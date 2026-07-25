@@ -1,0 +1,17 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "nerdit-plugin",
+  "description": "Marketplace for the NERDIT LMS multi-agent chapter lesson generator plugin.",
+  "owner": {
+    "name": "Future Vision Computers",
+    "url": "https://github.com/futurevisioncomputers"
+  },
+  "plugins": [
+    {
+      "name": "nerdit_try_plugin",
+      "description": "Multi-agent NERDIT LMS course generator: course object with assessment bank plus per-lesson HTML, durations, and quiz questions from course-[chaptername]_input.json.",
+      "source": "./",
+      "category": "education"
+    }
+  ]
+}

@@ -1,0 +1,162 @@
+[
+    {
+      "id": "introduction-to-langchain-and-llm-applications-01",
+      "title": "Introduction to LangChain and LLM Applications",
+      "description": "Understand what LangChain is, the problems it solves, and how it fits into the modern LLM application stack. Introduce core concepts, the LangChain ecosystem, common use cases, and what learners will build across the course."
+    },
+    {
+      "id": "python-and-ai-foundations-for-langchain-02",
+      "title": "Python and AI Foundations for LangChain",
+      "description": "Review the essential Python skills needed for LangChain development, including virtual environments, package management, async basics, type hints, and working with APIs, JSON, and environment variables."
+    },
+    {
+      "id": "natural-language-processing-and-llm-fundamentals-03",
+      "title": "Natural Language Processing and LLM Fundamentals",
+      "description": "Cover foundational NLP concepts such as tokenization, embeddings, context windows, and how language models process text, giving learners the theory needed to reason about LLM behavior."
+    },
+    {
+      "id": "large-language-models-and-generative-ai-04",
+      "title": "Large Language Models and Generative AI",
+      "description": "Explain how large language models are trained and how generative AI works, covering transformers, tokens, parameters, temperature, sampling, and the differences between major model families."
+    },
+    {
+      "id": "setting-up-langchain-development-environment-05",
+      "title": "Setting Up LangChain Development Environment",
+      "description": "Walk through installing LangChain and its dependencies, configuring API keys, setting up a project structure, and verifying the environment with a first working example."
+    },
+    {
+      "id": "understanding-langchain-architecture-06",
+      "title": "Understanding LangChain Architecture",
+      "description": "Break down the core building blocks of LangChain — models, prompts, chains, memory, indexes, agents, and callbacks — and how they connect to form an application."
+    },
+    {
+      "id": "prompt-templates-and-prompt-engineering-07",
+      "title": "Prompt Templates and Prompt Engineering",
+      "description": "Teach how to design effective prompts using LangChain PromptTemplates, few-shot examples, output parsers, and prompt engineering techniques for reliable, structured responses."
+    },
+    {
+      "id": "chains-and-sequential-workflows-08",
+      "title": "Chains and Sequential Workflows",
+      "description": "Introduce LangChain chains, including LLMChain, sequential chains, and the LangChain Expression Language (LCEL), to compose multi-step workflows from smaller components."
+    },
+    {
+      "id": "llm-integration-and-api-management-09",
+      "title": "LLM Integration and API Management",
+      "description": "Show how to integrate different LLM providers, manage API calls, handle rate limits, retries, streaming, and costs, and switch between models cleanly."
+    },
+    {
+      "id": "memory-systems-and-conversational-ai-10",
+      "title": "Memory Systems and Conversational AI",
+      "description": "Explain LangChain memory types for maintaining conversation state, including buffer, summary, and window memory, and how to build context-aware conversational applications."
+    },
+    {
+      "id": "document-loaders-and-data-ingestion-11",
+      "title": "Document Loaders and Data Ingestion",
+      "description": "Cover LangChain document loaders for ingesting data from files, PDFs, web pages, and databases, and how to standardize sources into Document objects for downstream use."
+    },
+    {
+      "id": "text-splitting-and-document-chunking-12",
+      "title": "Text Splitting and Document Chunking",
+      "description": "Teach strategies for splitting large documents into chunks, covering character, token, and recursive splitters, chunk size and overlap, and how chunking affects retrieval quality."
+    },
+    {
+      "id": "embeddings-and-vector-representations-13",
+      "title": "Embeddings and Vector Representations",
+      "description": "Explain what embeddings are, how text is converted into vectors, embedding models, and how semantic similarity is measured for search and retrieval."
+    },
+    {
+      "id": "vector-databases-and-semantic-search-14",
+      "title": "Vector Databases and Semantic Search",
+      "description": "Introduce vector databases such as Chroma, FAISS, and Pinecone, how to store and index embeddings, and how to perform semantic and similarity search."
+    },
+    {
+      "id": "retrieval-augmented-generation-rag-15",
+      "title": "Retrieval-Augmented Generation (RAG)",
+      "description": "Teach the full RAG pipeline — retrieval, augmentation, and generation — showing how to ground LLM answers in external documents to reduce hallucination and improve accuracy."
+    },
+    {
+      "id": "agents-and-tool-calling-systems-16",
+      "title": "Agents and Tool Calling Systems",
+      "description": "Explain LangChain agents, the reasoning-action loop, tool calling, and how agents decide which tools to use to accomplish multi-step tasks autonomously."
+    },
+    {
+      "id": "langchain-tools-and-external-integrations-17",
+      "title": "LangChain Tools and External Integrations",
+      "description": "Cover building and using custom tools, connecting to external APIs and services, and extending agents with search, calculators, and third-party integrations."
+    },
+    {
+      "id": "langgraph-and-ai-agent-orchestration-18",
+      "title": "LangGraph and AI Agent Orchestration",
+      "description": "Introduce LangGraph for building stateful, multi-step, and multi-agent workflows as graphs, covering nodes, edges, state, and orchestration patterns."
+    },
+    {
+      "id": "streamlit-and-langchain-web-applications-19",
+      "title": "Streamlit and LangChain Web Applications",
+      "description": "Show how to build interactive front-end web applications for LangChain projects using Streamlit, including chat interfaces, file uploads, and displaying streamed responses."
+    },
+    {
+      "id": "fastapi-and-backend-ai-development-20",
+      "title": "FastAPI and Backend AI Development",
+      "description": "Teach how to serve LangChain applications through a FastAPI backend, covering API endpoints, request handling, streaming responses, and structuring production services."
+    },
+    {
+      "id": "llmops-and-production-ai-workflows-21",
+      "title": "LLMOps and Production AI Workflows",
+      "description": "Introduce LLMOps practices for managing LLM applications in production, including prompt versioning, monitoring, logging, tracing with LangSmith, and cost control."
+    },
+    {
+      "id": "evaluation-and-testing-for-ai-systems-22",
+      "title": "Evaluation and Testing for AI Systems",
+      "description": "Cover how to evaluate and test LLM applications, including accuracy, relevance, and hallucination metrics, automated evaluation, and building reliable test suites."
+    },
+    {
+      "id": "deployment-and-scaling-of-langchain-applications-23",
+      "title": "Deployment and Scaling of LangChain Applications",
+      "description": "Explain how to deploy and scale LangChain applications using containers, cloud platforms, and best practices for reliability, caching, and handling load."
+    },
+    {
+      "id": "security-and-ethical-ai-development-24",
+      "title": "Security and Ethical AI Development",
+      "description": "Address security and ethics in AI development, covering prompt injection, data privacy, API key protection, bias, safety guardrails, and responsible AI practices."
+    },
+    {
+      "id": "multimodal-ai-and-advanced-generative-systems-25",
+      "title": "Multimodal AI and Advanced Generative Systems",
+      "description": "Explore multimodal AI that combines text, images, and audio, and advanced generative techniques for building richer applications with LangChain."
+    },
+    {
+      "id": "real-world-business-and-enterprise-ai-applications-26",
+      "title": "Real-World Business and Enterprise AI Applications",
+      "description": "Examine how LangChain is applied in real business and enterprise settings, covering common use cases, architecture patterns, ROI, and integration with existing systems."
+    },
+    {
+      "id": "project-ai-chatbot-and-conversational-assistant-27",
+      "title": "Project — AI Chatbot and Conversational Assistant",
+      "description": "Guide learners through building a complete AI chatbot and conversational assistant, applying prompts, memory, and a user interface into a working end-to-end project."
+    },
+    {
+      "id": "project-rag-document-analysis-platform-28",
+      "title": "Project — RAG Document Analysis Platform",
+      "description": "Guide learners through building a RAG-based document analysis platform that ingests documents, indexes them, and answers questions grounded in their content."
+    },
+    {
+      "id": "project-ai-agent-and-tool-automation-system-29",
+      "title": "Project — AI Agent and Tool Automation System",
+      "description": "Guide learners through building an AI agent that uses tools to automate multi-step tasks, applying agent reasoning, tool calling, and orchestration in a real project."
+    },
+    {
+      "id": "project-enterprise-ai-knowledge-management-system-30",
+      "title": "Project — Enterprise AI Knowledge Management System",
+      "description": "Guide learners through building an enterprise knowledge management system that combines retrieval, memory, and access to organizational data into a scalable solution."
+    },
+    {
+      "id": "project-multimodal-generative-ai-dashboard-31",
+      "title": "Project — Multimodal Generative AI Dashboard",
+      "description": "Guide learners through building a multimodal generative AI dashboard that processes and generates text, images, and other media in a unified interface."
+    },
+    {
+      "id": "expert-level-langchain-and-ai-platform-engineering-32",
+      "title": "Expert-Level LangChain and AI Platform Engineering",
+      "description": "Cover expert-level topics in LangChain and AI platform engineering, including advanced architecture, performance optimization, custom components, and building production-grade AI platforms."
+    }
+]

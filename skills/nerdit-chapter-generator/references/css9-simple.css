@@ -1,0 +1,727 @@
+/* ====================================================================
+   NERDIT LMS — css9-simple.css
+   Additive patch loaded AFTER css8.css.
+   Adds the v9 "simple learning" components:
+     syntax box · example unit · output panel · demo data table ·
+     figure/caption · predict-output · fill-in-the-blank · SQL try-it runner
+   Plus readability upgrades scoped to .nerdit-wrapper.nerdit-simple.
+   Reuses css8 design tokens (--nb, --green, --bd-soft, --r, …).
+   ==================================================================== */
+
+/* --------------------------------------------------------------------
+   1 · READABILITY (scoped to the v9 wrapper flag)
+   -------------------------------------------------------------------- */
+.nerdit-wrapper.nerdit-simple {
+  max-width: 920px;               /* narrower column = easier reading */
+}
+
+/* Only top-level prose. Component blocks (recap band, callouts, example notes,
+   objectives) keep their own css8/css9 colors — a blanket `p, li` rule here would
+   paint dark text onto the dark-blue .nerdit-recap band and kill its contrast. */
+.nerdit-wrapper.nerdit-simple > p,
+.nerdit-wrapper.nerdit-simple > ul > li,
+.nerdit-wrapper.nerdit-simple > section > p,
+.nerdit-wrapper.nerdit-simple > section > ul > li {
+  font-size: 16.5px;
+  line-height: 1.8;
+  color: var(--tx-b);
+}
+
+.nerdit-wrapper.nerdit-simple section {
+  margin-bottom: 2.2rem;
+}
+
+.nerdit-wrapper.nerdit-simple h2 {
+  margin-top: 2.4rem;
+}
+
+@media (min-width: 768px) {
+  .nerdit-wrapper.nerdit-simple > p,
+  .nerdit-wrapper.nerdit-simple > ul > li,
+  .nerdit-wrapper.nerdit-simple > section > p,
+  .nerdit-wrapper.nerdit-simple > section > ul > li { font-size: 17px; }
+}
+
+/* --------------------------------------------------------------------
+   1b · SOLUTION PANEL TEXT
+   css8 gives `.nerdit-solution > div` a dark slate background (#1e293b) but
+   never sets a text colour, so anything inside inherits the page's dark body
+   text — the same value as the background, i.e. invisible. v8 solutions only
+   ever held a <pre>, which carries its own light text, so the gap never showed.
+   v9 solutions add explanation paragraphs after the code, so they need an
+   explicit light colour and some padding of their own (css8 sets padding: 0
+   so the <pre> can sit flush).
+   -------------------------------------------------------------------- */
+.nerdit-solution > div > p,
+.nerdit-solution > div > ul,
+.nerdit-solution > div > ol {
+  color: #cbd5e1;
+  font-size: 15px;
+  line-height: 1.75;
+  margin: .85rem 1.1rem;
+}
+
+.nerdit-solution > div > ul,
+.nerdit-solution > div > ol { padding-left: 1.4rem; }
+
+.nerdit-solution > div > p:last-child,
+.nerdit-solution > div > ul:last-child,
+.nerdit-solution > div > ol:last-child { margin-bottom: 1rem; }
+
+/* Inline code inside a solution: css8's light-blue chip is tuned for a white
+   page and glares on the dark panel. */
+.nerdit-solution > div > p code,
+.nerdit-solution > div > ul code,
+.nerdit-solution > div > ol code {
+  background: rgba(148, 163, 184, .2);
+  color: #fbbf24;
+  border-color: rgba(148, 163, 184, .35);
+}
+
+.nerdit-solution > div > p strong,
+.nerdit-solution > div > ul strong,
+.nerdit-solution > div > ol strong { color: #f1f5f9; }
+
+.nerdit-solution > div > p a { color: #93c5fd; }
+
+/* An output panel inside a solution keeps its own light styling — just give it
+   room so it does not sit flush against the panel edges. */
+.nerdit-solution > div > .nerdit-output {
+  margin: .85rem 1.1rem;
+}
+
+/* --------------------------------------------------------------------
+   2 · SYNTAX BOX  (bare pattern — light, calm, no copy button)
+   -------------------------------------------------------------------- */
+.nerdit-syntax {
+  background: var(--nb-soft);
+  border: 1px solid var(--blue-bd);
+  border-left: 4px solid var(--nb);
+  border-radius: var(--r);
+  padding: .9rem 1rem;
+  margin: 1rem 0;
+}
+
+.nerdit-syntax-label {
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--nb);
+  margin-bottom: .5rem;
+}
+
+.nerdit-syntax pre {
+  background: var(--white);
+  color: var(--tx-b);
+  border: 1px solid var(--blue-bd);
+  box-shadow: none;
+  padding: .8rem 1rem;
+  margin: 0;
+  font-size: 13.5px;
+}
+
+.nerdit-syntax pre::before { display: none; }
+
+.nerdit-syntax pre code {
+  color: var(--tx-b);
+  white-space: pre;
+}
+
+.nerdit-syntax pre code em {
+  font-style: italic;
+  color: var(--rose);
+}
+
+/* --------------------------------------------------------------------
+   3 · EXAMPLE UNIT  (the W3Schools-style example box)
+   -------------------------------------------------------------------- */
+.nerdit-example {
+  background: var(--bg-soft);
+  border: 1px solid var(--bd-soft);
+  border-left: 4px solid var(--green);
+  border-radius: var(--r);
+  padding: 1rem 1.1rem;
+  margin: 1.2rem 0;
+}
+
+.nerdit-example-head {
+  display: inline-block;
+  font-size: .78rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--green);
+  background: var(--green-bg);
+  border: 1px solid var(--green-bd);
+  border-radius: 999px;
+  padding: .18rem .7rem;
+  margin-bottom: .55rem;
+}
+
+.nerdit-example-lead {
+  font-weight: 600;
+  color: var(--tx-b);
+  margin: .2rem 0 .4rem;
+}
+
+.nerdit-example pre { margin: .6rem 0; }
+
+.nerdit-example-note {
+  font-size: 15px;
+  color: var(--tx-s);
+  background: var(--white);
+  border: 1px dashed var(--bd);
+  border-radius: var(--r-sm, 8px);
+  padding: .6rem .8rem;
+  margin: .6rem 0 0;
+}
+
+/* --------------------------------------------------------------------
+   4 · OUTPUT PANEL  (mandatory after every code block)
+   -------------------------------------------------------------------- */
+.nerdit-output {
+  background: var(--white);
+  border: 1px solid var(--bd-soft);
+  border-radius: var(--r);
+  margin: .6rem 0 1rem;
+  overflow: hidden;
+}
+
+.nerdit-output-label {
+  font-size: .72rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--tx-m);
+  background: var(--bg-code);
+  border-bottom: 1px solid var(--bd-soft);
+  padding: .35rem .9rem;
+}
+
+.nerdit-output-label::before {
+  content: "▸ ";
+  color: var(--green);
+}
+
+.nerdit-output pre {
+  background: var(--white);
+  color: var(--tx-b);
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  margin: 0;
+  padding: .7rem .9rem;
+  font-size: 13px;
+}
+
+.nerdit-output pre::before { display: none; }
+
+.nerdit-output pre code {
+  color: var(--tx-b);
+  white-space: pre;
+}
+
+/* --------------------------------------------------------------------
+   5 · DEMO DATA TABLE  (shared dataset, shown once at the top)
+   -------------------------------------------------------------------- */
+.nerdit-demo-table {
+  margin: 1.2rem 0;
+  border: 1px solid var(--bd-soft);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+
+.nerdit-demo-table-label {
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--nb);
+  background: var(--nb-soft);
+  border-bottom: 1px solid var(--bd-soft);
+  padding: .5rem .9rem;
+}
+
+.nerdit-demo-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.nerdit-demo-table th {
+  background: var(--bg-code);
+  color: var(--tx-b);
+  text-align: left;
+  font-weight: 700;
+  padding: .45rem .9rem;
+  border-bottom: 2px solid var(--bd);
+  font-family: var(--font-code);
+  font-size: 12.5px;
+}
+
+.nerdit-demo-table td {
+  padding: .45rem .9rem;
+  border-bottom: 1px solid var(--bd-soft);
+  color: var(--tx-s);
+}
+
+.nerdit-demo-table tbody tr:nth-child(even) { background: var(--bg-soft); }
+.nerdit-demo-table tbody tr:last-child td { border-bottom: none; }
+
+/* --------------------------------------------------------------------
+   6 · FIGURE  (teaching SVG + caption)
+   -------------------------------------------------------------------- */
+.nerdit-figure {
+  margin: 1.2rem auto;
+  max-width: 680px;
+  text-align: center;
+}
+
+.nerdit-figure svg {
+  width: 100%;
+  height: auto;
+}
+
+.nerdit-figure-caption {
+  font-size: 13.5px;
+  color: var(--tx-m);
+  margin-top: .4rem;
+}
+
+/* --------------------------------------------------------------------
+   7 · PREDICT THE OUTPUT  (Try It — retrieval practice)
+   -------------------------------------------------------------------- */
+.nerdit-predict {
+  background: var(--amber-bg);
+  border: 1px solid var(--amber-bd);
+  border-left: 4px solid var(--amber);
+  border-radius: var(--r);
+  padding: 1rem 1.1rem;
+  margin: 1.2rem 0;
+}
+
+.nerdit-predict-head {
+  font-weight: 800;
+  color: var(--amber);
+  margin-bottom: .4rem;
+}
+
+.nerdit-predict pre { margin: .6rem 0; }
+
+.nerdit-predict-answer summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--nb);
+  padding: .4rem 0;
+  user-select: none;
+}
+
+.nerdit-predict-answer[open] summary { margin-bottom: .4rem; }
+
+/* --------------------------------------------------------------------
+   8 · FILL IN THE BLANK  (Try It — instant feedback)
+   -------------------------------------------------------------------- */
+.nerdit-fillblank {
+  background: var(--teal-bg);
+  border: 1px solid var(--teal-bd);
+  border-left: 4px solid var(--teal);
+  border-radius: var(--r);
+  padding: 1rem 1.1rem;
+  margin: 1.2rem 0;
+}
+
+.nerdit-fillblank-head {
+  font-weight: 800;
+  color: var(--teal);
+  margin-bottom: .4rem;
+}
+
+.nerdit-fillblank pre { margin: .6rem 0; }
+
+/* Default: sits in light prose. */
+.nerdit-blank {
+  font-family: var(--font-code);
+  font-size: 13.5px;
+  background: var(--white);
+  color: var(--tx-b);
+  border: 1.5px dashed var(--tx-m);
+  border-radius: 6px;
+  padding: .15rem .45rem;
+  outline: none;
+  width: auto;
+}
+
+/* Inside a dark code block, invert so it reads as part of the code. */
+.nerdit-wrapper pre .nerdit-blank,
+.nerdit-reader pre .nerdit-blank {
+  background: #0f172a;
+  color: #fbbf24;
+  border-color: #64748b;
+  font-size: 13px;
+}
+
+.nerdit-blank:focus { border-color: var(--nb-vivid); border-style: solid; }
+.nerdit-blank.ok { border-color: var(--green); border-style: solid; color: var(--green); }
+.nerdit-blank.no { border-color: var(--rose); border-style: solid; }
+
+.nerdit-wrapper pre .nerdit-blank.ok,
+.nerdit-reader pre .nerdit-blank.ok { border-color: #34d399; color: #34d399; }
+.nerdit-wrapper pre .nerdit-blank.no,
+.nerdit-reader pre .nerdit-blank.no { border-color: #fb7185; }
+
+.nerdit-check-btn {
+  font: inherit;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--white);
+  background: var(--teal);
+  border: none;
+  border-radius: 8px;
+  padding: .45rem 1.1rem;
+  cursor: pointer;
+  margin-top: .3rem;
+}
+
+.nerdit-check-btn:hover { filter: brightness(1.08); }
+
+.nerdit-check-msg {
+  margin-left: .6rem;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.nerdit-check-msg.ok { color: var(--green); }
+.nerdit-check-msg.no { color: var(--rose); }
+
+/* --------------------------------------------------------------------
+   9 · SQL TRY-IT RUNNER  (live editor — sql.js)
+   -------------------------------------------------------------------- */
+.nerdit-tryit {
+  background: var(--white);
+  border: 1px solid var(--bd);
+  border-top: 4px solid var(--green);
+  border-radius: var(--r);
+  padding: 1rem 1.1rem;
+  margin: 1.4rem 0;
+  box-shadow: var(--sh-sm);
+}
+
+.nerdit-tryit-head {
+  font-weight: 800;
+  color: var(--tx-b);
+  margin-bottom: .6rem;
+}
+
+.nerdit-tryit-editor {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: var(--font-code);
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: #e2e8f0;
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: var(--r-sm, 8px);
+  padding: .8rem 1rem;
+  resize: vertical;
+  outline: none;
+}
+
+.nerdit-tryit-editor:focus { border-color: var(--nb-vivid); }
+
+.nerdit-tryit-bar {
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  margin: .6rem 0;
+}
+
+.nerdit-run-btn {
+  font: inherit;
+  font-weight: 800;
+  font-size: 14.5px;
+  color: var(--white);
+  background: var(--green);
+  border: none;
+  border-radius: 8px;
+  padding: .5rem 1.3rem;
+  cursor: pointer;
+  box-shadow: var(--sh-xs);
+}
+
+.nerdit-run-btn:hover { filter: brightness(1.08); }
+.nerdit-run-btn:active { transform: translateY(1px); }
+
+.nerdit-tryit-status {
+  font-size: 13.5px;
+  color: var(--tx-m);
+  font-weight: 600;
+}
+
+.nerdit-result-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  font-family: var(--font-code);
+  border: 1px solid var(--bd-soft);
+}
+
+.nerdit-result-table th {
+  background: var(--nb);
+  color: var(--white);
+  text-align: left;
+  padding: .4rem .8rem;
+  font-size: 12.5px;
+}
+
+.nerdit-result-table td {
+  padding: .4rem .8rem;
+  border-bottom: 1px solid var(--bd-soft);
+  color: var(--tx-s);
+}
+
+.nerdit-result-table tbody tr:nth-child(even) { background: var(--bg-soft); }
+
+/* --------------------------------------------------------------------
+   9b · EXCEL WIDGETS — spreadsheet grid, formula bar, pivot builder
+   -------------------------------------------------------------------- */
+.nerdit-xl {
+  background: var(--white);
+  border: 1px solid var(--bd);
+  border-top: 4px solid var(--green);
+  border-radius: var(--r);
+  padding: 1rem 1.1rem;
+  margin: 1.4rem 0;
+  box-shadow: var(--sh-sm);
+}
+
+.nerdit-xl-head {
+  font-weight: 800;
+  color: var(--tx-b);
+  margin-bottom: .6rem;
+}
+
+.nerdit-xl-sheet,
+.nerdit-xl-pivot-result {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: .6rem 0;
+}
+
+.nerdit-xl-table {
+  border-collapse: collapse;
+  font-family: var(--font-code);
+  font-size: 12.5px;
+  min-width: 100%;
+  background: var(--white);
+}
+
+.nerdit-xl-table th,
+.nerdit-xl-table td {
+  border: 1px solid var(--bd);
+  padding: .3rem .6rem;
+  white-space: nowrap;
+}
+
+/* Column letters and row numbers — the grey chrome of a real sheet. */
+.nerdit-xl-colhead,
+.nerdit-xl-rowhead,
+.nerdit-xl-corner {
+  background: #e2e8f0;
+  color: var(--tx-s);
+  font-weight: 700;
+  text-align: center;
+  font-size: 11.5px;
+}
+
+.nerdit-xl-rowhead { width: 30px; }
+.nerdit-xl-cell { color: var(--tx-b); text-align: left; }
+.nerdit-xl-cell.is-header { background: var(--nb-soft); font-weight: 700; color: var(--nb); }
+.nerdit-xl-cell.is-num { text-align: right; }
+.nerdit-xl-cell.is-hit { background: #fef9c3; box-shadow: inset 0 0 0 2px var(--amber); }
+
+.nerdit-xl-bar {
+  display: flex;
+  align-items: stretch;
+  gap: .5rem;
+  flex-wrap: wrap;
+  margin: .7rem 0 .5rem;
+}
+
+.nerdit-xl-fx {
+  display: flex;
+  align-items: center;
+  padding: 0 .7rem;
+  background: var(--bg-code);
+  border: 1px solid var(--bd);
+  border-radius: 8px;
+  font-family: var(--font-code);
+  font-style: italic;
+  font-weight: 700;
+  color: var(--tx-m);
+}
+
+.nerdit-xl-input {
+  flex: 1 1 260px;
+  min-width: 0;
+  font-family: var(--font-code);
+  font-size: 13.5px;
+  color: var(--tx-b);
+  background: var(--white);
+  border: 1.5px solid var(--bd);
+  border-radius: 8px;
+  padding: .5rem .7rem;
+  outline: none;
+}
+
+.nerdit-xl-input:focus { border-color: var(--nb-vivid); }
+
+.nerdit-xl-out {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  flex-wrap: wrap;
+  background: var(--green-bg);
+  border: 1px solid var(--green-bd);
+  border-radius: var(--r-sm, 8px);
+  padding: .6rem .9rem;
+}
+
+.nerdit-xl-out.error { background: var(--rose-bg); border-color: var(--rose-bd); }
+
+.nerdit-xl-out-label {
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--tx-m);
+}
+
+.nerdit-xl-out-val {
+  font-family: var(--font-code);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--green);
+  word-break: break-word;
+}
+
+.nerdit-xl-out.error .nerdit-xl-out-val { color: var(--rose); }
+
+/* Preset formula chips — let a learner load an example without typing. */
+.nerdit-xl-presets { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .5rem; }
+
+.nerdit-xl-preset {
+  font: inherit;
+  font-family: var(--font-code);
+  font-size: 12px;
+  color: var(--nb);
+  background: var(--nb-soft);
+  border: 1px solid var(--blue-bd);
+  border-radius: 999px;
+  padding: .25rem .7rem;
+  cursor: pointer;
+}
+
+.nerdit-xl-preset:hover { background: var(--white); border-color: var(--nb); }
+
+/* Pivot builder */
+.nerdit-xl-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .8rem;
+  align-items: flex-end;
+  background: var(--bg-soft);
+  border: 1px solid var(--bd-soft);
+  border-radius: var(--r-sm, 8px);
+  padding: .8rem .9rem;
+  margin: .6rem 0;
+}
+
+.nerdit-xl-field { display: flex; flex-direction: column; gap: .25rem; }
+
+.nerdit-xl-field label {
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--tx-m);
+}
+
+.nerdit-xl-field select {
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--tx-b);
+  background: var(--white);
+  border: 1.5px solid var(--bd);
+  border-radius: 8px;
+  padding: .4rem .6rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.nerdit-xl-field select:focus { border-color: var(--nb-vivid); }
+
+.nerdit-xl-pivot thead th { background: var(--nb); color: var(--white); border-color: var(--nb); }
+.nerdit-xl-total td { background: var(--nb-soft); font-weight: 800; color: var(--nb); }
+
+/* Plain-text program output (Python runner). */
+.nerdit-tryit-output {
+  font-family: var(--font-code);
+  font-size: 13.5px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--tx-b);
+  background: var(--bg-code);
+  border: 1px solid var(--bd-soft);
+  border-radius: var(--r-sm, 8px);
+  padding: .7rem .9rem;
+}
+
+.nerdit-tryit-output.error {
+  color: var(--rose);
+  background: var(--rose-bg);
+  border-color: var(--rose-bd);
+}
+
+/* Rendered chart from the Matplotlib runner. */
+.nerdit-plot-figure {
+  background: var(--white);
+  border: 1px solid var(--bd-soft);
+  border-radius: var(--r-sm, 8px);
+  padding: .6rem;
+  margin-top: .5rem;
+  text-align: center;
+}
+
+.nerdit-plot-img {
+  max-width: 100%;
+  height: auto;
+  display: inline-block;
+}
+
+.nerdit-plot-caption {
+  font-size: .7rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--tx-m);
+  margin-bottom: .4rem;
+  text-align: left;
+}
+
+.nerdit-tryit-empty {
+  color: var(--tx-m);
+  font-size: 14px;
+  padding: .5rem 0;
+}
+
+.nerdit-tryit-error {
+  color: var(--rose);
+  background: var(--rose-bg);
+  border: 1px solid var(--rose-bd);
+  border-radius: var(--r-sm, 8px);
+  font-family: var(--font-code);
+  font-size: 13px;
+  padding: .6rem .9rem;
+}
