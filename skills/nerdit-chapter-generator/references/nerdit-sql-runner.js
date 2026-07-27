@@ -10,7 +10,7 @@
  */
 (function () {
   if (typeof window.nerditRunSql !== "function") {
-    window.nerditRunSql = function (btn) {
+    window.nerditRunSql = function(btn){
       var box = btn.closest('.nerdit-tryit');
       var status = box.querySelector('.nerdit-tryit-status');
       var out = box.querySelector('.nerdit-tryit-result');
