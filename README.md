@@ -30,8 +30,10 @@ still require the LLM.
 See [skills/nerdit-chapter-generator/SKILL.md](skills/nerdit-chapter-generator/SKILL.md) for
 the full orchestration flow, and
 [skills/nerdit-chapter-generator/references/](skills/nerdit-chapter-generator/references/)
-for the NERDIT component catalogue (`NERDIT_LESSON_PROMPT_v9_simple.md`) and stylesheets (`css8.css` + `css9-simple.css`)
-the agents read as their source of truth.
+for the NERDIT component catalogue (`CORE.md`, plus one fragment per runner in `runners/`) and
+stylesheets (`css8.css` + `css9-simple.css`) the agents read as their source of truth. A lesson
+writer reads `CORE.md` and exactly one runner fragment, so adding a new runner costs every other
+lesson nothing.
 
 ## Install
 

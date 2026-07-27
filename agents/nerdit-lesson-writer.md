@@ -29,8 +29,14 @@ not teach. Do not draft questions before the HTML exists.
 ## Step 0 — Read the rulebook first, every time
 
 Before writing anything:
-- Read `${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/references/NERDIT_LESSON_PROMPT_v9_simple.md` in full — skeleton, language rules, component set, banned list, widget script contracts
-- Do **not** read the css files in full. Grep `css8.css` / `css9-simple.css` for specific class names only when the prompt file leaves exact markup unclear
+- Read `${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/references/CORE.md` in full — skeleton, language rules, component set, banned list, shared script helpers
+- If the orchestrator named a `RUNNER`, also read
+  `${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/references/runners/<RUNNER>.md` — that
+  is the only runner this lesson may use. Do not read the other runner fragments. If this
+  lesson genuinely needs a different one, read that fragment before using it.
+- `RUNNER: none` means no live runner — practice comes from `nerdit-predict` and
+  `nerdit-fillblank` only.
+- Do **not** read the css files in full. Grep `css8.css` / `css9-simple.css` for specific class names only when `CORE.md` leaves exact markup unclear
 
 If the orchestrator attached a sample `course-[chaptername]_output.json`, read it too for field ordering and tone reference.
 

@@ -74,7 +74,8 @@ structure, and formatting rule.
 
 | File | Authority for |
 |------|---------------|
-| `references/NERDIT_LESSON_PROMPT_v9_simple.md` | **The lesson rules.** Fixed skeleton, language rules, example units with mandatory outputs, Try It widgets, visual decision table, banned-component list |
+| `references/CORE.md` | **The lesson rules, subject-agnostic.** Fixed skeleton, language rules, example units with mandatory outputs, predict/fill-blank practice, visual decision table, banned-component list, shared script helpers |
+| `references/runners/<runner>.md` | **One runner's markup contract.** `sql`, `python`, `excel`, `plot`. Exactly one is passed per lesson — see Step 2b |
 | `references/css8.css` | The base NERDIT LMS stylesheet — class names, color tokens, design variables (v9 lessons use these base classes; `css9-simple.css` is additive on top). When in doubt about exact markup a class expects, grep this file |
 | `references/css9-simple.css` | Additive v9 patch loaded after `css8.css` — defines `nerdit-syntax`, `nerdit-example`, `nerdit-output`, `nerdit-demo-table`, `nerdit-figure`, `nerdit-predict`, `nerdit-fillblank`, `nerdit-tryit`, and the Excel widgets |
 | `references/nerdit-excel-engine.js` | Formula evaluator, sheet renderer, and pivot builder for Excel lessons. Ship it alongside the lesson HTML (Excel has no embeddable engine like sql.js or Pyodide) |
@@ -82,7 +83,7 @@ structure, and formatting rule.
 
 ### Lesson style
 
-Every lesson follows `NERDIT_LESSON_PROMPT_v9_simple.md` — wrapper `nerdit-wrapper nerdit-simple`.
+Every lesson follows `CORE.md` — wrapper `nerdit-wrapper nerdit-simple`.
 It is the only style.
 
 Two more reference files live in the same `references/` directory and are the **authoritative
@@ -96,8 +97,8 @@ schema example** for this skill's output — study them before assembling Step 3
 If the user attaches their own sample input/output pair for the current chapter, prefer those
 for field ordering/tone, but the bundled reference pair remains the schema source of truth.
 
-**Always read the active style's prompt file first** (`NERDIT_LESSON_PROMPT_v9_simple.md`
-by default). It is the single source of truth for what a lesson may and may not contain.
+**`CORE.md` is the single source of truth** for what a lesson may and may not contain.
+A runner fragment adds one widget contract on top of it and overrides nothing.
 
 ---
 
@@ -128,7 +129,18 @@ For a brand-new course (no old JSON), skip this section and start at Step 1.
    - `id` — unique lesson identifier string
    - `title` — lesson title string
    - `description` — short lesson description string
-3. If the file cannot be found or parsed, notify the user and stop.
+   - `runner` — *optional*. One of `sql`, `python`, `excel`, `plot`, `none`. Selects the
+     runner fragment passed to that lesson's writer. Generation context only: it is never
+     copied into the output, and the assembler ignores it.
+3. Resolve the runner for every lesson before spawning anything.
+   - If `runner` is absent on some or all lessons, infer it from the chapter name and the
+     lesson descriptions, then **print your per-lesson choice and get the user's
+     confirmation before spawning any agent.** Inference costs nothing; twelve
+     wrongly-generated lessons cost a full run.
+   - If a `runner` value is not one of the five listed above, stop and show the valid
+     values. Do **not** fall back to `none` — that would silently produce a whole chapter
+     with no practice widgets.
+4. If the file cannot be found or parsed, notify the user and stop.
 
 ---
 
@@ -160,7 +172,14 @@ the same way `title` is used to inform content, but it does not appear in the as
 Do not generate the HTML lesson yourself. Spawn the `nerdit-lesson-writer` agent for this
 lesson (in parallel with the other lessons' agents — see Multi-Agent Architecture above),
 passing it: `id`, `title`, `description`, chapter name, whether this is a multi-lesson chapter,
-`HTML_PATH = <workdir>/<id>.html`, and `QUIZ_PATH = <workdir>/<id>.quiz.json`. The agent owns
+`RUNNER` (the value resolved in Step 1), `HTML_PATH = <workdir>/<id>.html`, and
+`QUIZ_PATH = <workdir>/<id>.quiz.json`.
+
+Before spawning, confirm `references/runners/<RUNNER>.md` exists on disk (skip this check when
+`RUNNER` is `none`). If it does not, stop — an agent that proceeds without its fragment emits a
+Try It block whose handler does not exist.
+
+The agent owns
 every content rule (skeleton, language, example/output, Try It, banned components, HTML hygiene)
 and every question rule — see `agents/nerdit-lesson-writer.md`. It **writes the fragment to
 `HTML_PATH` and the 6 questions to `QUIZ_PATH`**, then returns only its `FILE:`/`QUIZ:` path
@@ -240,7 +259,7 @@ and spawn `nerdit-qa-validator` again before moving to Step 6. The checklist it 
 - [ ] **(simple/v9)** Any SVG sits in `nerdit-figure`/`nerdit-flow-wrap` and teaches structure/flow/overlap — no decorative art; at most one live runner per lesson, with its seed/grid block id matching the widget's `data-seed`/`data-grid`
 - [ ] **(simple/v9, Excel)** Every documented formula output was verified against `nerdit-excel-engine.js` — a worked example claiming `301300` must actually evaluate to `301300`
 - [ ] **(simple/v9, data-viz)** Every documented chart description was verified by running the code — describe what actually renders, never a guess. Charts the learner's code produces are outputs and are always allowed; the decoration ban in §7 still applies to the page itself
-- [ ] Component markup matches `NERDIT_LESSON_PROMPT_v9_simple.md` exactly (correct nesting, label divs, variant classes)
+- [ ] Component markup matches `CORE.md` and the lesson's runner fragment exactly (correct nesting, label divs, variant classes)
 - [ ] All `id` attributes within each `content` block are unique within that lesson
 - [ ] Each lesson's `duration` is present and follows the `"NNm"` format
 - [ ] Each lesson's `questions` array has exactly 3 objects, ids matching `lesson-<QID_SESSION_TS>-<lesson.id>-qN-<QID_BATCH_TS>`
