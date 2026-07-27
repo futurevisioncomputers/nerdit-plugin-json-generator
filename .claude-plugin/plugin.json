@@ -1,7 +1,7 @@
 {
   "name": "nerdit_try_plugin",
   "version": "2.2.0",
-  "description": "Multi-agent NERDIT LMS course generator. Orchestrates nerdit-lesson-writer, nerdit-quiz-writer, and nerdit-qa-validator subagents to turn course-[chaptername]_input.json files into a full course-[chaptername]_output.json course object (course metadata + assessment bank + per-lesson HTML, duration, and quiz questions).",
+  "description": "Multi-agent NERDIT LMS course generator. Orchestrates nerdit-lesson-writer and nerdit-qa-validator subagents to turn course-[chaptername]_input.json files into a full course-[chaptername]_output.json course object (course metadata + assessment bank + per-lesson HTML, duration, and quiz questions).",
   "author": {
     "name": "Future Vision Computers",
     "url": "https://github.com/futurevisioncomputers"

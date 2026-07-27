@@ -31,18 +31,19 @@ from the input.
 ## Multi-Agent Architecture
 
 This skill is the **orchestrator**. It does not write lesson HTML or quiz questions itself —
-it delegates to three specialized subagents (bundled in `agents/`) and assembles their output:
+it delegates to two specialized subagents (bundled in `agents/`) and assembles their output:
 
 | Agent | Job | Runs |
 |---|---|---|
-| `nerdit-lesson-writer` | Writes one lesson's HTML fragment to `<workdir>/<id>.html`; returns the path | Once per lesson, in parallel |
-| `nerdit-quiz-writer` | Reads that lesson's `<id>.html` and derives 6 MCQs, split 3 (lesson) + 3 (assessment) | Once per lesson, after that lesson's file exists |
+| `nerdit-lesson-writer` | Writes one lesson's HTML fragment to `<workdir>/<id>.html` **and** its 6 MCQs to `<workdir>/<id>.quiz.json`; returns both paths | Once per lesson, in parallel |
 | `nerdit-qa-validator` | Read-only checklist pass over the script-assembled output file | Once, after assembly |
 
 Why: each lesson's generation is independent and reference-heavy (the two reference files
 alone are ~4,000 lines), so isolating each lesson in its own subagent context keeps quality
-high and keeps this orchestrator's own context light regardless of chapter size. Running
-lessons in parallel also cuts wall-clock time on multi-lesson chapters.
+high and keeps this orchestrator's own context light regardless of chapter size. Generating
+each lesson's questions in the same turn that wrote its HTML avoids re-reading the fragment
+from disk in a second agent. Running lessons in parallel also cuts wall-clock time on
+multi-lesson chapters.
 
 **Delegation flow:**
 
@@ -50,20 +51,17 @@ lessons in parallel also cuts wall-clock time on multi-lesson chapters.
 2. Spawn one `nerdit-lesson-writer` agent per lesson. Independent lessons have no dependency
    on each other — launch them together in one batch of parallel Agent calls. Pass each agent:
    the lesson's `id`/`title`/`description`, the chapter name, whether this is a multi-lesson
-   chapter (so it prefixes internal HTML ids), and the target `HTML_PATH = <workdir>/<id>.html`.
-   Each returns only `FILE: <path>` — the HTML stays on disk, never in your context.
-3. As each lesson's file is written, spawn that lesson's `nerdit-quiz-writer`, passing the
-   lesson `id` and its `HTML_PATH`. The agent reads the file itself and returns 6 MCQs (no ids).
-   These run in parallel across lessons.
-4. Write the small `<workdir>/meta.json` sidecar (Step 3) — per-lesson `id`, `title`, and the
-   two question arrays. No HTML, no course object.
-5. Run `scripts/assemble_course.py` (Step 4) to build the full `course-<chapter>_output.json`
-   from the input, the `<id>.html` files, and `meta.json`. The script owns all course defaults,
-   ids, timestamps, durations, and `assets`.
-6. Spawn `nerdit-qa-validator` once against the assembled output file (Step 5). On any `FAIL`,
-   re-run the broken lesson's writer/quiz agent, re-assemble, re-validate. Then deliver (Step 6).
+   chapter (so it prefixes internal HTML ids), `HTML_PATH = <workdir>/<id>.html`, and
+   `QUIZ_PATH = <workdir>/<id>.quiz.json`. Each returns only `FILE:` and `QUIZ:` path lines —
+   neither the HTML nor the questions ever enter your context.
+3. Run `scripts/assemble_course.py` (Step 4) to build the full `course-<chapter>_output.json`
+   from the input, the `<id>.html` files, and the `<id>.quiz.json` files. The script owns all
+   course defaults, ids, timestamps, durations, and `assets`.
+4. Spawn `nerdit-qa-validator` once against the assembled output file (Step 5). On any `FAIL`,
+   re-run the broken lesson's `nerdit-lesson-writer` (it regenerates both files), re-assemble,
+   re-validate. Then deliver (Step 6).
 
-If the chapter has exactly one lesson, the parallelism in steps 2/3 is moot but the same
+If the chapter has exactly one lesson, the parallelism in step 2 is moot but the same
 delegation still applies — do not write lesson content directly in the orchestrator.
 
 ---
@@ -76,7 +74,8 @@ structure, and formatting rule.
 
 | File | Authority for |
 |------|---------------|
-| `references/NERDIT_LESSON_PROMPT_v9_simple.md` | **The lesson rules.** Fixed skeleton, language rules, example units with mandatory outputs, Try It widgets, visual decision table, banned-component list |
+| `references/CORE.md` | **The lesson rules, subject-agnostic.** Fixed skeleton, language rules, example units with mandatory outputs, predict/fill-blank practice, visual decision table, banned-component list, shared script helpers |
+| `references/runners/<runner>.md` | **One runner's markup contract.** `sql`, `python`, `excel`, `plot`. Exactly one is passed per lesson — see Step 2b |
 | `references/css8.css` | The base NERDIT LMS stylesheet — class names, color tokens, design variables (v9 lessons use these base classes; `css9-simple.css` is additive on top). When in doubt about exact markup a class expects, grep this file |
 | `references/css9-simple.css` | Additive v9 patch loaded after `css8.css` — defines `nerdit-syntax`, `nerdit-example`, `nerdit-output`, `nerdit-demo-table`, `nerdit-figure`, `nerdit-predict`, `nerdit-fillblank`, `nerdit-tryit`, and the Excel widgets |
 | `references/nerdit-excel-engine.js` | Formula evaluator, sheet renderer, and pivot builder for Excel lessons. Ship it alongside the lesson HTML (Excel has no embeddable engine like sql.js or Pyodide) |
@@ -84,22 +83,24 @@ structure, and formatting rule.
 
 ### Lesson style
 
-Every lesson follows `NERDIT_LESSON_PROMPT_v9_simple.md` — wrapper `nerdit-wrapper nerdit-simple`.
+Every lesson follows `CORE.md` — wrapper `nerdit-wrapper nerdit-simple`.
 It is the only style.
 
-Two more reference files live in the same `references/` directory and are the **authoritative
-schema example** for this skill's output — study them before assembling Step 3:
+More reference files live in the same `references/` directory and are the **authoritative
+schema example** for this skill's output — study them before assembling (Step 4):
 
 | File | Authority for |
 |------|---------------|
 | `references/course-introduction-to-langchain-and-llm-applications_input.json` | Exact input schema — array of `{id, title, description}` |
 | `references/course-introduction-to-langchain-and-llm-applications_output.json` | Exact output schema — course-level field set and order, `assessment` shape, per-lesson field set and order, `lessonIds` |
+| `references/course-sample-mixed_input.json` | The optional `runner` field in use — one chapter mixing all four runners (`sql`, `python`, `excel`, `plot`) across its lessons |
+| `references/course-sample-mixed_output.json` | Proof the `runner` field never reaches the output, and the correct root-relative `assets` URL for each of the four engines |
 
 If the user attaches their own sample input/output pair for the current chapter, prefer those
 for field ordering/tone, but the bundled reference pair remains the schema source of truth.
 
-**Always read the active style's prompt file first** (`NERDIT_LESSON_PROMPT_v9_simple.md`
-by default). It is the single source of truth for what a lesson may and may not contain.
+**`CORE.md` is the single source of truth** for what a lesson may and may not contain.
+A runner fragment adds one widget contract on top of it and overrides nothing.
 
 ---
 
@@ -130,7 +131,18 @@ For a brand-new course (no old JSON), skip this section and start at Step 1.
    - `id` — unique lesson identifier string
    - `title` — lesson title string
    - `description` — short lesson description string
-3. If the file cannot be found or parsed, notify the user and stop.
+   - `runner` — *optional*. One of `sql`, `python`, `excel`, `plot`, `none`. Selects the
+     runner fragment passed to that lesson's writer. Generation context only: it is never
+     copied into the output, and the assembler ignores it.
+3. Resolve the runner for every lesson before spawning anything.
+   - If `runner` is absent on some or all lessons, infer it from the chapter name and the
+     lesson descriptions, then **print your per-lesson choice and get the user's
+     confirmation before spawning any agent.** Inference costs nothing; twelve
+     wrongly-generated lessons cost a full run.
+   - If a `runner` value is not one of the five listed above, stop and show the valid
+     values. Do **not** fall back to `none` — that would silently produce a whole chapter
+     with no practice widgets.
+4. If the file cannot be found or parsed, notify the user and stop.
 
 ---
 
@@ -142,7 +154,7 @@ For a brand-new course (no old JSON), skip this section and start at Step 1.
 > question id share the same session/batch pair by construction.
 
 **Workdir:** decide the output directory up front (ask the user per Step 6's destination rules —
-never the plugin folder). Every `<id>.html`, `meta.json`, and the final output JSON live there.
+never the plugin folder). Every `<id>.html`, `<id>.quiz.json`, and the final output JSON live there.
 
 Process every lesson object in the input array. For each lesson:
 
@@ -157,58 +169,47 @@ lesson.title = input.title
 per-lesson `description` field) — pass it to `nerdit-lesson-writer` as generation context only,
 the same way `title` is used to inform content, but it does not appear in the assembled output.
 
-### 2b/2c. Delegate the lesson HTML to `nerdit-lesson-writer`
+### 2b. Delegate the lesson to `nerdit-lesson-writer`
 
 Do not generate the HTML lesson yourself. Spawn the `nerdit-lesson-writer` agent for this
 lesson (in parallel with the other lessons' agents — see Multi-Agent Architecture above),
 passing it: `id`, `title`, `description`, chapter name, whether this is a multi-lesson chapter,
-and the target `HTML_PATH = <workdir>/<id>.html`. The agent owns every content rule (skeleton, language,
-example/output, Try It, banned components, HTML hygiene) — see `agents/nerdit-lesson-writer.md`.
-It **writes the fragment to `HTML_PATH`** and returns only `FILE: <path>`. Do not read the HTML
-back into your context; duration is computed later by the assembler.
+`RUNNER` (the value resolved in Step 1), `HTML_PATH = <workdir>/<id>.html`, and
+`QUIZ_PATH = <workdir>/<id>.quiz.json`.
 
-### 2d. Delegate 6 split `questions` to `nerdit-quiz-writer`
+Before spawning, confirm `references/runners/<RUNNER>.md` exists on disk (skip this check when
+`RUNNER` is `none`). If it does not, stop — an agent that proceeds without its fragment emits a
+Try It block whose handler does not exist.
 
-Once a lesson's `HTML_PATH` file exists, spawn `nerdit-quiz-writer` for that same lesson,
-passing only the lesson `id` and its `HTML_PATH`. The agent **reads the file itself** and owns
-the question-quality rules — see `agents/nerdit-quiz-writer.md`. It returns a JSON object with
-two 3-item arrays, **without ids** (the assembler assigns them):
+The agent owns
+every content rule (skeleton, language, example/output, Try It, banned components, HTML hygiene)
+and every question rule — see `agents/nerdit-lesson-writer.md`. It **writes the fragment to
+`HTML_PATH` and the 6 questions to `QUIZ_PATH`**, then returns only its `FILE:`/`QUIZ:` path
+lines. Do not read either file back into your context; duration is computed later by the
+assembler, and question ids are assigned by it.
+
+The quiz file holds two 3-item arrays, **without ids**:
 
 - `lessonQuestions` — 3 questions, each `{text, options[4], correctOptionIndex}`
 - `assessmentQuestions` — 3 *different* questions (not restatements of the lesson set), same shape
 
-Capture both arrays verbatim. All 6 questions must be derivable from that lesson's HTML alone —
-never invent facts the lesson doesn't teach.
-
 ---
 
-## Step 3 — Write the meta.json Sidecar
+## Step 3 — (removed)
 
-Do **not** build the course object yourself — the assembler script does that in Step 4. Your
-only job here is to write a small `<workdir>/meta.json`: a JSON array with one entry per input
-lesson, **in input order**, each holding just the lesson `id`, `title`, and the two question
-arrays captured from `nerdit-quiz-writer` (no HTML, no ids, no duration):
+The `meta.json` sidecar is gone: `nerdit-lesson-writer` writes each lesson's questions
+straight to `<workdir>/<id>.quiz.json`, and `id`/`title` reach the assembler from the input
+file it already reads. Nothing to do here — go to Step 4.
 
-```json
-[
-  {
-    "id": "<lesson id, copied exactly from input>",
-    "title": "<lesson title, copied exactly from input>",
-    "lessonQuestions": [ { "text": "...", "options": ["A", "B", "C", "D"], "correctOptionIndex": 0 }, "...×3" ],
-    "assessmentQuestions": [ "...×3, same shape" ]
-  }
-]
-```
-
-`description` is generation context only — it is not written to `meta.json` or the output.
-Every input lesson gets exactly one entry, none dropped or added.
+`description` remains generation context only — it is passed to the agent but never appears in
+the assembled output.
 
 ---
 
 ## Step 4 — Assemble the Output JSON (deterministic script)
 
 Run the bundled assembler via Bash. It reads the input file, every `<workdir>/<id>.html`, and
-`meta.json`, then writes the full course object — course-level fixed defaults, `id` +
+every `<workdir>/<id>.quiz.json`, then writes the full course object — course-level fixed defaults, `id` +
 `createdAt`/`updatedAt` from one timestamp, all question ids (one shared session/batch pair),
 per-lesson `content` + computed `duration` + engine `assets`, the `assessment` bank (all
 `assessmentQuestions` concatenated in lesson order, `passingScore` 70, `examQuestionCount` 20),
@@ -218,12 +219,13 @@ and `lessonIds`:
       --chapter <chaptername> \
       --input   <path to the input JSON> \
       --html-dir <workdir> \
-      --meta    <workdir>/meta.json \
       --out     <workdir>/course-<chaptername>_output.json
 
 You own none of the schema details — they live in the script and are checked in Step 5. If the
-script prints `WARNING missing HTML`, a lesson file failed to write: re-run that lesson's
-`nerdit-lesson-writer`, then re-run the script.
+script prints `WARNING missing HTML` or `WARNING missing quiz`, that lesson's agent failed to
+write one of its two files: re-run that lesson's `nerdit-lesson-writer`, then re-run the script.
+If it exits 2 with an `ERROR:` naming a lesson and a `.quiz.json` path, that file is malformed —
+re-run that lesson's agent and re-assemble.
 
 The script also prints the assembled **Firestore document size**. The whole course object is
 stored in a single Firestore document (hard cap 1,048,576 bytes). If it prints a size `WARNING`
@@ -238,8 +240,8 @@ the run instead of warning.
 Spawn `nerdit-qa-validator` against the script-assembled `<workdir>/course-<chaptername>_output.json`
 from Step 4 — do not eyeball the checklist yourself first. It reports `FAIL` lines, read-only. If it
 reports failures, fix the specific lesson(s) by re-running that lesson's `nerdit-lesson-writer`
-and/or `nerdit-quiz-writer` (Step 2), re-run the assembler (Step 4), and spawn `nerdit-qa-validator`
-again before moving to Step 6. The checklist it enforces:
+(Step 2) — it regenerates both the HTML and the questions — then re-run the assembler (Step 4)
+and spawn `nerdit-qa-validator` again before moving to Step 6. The checklist it enforces:
 
 - [ ] Output is a single course object, not an array
 - [ ] Every fixed-default course-level field matches the exact literals (see the `nerdit-qa-validator` course-level list)
@@ -259,7 +261,7 @@ again before moving to Step 6. The checklist it enforces:
 - [ ] **(simple/v9)** Any SVG sits in `nerdit-figure`/`nerdit-flow-wrap` and teaches structure/flow/overlap — no decorative art; at most one live runner per lesson, with its seed/grid block id matching the widget's `data-seed`/`data-grid`
 - [ ] **(simple/v9, Excel)** Every documented formula output was verified against `nerdit-excel-engine.js` — a worked example claiming `301300` must actually evaluate to `301300`
 - [ ] **(simple/v9, data-viz)** Every documented chart description was verified by running the code — describe what actually renders, never a guess. Charts the learner's code produces are outputs and are always allowed; the decoration ban in §7 still applies to the page itself
-- [ ] Component markup matches `NERDIT_LESSON_PROMPT_v9_simple.md` exactly (correct nesting, label divs, variant classes)
+- [ ] Component markup matches `CORE.md` and the lesson's runner fragment exactly (correct nesting, label divs, variant classes)
 - [ ] All `id` attributes within each `content` block are unique within that lesson
 - [ ] Each lesson's `duration` is present and follows the `"NNm"` format
 - [ ] Each lesson's `questions` array has exactly 3 objects, ids matching `lesson-<QID_SESSION_TS>-<lesson.id>-qN-<QID_BATCH_TS>`

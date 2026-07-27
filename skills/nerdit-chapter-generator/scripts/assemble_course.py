@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
-"""Assemble a NERDIT course-[chapter]_output.json from generated HTML files and a
-small meta.json sidecar. Deterministic, Python-stdlib only, zero model tokens.
+"""Assemble a NERDIT course-[chapter]_output.json from the per-lesson files the
+lesson-writer agent leaves in the run workdir. Deterministic, Python-stdlib only,
+zero model tokens.
 
-The orchestrator never holds lesson HTML in context: the lesson-writer agent writes
-each <id>.html to disk, and this script reads those files and injects them into the
-final course object. Question ids, the course id, and timestamps are all assigned
-here so they are internally consistent by construction.
+The orchestrator never holds lesson HTML or question text in context: the
+lesson-writer agent writes each <id>.html and its <id>.quiz.json to disk, and this
+script reads those files and injects them into the final course object. Question ids,
+the course id, and timestamps are all assigned here so they are internally consistent
+by construction.
+
+--meta is a pre-merge fallback kept for re-assembling older workdirs, where the
+questions lived in a single meta.json sidecar instead of per-lesson quiz files.
 
 Usage:
   python assemble_course.py --chapter <slug> --input <input.json> \
-      --html-dir <dir> --meta <meta.json> --out <output.json>
+      --html-dir <dir> --out <output.json> [--meta <meta.json>]
 """
 import argparse
 import datetime
@@ -19,8 +24,14 @@ import re
 import sys
 import time
 
-ASSET_URL_BASE = "/assets/js"
-ENGINE_FILES = ["nerdit-plot-runner.js", "nerdit-excel-engine.js"]
+# The website serves these from future-vision/public/, which Vite exposes at the
+# site root — /nerdit-excel-engine.js, not /assets/js/nerdit-excel-engine.js. The
+# lesson HTML references them at the root too, so these must agree.
+ASSET_URL_BASE = ""
+ENGINE_FILES = [
+    "nerdit-plot-runner.js", "nerdit-excel-engine.js",
+    "nerdit-sql-runner.js", "nerdit-python-runner.js",
+]
 
 # Firestore hard-caps a single document at 1,048,576 bytes. The whole course object
 # is stored in one doc, so keep it under this budget (margin left for Firestore's
@@ -79,16 +90,50 @@ def with_ids(qs, kind, session, lesson_id, batch):
     return out
 
 
+def load_quiz(html_dir, lesson_id):
+    """Read <html_dir>/<lesson_id>.quiz.json, the question sidecar the lesson-writer
+    agent writes next to its <lesson_id>.html. Returns the parsed object, or None when
+    no such file exists (the lesson simply has no questions from this source).
+
+    A present-but-broken file raises instead of being skipped: a silently dropped
+    question set assembles into a file that looks fine but ships a short assessment
+    bank, which QA would only catch as a confusing count mismatch."""
+    path = os.path.join(html_dir, lesson_id + ".quiz.json")
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+    except (json.JSONDecodeError, OSError) as e:
+        raise ValueError(f"{lesson_id}: unreadable quiz file {path}: {e}")
+    if not isinstance(data, dict):
+        raise ValueError(
+            f"{lesson_id}: quiz file {path} must contain a JSON object, "
+            f"got {type(data).__name__}")
+    for key in ("lessonQuestions", "assessmentQuestions"):
+        if key in data and not isinstance(data[key], list):
+            raise ValueError(
+                f"{lesson_id}: quiz file {path} field {key} must be a list, "
+                f"got {type(data[key]).__name__}")
+    return data
+
+
 def build_course(chapter, input_lessons, meta, html_dir, now_ms=None):
     now_ms = now_ms if now_ms is not None else int(time.time() * 1000)
     session = batch = now_ms
     iso = iso_from_ms(now_ms)
-    meta_by_id = {m["id"]: m for m in meta}
+    meta_by_id = {m["id"]: m for m in (meta or [])}
 
     lessons, assessment_qs, lesson_ids = [], [], []
     for src in input_lessons:
         lid = src["id"]
-        m = meta_by_id.get(lid, {})
+        # Per-lesson <id>.quiz.json is the current source; meta.json is the
+        # pre-merge fallback. Layering (not replacing) keeps meta-only fields
+        # such as `duration` working when both are present.
+        m = dict(meta_by_id.get(lid, {}))
+        quiz = load_quiz(html_dir, lid)
+        if quiz is not None:
+            m.update(quiz)
         content = ""
         html_path = os.path.join(html_dir, lid + ".html")
         if os.path.exists(html_path):
@@ -140,7 +185,9 @@ def main():
     ap.add_argument("--chapter", required=True)
     ap.add_argument("--input", required=True)
     ap.add_argument("--html-dir", required=True)
-    ap.add_argument("--meta", required=True)
+    ap.add_argument("--meta", default=None,
+                    help="optional legacy meta.json sidecar; a per-lesson "
+                         "<id>.quiz.json in --html-dir takes precedence")
     ap.add_argument("--out", required=True)
     ap.add_argument("--strict", action="store_true",
                     help="exit non-zero if the course object exceeds the 1 MiB Firestore budget")
@@ -148,10 +195,16 @@ def main():
 
     with open(args.input, encoding="utf-8") as f:
         input_lessons = json.load(f)
-    with open(args.meta, encoding="utf-8") as f:
-        meta = json.load(f)
+    meta = []
+    if args.meta:
+        with open(args.meta, encoding="utf-8") as f:
+            meta = json.load(f)
 
-    course = build_course(args.chapter, input_lessons, meta, args.html_dir)
+    try:
+        course = build_course(args.chapter, input_lessons, meta, args.html_dir)
+    except ValueError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(2)
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump(course, f, ensure_ascii=False, indent=2)
 
@@ -160,6 +213,10 @@ def main():
           f"{len(course['assessment']['questions'])} assessment questions")
     if missing:
         print(f"WARNING missing HTML ({len(missing)}): {', '.join(missing)}")
+
+    noquiz = [l["id"] for l in course["lessons"] if not l["questions"]]
+    if noquiz:
+        print(f"WARNING missing quiz ({len(noquiz)}): {', '.join(noquiz)}")
 
     rep = doc_size_report(course)
     print(f"Firestore doc size (whole course object): {rep['total']:,} bytes "

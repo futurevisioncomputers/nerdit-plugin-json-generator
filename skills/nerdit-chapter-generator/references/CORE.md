@@ -235,180 +235,10 @@ print(x * 2)</code></pre>
 Use at most ONE per lesson, on the concept that benefits most. Two engines exist; pick by
 course language. Both run fully in the learner's browser and lazy-load only on first Run.
 
-| Course language | Engine | Attribute | Handler |
-|---|---|---|---|
-| SQL / MySQL | sql.js (SQLite → WASM, ~1.2 MB) | `data-seed="<id>"` | `nerditRunSql(this)` |
-| Python | Pyodide (CPython → WASM, ~6 MB first load) | `data-lang="python"` | `nerditRunPython(this)` |
-| Excel | `nerdit-excel-engine.js` (bundled, ~14 KB) | `data-grid="<id>"` | `nerditRunExcel(this)` — see §6d |
-| Matplotlib | Pyodide + matplotlib, via `nerdit-plot-runner.js` | `data-lang="python"` | `nerditRunPlot(this)` — see §6e |
-
-**Python variant** — no seed block; the learner's code is the whole program. Keep the
-starter program short and directly tied to the concept just taught.
-```html
-<div class="nerdit-tryit" data-lang="python">
-  <div class="nerdit-tryit-head">▶ Try It Yourself — edit the code and run it</div>
-  <textarea class="nerdit-tryit-editor" rows="6" spellcheck="false">marks = 72
-if marks >= 40:
-    print("Pass")
-else:
-    print("Fail")</textarea>
-  <div class="nerdit-tryit-bar">
-    <button class="nerdit-run-btn" onclick="nerditRunPython(this)">Run Python ▶</button>
-    <span class="nerdit-tryit-status" aria-live="polite"></span>
-  </div>
-  <div class="nerdit-tryit-result"></div>
-</div>
-```
-Python output (including tracebacks) renders into `.nerdit-tryit-result` as plain text
-inside `.nerdit-tryit-output`. Warn the learner in one sentence that the first run takes a
-few seconds while Python loads.
-
-**SQL variant** — needs a seed block that recreates the demo tables from §5, so the
-learner queries the exact data shown on the page.
-```html
-<div class="nerdit-tryit" data-seed="tryit-seed-1">
-  <div class="nerdit-tryit-head">▶ Try It Yourself — edit the SQL and run it</div>
-  <textarea class="nerdit-tryit-editor" rows="4" spellcheck="false">SELECT name, city FROM customers WHERE city = 'Surat';</textarea>
-  <div class="nerdit-tryit-bar">
-    <button class="nerdit-run-btn" onclick="nerditRunSql(this)">Run SQL ▶</button>
-    <span class="nerdit-tryit-status" aria-live="polite"></span>
-  </div>
-  <div class="nerdit-tryit-result"></div>
-</div>
-<script type="text/plain" id="tryit-seed-1">
-CREATE TABLE customers (id INT, name TEXT, city TEXT, age INT);
-INSERT INTO customers VALUES (1,'Aarav','Surat',21),(2,'Diya','Surat',24),
-(3,'Kabir','Mumbai',28),(4,'Meera','Delhi',19);
-</script>
-```
-The seed script recreates the demo table from §5 — the learner runs queries against the
-exact data shown on the page. `data-seed` points at the seed block's `id`. sql.js
-(SQLite compiled to WebAssembly) is lazy-loaded from CDN only when the learner first
-clicks Run — zero page-load cost.
-
-### 6d. Excel widgets (spreadsheet courses)
-
-Excel has no public engine to embed, so the plugin ships its own:
-`references/nerdit-excel-engine.js`. Load it once per lesson with
-`<script src="/nerdit-excel-engine.js"></script>` placed after the demo-data block.
-Use the **absolute** path (leading `/`) — the LMS renders lessons at routes like
-`/course/<id>`, and a relative `src` would resolve against that route and 404. The file
-is served from the site root (the app's `public/` folder).
-It supports only the functions the v9 Excel lessons teach: `SUM AVERAGE COUNT COUNTA
-MAX MIN ROUND ABS LEN UPPER LOWER CONCAT IF IFS IFERROR AND OR NOT VLOOKUP XLOOKUP
-COUNTIF COUNTIFS SUMIF SUMIFS AVERAGEIF`, plus `+ - * / ^ % &` and the comparison
-operators, cell refs (`B3`, `$B$3`) and ranges (`B2:E8`). Anything else returns `#NAME?`.
-
-**Demo data** — one JSON block per lesson, referenced by id. Row 1 is the header row,
-so data row 1 sits on sheet row 2 (exactly like a real sheet):
-```html
-<script type="application/json" id="xl-sales">
-{ "headers": ["ID","Name","Region","Product","Amount"],
-  "rows": [[101,"Aarav","West","Laptop",180000], [102,"Diya","West","Mouse",1300]] }
-</script>
-```
-
-**Render the sheet** anywhere (usually inside `nerdit-demo-table`) — the engine fills it:
-```html
-<div class="nerdit-xl-sheet" data-grid="xl-sales"></div>
-```
-
-**Formula runner** (the Excel equivalent of the SQL/Python Try It):
-```html
-<div class="nerdit-xl" data-grid="xl-sales">
-  <div class="nerdit-xl-head">▶ Try It Yourself — type a formula and run it</div>
-  <div class="nerdit-xl-bar">
-    <span class="nerdit-xl-fx">fx</span>
-    <input class="nerdit-xl-input" spellcheck="false" value='=VLOOKUP("Kabir",B1:E8,4,FALSE)'>
-    <button class="nerdit-run-btn" onclick="nerditRunExcel(this)">Run ▶</button>
-  </div>
-  <div class="nerdit-xl-presets">
-    <button class="nerdit-xl-preset" onclick="nerditLoadFormula(this)">=SUM(E2:E8)</button>
-  </div>
-  <div class="nerdit-xl-result"></div>
-</div>
-```
-Preset chips are optional but recommended — a learner can try a formula without typing.
-Their text content IS the formula, so write it exactly as it should run.
-
-**Pivot builder** — for PivotTable lessons, where there is no formula to type:
-```html
-<div class="nerdit-xl-pivotbox nerdit-xl" data-grid="xl-sales">
-  <div class="nerdit-xl-head">▶ Try It Yourself — build a PivotTable</div>
-  <div class="nerdit-xl-controls">
-    <div class="nerdit-xl-field"><label for="pv-row">Rows</label>
-      <select id="pv-row" data-role="rowField" onchange="nerditPivotChanged(this)">
-        <option>Region</option><option>Product</option></select></div>
-    <div class="nerdit-xl-field"><label for="pv-val">Values</label>
-      <select id="pv-val" data-role="valueField" onchange="nerditPivotChanged(this)">
-        <option>Amount</option></select></div>
-    <div class="nerdit-xl-field"><label for="pv-agg">Summarise by</label>
-      <select id="pv-agg" data-role="agg" onchange="nerditPivotChanged(this)">
-        <option>SUM</option><option>COUNT</option><option>AVERAGE</option>
-        <option>MAX</option><option>MIN</option></select></div>
-  </div>
-  <div class="nerdit-xl-pivot-result"></div>
-</div>
-```
-The `data-role` values and the option text must match exactly — the builder reads the
-row/value option text as a column name and looks it up in `headers`.
-
-Excel lessons also need `nerditLoadFormula` in their lesson script:
-```js
-if (typeof window.nerditLoadFormula !== "function") {
-  window.nerditLoadFormula = function(btn){
-    var box = btn.closest('.nerdit-xl');
-    box.querySelector('.nerdit-xl-input').value = btn.textContent.trim();
-    window.nerditRunExcel(box.querySelector('.nerdit-run-btn'));
-  };
-}
-```
-
-> **Every formula you document must actually evaluate to the output you claim.** The
-> engine is the source of truth — if a worked example says the answer is `301300`, running
-> that formula in the widget must produce `301300`. Verify before shipping the lesson.
-
-### 6e. Matplotlib widget (data-visualization courses)
-
-A chart lesson's output is a picture, not text, so the plain Python runner is not
-enough. Load `references/nerdit-plot-runner.js` (`<script src="/nerdit-plot-runner.js">`,
-absolute path — same reason as the Excel engine in §6d)
-and use `nerditRunPlot(this)` instead of `nerditRunPython(this)`. Everything else about
-the `nerdit-tryit` block is identical:
-
-```html
-<div class="nerdit-tryit" data-lang="python">
-  <div class="nerdit-tryit-head">▶ Try It Yourself — edit the code and draw a real chart</div>
-  <p>This runs real Python and Matplotlib inside your browser. The first run takes a
-  little while as Python and Matplotlib load.</p>
-  <textarea class="nerdit-tryit-editor" rows="12" spellcheck="false">import matplotlib.pyplot as plt
-
-plt.plot(["Jan","Feb","Mar"], [120, 150, 130], marker="o")
-plt.title("Monthly Sales")
-plt.show()</textarea>
-  <div class="nerdit-tryit-bar">
-    <button class="nerdit-run-btn" onclick="nerditRunPlot(this)">Run &amp; Draw ▶</button>
-    <span class="nerdit-tryit-status" aria-live="polite"></span>
-  </div>
-  <div class="nerdit-tryit-result"></div>
-</div>
-```
-
-The runner captures the current figure after the learner's code and shows it as a PNG in
-`nerdit-plot-figure`; anything printed appears above it. Each run gets a fresh namespace
-and closes old figures, so charts never bleed between runs.
-
-Two things it handles for you, both of which would otherwise confuse a beginner:
-- **`plt.show()` warning suppressed.** Lessons teach `plt.show()` as the correct last
-  line, but the browser's AGG backend warns "cannot show the figure" on every call. That
-  warning is an artefact of the environment, not a learner mistake, so it is filtered out.
-- **Tracebacks reduced** to the learner's line plus the error, hiding Pyodide and
-  matplotlib internal frames.
-
-**Writing the documented output.** A chart has no text output to paste, so describe what
-appears, in one or two short sentences — "Four bars. Mouse is tallest at 120, Laptop is
-shortest at 45." When the code also prints, show the printed text exactly and describe the
-chart separately. Never invent a number: run the code and check.
+At most ONE live runner per lesson, on the concept that benefits most. The orchestrator
+gives you the runner fragment for this lesson — follow it exactly, and do not substitute a
+different runner. If a lesson genuinely needs a different one, read that fragment from
+`references/runners/` first.
 
 ---
 
@@ -491,9 +321,12 @@ Order tasks easy → medium → challenge.
 
 ## 9. THE LESSON SCRIPT (one `<script>` after the wrapper)
 
-Emit ONE script only if the lesson uses copy buttons, tabs, fill-blanks, the SQL runner,
-or Chart.js. Compose only the parts you need. All helpers are guarded so multiple lessons
-on one page never double-define.
+Emit ONE script only if the lesson uses copy buttons, tabs, fill-blanks, or Chart.js.
+Compose only the parts you need. All helpers are guarded so multiple lessons on one page
+never double-define.
+
+Live code runners are NOT part of this script. Each runner ships as its own file, loaded
+with a `<script src>` given in that runner's fragment.
 
 ```html
 <script>
@@ -534,115 +367,6 @@ on one page never double-define.
       msg.className = 'nerdit-check-msg ' + (ok ? 'ok' : 'no');
       input.classList.toggle('ok', ok);
       input.classList.toggle('no', !ok);
-    };
-  }
-
-  /* --- Python runner (only when a nerdit-tryit with data-lang="python" is used) --- */
-  if (typeof window.nerditRunPython !== "function") {
-    window.nerditRunPython = function(btn){
-      var box = btn.closest('.nerdit-tryit');
-      var status = box.querySelector('.nerdit-tryit-status');
-      var out = box.querySelector('.nerdit-tryit-result');
-      var show = function(text, isError){
-        status.textContent = '';
-        out.innerHTML = '<div class="nerdit-tryit-output' + (isError ? ' error' : '') + '"></div>';
-        out.firstChild.textContent = text === '' ? '(no output — did you forget print()?)' : text;
-      };
-      // Pyodide tracebacks start with 5-6 frames of its own loader internals
-      // (/lib/python312.zip/_pyodide/_base.py). A beginner reading that has no idea
-      // which line is theirs, so reduce it to the learner's line + the error itself.
-      var friendlyError = function(msg){
-        var lines = String(msg).replace(/\s+$/, '').split('\n');
-        var errLine = '', lineNo = '';
-        for (var i = lines.length - 1; i >= 0; i--) {
-          if (/^[A-Za-z_][A-Za-z_.]*(Error|Exception|Interrupt)\b/.test(lines[i].trim())) {
-            errLine = lines[i].trim();
-            break;
-          }
-        }
-        for (var j = lines.length - 1; j >= 0; j--) {
-          var m = lines[j].match(/File "<exec>", line (\d+)/);
-          if (m) { lineNo = m[1]; break; }
-        }
-        if (!errLine) return String(msg);
-        return (lineNo ? 'Line ' + lineNo + ' — ' : '') + errLine;
-      };
-      var run = function(py){
-        var buf = [];
-        var collect = { batched: function(s){ buf.push(s); } };
-        py.setStdout(collect);
-        py.setStderr(collect);
-        // Fresh namespace each run, so deleting a variable in the editor really
-        // removes it instead of silently surviving from the previous run.
-        var ns = py.toPy({});
-        try {
-          py.runPython(box.querySelector('.nerdit-tryit-editor').value, { globals: ns });
-          show(buf.join('\n'), false);
-        } catch (err) {
-          show((buf.length ? buf.join('\n') + '\n' : '') + friendlyError(err.message || err), true);
-        } finally {
-          py.setStdout({});
-          py.setStderr({});
-          if (ns && ns.destroy) ns.destroy();
-        }
-      };
-      if (window.__nerditPy) return run(window.__nerditPy);
-      status.textContent = 'Loading Python… (first run takes a few seconds)';
-      var boot = function(){
-        window.loadPyodide({ indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.26.2/full/' })
-          .then(function(py){ window.__nerditPy = py; run(py); })
-          .catch(function(){ status.textContent = 'Could not start Python. Check your internet connection.'; });
-      };
-      if (window.loadPyodide) return boot();
-      var s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js';
-      s.onload = boot;
-      s.onerror = function(){ status.textContent = 'Could not load Python. Check your internet connection.'; };
-      document.head.appendChild(s);
-    };
-  }
-
-  /* --- SQL runner (only when a nerdit-tryit with data-seed is used) --- */
-  if (typeof window.nerditRunSql !== "function") {
-    window.nerditRunSql = function(btn){
-      var box = btn.closest('.nerdit-tryit');
-      var status = box.querySelector('.nerdit-tryit-status');
-      var out = box.querySelector('.nerdit-tryit-result');
-      var run = function(SQL){
-        try {
-          var db = new SQL.Database();
-          var seedEl = document.getElementById(box.getAttribute('data-seed'));
-          if (seedEl) db.run(seedEl.textContent);
-          var res = db.exec(box.querySelector('.nerdit-tryit-editor').value);
-          status.textContent = '';
-          if (!res.length) { out.innerHTML = '<div class="nerdit-tryit-empty">Query ran. No rows returned.</div>'; db.close(); return; }
-          var r = res[res.length - 1], h = '<table class="nerdit-result-table"><thead><tr>';
-          r.columns.forEach(function(c){ h += '<th>' + c + '</th>'; });
-          h += '</tr></thead><tbody>';
-          r.values.forEach(function(row){
-            h += '<tr>';
-            row.forEach(function(v){ h += '<td>' + (v === null ? 'NULL' : String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;')) + '</td>'; });
-            h += '</tr>';
-          });
-          out.innerHTML = h + '</tbody></table>';
-          db.close();
-        } catch (e) {
-          status.textContent = '';
-          out.innerHTML = '<div class="nerdit-tryit-error">Error: ' + String(e.message || e).replace(/</g,'&lt;') + '</div>';
-        }
-      };
-      if (window.__nerditSQL) return run(window.__nerditSQL);
-      status.textContent = 'Loading SQL engine…';
-      var boot = function(){
-        window.initSqlJs({ locateFile: function(f){ return 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/' + f; } })
-          .then(function(SQL){ window.__nerditSQL = SQL; run(SQL); });
-      };
-      if (window.initSqlJs) return boot();
-      var s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js';
-      s.onload = boot;
-      s.onerror = function(){ status.textContent = 'Could not load the SQL engine. Check your internet connection.'; };
-      document.head.appendChild(s);
     };
   }
 })();
@@ -713,10 +437,10 @@ CONTENT:
 | Predict output | `nerdit-predict` | Try It option |
 | Fill blank | `nerdit-fillblank` + `nerdit-check-btn` | Try It option |
 | Live code runner | `nerdit-tryit` — SQL: `data-seed` + `nerditRunSql`; Python: `data-lang="python"` + `nerditRunPython` | ≤1 per lesson |
-| Matplotlib runner | `nerdit-tryit` + `nerditRunPlot` + `nerdit-plot-runner.js` (§6e) | ≤1 per lesson |
-| Excel sheet | `nerdit-xl-sheet` + `data-grid` (§6d) | as needed |
-| Excel formula runner | `nerdit-xl` + `nerdit-xl-input` + `nerditRunExcel` (§6d) | ≤1 per lesson |
-| Excel pivot builder | `nerdit-xl-pivotbox` + `nerditPivotChanged` (§6d) | ≤1 per lesson |
+| Matplotlib runner | `nerdit-tryit` + `nerditRunPlot` + `nerdit-plot-runner.js` (runners/plot.md) | ≤1 per lesson |
+| Excel sheet | `nerdit-xl-sheet` + `data-grid` (runners/excel.md) | as needed |
+| Excel formula runner | `nerdit-xl` + `nerdit-xl-input` + `nerditRunExcel` (runners/excel.md) | ≤1 per lesson |
+| Excel pivot builder | `nerdit-xl-pivotbox` + `nerditPivotChanged` (runners/excel.md) | ≤1 per lesson |
 | Cheatsheet | `nerdit-cheatsheet` (v8) | exactly 1, closing section |
 | Recap | `nerdit-recap` | 1, ≤5 bullets |
 | Practice | `nerdit-practical` + `nerdit-solution` (v8) | 2–3 tasks |

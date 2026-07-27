@@ -1,0 +1,347 @@
+{
+  "id": "course-sample-mixed-1785148149202",
+  "title": "",
+  "description": "",
+  "category": "Development",
+  "difficulty": "Beginner",
+  "image": "",
+  "instructor": "Future vision",
+  "rating": 0,
+  "students": 0,
+  "price": 0,
+  "certificatePrice": 999,
+  "hasExam": true,
+  "isDraft": true,
+  "isPrerequisiteOnly": false,
+  "isBestSeller": false,
+  "isTrending": false,
+  "isPopular": false,
+  "isTopRated": false,
+  "duration": "0h 0m",
+  "createdAt": "2026-07-27T10:29:09.202Z",
+  "updatedAt": "2026-07-27T10:29:09.202Z",
+  "prerequisiteLessons": null,
+  "assessment": {
+    "questions": [
+      {
+        "id": "assessment-1785148149202-sql-select-basics-q1-1785148149202",
+        "text": "Exam question 1 about sql-select-basics?",
+        "options": [
+          "The correct answer",
+          "A plausible miss",
+          "Another plausible miss",
+          "A fourth option"
+        ],
+        "correctOptionIndex": 0
+      },
+      {
+        "id": "assessment-1785148149202-sql-select-basics-q2-1785148149202",
+        "text": "Exam question 2 about sql-select-basics?",
+        "options": [
+          "The correct answer",
+          "A plausible miss",
+          "Another plausible miss",
+          "A fourth option"
+        ],
+        "correctOptionIndex": 0
+      },
+      {
+        "id": "assessment-1785148149202-sql-select-basics-q3-1785148149202",
+        "text": "Exam question 3 about sql-select-basics?",
+        "options": [
+          "The correct answer",
+          "A plausible miss",
+          "Another plausible miss",
+          "A fourth option"
+        ],
+        "correctOptionIndex": 0
+      },
+      {
+        "id": "assessment-1785148149202-py-lists-basics-q1-1785148149202",
+        "text": "Exam question 1 about py-lists-basics?",
+        "options": [
+          "The correct answer",
+          "A plausible miss",
+          "Another plausible miss",
+          "A fourth option"
+        ],
+        "correctOptionIndex": 0
+      },
+      {
+        "id": "assessment-1785148149202-py-lists-basics-q2-1785148149202",
+        "text": "Exam question 2 about py-lists-basics?",
+        "options": [
+          "The correct answer",
+          "A plausible miss",
+          "Another plausible miss",
+          "A fourth option"
+        ],
+        "correctOptionIndex": 0
+      },
+      {
+        "id": "assessment-1785148149202-py-lists-basics-q3-1785148149202",
+        "text": "Exam question 3 about py-lists-basics?",
+        "options": [
+          "The correct answer",
+          "A plausible miss",
+          "Another plausible miss",
+          "A fourth option"
+        ],
+        "correctOptionIndex": 0
+      },
+      {
+        "id": "assessment-1785148149202-xl-sumif-q1-1785148149202",
+        "text": "Exam question 1 about xl-sumif?",
+        "options": [
+          "The correct answer",
+          "A plausible miss",
+          "Another plausible miss",
+          "A fourth option"
+        ],
+        "correctOptionIndex": 0
+      },
+      {
+        "id": "assessment-1785148149202-xl-sumif-q2-1785148149202",
+        "text": "Exam question 2 about xl-sumif?",
+        "options": [
+          "The correct answer",
+          "A plausible miss",
+          "Another plausible miss",
+          "A fourth option"
+        ],
+        "correctOptionIndex": 0
+      },
+      {
+        "id": "assessment-1785148149202-xl-sumif-q3-1785148149202",
+        "text": "Exam question 3 about xl-sumif?",
+        "options": [
+          "The correct answer",
+          "A plausible miss",
+          "Another plausible miss",
+          "A fourth option"
+        ],
+        "correctOptionIndex": 0
+      },
+      {
+        "id": "assessment-1785148149202-viz-bar-chart-q1-1785148149202",
+        "text": "Exam question 1 about viz-bar-chart?",
+        "options": [
+          "The correct answer",
+          "A plausible miss",
+          "Another plausible miss",
+          "A fourth option"
+        ],
+        "correctOptionIndex": 0
+      },
+      {
+        "id": "assessment-1785148149202-viz-bar-chart-q2-1785148149202",
+        "text": "Exam question 2 about viz-bar-chart?",
+        "options": [
+          "The correct answer",
+          "A plausible miss",
+          "Another plausible miss",
+          "A fourth option"
+        ],
+        "correctOptionIndex": 0
+      },
+      {
+        "id": "assessment-1785148149202-viz-bar-chart-q3-1785148149202",
+        "text": "Exam question 3 about viz-bar-chart?",
+        "options": [
+          "The correct answer",
+          "A plausible miss",
+          "Another plausible miss",
+          "A fourth option"
+        ],
+        "correctOptionIndex": 0
+      }
+    ],
+    "passingScore": 70,
+    "examQuestionCount": 20
+  },
+  "finalAssignment": null,
+  "lessons": [
+    {
+      "id": "sql-select-basics",
+      "title": "Filtering Rows with WHERE",
+      "content": "<div class=\"nerdit-wrapper nerdit-simple\">\n  <h1>Filtering Rows with WHERE</h1>\n  <p class=\"nerdit-overview\">You will learn one idea here. It takes about ten minutes.</p>\n  <h2>1. The idea</h2>\n  <p>A <strong>filter</strong> keeps the rows you want. It drops the rest.</p>\n  <div class=\"nerdit-example\">\n    <p>Run this and watch what comes back.</p>\n    <pre><code>example code for sql-select-basics</code></pre>\n    <div class=\"nerdit-output\">the output the learner should expect</div>\n    <p>Only matching rows appear. Everything else is left out.</p>\n  </div>\n  <div class=\"nerdit-predict\">\n    <p>What do you think this prints?</p>\n  </div>\n</div>\n<script src=\"/nerdit-sql-runner.js\"></script>",
+      "duration": "8m",
+      "questions": [
+        {
+          "id": "lesson-1785148149202-sql-select-basics-q1-1785148149202",
+          "text": "Lesson question 1 about sql-select-basics?",
+          "options": [
+            "The correct answer",
+            "A plausible miss",
+            "Another plausible miss",
+            "A fourth option"
+          ],
+          "correctOptionIndex": 0
+        },
+        {
+          "id": "lesson-1785148149202-sql-select-basics-q2-1785148149202",
+          "text": "Lesson question 2 about sql-select-basics?",
+          "options": [
+            "The correct answer",
+            "A plausible miss",
+            "Another plausible miss",
+            "A fourth option"
+          ],
+          "correctOptionIndex": 0
+        },
+        {
+          "id": "lesson-1785148149202-sql-select-basics-q3-1785148149202",
+          "text": "Lesson question 3 about sql-select-basics?",
+          "options": [
+            "The correct answer",
+            "A plausible miss",
+            "Another plausible miss",
+            "A fourth option"
+          ],
+          "correctOptionIndex": 0
+        }
+      ],
+      "assets": [
+        "/nerdit-sql-runner.js"
+      ]
+    },
+    {
+      "id": "py-lists-basics",
+      "title": "Looping Over a List",
+      "content": "<div class=\"nerdit-wrapper nerdit-simple\">\n  <h1>Looping Over a List</h1>\n  <p class=\"nerdit-overview\">You will learn one idea here. It takes about ten minutes.</p>\n  <h2>1. The idea</h2>\n  <p>A <strong>filter</strong> keeps the rows you want. It drops the rest.</p>\n  <div class=\"nerdit-example\">\n    <p>Run this and watch what comes back.</p>\n    <pre><code>example code for py-lists-basics</code></pre>\n    <div class=\"nerdit-output\">the output the learner should expect</div>\n    <p>Only matching rows appear. Everything else is left out.</p>\n  </div>\n  <div class=\"nerdit-predict\">\n    <p>What do you think this prints?</p>\n  </div>\n</div>\n<script src=\"/nerdit-python-runner.js\"></script>",
+      "duration": "8m",
+      "questions": [
+        {
+          "id": "lesson-1785148149202-py-lists-basics-q1-1785148149202",
+          "text": "Lesson question 1 about py-lists-basics?",
+          "options": [
+            "The correct answer",
+            "A plausible miss",
+            "Another plausible miss",
+            "A fourth option"
+          ],
+          "correctOptionIndex": 0
+        },
+        {
+          "id": "lesson-1785148149202-py-lists-basics-q2-1785148149202",
+          "text": "Lesson question 2 about py-lists-basics?",
+          "options": [
+            "The correct answer",
+            "A plausible miss",
+            "Another plausible miss",
+            "A fourth option"
+          ],
+          "correctOptionIndex": 0
+        },
+        {
+          "id": "lesson-1785148149202-py-lists-basics-q3-1785148149202",
+          "text": "Lesson question 3 about py-lists-basics?",
+          "options": [
+            "The correct answer",
+            "A plausible miss",
+            "Another plausible miss",
+            "A fourth option"
+          ],
+          "correctOptionIndex": 0
+        }
+      ],
+      "assets": [
+        "/nerdit-python-runner.js"
+      ]
+    },
+    {
+      "id": "xl-sumif",
+      "title": "Adding Up Only What Matches",
+      "content": "<div class=\"nerdit-wrapper nerdit-simple\">\n  <h1>Adding Up Only What Matches</h1>\n  <p class=\"nerdit-overview\">You will learn one idea here. It takes about ten minutes.</p>\n  <h2>1. The idea</h2>\n  <p>A <strong>filter</strong> keeps the rows you want. It drops the rest.</p>\n  <div class=\"nerdit-example\">\n    <p>Run this and watch what comes back.</p>\n    <pre><code>example code for xl-sumif</code></pre>\n    <div class=\"nerdit-output\">the output the learner should expect</div>\n    <p>Only matching rows appear. Everything else is left out.</p>\n  </div>\n  <div class=\"nerdit-predict\">\n    <p>What do you think this prints?</p>\n  </div>\n</div>\n<script src=\"/nerdit-excel-engine.js\"></script>",
+      "duration": "8m",
+      "questions": [
+        {
+          "id": "lesson-1785148149202-xl-sumif-q1-1785148149202",
+          "text": "Lesson question 1 about xl-sumif?",
+          "options": [
+            "The correct answer",
+            "A plausible miss",
+            "Another plausible miss",
+            "A fourth option"
+          ],
+          "correctOptionIndex": 0
+        },
+        {
+          "id": "lesson-1785148149202-xl-sumif-q2-1785148149202",
+          "text": "Lesson question 2 about xl-sumif?",
+          "options": [
+            "The correct answer",
+            "A plausible miss",
+            "Another plausible miss",
+            "A fourth option"
+          ],
+          "correctOptionIndex": 0
+        },
+        {
+          "id": "lesson-1785148149202-xl-sumif-q3-1785148149202",
+          "text": "Lesson question 3 about xl-sumif?",
+          "options": [
+            "The correct answer",
+            "A plausible miss",
+            "Another plausible miss",
+            "A fourth option"
+          ],
+          "correctOptionIndex": 0
+        }
+      ],
+      "assets": [
+        "/nerdit-excel-engine.js"
+      ]
+    },
+    {
+      "id": "viz-bar-chart",
+      "title": "Drawing Your First Bar Chart",
+      "content": "<div class=\"nerdit-wrapper nerdit-simple\">\n  <h1>Drawing Your First Bar Chart</h1>\n  <p class=\"nerdit-overview\">You will learn one idea here. It takes about ten minutes.</p>\n  <h2>1. The idea</h2>\n  <p>A <strong>filter</strong> keeps the rows you want. It drops the rest.</p>\n  <div class=\"nerdit-example\">\n    <p>Run this and watch what comes back.</p>\n    <pre><code>example code for viz-bar-chart</code></pre>\n    <div class=\"nerdit-output\">the output the learner should expect</div>\n    <p>Only matching rows appear. Everything else is left out.</p>\n  </div>\n  <div class=\"nerdit-predict\">\n    <p>What do you think this prints?</p>\n  </div>\n</div>\n<script src=\"/nerdit-plot-runner.js\"></script>",
+      "duration": "8m",
+      "questions": [
+        {
+          "id": "lesson-1785148149202-viz-bar-chart-q1-1785148149202",
+          "text": "Lesson question 1 about viz-bar-chart?",
+          "options": [
+            "The correct answer",
+            "A plausible miss",
+            "Another plausible miss",
+            "A fourth option"
+          ],
+          "correctOptionIndex": 0
+        },
+        {
+          "id": "lesson-1785148149202-viz-bar-chart-q2-1785148149202",
+          "text": "Lesson question 2 about viz-bar-chart?",
+          "options": [
+            "The correct answer",
+            "A plausible miss",
+            "Another plausible miss",
+            "A fourth option"
+          ],
+          "correctOptionIndex": 0
+        },
+        {
+          "id": "lesson-1785148149202-viz-bar-chart-q3-1785148149202",
+          "text": "Lesson question 3 about viz-bar-chart?",
+          "options": [
+            "The correct answer",
+            "A plausible miss",
+            "Another plausible miss",
+            "A fourth option"
+          ],
+          "correctOptionIndex": 0
+        }
+      ],
+      "assets": [
+        "/nerdit-plot-runner.js"
+      ]
+    }
+  ],
+  "lessonIds": [
+    "sql-select-basics",
+    "py-lists-basics",
+    "xl-sumif",
+    "viz-bar-chart"
+  ]
+}
