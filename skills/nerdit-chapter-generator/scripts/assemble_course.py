@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
-"""Assemble a NERDIT course-[chapter]_output.json from generated HTML files and a
-small meta.json sidecar. Deterministic, Python-stdlib only, zero model tokens.
+"""Assemble a NERDIT course-[chapter]_output.json from the per-lesson files the
+lesson-writer agent leaves in the run workdir. Deterministic, Python-stdlib only,
+zero model tokens.
 
-The orchestrator never holds lesson HTML in context: the lesson-writer agent writes
-each <id>.html to disk, and this script reads those files and injects them into the
-final course object. Question ids, the course id, and timestamps are all assigned
-here so they are internally consistent by construction.
+The orchestrator never holds lesson HTML or question text in context: the
+lesson-writer agent writes each <id>.html and its <id>.quiz.json to disk, and this
+script reads those files and injects them into the final course object. Question ids,
+the course id, and timestamps are all assigned here so they are internally consistent
+by construction.
+
+--meta is a pre-merge fallback kept for re-assembling older workdirs, where the
+questions lived in a single meta.json sidecar instead of per-lesson quiz files.
 
 Usage:
   python assemble_course.py --chapter <slug> --input <input.json> \
-      --html-dir <dir> --meta <meta.json> --out <output.json>
+      --html-dir <dir> --out <output.json> [--meta <meta.json>]
 """
 import argparse
 import datetime
@@ -174,7 +179,9 @@ def main():
     ap.add_argument("--chapter", required=True)
     ap.add_argument("--input", required=True)
     ap.add_argument("--html-dir", required=True)
-    ap.add_argument("--meta", required=True)
+    ap.add_argument("--meta", default=None,
+                    help="optional legacy meta.json sidecar; a per-lesson "
+                         "<id>.quiz.json in --html-dir takes precedence")
     ap.add_argument("--out", required=True)
     ap.add_argument("--strict", action="store_true",
                     help="exit non-zero if the course object exceeds the 1 MiB Firestore budget")
@@ -182,10 +189,16 @@ def main():
 
     with open(args.input, encoding="utf-8") as f:
         input_lessons = json.load(f)
-    with open(args.meta, encoding="utf-8") as f:
-        meta = json.load(f)
+    meta = []
+    if args.meta:
+        with open(args.meta, encoding="utf-8") as f:
+            meta = json.load(f)
 
-    course = build_course(args.chapter, input_lessons, meta, args.html_dir)
+    try:
+        course = build_course(args.chapter, input_lessons, meta, args.html_dir)
+    except ValueError as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        sys.exit(2)
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump(course, f, ensure_ascii=False, indent=2)
 
@@ -194,6 +207,10 @@ def main():
           f"{len(course['assessment']['questions'])} assessment questions")
     if missing:
         print(f"WARNING missing HTML ({len(missing)}): {', '.join(missing)}")
+
+    noquiz = [l["id"] for l in course["lessons"] if not l["questions"]]
+    if noquiz:
+        print(f"WARNING missing quiz ({len(noquiz)}): {', '.join(noquiz)}")
 
     rep = doc_size_report(course)
     print(f"Firestore doc size (whole course object): {rep['total']:,} bytes "

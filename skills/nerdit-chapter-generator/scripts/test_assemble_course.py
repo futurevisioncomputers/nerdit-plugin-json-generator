@@ -1,5 +1,7 @@
 import json
 import os
+import subprocess
+import sys
 
 import pytest
 
@@ -185,3 +187,60 @@ def test_quiz_json_wrong_field_type_raises(tmp_path):
     with pytest.raises(ValueError) as e:
         build_course("demo", inp, None, str(tmp_path), now_ms=1700000000000)
     assert "lessonQuestions" in str(e.value)
+
+
+# --- CLI: --meta optional, missing-quiz warning, malformed-quiz exit code ---
+
+SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assemble_course.py")
+
+
+def _run_cli(tmp_path, extra=()):
+    return subprocess.run(
+        [sys.executable, SCRIPT, "--chapter", "demo",
+         "--input", str(tmp_path / "in.json"),
+         "--html-dir", str(tmp_path),
+         "--out", str(tmp_path / "out.json"), *extra],
+        capture_output=True, text=True,
+    )
+
+
+def _one_lesson_input(tmp_path):
+    (tmp_path / "in.json").write_text(
+        json.dumps([{"id": "l1", "title": "T", "description": "d"}]), encoding="utf-8")
+    (tmp_path / "l1.html").write_text("<div>x</div>", encoding="utf-8")
+
+
+def test_cli_runs_without_meta_flag(tmp_path):
+    _one_lesson_input(tmp_path)
+    _quizfile(tmp_path, "l1", [_q("lq")] * 3, [_q("aq")] * 3)
+    r = _run_cli(tmp_path)
+    assert r.returncode == 0, r.stderr
+    out = json.loads((tmp_path / "out.json").read_text(encoding="utf-8"))
+    assert len(out["lessons"][0]["questions"]) == 3
+    assert "missing quiz" not in r.stdout
+
+
+def test_cli_warns_when_quiz_missing(tmp_path):
+    _one_lesson_input(tmp_path)
+    r = _run_cli(tmp_path)
+    assert r.returncode == 0, r.stderr
+    assert "WARNING missing quiz (1): l1" in r.stdout
+
+
+def test_cli_exits_2_on_malformed_quiz(tmp_path):
+    _one_lesson_input(tmp_path)
+    (tmp_path / "l1.quiz.json").write_text("{broken", encoding="utf-8")
+    r = _run_cli(tmp_path)
+    assert r.returncode == 2
+    assert "l1" in r.stderr
+
+
+def test_cli_still_accepts_meta_flag(tmp_path):
+    _one_lesson_input(tmp_path)
+    (tmp_path / "meta.json").write_text(json.dumps(
+        [{"id": "l1", "title": "T", "lessonQuestions": [_q("m")] * 3,
+          "assessmentQuestions": [_q("m2")] * 3}]), encoding="utf-8")
+    r = _run_cli(tmp_path, ["--meta", str(tmp_path / "meta.json")])
+    assert r.returncode == 0, r.stderr
+    out = json.loads((tmp_path / "out.json").read_text(encoding="utf-8"))
+    assert out["lessons"][0]["questions"][0]["text"] == "m"
