@@ -21,7 +21,9 @@
 
 ## Repo note — read before Task 1
 
-`d:\siddharth\nerdit-backup` is **not a git repository**, so the `git commit` step at the end of each task will fail as written. Either run `git init` in the repo root first, or skip the commit steps and treat the passing test run as the task gate. Confirm which with the user before starting Task 1.
+The git repository root is `d:\siddharth\nerdit-backup\nerdit_plugin-main` (remote: `futurevisioncomputers/nerdit-plugin-json-generator`). Work happens on branch `feat/merge-lesson-quiz-agents`, cut from `main`.
+
+**Path convention:** file paths in this plan are written from `d:\siddharth\nerdit-backup` and therefore carry a `nerdit_plugin-main/` prefix. Shell commands — `git add`, `grep`, `rm` — run **from inside the repo root**, so drop that prefix when typing them. Example: the plan says `nerdit_plugin-main/agents/nerdit-quiz-writer.md`; the command is `rm agents/nerdit-quiz-writer.md`.
 
 ## File Structure
 
