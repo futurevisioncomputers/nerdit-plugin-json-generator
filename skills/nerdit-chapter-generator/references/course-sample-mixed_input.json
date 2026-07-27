@@ -1,0 +1,26 @@
+[
+  {
+    "id": "sql-select-basics",
+    "title": "Filtering Rows with WHERE",
+    "description": "Pick out just the rows you need.",
+    "runner": "sql"
+  },
+  {
+    "id": "py-lists-basics",
+    "title": "Looping Over a List",
+    "description": "Visit every item one at a time.",
+    "runner": "python"
+  },
+  {
+    "id": "xl-sumif",
+    "title": "Adding Up Only What Matches",
+    "description": "SUMIF totals rows that pass a test.",
+    "runner": "excel"
+  },
+  {
+    "id": "viz-bar-chart",
+    "title": "Drawing Your First Bar Chart",
+    "description": "Turn numbers into a picture.",
+    "runner": "plot"
+  }
+]
