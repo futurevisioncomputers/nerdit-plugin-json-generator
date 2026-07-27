@@ -16,9 +16,35 @@ def _q(t):
 
 
 def test_detect_assets():
-    assert detect_assets("uses nerdit-plot-runner.js here") == ["/assets/js/nerdit-plot-runner.js"]
-    assert detect_assets("uses nerdit-excel-engine.js") == ["/assets/js/nerdit-excel-engine.js"]
+    # The website serves these from public/ at the site root, not from /assets/js.
+    assert detect_assets("uses nerdit-plot-runner.js here") == ["/nerdit-plot-runner.js"]
+    assert detect_assets("uses nerdit-excel-engine.js") == ["/nerdit-excel-engine.js"]
     assert detect_assets("plain lesson, no engine") == []
+
+
+def test_detect_assets_covers_all_four_engines():
+    assert detect_assets("uses nerdit-sql-runner.js") == ["/nerdit-sql-runner.js"]
+    assert detect_assets("uses nerdit-python-runner.js") == ["/nerdit-python-runner.js"]
+    assert detect_assets("uses nerdit-excel-engine.js") == ["/nerdit-excel-engine.js"]
+    assert detect_assets("uses nerdit-plot-runner.js") == ["/nerdit-plot-runner.js"]
+
+
+def test_detect_assets_url_prefix_is_site_root():
+    assert all(u.startswith("/nerdit-") for u in detect_assets("nerdit-sql-runner.js"))
+
+
+def test_detect_assets_multiple_engines_in_engine_files_order():
+    # detect_assets iterates ENGINE_FILES, so order follows that constant rather
+    # than order of appearance in the HTML.
+    html = "<div>nerdit-sql-runner.js and nerdit-plot-runner.js</div>"
+    assert detect_assets(html) == ["/nerdit-plot-runner.js", "/nerdit-sql-runner.js"]
+
+
+def test_lesson_without_engine_has_no_assets_key(tmp_path):
+    (tmp_path / "l1.html").write_text("<div>plain lesson</div>", encoding="utf-8")
+    inp = [{"id": "l1", "title": "T", "description": "d"}]
+    c = build_course("demo", inp, None, str(tmp_path), now_ms=1700000000000)
+    assert "assets" not in c["lessons"][0]
 
 
 def test_build_course_minimal(tmp_path):
@@ -98,11 +124,11 @@ def test_size_report_over_budget_flags_biggest(tmp_path):
 
 
 def test_assets_attached_when_engine_present(tmp_path):
-    (tmp_path / "l2.html").write_text('<div>chart</div><script src="/assets/js/nerdit-plot-runner.js"></script>', encoding="utf-8")
+    (tmp_path / "l2.html").write_text('<div>chart</div><script src="/nerdit-plot-runner.js"></script>', encoding="utf-8")
     inp = [{"id": "l2", "title": "Viz", "description": "d"}]
     meta = [{"id": "l2", "title": "Viz", "duration": "9m", "lessonQuestions": [], "assessmentQuestions": []}]
     c = build_course("demo", inp, meta, str(tmp_path), now_ms=1700000000000)
-    assert c["lessons"][0]["assets"] == ["/assets/js/nerdit-plot-runner.js"]
+    assert c["lessons"][0]["assets"] == ["/nerdit-plot-runner.js"]
 
 
 # --- <id>.quiz.json sidecar (written by nerdit-lesson-writer next to the HTML) ---

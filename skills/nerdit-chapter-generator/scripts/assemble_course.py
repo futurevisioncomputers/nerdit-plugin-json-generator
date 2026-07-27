@@ -24,8 +24,14 @@ import re
 import sys
 import time
 
-ASSET_URL_BASE = "/assets/js"
-ENGINE_FILES = ["nerdit-plot-runner.js", "nerdit-excel-engine.js"]
+# The website serves these from future-vision/public/, which Vite exposes at the
+# site root — /nerdit-excel-engine.js, not /assets/js/nerdit-excel-engine.js. The
+# lesson HTML references them at the root too, so these must agree.
+ASSET_URL_BASE = ""
+ENGINE_FILES = [
+    "nerdit-plot-runner.js", "nerdit-excel-engine.js",
+    "nerdit-sql-runner.js", "nerdit-python-runner.js",
+]
 
 # Firestore hard-caps a single document at 1,048,576 bytes. The whole course object
 # is stored in one doc, so keep it under this budget (margin left for Firestore's
