@@ -1,5 +1,12 @@
 import json
-from assemble_course import build_course, detect_assets, estimate_duration, doc_size_report, MAX_DOC_BYTES
+import os
+
+import pytest
+
+from assemble_course import (
+    build_course, detect_assets, estimate_duration, doc_size_report, load_quiz,
+    MAX_DOC_BYTES,
+)
 
 
 def _q(t):
@@ -94,3 +101,87 @@ def test_assets_attached_when_engine_present(tmp_path):
     meta = [{"id": "l2", "title": "Viz", "duration": "9m", "lessonQuestions": [], "assessmentQuestions": []}]
     c = build_course("demo", inp, meta, str(tmp_path), now_ms=1700000000000)
     assert c["lessons"][0]["assets"] == ["/assets/js/nerdit-plot-runner.js"]
+
+
+# --- <id>.quiz.json sidecar (written by nerdit-lesson-writer next to the HTML) ---
+
+
+def _quizfile(tmp_path, lesson_id, lesson_qs, assessment_qs):
+    (tmp_path / f"{lesson_id}.quiz.json").write_text(
+        json.dumps({"lessonQuestions": lesson_qs, "assessmentQuestions": assessment_qs}),
+        encoding="utf-8",
+    )
+
+
+def test_load_quiz_absent_returns_none(tmp_path):
+    assert load_quiz(str(tmp_path), "nope") is None
+
+
+def test_quiz_file_questions_land_with_ids(tmp_path):
+    (tmp_path / "l1.html").write_text("<div>x</div>", encoding="utf-8")
+    _quizfile(tmp_path, "l1", [_q("lq")] * 3, [_q("aq")] * 3)
+    inp = [{"id": "l1", "title": "T", "description": "d"}]
+    c = build_course("demo", inp, None, str(tmp_path), now_ms=1700000000000)
+    assert len(c["lessons"][0]["questions"]) == 3
+    assert c["lessons"][0]["questions"][0]["text"] == "lq"
+    assert c["lessons"][0]["questions"][0]["id"] == "lesson-1700000000000-l1-q1-1700000000000"
+    assert len(c["assessment"]["questions"]) == 3
+    assert c["assessment"]["questions"][2]["id"] == "assessment-1700000000000-l1-q3-1700000000000"
+
+
+def test_quiz_file_beats_meta(tmp_path):
+    (tmp_path / "l1.html").write_text("<div>x</div>", encoding="utf-8")
+    _quizfile(tmp_path, "l1", [_q("from-file")] * 3, [_q("af")] * 3)
+    inp = [{"id": "l1", "title": "T", "description": "d"}]
+    meta = [{"id": "l1", "title": "T", "lessonQuestions": [_q("from-meta")] * 3,
+             "assessmentQuestions": [_q("am")] * 3}]
+    c = build_course("demo", inp, meta, str(tmp_path), now_ms=1700000000000)
+    assert c["lessons"][0]["questions"][0]["text"] == "from-file"
+    assert c["assessment"]["questions"][0]["text"] == "af"
+
+
+def test_meta_duration_survives_quiz_file(tmp_path):
+    (tmp_path / "l1.html").write_text("<div>x</div>", encoding="utf-8")
+    _quizfile(tmp_path, "l1", [_q("lq")] * 3, [_q("aq")] * 3)
+    inp = [{"id": "l1", "title": "T", "description": "d"}]
+    meta = [{"id": "l1", "title": "T", "duration": "12m",
+             "lessonQuestions": [], "assessmentQuestions": []}]
+    c = build_course("demo", inp, meta, str(tmp_path), now_ms=1700000000000)
+    assert c["lessons"][0]["duration"] == "12m"
+    assert c["lessons"][0]["questions"][0]["text"] == "lq"
+
+
+def test_no_quiz_no_meta_is_empty_not_crash(tmp_path):
+    (tmp_path / "l1.html").write_text("<div>x</div>", encoding="utf-8")
+    inp = [{"id": "l1", "title": "T", "description": "d"}]
+    c = build_course("demo", inp, None, str(tmp_path), now_ms=1700000000000)
+    assert c["lessons"][0]["questions"] == []
+    assert c["assessment"]["questions"] == []
+
+
+def test_malformed_quiz_json_raises_with_id_and_path(tmp_path):
+    (tmp_path / "l1.html").write_text("<div>x</div>", encoding="utf-8")
+    (tmp_path / "l1.quiz.json").write_text("{not json", encoding="utf-8")
+    inp = [{"id": "l1", "title": "T", "description": "d"}]
+    with pytest.raises(ValueError) as e:
+        build_course("demo", inp, None, str(tmp_path), now_ms=1700000000000)
+    assert "l1" in str(e.value) and "l1.quiz.json" in str(e.value)
+
+
+def test_quiz_json_wrong_toplevel_type_raises(tmp_path):
+    (tmp_path / "l1.html").write_text("<div>x</div>", encoding="utf-8")
+    (tmp_path / "l1.quiz.json").write_text('["a", "b"]', encoding="utf-8")
+    inp = [{"id": "l1", "title": "T", "description": "d"}]
+    with pytest.raises(ValueError) as e:
+        build_course("demo", inp, None, str(tmp_path), now_ms=1700000000000)
+    assert "JSON object" in str(e.value)
+
+
+def test_quiz_json_wrong_field_type_raises(tmp_path):
+    (tmp_path / "l1.html").write_text("<div>x</div>", encoding="utf-8")
+    (tmp_path / "l1.quiz.json").write_text(
+        '{"lessonQuestions": "oops", "assessmentQuestions": []}', encoding="utf-8")
+    inp = [{"id": "l1", "title": "T", "description": "d"}]
+    with pytest.raises(ValueError) as e:
+        build_course("demo", inp, None, str(tmp_path), now_ms=1700000000000)
+    assert "lessonQuestions" in str(e.value)

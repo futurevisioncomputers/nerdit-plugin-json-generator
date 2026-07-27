@@ -79,16 +79,50 @@ def with_ids(qs, kind, session, lesson_id, batch):
     return out
 
 
+def load_quiz(html_dir, lesson_id):
+    """Read <html_dir>/<lesson_id>.quiz.json, the question sidecar the lesson-writer
+    agent writes next to its <lesson_id>.html. Returns the parsed object, or None when
+    no such file exists (the lesson simply has no questions from this source).
+
+    A present-but-broken file raises instead of being skipped: a silently dropped
+    question set assembles into a file that looks fine but ships a short assessment
+    bank, which QA would only catch as a confusing count mismatch."""
+    path = os.path.join(html_dir, lesson_id + ".quiz.json")
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+    except (json.JSONDecodeError, OSError) as e:
+        raise ValueError(f"{lesson_id}: unreadable quiz file {path}: {e}")
+    if not isinstance(data, dict):
+        raise ValueError(
+            f"{lesson_id}: quiz file {path} must contain a JSON object, "
+            f"got {type(data).__name__}")
+    for key in ("lessonQuestions", "assessmentQuestions"):
+        if key in data and not isinstance(data[key], list):
+            raise ValueError(
+                f"{lesson_id}: quiz file {path} field {key} must be a list, "
+                f"got {type(data[key]).__name__}")
+    return data
+
+
 def build_course(chapter, input_lessons, meta, html_dir, now_ms=None):
     now_ms = now_ms if now_ms is not None else int(time.time() * 1000)
     session = batch = now_ms
     iso = iso_from_ms(now_ms)
-    meta_by_id = {m["id"]: m for m in meta}
+    meta_by_id = {m["id"]: m for m in (meta or [])}
 
     lessons, assessment_qs, lesson_ids = [], [], []
     for src in input_lessons:
         lid = src["id"]
-        m = meta_by_id.get(lid, {})
+        # Per-lesson <id>.quiz.json is the current source; meta.json is the
+        # pre-merge fallback. Layering (not replacing) keeps meta-only fields
+        # such as `duration` working when both are present.
+        m = dict(meta_by_id.get(lid, {}))
+        quiz = load_quiz(html_dir, lid)
+        if quiz is not None:
+            m.update(quiz)
         content = ""
         html_path = os.path.join(html_dir, lid + ".html")
         if os.path.exists(html_path):
