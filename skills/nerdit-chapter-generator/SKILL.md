@@ -35,7 +35,7 @@ it delegates to two specialized subagents (bundled in `agents/`) and assembles t
 
 | Agent | Job | Runs |
 |---|---|---|
-| `nerdit-lesson-writer` | Writes one lesson's HTML fragment to `<workdir>/<id>.html` **and** its 6 MCQs to `<workdir>/<id>.quiz.json`; returns both paths | Once per lesson, in parallel |
+| `nerdit-lesson-writer` | Writes one lesson's HTML fragment to `<workdir>/<id>.html`, its 6 MCQs to `<workdir>/<id>.quiz.json`, **and** its concept manifest to `<workdir>/<id>.concepts.json`; returns the three paths | Once per lesson, in parallel |
 | `nerdit-qa-validator` | Read-only checklist pass over the script-assembled output file | Once, after assembly |
 
 Why: each lesson's generation is independent and reference-heavy (the two reference files
@@ -47,19 +47,28 @@ multi-lesson chapters.
 
 **Delegation flow:**
 
-1. Parse the input array (Step 1) and choose the run workdir (Step 6's destination).
+1. Pre-flight and parse the input array (Step 1) and choose the run workdir (Step 6's
+   destination).
 2. Spawn one `nerdit-lesson-writer` agent per lesson. Independent lessons have no dependency
    on each other — launch them together in one batch of parallel Agent calls. Pass each agent:
    the lesson's `id`/`title`/`description`, the chapter name, whether this is a multi-lesson
-   chapter (so it prefixes internal HTML ids), `HTML_PATH = <workdir>/<id>.html`, and
-   `QUIZ_PATH = <workdir>/<id>.quiz.json`. Each returns only `FILE:` and `QUIZ:` path lines —
-   neither the HTML nor the questions ever enter your context.
+   chapter (so it prefixes internal HTML ids), the lesson's **curriculum context** —
+   `PRIOR_TOPICS` (title + description of every earlier lesson, in input order) and
+   `UPCOMING_TOPICS` (title + description of every later lesson) — `HTML_PATH =
+   <workdir>/<id>.html`, `QUIZ_PATH = <workdir>/<id>.quiz.json`, and
+   `CONCEPTS_PATH = <workdir>/<id>.concepts.json`. Each returns only `FILE:`, `QUIZ:` and
+   `CONCEPTS:` path lines — no file content ever enters your context. The curriculum context
+   is static per lesson (computed from the input array alone), so it does not break the
+   parallel batch.
 3. Run `scripts/assemble_course.py` (Step 4) to build the full `course-<chapter>_output.json`
    from the input, the `<id>.html` files, and the `<id>.quiz.json` files. The script owns all
    course defaults, ids, timestamps, durations, and `assets`.
-4. Spawn `nerdit-qa-validator` once against the assembled output file (Step 5). On any `FAIL`,
-   re-run the broken lesson's `nerdit-lesson-writer` (it regenerates both files), re-assemble,
-   re-validate. Then deliver (Step 6).
+4. Run `scripts/check_sequence.py --strict` (Step 4b) — deterministic, zero tokens. Exit 2
+   means a lesson reaches for a construct a later lesson owns: regenerate that lesson with
+   the violation lines, re-assemble, re-check, and do not proceed until it exits 0.
+5. Spawn `nerdit-qa-validator` once against the assembled output file (Step 5). On any `FAIL`,
+   re-run the broken lesson's `nerdit-lesson-writer` (it regenerates all three files),
+   re-assemble, re-validate. Then deliver (Step 6).
 
 If the chapter has exactly one lesson, the parallelism in step 2 is moot but the same
 delegation still applies — do not write lesson content directly in the orchestrator.
@@ -98,6 +107,12 @@ schema example** for this skill's output — study them before assembling (Step 
 
 If the user attaches their own sample input/output pair for the current chapter, prefer those
 for field ordering/tone, but the bundled reference pair remains the schema source of truth.
+
+> **The reference outputs are a schema model, not a teaching model.** The LangChain
+> reference was generated before the sequencing rule existed, and its lesson 1 demonstrates
+> `LLMChain` — which lesson 8 teaches. Copy its field shapes; never copy its habit of
+> reaching forward for a construct. `scripts/check_sequence.py` reports that exact defect
+> on it, on purpose.
 
 **`CORE.md` is the single source of truth** for what a lesson may and may not contain.
 A runner fragment adds one widget contract on top of it and overrides nothing.
@@ -142,7 +157,27 @@ For a brand-new course (no old JSON), skip this section and start at Step 1.
    - If a `runner` value is not one of the five listed above, stop and show the valid
      values. Do **not** fall back to `none` — that would silently produce a whole chapter
      with no practice widgets.
-4. If the file cannot be found or parsed, notify the user and stop.
+4. **The array order is the course order** — lesson 1 is taught first, and a learner reaching
+   lesson N has seen lessons 1..N only. Everything downstream depends on this, so before
+   spawning anything, read the titles in order and check the syllabus builds up: does any
+   lesson's subject depend on a topic that only appears *later* (a project lesson before the
+   feature it uses, conditions after loops)? If so, list the inversions and ask the user
+   whether to reorder the input. Never reorder it yourself — the order is theirs, and lesson
+   ids often encode it.
+5. Run the input pre-flight before generating anything:
+
+       python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/check_input.py" \
+         --input <path to the input JSON>
+
+   `ERROR` lines mean the input cannot produce good lessons — most often a `description`
+   that repeats its `title` verbatim, which leaves the writer nothing to expand and leaves
+   Step 4b guessing who owns each concept. Show them to the user and agree on real
+   descriptions before spawning any writer. `WARN` lines are advisory.
+6. Ask the user what the course assumes learners already know (e.g. "basic Python syntax",
+   "SQL SELECT"). Keep the list — it becomes `--allow` in Step 4b. Without it, lesson 1 is
+   checked against an empty world and legitimate prerequisite vocabulary reads as a forward
+   reference. If the user has no answer, use an empty allowlist and say so.
+7. If the file cannot be found or parsed, notify the user and stop.
 
 ---
 
@@ -174,8 +209,27 @@ the same way `title` is used to inform content, but it does not appear in the as
 Do not generate the HTML lesson yourself. Spawn the `nerdit-lesson-writer` agent for this
 lesson (in parallel with the other lessons' agents — see Multi-Agent Architecture above),
 passing it: `id`, `title`, `description`, chapter name, whether this is a multi-lesson chapter,
-`RUNNER` (the value resolved in Step 1), `HTML_PATH = <workdir>/<id>.html`, and
-`QUIZ_PATH = <workdir>/<id>.quiz.json`.
+`RUNNER` (the value resolved in Step 1), `PRIOR_TOPICS` + `UPCOMING_TOPICS` (the curriculum
+context — see below), `HTML_PATH = <workdir>/<id>.html`,
+`QUIZ_PATH = <workdir>/<id>.quiz.json`, and
+`CONCEPTS_PATH = <workdir>/<id>.concepts.json`.
+
+The writer returns three path lines (`FILE:`, `QUIZ:`, `CONCEPTS:`). Read none of the files
+back into your context: the assembler consumes the first two in Step 4, and
+`check_sequence.py` consumes the manifests in Step 4b.
+
+**Curriculum context (mandatory — this is what keeps lesson N from using lesson N+1's
+concepts):** the input array order **is** the course order. For lesson at index `i`, build:
+
+- `PRIOR_TOPICS` — the `title` + `description` of every lesson at index `< i`, in order
+  (empty for the first lesson)
+- `UPCOMING_TOPICS` — the `title` + `description` of every lesson at index `> i`
+
+Include both lists verbatim in the agent prompt. The writer treats `PRIOR_TOPICS` + its
+own lesson as the learner's entire knowledge and must not put any `UPCOMING_TOPICS`-owned
+construct in code — e.g. no loops inside the conditions lesson, no `LLMChain` inside the
+prompt-templates lesson. Never spawn a writer without these two lists on a multi-lesson
+chapter.
 
 Before spawning, confirm `references/runners/<RUNNER>.md` exists on disk (skip this check when
 `RUNNER` is `none`). If it does not, stop — an agent that proceeds without its fragment emits a
@@ -184,14 +238,24 @@ Try It block whose handler does not exist.
 The agent owns
 every content rule (skeleton, language, example/output, Try It, banned components, HTML hygiene)
 and every question rule — see `agents/nerdit-lesson-writer.md`. It **writes the fragment to
-`HTML_PATH` and the 6 questions to `QUIZ_PATH`**, then returns only its `FILE:`/`QUIZ:` path
-lines. Do not read either file back into your context; duration is computed later by the
-assembler, and question ids are assigned by it.
+`HTML_PATH`, the 6 questions to `QUIZ_PATH`, and the concept manifest to `CONCEPTS_PATH`**,
+then returns only its three path lines. Duration is computed later by the assembler, and
+question ids are assigned by it.
 
 The quiz file holds two 3-item arrays, **without ids**:
 
 - `lessonQuestions` — 3 questions, each `{text, options[4], correctOptionIndex}`
 - `assessmentQuestions` — 3 *different* questions (not restatements of the lesson set), same shape
+
+The concepts file holds two string arrays:
+
+- `teaches` — the terms this lesson defines or introduces (5–20)
+- `uses` — terms it leans on without defining; every one must come from this lesson or an
+  earlier one
+
+The manifest is what makes Step 4b's ownership a declared fact instead of a guess from the
+title and description, and it is the only way a *prose-level* forward reference is caught —
+a lesson that explains embeddings three lessons early has no telltale code to scan.
 
 ---
 
@@ -235,10 +299,54 @@ the run instead of warning.
 
 ---
 
+## Step 4b — Check Concept Sequencing (deterministic script, blocking)
+
+Run the sequencing checker on the assembled file before spawning QA:
+
+    python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/check_sequence.py" \
+      --input        <path to the input JSON> \
+      --course       <workdir>/course-<chaptername>_output.json \
+      --concepts-dir <workdir> \
+      --allow        "<the Step 1 assumed-knowledge list, comma separated>" \
+      --strict
+
+It compares each lesson's **code blocks** and its manifest's declared `uses` against the
+terms later lessons own (declared `teaches` first, then named APIs from any lesson's
+title/description, then language constructs from titles) and prints one line per violation:
+
+    lesson 07 prompt-templates-07: uses 'LLMChain' -- first taught in lesson 08 "Chains and Sequential Workflows"
+
+**Exit 2 means the run is not deliverable.** Every violation is a learner meeting a
+construct before the lesson that teaches it. For each reported lesson:
+
+1. Re-run that lesson's `nerdit-lesson-writer` (Step 2) with a `VIOLATIONS` block holding
+   that lesson's exact report lines. It regenerates all three files.
+2. Re-run the assembler (Step 4).
+3. Re-run this check.
+
+Repeat until it exits 0. Do not continue to Step 5 with known violations, and never deliver
+a course that has not passed this check exit-0.
+
+Do **not** "fix" a violation by reordering the input — the order is the user's syllabus. If
+a violation is genuinely a syllabus problem rather than a lesson defect (the construct
+cannot be avoided at that point — an auth lesson that must raise an error before the
+error-handling lesson), stop and tell the user which lesson should move, with the report
+lines as evidence. Reordering is their decision, and lesson `id` values stay unchanged when
+they do it: ids are referenced by learner progress records.
+
+The check is still a floor, not a ceiling: it only names terms it can recognise
+mechanically or that a writer declared. Conceptual leaks past both are the QA agent's job
+in Step 5. It costs zero model tokens — always run it.
+
+---
+
 ## Step 5 — Validate the Assembled File (delegated)
 
 Spawn `nerdit-qa-validator` against the script-assembled `<workdir>/course-<chaptername>_output.json`
-from Step 4 — do not eyeball the checklist yourself first. It reports `FAIL` lines, read-only. If it
+from Step 4 — do not eyeball the checklist yourself first. Always pass it the input JSON
+path as well: it needs the lesson order for the concept-sequencing check. Pass the
+`<workdir>` too, so it can check each lesson's `<id>.concepts.json` against the lesson. It reports
+`FAIL` lines, read-only. If it
 reports failures, fix the specific lesson(s) by re-running that lesson's `nerdit-lesson-writer`
 (Step 2) — it regenerates both the HTML and the questions — then re-run the assembler (Step 4)
 and spawn `nerdit-qa-validator` again before moving to Step 6. The checklist it enforces:
@@ -255,6 +363,7 @@ and spawn `nerdit-qa-validator` again before moving to Step 6. The checklist it 
 - [ ] **(simple/v9)** 3–5 numbered `<h2>` concept sections, each teaching exactly one concept
 - [ ] **(simple/v9)** Every `<pre>` code block is followed by a `nerdit-output` block (exceptions: `nerdit-syntax` boxes, `nerdit-terminal`, code inside `nerdit-compare`, tabbed variants sharing one output)
 - [ ] **(simple/v9)** Every concept section ends with a Try It block (`nerdit-predict`, `nerdit-fillblank`, or `nerdit-tryit`)
+- [ ] **Sequencing:** no lesson's code (examples, Try It, practice, quiz options) uses a construct owned by a later lesson in the input order — e.g. loops before the loops lesson, `LLMChain` before the chains lesson
 - [ ] **(simple/v9)** At most ONE callout per concept section; closing section has exactly one `nerdit-cheatsheet`, one `nerdit-recap` (≤5 bullets), and 2–3 `nerdit-practical` tasks
 - [ ] **(simple/v9)** NO banned components: stat-grid, donut, gauge, ring-grid, funnel, metric-compare, dashboard, cards-grid, card-grid, hbar-chart, bar-chart, callout bands, memory-aid, step-block, datatable-wrap
 - [ ] **(simple/v9)** Language spot-check on 2 random paragraphs: sentences ≤ ~15 words, ≤3 sentences per paragraph, second person, no undefined jargon
@@ -346,6 +455,9 @@ A safe pattern: prefix canvas IDs with a slug of the lesson `id` field.
 - Explanations must be in real prose paragraphs, not bare bullet lists.
 - Code examples must be syntactically correct and runnable where possible.
 - Every lesson must feel complete — a learner should be able to study it standalone.
+- The course order is a contract: a lesson may use only concepts it or an earlier lesson
+  taught. Constructs owned by later lessons never appear in code; at most one prose
+  "You will learn X in a later lesson" mention is allowed.
 - Do not repeat the same boilerplate structure for every lesson; adapt sections to suit
   the specific lesson's natural learning flow.
 - Every one of the 6 questions generated per lesson (3 lesson-level + 3 assessment-level)

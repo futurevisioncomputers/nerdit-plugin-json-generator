@@ -27,6 +27,31 @@ computed `duration` + engine `assets`, the `assessment` bank, and `lessonIds` �
 (lesson HTML) out of the model's output and context entirely; only lesson content and quiz text
 still require the LLM.
 
+### Concept sequencing
+
+Each lesson is written by its own isolated agent, which by itself cannot know what the other
+lessons teach — so a lesson would happily demonstrate a `for` loop before the loops lesson, or
+`LLMChain` seven lessons before chains. Four layers prevent that, cheapest first:
+
+- **Pre-flight.** [`scripts/check_input.py`](skills/nerdit-chapter-generator/scripts/check_input.py)
+  refuses inputs that cannot produce good lessons — most importantly a `description` that just
+  repeats its `title`, which leaves the writer nothing to expand and leaves ownership detection
+  guessing. Observed in the wild on two live courses.
+- **Curriculum context.** The orchestrator passes every writer `PRIOR_TOPICS` (all earlier
+  lessons) and `UPCOMING_TOPICS` (all later ones). The writer may use only what the learner has
+  already met; a later lesson's construct may be named once in prose, never in code.
+- **Declaration.** Each writer also emits `<id>.concepts.json` — the terms it `teaches` and the
+  terms it `uses` without defining. That turns "which lesson owns `DataFrame`?" from a regex
+  guess into a recorded fact, and it is the only way a *prose-level* forward reference gets
+  caught: a lesson explaining embeddings three lessons early has no code to scan.
+- **Blocking gate.** [`scripts/check_sequence.py`](skills/nerdit-chapter-generator/scripts/check_sequence.py)
+  re-checks the assembled JSON deterministically (zero model tokens), scanning code blocks and
+  declared `uses` against the manifests, the named APIs, and the language constructs later
+  lessons own. Run with `--strict` it fails the build; the orchestrator then feeds the exact
+  violation lines back to the offending lesson's writer and re-assembles until it passes.
+  `--allow` carries the course's assumed prior knowledge so lesson 1 is not judged against an
+  empty world. The QA agent covers conceptual leaks past all of it.
+
 See [skills/nerdit-chapter-generator/SKILL.md](skills/nerdit-chapter-generator/SKILL.md) for
 the full orchestration flow, and
 [skills/nerdit-chapter-generator/references/](skills/nerdit-chapter-generator/references/)

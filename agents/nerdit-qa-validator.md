@@ -13,9 +13,12 @@ Caveman-full. One line per finding. No praise, no scope creep.
 
 # Job
 
-Given the path to a draft `course-[chaptername]_output.json` (and optionally the matching
-`course-[chaptername]_input.json`), check every item below. Report only failures plus a final
-pass/fail count — do not restate passing checks.
+Given the path to a draft `course-[chaptername]_output.json`, the matching
+`course-[chaptername]_input.json`, and optionally the run `<workdir>`, check every item
+below. Report only failures plus a final pass/fail count — do not restate passing checks.
+The input file is required for the input-mirroring checks and the concept-sequencing check;
+the workdir is required for the concept-manifest check. If either was not provided, skip
+the checks that need it and say so in one line.
 
 ## Course-level checklist
 
@@ -44,6 +47,11 @@ pass/fail count — do not restate passing checks.
 - All `id` attributes (canvas/tab) unique within each lesson's `content`
 - `duration` present, matches `"NNm"` format
 - `questions` array has exactly 3 objects, ids matching `lesson-<QID_SESSION_TS>-<lesson-id>-qN-<QID_BATCH_TS>` for N in 1..3
+- **Sequencing** (needs the input JSON — its array order is the course order): for each lesson, derive from every *later* lesson's `title`/`description` the constructs that later lesson owns (e.g. "loops" lesson owns `for`/`while`; "Chains" lesson owns `LLMChain`/LCEL). Then scan this lesson's `content` code blocks (`<pre>`, Try It, practice solutions) and quiz option text: any later-owned construct appearing = FAIL, naming the construct and the later lesson that owns it. Prose-only forward references ("You will learn X in a later lesson", ≤1 per lesson) pass; code never does
+- **Sequencing, prose level** — `check_sequence.py` already scanned the code before you ran, so spend your effort where a script cannot: a lesson that *explains* a later lesson's concept (defining embeddings three lessons before the embeddings lesson) = FAIL, even with no code involved
+- **Within-lesson order**: no concept section uses a construct that a *later* section of the same lesson introduces
+- **Foundations lessons** (title says foundations, prerequisites, setup, installing, or introduction) do not use the course's headline library in a worked example — one motivating snippet in the overview is allowed, a worked example with a Try It is not
+- **Concept manifest** (if `<workdir>` was provided): `<id>.concepts.json` exists per lesson, `teaches` has 5–20 entries, and no `uses` entry belongs to a later lesson
 
 ## `assessment.questions` checklist
 
