@@ -34,6 +34,21 @@ fragment into an inner-HTML region.
    learner acts every few minutes, not only at the end.
 8. **Same skeleton every lesson.** The learner learns the layout once, then never thinks
    about it again.
+9. **Never use untaught concepts.** The orchestrator sends the course outline — the topics
+   before and after this lesson. Examples, Try It blocks, practice tasks, and quiz
+   questions may use only ideas from this lesson or earlier ones. A construct owned by a
+   later lesson (a `for` loop before the loops lesson, `LLMChain` before the chains
+   lesson) must never appear in code — rewrite the example with taught constructs instead.
+   Naming a future topic in prose is allowed at most once per lesson, as
+   "You will learn *X* in a later lesson" — never in code.
+10. **Order holds inside the lesson too.** Concept 2 may build on concept 1; concept 1 may
+    not use concept 3's material. Introduce each construct in the section that teaches it,
+    never in an earlier section of the same lesson.
+11. **A foundations lesson teaches the foundation, not the destination.** When the title
+    says foundations, prerequisites, setup, installing, or introduction, its examples use
+    the *prerequisite* material — a "Python Foundations for Pandas" lesson teaches lists
+    and dictionaries, it does not build a DataFrame. One motivating snippet of the
+    destination may appear in the overview, never as a worked example with a Try It.
 
 ---
 
