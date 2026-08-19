@@ -71,6 +71,8 @@ CONCEPT_CONSTRUCTS = {
     "module": [("import", r"(?m)^[ \t]*(?:import|from)\s+\w", None)],
     "import": [("import", r"(?m)^[ \t]*(?:import|from)\s+\w", None)],
     "async": [("async", r"(?m)^[ \t]*async\s+def\b", None), ("await", r"\bawait\s+\w", None)],
+    "asynchron": [("async", r"(?m)^[ \t]*async\s+def\b", None),
+                  ("await", r"\bawait\s+\w", None)],
     "concurren": [("async", r"(?m)^[ \t]*async\s+def\b", None),
                   ("await", r"\bawait\s+\w", None)],
     "join": [("JOIN", r"(?i)\b(?:inner|left|right|full|cross)?\s*join\s+\w+\s+on\b", "sql")],
@@ -107,6 +109,16 @@ IDENT_STOPWORDS = {
     "HTML", "CSS", "SQL", "CLI", "GUI", "IDE", "OS", "AI", "ML", "NLP", "LLM",
     "LLMS", "GPU", "CPU", "RAM", "YAML", "XML", "UUID", "ASCII", "UTF", "TODO",
     "NULL", "TRUE", "FALSE", "AND", "NOT", "THE", "YOU", "FOR",
+    # SQL clause words. The construct layer already owns these with SQL-scoped patterns;
+    # letting them through here too would double-report and would hand `GROUP` to any
+    # lesson whose title happens to read "Grouping with GROUP BY".
+    "SELECT", "FROM", "WHERE", "GROUP", "ORDER", "HAVING", "LIMIT", "OFFSET", "JOIN",
+    "INNER", "OUTER", "FULL", "CROSS", "TABLE", "INSERT", "UPDATE", "VALUES", "INTO",
+    "COUNT", "SUM", "AVG", "MIN", "MAX", "DISTINCT", "UNION", "INDEX", "COMMIT",
+    "ROLLBACK", "PRIMARY", "FOREIGN",
+    # Platforms and environments. They appear in setup notes and ASCII diagrams all
+    # course long; no lesson meaningfully "owns" the name of an operating system.
+    "MACOS", "WINDOWS", "LINUX", "UBUNTU", "DEBIAN", "ANDROID", "IOS", "UNIX",
 }
 
 _OUTPUT_RE = re.compile(r'<div class="nerdit-output".*?</div>\s*</div>', re.S | re.I)
@@ -115,22 +127,34 @@ _LANG_RE = re.compile(r"""data-lang\s*=\s*["']([^"']+)["']""", re.I)
 _TAG_RE = re.compile(r"<[^>]+>")
 _COMMENT_RE = re.compile(r"(?m)(#|--|//).*$")
 _SQLISH_RE = re.compile(r"(?is)\bselect\b.*?\bfrom\b")
+# Docstrings and string literals are prose the code merely carries. A lesson whose sample
+# prompt list contains "What is RAG?" is not using RAG, and a docstring reading "chunk for
+# RAG" teaches nothing about it -- while `from ... import FAISS` genuinely does.
+_STRING_RES = [
+    re.compile(r'"""[\s\S]*?"""'),
+    re.compile(r"'''[\s\S]*?'''"),
+    re.compile(r'"(?:[^"\\\n]|\\.)*"'),
+    re.compile(r"'(?:[^'\\\n]|\\.)*'"),
+]
 
 
 def code_blocks(content):
     """Each source `<pre>` block as (lang, text): output blocks dropped, tags stripped,
-    entities decoded, comments removed.
+    entities decoded, string literals and comments removed.
 
-    Output blocks are printed results, not code the learner writes, and comments are
-    English -- scanning either turns ordinary prose into phantom `for` loops. Prose
-    outside `<pre>` is skipped too: the rulebook allows one sentence naming a future
-    topic, so flagging it would contradict the rule this script enforces."""
+    Output blocks are printed results, not code the learner writes; comments and string
+    literals are English. Scanning any of them turns ordinary prose into phantom `for`
+    loops and phantom API usage. Prose outside `<pre>` is skipped too: the rulebook allows
+    one sentence naming a future topic, so flagging it would contradict the rule this
+    script enforces."""
     body = _OUTPUT_RE.sub(" ", content or "")
     out = []
     for attrs, raw in _PRE_RE.findall(body):
         lang = (_LANG_RE.search(attrs).group(1).lower() if _LANG_RE.search(attrs) else "")
-        text = _COMMENT_RE.sub("", htmllib.unescape(_TAG_RE.sub(" ", raw)))
-        out.append((lang, text))
+        text = htmllib.unescape(_TAG_RE.sub(" ", raw))
+        for pattern in _STRING_RES:  # strings before comments: a `#` may sit inside one
+            text = pattern.sub(" ", text)
+        out.append((lang, _COMMENT_RE.sub("", text)))
     return out
 
 
@@ -145,7 +169,14 @@ def code_text(content, flavor=None):
 
 
 def identifiers(text):
-    return {t for t in _IDENT_RE.findall(text or "") if t.upper() not in IDENT_STOPWORDS}
+    """API-shaped names in `text`.
+
+    A token with no lowercase letter must be a 3+ character acronym to count: the
+    CamelCase branch also matches two-capital words like `BY`, which are grammar, not
+    API names."""
+    return {t for t in _IDENT_RE.findall(text or "")
+            if t.upper() not in IDENT_STOPWORDS
+            and (any(c.islower() for c in t) or len(t) >= 3)}
 
 
 def canonical(term):
@@ -157,12 +188,18 @@ def canonical(term):
     return term
 
 
+def _phrase_in(phrase, text):
+    """Match `phrase` plus at most a short inflection: "loop" covers loops/looping,
+    "iterat" covers iteration, but "class" must not swallow "classification"."""
+    return re.search(r"\b" + re.escape(phrase) + r"[a-z]{0,3}\b", text) is not None
+
+
 def concepts_in_title(title):
     """Constructs owned by a lesson with this title, as {label: (pattern, flavor)}."""
     low = (title or "").lower()
     owned = {}
     for phrase, constructs in CONCEPT_CONSTRUCTS.items():
-        if re.search(r"\b" + re.escape(phrase), low):
+        if _phrase_in(phrase, low):
             owned.update({label: (pat, flav) for label, pat, flav in constructs})
     return owned
 
@@ -194,9 +231,18 @@ def identifier_families_in_title(title):
     low = (title or "").lower()
     owned = set()
     for phrase, names in CONCEPT_IDENTIFIERS.items():
-        if re.search(r"\b" + re.escape(phrase), low):
+        if _phrase_in(phrase, low):
             owned.update(names)
     return owned
+
+
+def is_applied_lesson(title):
+    """Project and capstone lessons apply the course; they do not introduce it.
+
+    Letting lesson 29 "Project -- AI Container Platform" own `OpenAI` makes every earlier
+    lesson that touches OpenAI a violation, which inverts the rule: the project is late
+    *because* it uses what came before."""
+    return re.match(r"\s*(project|capstone|case study)\b", (title or "").lower()) is not None
 
 
 def load_manifests(concepts_dir, lesson_ids):
@@ -240,6 +286,8 @@ def build_ownership(input_lessons, manifests=None):
             ident_owner.setdefault(canonical(term), i)
         for label, (pattern, flavor) in constructs_declared(declared).items():
             construct_owner.setdefault(label, (i, pattern, flavor))
+        if is_applied_lesson(title) and not declared:
+            continue
         for term in identifiers(blob) | identifier_families_in_title(title):
             ident_owner.setdefault(canonical(term), i)
         for label, (pattern, flavor) in concepts_in_title(title).items():

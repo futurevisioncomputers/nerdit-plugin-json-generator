@@ -79,6 +79,38 @@ def test_english_prose_inside_pre_is_not_a_for_loop():
     assert find_violations(PY_COURSE, {"l1": _pre("example code for beginners")}) == []
 
 
+def test_string_literals_are_not_api_usage():
+    course = [
+        {"id": "a", "title": "NLP Fundamentals", "description": "Tokens and embeddings."},
+        {"id": "b", "title": "Vector Databases", "description": "Store vectors in FAISS."},
+    ]
+    # A prompt list mentioning FAISS is prose the code carries, not a use of FAISS.
+    prose = _pre('prompts = ["What is FAISS?", "Define embeddings."]')
+    assert find_violations(course, {"a": prose}) == []
+    # An import of it is.
+    real = _pre("from langchain_community.vectorstores import FAISS")
+    assert [x[2] for x in find_violations(course, {"a": real})] == ["FAISS"]
+
+
+def test_docstrings_are_not_api_usage():
+    course = [
+        {"id": "a", "title": "Python Foundations", "description": "Async and typing."},
+        {"id": "b", "title": "Chains and Workflows", "description": "Compose LLMChain."},
+    ]
+    doc = _pre('def go():\n    """Async invocation of an LLMChain chain."""\n    return 1')
+    assert find_violations(course, {"a": doc}) == []
+
+
+def test_sql_string_values_do_not_hide_real_keywords():
+    # Stripping 'Surat' must not disturb the surrounding SQL.
+    course = [
+        {"id": "s1", "title": "Filtering Rows", "description": "Keep only some rows."},
+        {"id": "s2", "title": "Grouping with GROUP BY", "description": "Group rows."},
+    ]
+    html = _pre("SELECT city FROM customers WHERE city = 'Surat' GROUP BY city;", "sql")
+    assert [x[2] for x in find_violations(course, {"s1": html})] == ["GROUP BY"]
+
+
 def test_comments_are_stripped_before_matching():
     content = {"l1": _pre("x = 1  # a for loop would go here\n-- and here")}
     assert find_violations(PY_COURSE, content) == []
@@ -188,6 +220,59 @@ def test_python_open_builtin_flagged_but_method_call_is_not():
     ]
     assert find_violations(course, {"a": _pre('f = open("data.txt")')})
     assert find_violations(course, {"a": _pre("conn.open()")}) == []
+
+
+def test_classification_lesson_does_not_own_the_class_keyword():
+    course = [
+        {"id": "a", "title": "Text Processing Systems", "description": "Clean text."},
+        {"id": "b", "title": "Text Classification and Document Categorization",
+         "description": "Sort documents into labelled buckets."},
+    ]
+    assert "class" not in concepts_in_title(course[1]["title"])
+    assert find_violations(course, {"a": _pre("class TextCleaner:\n    pass")}) == []
+
+
+def test_plural_and_inflected_titles_still_own_their_construct():
+    assert "class" in concepts_in_title("Classes and Objects")
+    assert "for" in concepts_in_title("Loops and Iteration")
+    assert "for" in concepts_in_title("Looping Over Data")
+    assert "async" in concepts_in_title("Asynchronous Programming")
+    assert "open()" in concepts_in_title("Reading Files Safely")
+
+
+def test_project_lessons_do_not_own_terms():
+    course = [
+        {"id": "a", "title": "Docker for AI Systems", "description": "Containerise models."},
+        {"id": "b", "title": "Project — AI-Powered Container Platform",
+         "description": "Build a platform using OpenAI end to end."},
+    ]
+    # The project is late because it uses what came before, not because it introduces it.
+    assert find_violations(course, {"a": _pre("llm = OpenAI(temperature=0)")}) == []
+
+
+def test_a_project_lesson_that_declares_teaches_still_owns_those_terms():
+    course = [
+        {"id": "a", "title": "Setup", "description": "Install the tools you need."},
+        {"id": "b", "title": "Project — Build a Tracer",
+         "description": "Assemble the pieces into one tool."},
+    ]
+    manifests = {"b": {"teaches": ["LangSmith"], "uses": []}}
+    v = find_violations(course, {"a": _pre("t = LangSmith()")}, manifests=manifests)
+    assert [(x[1], x[2], x[3]) for x in v] == [("a", "LangSmith", 1)]
+
+
+def test_platform_names_are_never_owned():
+    course = [
+        {"id": "a", "title": "Virtualization Basics", "description": "How containers run."},
+        {"id": "b", "title": "Setting Up Docker on macOS",
+         "description": "Install Docker Desktop on macOS and Windows."},
+    ]
+    assert find_violations(course, {"a": _pre("Host OS (macOS/Windows)")}) == []
+
+
+def test_two_capital_words_are_not_identifiers():
+    assert identifiers("GROUP BY and ORDER BY clauses") == set()
+    assert "BY" not in identifiers("Grouping with GROUP BY")
 
 
 def test_first_mention_wins_for_construct_ownership():
