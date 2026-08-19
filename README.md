@@ -1,4 +1,4 @@
-# nerdit_plugin-jdon-generator
+# NerdIt_Plugin-JSON-Generator
 
 Claude Code plugin that generates a full NERDIT LMS course JSON — course-level metadata, a
 top-level assessment question bank, per-lesson HTML body, duration estimate, and per-lesson
