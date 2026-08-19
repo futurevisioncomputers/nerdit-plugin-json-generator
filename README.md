@@ -1,4 +1,4 @@
-# nerdit_plugin-jdon-generator
+# NerdIt_Plugin-JSON-Generator
 
 Claude Code plugin that generates a full NERDIT LMS course JSON — course-level metadata, a
 top-level assessment question bank, per-lesson HTML body, duration estimate, and per-lesson
@@ -62,18 +62,18 @@ lesson nothing.
 
 ## Install
 
-Add this repo as a marketplace, then install the plugin:
+Add the Future Vision marketplace, then install the plugin:
 
 ```
-/plugin marketplace add futurevisioncomputers/nerdit-plugin-json-generator
-/plugin install nerdit_try_plugin
+/plugin marketplace add futurevisioncomputers/fv-analysis-marketplace
+/plugin install nerdit_content_creator
 ```
 
-Or point Claude Code at a local clone:
+Or point Claude Code at a local clone of the marketplace:
 
 ```
-/plugin marketplace add /path/to/nerdit_plugin
-/plugin install nerdit_try_plugin
+/plugin marketplace add /path/to/fv-analysis-marketplace
+/plugin install nerdit_content_creator
 ```
 
 ## Use
