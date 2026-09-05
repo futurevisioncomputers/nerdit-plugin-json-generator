@@ -48,15 +48,44 @@ If the orchestrator attached a sample `course-[chaptername]_output.json`, read i
 
 The rulebook is authoritative; these are the spine (violating any = rejected by QA):
 
-- **Skeleton fixed:** h1 → overview (≤2 sentences) → what-you-will-learn (3–5 bullets) →
-  meta pills → optional demo data table → 3–5 numbered concept `<section>`s → closing
-  section (cheatsheet + recap + 2–3 practice tasks). Wrapper class:
-  `nerdit-wrapper nerdit-simple`.
+- **Skeleton fixed:** h1 → overview (≤2 sentences) → meta pills → optional demo data
+  table → 3–5 numbered concept `<section>`s → closing section (cheatsheet + 2–3 practice
+  tasks). Wrapper class: `nerdit-wrapper nerdit-simple`.
+- **Pick the preset first** (CORE.md §2b). Explicit `preset` field → `runner` field →
+  inference, in that order. It decides the run line's tags and which optional blocks you
+  may use — a Design lesson gets no code runner, a Business lesson gets no syntax box.
+  One preset for the whole chapter; mixing them makes a course feel assembled by
+  different people.
+- **The run line is not a code block.** It is `what you do → what you get` — steps and a
+  screenshot, a calculation and a figure, a prompt and a reply. Name the responder in the
+  output tag; never write "Output".
+- **Never write a colour** (CORE.md §7b). SVG fills, Chart.js datasets and every other
+  visual take `var(--nb)`, `var(--orange)`, `var(--green)` and the rest. A hex value
+  breaks the dark and high-contrast themes, and no inline `style="color:…"` is allowed.
+- **Explain with mappings, not only sentences.** `thing → what it becomes`, in a
+  `nerdit-map` block, arrows padded into a column (CORE.md §4b). The reference course
+  uses more mappings than code blocks. Reach for one whenever you are about to write a
+  sentence that states a correspondence; keep prose for the reasons.
+- **Emoji on headings is a legend, not decoration** (CORE.md §4c). One per heading, at the
+  front, only from the table. Name examples by their dataset (`🌟 Practical example:
+  product details`), never `Example 1`, unless the order genuinely matters.
+- **No tick lists.** There is no "what you will learn" opener and no "what you learned"
+  recap. The numbered section headings carry the contents while the learner reads, and
+  the cheatsheet table carries it afterwards. Emitting either is rejected.
 - **One concept per section.** Definition (2–3 short sentences, one `<strong>` key word,
-  optional 1-line analogy) → syntax box if syntax exists → 2–3 `nerdit-example` units →
+  optional 1-line analogy) → syntax box if syntax exists → 2–3 **run lines** →
   optional teaching SVG → ≤1 callout → one Try It block.
-- **Every code block shows output.** `nerdit-example` = lead sentence + code + `nerdit-output`
-  + 1–3 sentence note. No orphan code.
+- **Every code block shows its result.** A run line is `nerdit-runhead` heading + one
+  sentence + `nerdit-run` holding a `nerdit-in` and a matching `nerdit-out`, each with
+  its own `nerdit-tag`. No orphan code, and no `nerdit-in` without a `nerdit-out`.
+- **Never emit the old example box.** `nerdit-example`, `nerdit-example-head`,
+  `nerdit-example-lead`, `nerdit-example-note`, `nerdit-output` and
+  `nerdit-output-label` are retired in v10 and are rejected by QA. See CORE.md §4.
+- **Two levels of chrome, maximum.** `section` > one block. Never a boxed block inside
+  another boxed block.
+- **Every answer stays on the page.** Never link to Colab, a Doc or a repo as the place a
+  solution lives. A learner who has to leave to find out whether they were right does not
+  find out, and an exercise with no feedback teaches nothing. Answers go in a `<details>`.
 - **Try It every concept:** `nerdit-predict` (predict output), `nerdit-fillblank` (instant
   check), or — SQL courses, max once per lesson — `nerdit-tryit` live sql.js runner with its
   seed `<script type="text/plain">`.
@@ -139,9 +168,12 @@ best untainted version.
 If the orchestrator passes a `SOURCE_PATH` (an old lesson's HTML), **Read it first** and reshape
 its teaching into the v9 skeleton above — do not generate from the title alone:
 - Keep the real material: explanations, code, examples, data, numbers.
-- Drop v9-banned components (card/stat grids, dashboards, CSS/gauge/donut charts, callout bands).
-- Add what v9 requires and the source lacks: one `nerdit-example` + `nerdit-output` per code block,
-  one Try It per concept, plain-language rewrite (≤15-word sentences, one concept per section).
+- Drop v10-banned components (card/stat grids, dashboards, CSS/gauge/donut charts, callout bands)
+  **and the retired example box** — an old lesson's `nerdit-example` blocks are rewritten as run
+  lines, not carried over. Reform mode flattens; it never preserves the old nesting.
+- Add what v10 requires and the source lacks: a run line per code block (`nerdit-runhead` +
+  one sentence + `nerdit-run`), one Try It per concept, plain-language rewrite
+  (≤15-word sentences, one concept per section).
 - Sequencing rule still applies: an old example using a construct an `UPCOMING_TOPICS`
   lesson owns → rewrite that example with taught constructs, keeping what it teaches.
 - Do not invent facts the source never taught.
@@ -161,7 +193,20 @@ Rules:
 - All 6 answerable from the fragment you wrote alone — never invent facts it does not teach
 - No question or option leans on an `UPCOMING_TOPICS` construct (Sequencing section applies
   to quizzes too)
+- **At least 4 of the 6 must be applied, not definitional.** An applied question shows
+  something — a snippet, a formula, a value, a described situation — and asks what it does,
+  what it returns, or what went wrong. A definitional question asks what a term means. The
+  second kind feels like assessment but only tests whether the learner read the first
+  paragraph, and it is the default a writer drifts to. At most 2 of the 6 may be
+  definitional, and never both in `lessonQuestions`.
+
+  Weak:   "How are a workbook and a worksheet related in Excel?"
+  Strong: "`=SUM(E2:E9)` returns 185600. What does `=AVERAGE(E2:E9)` return?"
+  Strong: "A formula shows `#REF!` after you deleted column D. What caused it?"
 - Vary what each of the 6 tests: mix conceptual, applied/troubleshooting, and comparative angles
+- **The checkpoint is not where the learning happens** — the Try It blocks are (CORE.md §6).
+  The 6 questions confirm the lesson landed; they are not a substitute for one Try It per
+  concept, and a lesson that leans on them instead has been written wrong.
 - `assessmentQuestions` must test **different** facts/angles than `lessonQuestions` — not
   verbatim or near-verbatim restatements of the other group's 3 questions
 - All 4 options per question plausible — no throwaway distractors

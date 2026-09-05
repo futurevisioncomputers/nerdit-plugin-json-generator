@@ -40,9 +40,18 @@ the checks that need it and say so in one line.
 - `content` has no forbidden elements: self-check quiz section, next-lesson nav, topbar/sidebar/bottom-nav/lesson-shell/hamburger chrome
 - Wrapper carries the `nerdit-simple` class
 - 3–5 numbered `<h2>` concept sections, each teaching exactly one concept
-- Every `<pre>` code block is followed by a `nerdit-output` (exceptions: `nerdit-syntax`, `nerdit-terminal`, code inside `nerdit-compare`, tabbed variants sharing one output)
-- Every concept section ends with a Try It block (`nerdit-predict`, `nerdit-fillblank`, or `nerdit-tryit`)
-- At most ONE callout per concept; closing section has exactly one `nerdit-cheatsheet`, one `nerdit-recap` (≤5 bullets), and 2–3 `nerdit-practical` tasks
+- Every `<pre>` code block sits inside a `nerdit-in` whose parent `nerdit-run` also holds a `nerdit-out` (exceptions: `nerdit-syntax`, `nerdit-terminal`, code inside `nerdit-compare` or `nerdit-predict`, tabbed variants sharing one result)
+- Every `nerdit-in` and `nerdit-out` carries a `nerdit-tag`, and the run line's heading is a `nerdit-runhead` — colour alone never distinguishes the two halves
+- **Preset respected** (CORE.md §2b): the run line's tags match the preset, and no block its preset forbids appears — a live code runner in a Visual lesson, a syntax box in a Quantitative one, all lessons in the chapter on the same preset
+- **No hotlinked image** (CORE.md 7b): no `<img src="http...">` pointing at another site. Pictures are generated - matplotlib SVG for data, hand-authored inline SVG for concepts
+- **No hardcoded colour** (CORE.md §7b): no `#rrggbb` in an SVG `fill`/`stroke`, no Chart.js colour literal, no inline `style="color:…"` or `style="background:…"`. Colours come from `var(--…)` tokens or they fail
+- NO retired v9 blocks: `nerdit-example`, `nerdit-example-head`, `nerdit-example-lead`, `nerdit-example-note`, `nerdit-output`, `nerdit-output-label`, `nerdit-objective`, `nerdit-recap`. These render flat for old lessons but are rejected in a new one
+- **Depth cap:** at most TWO *painted* blocks deep. Count only blocks that actually draw a border, fill, radius or shadow: `nerdit-example`, `nerdit-step`, `nerdit-task`, `nerdit-solution`, `nerdit-output`, `nerdit-tryit`, `nerdit-predict`. **`<section>` and `nerdit-practical` never count** — the section is structure, and `nerdit-practical` is a grouping with no chrome of its own (CORE.md §8), so neither costs the reader a level. So `section > nerdit-practical > nerdit-task > nerdit-solution` is **two** and PASSES; adding a painted block inside the solution makes it three and FAILS. Legacy lessons reach four (`practical > task > solution > output` when practical still painted a card); that is the debt this cap exists to stop repeating
+- Every concept section ends with a Try It block (`nerdit-predict`, `nerdit-fillblank`, or `nerdit-tryit`) — a section without one FAILS, however simple the concept looked
+- **No answer lives off the platform**: no link to Colab, a Doc or a repo presented as where the solution is. Every answer sits in a `<details>` on the page
+- **At least 4 of the 6 questions are applied**, showing a snippet, value or situation and asking what it does or what went wrong — not asking what a term means. At most 2 definitional, never both in `lessonQuestions`
+- At most ONE callout per concept; closing section has exactly one `nerdit-cheatsheet` and 2–3 `nerdit-practical` tasks — and NO `nerdit-recap`
+- NO `nerdit-objective` opener and NO `nerdit-recap` closer: the section headings and the cheatsheet table are the lesson's contents and summary
 - NO banned components: stat-grid, donut, gauge, ring-grid, funnel, metric-compare, dashboard, cards-grid, card-grid, hbar-chart, bar-chart, callout bands, memory-aid, step-block, datatable-wrap
 - All `id` attributes (canvas/tab) unique within each lesson's `content`
 - `duration` present, matches `"NNm"` format

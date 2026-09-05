@@ -16,6 +16,12 @@ import sys
 
 MIN_DESCRIPTION_WORDS = 12
 
+# CORE.md §2b. A preset decides the run line's tags and which optional blocks a lesson may
+# use. It is optional in the input -- when absent the writer derives it from `runner`, then
+# by inference -- but a misspelled one would fall through to inference silently.
+PRESETS = {"code", "spreadsheet", "visual", "quantitative", "conversational"}
+RUNNER_PRESET = {"python": "code", "sql": "code", "plot": "code", "excel": "spreadsheet"}
+
 
 def _norm(text):
     return re.sub(r"\s+", " ", (text or "")).strip().lower()
@@ -42,6 +48,24 @@ def audit(input_lessons):
             out.append(("WARN", lid, f"description is {len(str(desc).split())} words; "
                                      f"under {MIN_DESCRIPTION_WORDS} gives the writer "
                                      f"little to work from"))
+
+        preset = src.get("preset")
+        if preset is not None and str(preset).lower() not in PRESETS:
+            out.append(("ERROR", lid, f"unknown preset {preset!r} -- one of "
+                                      f"{', '.join(sorted(PRESETS))}"))
+
+    presets = {str(s.get("preset")).lower() for s in input_lessons if s.get("preset")}
+    if len(presets) > 1:
+        out.append(("ERROR", "<chapter>", f"chapter mixes presets ({', '.join(sorted(presets))}) "
+                                          f"-- one preset per chapter, see CORE.md §2b"))
+
+    if not presets:
+        runners = {str(s.get("runner")).lower() for s in input_lessons if s.get("runner")}
+        derived = {RUNNER_PRESET[r] for r in runners if r in RUNNER_PRESET}
+        if len(derived) > 1:
+            out.append(("WARN", "<chapter>", f"runners imply more than one preset "
+                                             f"({', '.join(sorted(derived))}) -- set an "
+                                             f"explicit \"preset\" so the chapter is consistent"))
 
     # No order-inversion check here on purpose. Deciding that lesson 3 should come before
     # lesson 7 needs to know which term is a lesson's *subject* versus a passing mention,

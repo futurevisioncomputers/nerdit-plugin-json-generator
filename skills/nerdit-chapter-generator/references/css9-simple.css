@@ -44,7 +44,7 @@
 
 /* --------------------------------------------------------------------
    1b · SOLUTION PANEL TEXT
-   css8 gives `.nerdit-solution > div` a dark slate background (#1e293b) but
+   css8 gives `.nerdit-solution > div` a dark slate background (#332d27) but
    never sets a text colour, so anything inside inherits the page's dark body
    text — the same value as the background, i.e. invisible. v8 solutions only
    ever held a <pre>, which carries its own light text, so the gap never showed.
@@ -55,7 +55,7 @@
 .nerdit-solution > div > p,
 .nerdit-solution > div > ul,
 .nerdit-solution > div > ol {
-  color: #cbd5e1;
+  color: #d9cbb2;
   font-size: 15px;
   line-height: 1.75;
   margin: .85rem 1.1rem;
@@ -80,7 +80,7 @@
 
 .nerdit-solution > div > p strong,
 .nerdit-solution > div > ul strong,
-.nerdit-solution > div > ol strong { color: #f1f5f9; }
+.nerdit-solution > div > ol strong { color: #faf3e6; }
 
 .nerdit-solution > div > p a { color: #93c5fd; }
 
@@ -135,6 +135,12 @@
 
 /* --------------------------------------------------------------------
    3 · EXAMPLE UNIT  (the W3Schools-style example box)
+
+   NOTE: these v9-era rules are superseded. The authoritative flat
+   treatment for the example unit, the output panel and the 15 label
+   chips lives in the FLATTENING layer further down this file (search
+   "The 15 chip components"). Those selectors carry the same or higher
+   specificity and come later, so they win. Edit there, not here.
    -------------------------------------------------------------------- */
 .nerdit-example {
   background: var(--bg-soft);
@@ -179,6 +185,7 @@
 
 /* --------------------------------------------------------------------
    4 · OUTPUT PANEL  (mandatory after every code block)
+   Superseded by the FLATTENING layer below — see the note in §3.
    -------------------------------------------------------------------- */
 .nerdit-output {
   background: var(--white);
@@ -353,9 +360,9 @@
 /* Inside a dark code block, invert so it reads as part of the code. */
 .nerdit-wrapper pre .nerdit-blank,
 .nerdit-reader pre .nerdit-blank {
-  background: #0f172a;
+  background: #231e1a;
   color: #fbbf24;
-  border-color: #64748b;
+  border-color: #6d6459;
   font-size: 13px;
 }
 
@@ -418,9 +425,9 @@
   font-family: var(--font-code);
   font-size: 13.5px;
   line-height: 1.7;
-  color: #e2e8f0;
-  background: #1e293b;
-  border: 1px solid #334155;
+  color: #e7dcc7;
+  background: #332d27;
+  border: 1px solid #453e36;
   border-radius: var(--r-sm, 8px);
   padding: .8rem 1rem;
   resize: vertical;
@@ -527,7 +534,7 @@
 .nerdit-xl-colhead,
 .nerdit-xl-rowhead,
 .nerdit-xl-corner {
-  background: #e2e8f0;
+  background: #e7dcc7;
   color: var(--tx-s);
   font-weight: 700;
   text-align: center;
@@ -724,4 +731,783 @@
   font-family: var(--font-code);
   font-size: 13px;
   padding: .6rem .9rem;
+}
+
+/* ====================================================================
+   v10 · THE RUN LINE
+   ====================================================================
+   A code sample and its result are one object, not two. They share a
+   single rule down the left gutter which changes colour at the join:
+   clay where you type, leaf where the machine answers.
+
+   This replaces the four nested boxes the example unit used to build
+   (example card > head chip > code > output card > output chip). Four
+   borders around one line of code became one line beside it.
+
+   Colour never carries the meaning alone — each half keeps a word.
+   ==================================================================== */
+
+.nerdit-wrapper .nerdit-runhead {
+  display: block;
+  position: static;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  font-family: var(--font-code);
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1.35;
+  color: var(--tx);
+  margin: 2.2rem 0 .35rem;
+}
+
+.nerdit-wrapper .nerdit-runhead .why {
+  font-family: var(--font-body);
+  font-weight: 600;
+  color: var(--tx-m);
+}
+
+.nerdit-wrapper .nerdit-run {
+  display: flex;
+  flex-direction: column;
+  margin: .9rem 0 .2rem;
+  border-radius: 0 8px 8px 0;
+  overflow: hidden;
+}
+
+.nerdit-wrapper .nerdit-in,
+.nerdit-wrapper .nerdit-out {
+  border-left: 3px solid;
+  padding: .65rem 0 .65rem 1rem;
+}
+
+.nerdit-wrapper .nerdit-in  { border-left-color: var(--orange); background: var(--orange-bg); }
+.nerdit-wrapper .nerdit-out { border-left-color: var(--green);  background: var(--green-bg); }
+
+.nerdit-wrapper .nerdit-tag {
+  display: block;
+  font-size: .625rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  margin-bottom: .2rem;
+}
+
+.nerdit-wrapper .nerdit-in  .nerdit-tag { color: var(--orange-deep); }
+.nerdit-wrapper .nerdit-out .nerdit-tag { color: var(--green); }
+
+/* Code inside a run line sits on the run line's own tint — it does not
+   bring a second box with it. */
+.nerdit-wrapper .nerdit-in pre,
+.nerdit-wrapper .nerdit-out pre {
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  font-family: var(--font-code);
+  font-size: .9375rem;
+  line-height: 1.6;
+  color: var(--tx);
+  overflow-x: auto;
+}
+
+.nerdit-wrapper .nerdit-in pre code,
+.nerdit-wrapper .nerdit-out pre code {
+  background: none;
+  padding: 0;
+  color: var(--tx);
+  font-weight: 500;
+}
+
+/* css8 stamps a language badge on every <pre>. Inside a run line the tag
+   already says which side this is, so the badge is noise. */
+.nerdit-wrapper .nerdit-in pre::before,
+.nerdit-wrapper .nerdit-in pre::after,
+.nerdit-wrapper .nerdit-out pre::before,
+.nerdit-wrapper .nerdit-out pre::after { content: none; display: none; }
+
+.nerdit-wrapper .nerdit-run .nerdit-copy-btn {
+  position: absolute;
+  right: .5rem;
+  top: .4rem;
+}
+
+.nerdit-wrapper .nerdit-in { position: relative; }
+
+@media (max-width: 640px) {
+  .nerdit-wrapper .nerdit-in,
+  .nerdit-wrapper .nerdit-out { padding-left: .7rem; }
+  .nerdit-wrapper .nerdit-runhead { margin-top: 1.8rem; }
+}
+
+/* ====================================================================
+   v10 · FLATTENING THE LEGACY BLOCKS
+   ====================================================================
+   Every lesson already published carries the old markup. Rather than
+   migrate that content, the old class names are restyled onto the same
+   flat system, so old and new lessons read alike from the day this
+   ships. New lessons should emit the run line above instead.
+   ==================================================================== */
+
+/* An example is a run of content, not a container. */
+.nerdit-wrapper .nerdit-example {
+  background: transparent;
+  border: 0;
+  border-left: 3px solid var(--bd-soft);
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0 0 0 1.1rem;
+  margin: 1.8rem 0;
+}
+
+/* The 15 chip components were all doing one job: naming what follows.
+   One heading treatment, no box, no fill. */
+.nerdit-wrapper .nerdit-example-head,
+.nerdit-wrapper .nerdit-output-label,
+.nerdit-wrapper .nerdit-block-label,
+.nerdit-wrapper .nerdit-objective-label,
+.nerdit-wrapper .nerdit-warning-label,
+.nerdit-wrapper .nerdit-memory-label,
+.nerdit-wrapper .nerdit-theory-label,
+.nerdit-wrapper .nerdit-important-label,
+.nerdit-wrapper .nerdit-syntax-label,
+.nerdit-wrapper .nerdit-demo-table-label,
+.nerdit-wrapper .nerdit-recap-title,
+.nerdit-wrapper .nerdit-step-title,
+.nerdit-wrapper .nerdit-runhead-title {
+  display: block;
+  padding: 0;
+  margin: 0 0 .35rem;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  font-size: .6875rem;
+  font-weight: 800;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--tx-m);
+}
+
+.nerdit-wrapper .nerdit-example-lead { margin: 0 0 .6rem; font-weight: 500; color: var(--tx-s); }
+
+/* Output belongs to the code above it: no box, no gap. */
+.nerdit-wrapper .nerdit-output {
+  border: 0;
+  border-left: 3px solid var(--green);
+  border-radius: 0;
+  background: var(--green-bg);
+  box-shadow: none;
+  margin: .35rem 0 0;
+  padding: .6rem .9rem;
+}
+
+.nerdit-wrapper .nerdit-output-label { color: var(--green); }
+
+.nerdit-wrapper .nerdit-example-note {
+  border: 0;
+  background: none;
+  padding: 0;
+  margin: .7rem 0 0;
+  font-size: .9375rem;
+  color: var(--tx-m);
+}
+
+/* Callouts: a coloured edge and a tint. Never four borders. */
+.nerdit-wrapper .nerdit-tip,
+.nerdit-wrapper .nerdit-note,
+.nerdit-wrapper .nerdit-info-box,
+.nerdit-wrapper .nerdit-important,
+.nerdit-wrapper .nerdit-warning-block,
+.nerdit-wrapper .nerdit-memory-aid,
+.nerdit-wrapper .nerdit-theory,
+.nerdit-wrapper .nerdit-definition,
+.nerdit-wrapper .nerdit-objective {
+  border: 0;
+  border-left: 3px solid var(--bd);
+  border-radius: 0 8px 8px 0;
+  box-shadow: none;
+  background-image: none;
+  padding: .85rem 1.1rem;
+  margin: 1.4rem 0;
+}
+
+.nerdit-wrapper .nerdit-tip          { border-left-color: var(--green);  background-color: var(--green-bg); }
+.nerdit-wrapper .nerdit-note,
+.nerdit-wrapper .nerdit-info-box     { border-left-color: var(--blue);   background-color: var(--blue-bg); }
+.nerdit-wrapper .nerdit-important,
+.nerdit-wrapper .nerdit-warning-block{ border-left-color: var(--amber);  background-color: var(--amber-bg); }
+.nerdit-wrapper .nerdit-objective    { border-left-color: var(--green);  background-color: var(--green-bg); }
+.nerdit-wrapper .nerdit-memory-aid,
+.nerdit-wrapper .nerdit-theory,
+.nerdit-wrapper .nerdit-definition   { border-left-color: var(--bd);     background-color: var(--bg-soft); }
+
+/* Elevation means "floats above the page". Nothing in the reading
+   column floats, so nothing in it casts a shadow — except the blocks
+   you can act on, which need to look actionable. */
+.nerdit-wrapper :not(.nerdit-tryit):not(.nerdit-predict):not(.nerdit-fillblank):not(.nerdit-xl) {
+  box-shadow: none;
+}
+
+/* Depth cap: a boxed block inside another boxed block loses its chrome.
+   Two levels of border is the most a reader can parse. */
+.nerdit-wrapper .nerdit-example .nerdit-example,
+.nerdit-wrapper .nerdit-practical .nerdit-example,
+.nerdit-wrapper .nerdit-step .nerdit-example,
+.nerdit-wrapper .nerdit-example .nerdit-output {
+  border-left: 3px solid var(--green);
+  padding-left: .9rem;
+  background: var(--green-bg);
+}
+
+/* ====================================================================
+   v10 · DEPTH CAP — TWO LEVELS, NOT FIVE
+   ====================================================================
+   Before this block a single worked example sat inside five boxes:
+   the outer wrapper, an inner wrapper, the <section> card, the block
+   (syntax / example), and that block's own inner <pre> panel. Each one
+   paid a border, a radius, a background and its own side padding, and
+   on a phone they stacked to about 62px of chrome per side.
+
+   The rule now is: ONE box for the page, ONE box for the thing you are
+   looking at. Sections are made of headings and whitespace, not cards.
+   ==================================================================== */
+
+/* 1 · A section is not a card. Whitespace and its heading separate it. */
+.nerdit-wrapper section,
+.nerdit-reader section {
+  border-left: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  padding: 0;
+  margin: 0 0 2.4rem;
+}
+
+@media (min-width: 768px) {
+  .nerdit-wrapper section,
+  .nerdit-reader section { padding: 0; margin-bottom: 2.8rem; }
+}
+
+/* 2 · A heading is type, not a filled band. */
+.nerdit-wrapper h2,
+.nerdit-reader h2 {
+  padding: 0 0 .5rem;
+  background: none;
+  border-left: 0;
+  border-radius: 0;
+  border-bottom: 1px solid var(--bd-soft);
+  margin: 2.4rem 0 1rem;
+}
+
+.nerdit-wrapper h3,
+.nerdit-reader h3 { background: none; border: 0; padding: 0; }
+
+/* 3 · When the app nests a wrapper inside a wrapper, only the outer one
+      is a surface. The inner is a transparent pass-through. */
+.nerdit-wrapper .nerdit-wrapper {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+  max-width: none;
+}
+
+/* 4 · Blocks get one edge, never a four-sided box. */
+.nerdit-wrapper .nerdit-syntax {
+  background: var(--bg-soft);
+  border: 0;
+  border-left: 3px solid var(--nb);
+  border-radius: 0 8px 8px 0;
+  box-shadow: none;
+  padding: .75rem 1rem;
+}
+
+/* 5 · A block's inner <pre> is not a second box. The block already is
+      the box; the code just sits in it. Dark code blocks are the one
+      exception — the dark ground is what makes code read as code. */
+.nerdit-wrapper .nerdit-syntax pre,
+.nerdit-wrapper .nerdit-output pre,
+.nerdit-wrapper .nerdit-out pre,
+.nerdit-wrapper .nerdit-predict-answer pre {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+}
+
+.nerdit-wrapper .nerdit-syntax pre::before,
+.nerdit-wrapper .nerdit-syntax pre::after,
+.nerdit-wrapper .nerdit-output pre::before,
+.nerdit-wrapper .nerdit-output pre::after { content: none; display: none; }
+
+/* 6 · Phone: with the boxes gone there is nothing left to trim. */
+@media (max-width: 640px) {
+  .nerdit-wrapper section,
+  .nerdit-reader section { padding: 0; margin-bottom: 2rem; }
+  .nerdit-wrapper .nerdit-syntax { padding: .7rem .8rem; }
+}
+
+/* The output block used to grow its own "📤 Expected Output" heading from
+   CSS, on top of the "Output" label the markup already provides — two
+   labels for one thing. The markup's label wins. */
+.nerdit-wrapper .nerdit-output::before,
+.nerdit-wrapper .nerdit-output::after { content: none; display: none; }
+
+/* The "Output" label sits right on the result. It needs no bullet. */
+.nerdit-wrapper .nerdit-output-label::before,
+.nerdit-wrapper .nerdit-output-label::after { content: none; }
+
+/* Last level to go: the example's own rule. Its "Example 1" heading and
+   the space above it already separate it, and keeping the rule put a
+   third edge around the output nested inside. Page surface, then the
+   block you are reading. Two. */
+.nerdit-wrapper .nerdit-example {
+  border-left: 0;
+  padding-left: 0;
+}
+
+/* ====================================================================
+   v10 · PRACTICE TASKS
+   ====================================================================
+   The closing practice section stacked six boxes around one formula:
+   the practical card, the task card, its "🎯 Task" chip, the solution's
+   bordered shell, a dark summary bar, and a dark panel wrapping the
+   light output block inside it.
+
+   A practice task is a question and an answer you can reveal. That
+   needs prose, a toggle, and the same code + output pair used
+   everywhere else in the lesson — no containers of its own.
+   ==================================================================== */
+
+/* The practice group is a list of questions, not a card. */
+.nerdit-wrapper .nerdit-practical {
+  border: 0;
+  border-left: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  padding: 0;
+  margin: 1.6rem 0 0;
+}
+
+/* Each task is its own question: a rule to group it, and nothing else.
+   The markup already opens with "Task 1:", so the CSS chip that said
+   "🎯 TASK" above it was labelling the label. */
+.nerdit-wrapper .nerdit-task {
+  background: none;
+  border: 0;
+  border-left: 2px solid var(--bd-soft);
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0 0 0 1rem;
+  margin: 1.6rem 0;
+  font-size: 1rem;
+  color: var(--tx-s);
+}
+
+.nerdit-wrapper .nerdit-task::before { content: none; display: none; }
+
+/* "Show solution" is a link, not a toolbar. */
+.nerdit-wrapper .nerdit-solution {
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+  margin-top: .7rem;
+}
+
+.nerdit-wrapper .nerdit-solution summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: .3rem 0;
+  min-height: 0;
+  background: none;
+  border: 0;
+  color: var(--orange);
+  font-size: .875rem;
+  font-weight: 700;
+}
+
+.nerdit-wrapper .nerdit-solution summary:hover,
+.nerdit-wrapper .nerdit-solution summary:active {
+  background: none;
+  text-decoration: underline;
+}
+
+.nerdit-wrapper .nerdit-solution summary::before { font-size: 8px; }
+
+/* The revealed answer is a plain code + output pair — the dark panel
+   that used to wrap it was a box around a box. */
+.nerdit-wrapper .nerdit-solution > div {
+  background: none;
+  padding: .4rem 0 0;
+}
+
+.nerdit-wrapper .nerdit-solution > div pre,
+.nerdit-wrapper .nerdit-solution > pre {
+  margin: 0;
+  border-radius: 8px;
+}
+
+.nerdit-wrapper .nerdit-solution .nerdit-output {
+  margin-top: .35rem;
+  border-radius: 0 8px 8px 0;
+}
+
+/* The output keeps its green rule wherever it appears — inside a task's
+   revealed solution as much as under a worked example. */
+.nerdit-wrapper .nerdit-task .nerdit-output,
+.nerdit-wrapper .nerdit-solution .nerdit-output {
+  border-left: 3px solid var(--green);
+  background: var(--green-bg);
+  padding: .6rem .9rem;
+}
+
+/* The recap was the last full card on the page — a navy gradient panel
+   with a heavy shadow, closing a lesson that has no other cards left.
+   It says "here is what you learned", which is a heading's job. */
+.nerdit-wrapper .nerdit-recap {
+  background: none;
+  color: var(--tx);
+  border-left: 3px solid var(--nb);
+  border-radius: 0 8px 8px 0;
+  box-shadow: none;
+  padding: .9rem 1.1rem;
+  margin: 2.4rem 0 1.2rem;
+}
+
+@media (min-width: 768px) {
+  .nerdit-wrapper .nerdit-recap { border-radius: 0 8px 8px 0; padding: 1rem 1.3rem; }
+}
+
+.nerdit-wrapper .nerdit-recap-title { color: var(--nb); }
+.nerdit-wrapper .nerdit-recap li,
+.nerdit-wrapper .nerdit-recap p { color: var(--tx-s); }
+
+/* Interactive blocks are the one place a card survives — you need to see
+   where you can act. That card is the second level, so the output inside
+   it drops its own rule rather than making a third. */
+.nerdit-wrapper .nerdit-predict .nerdit-output,
+.nerdit-wrapper .nerdit-fillblank .nerdit-output,
+.nerdit-wrapper .nerdit-tryit .nerdit-output {
+  border-left: 0;
+  padding-left: 0;
+  background: none;
+}
+
+/* The task's own hairline was the third edge on the page, sitting outside
+   the output rule inside it. "Task 2:" and the space above it separate
+   one question from the next perfectly well, so the hairline goes and the
+   count settles at two: the page, then the block you are reading. */
+.nerdit-wrapper .nerdit-task {
+  border-left: 0;
+  padding-left: 0;
+  margin: 2rem 0;
+}
+
+/* ====================================================================
+   v10 · THE TWO TICK LISTS
+   ====================================================================
+   A lesson opens with "What you will learn" and closes with "What you
+   learned". They are not the same thing — the first is a contents list
+   ("Sort and filter rows"), the second is the takeaway worth keeping
+   ("Sorting reorders rows; filtering hides rows") — but they were drawn
+   as the same object, so the lesson began and ended with what looked
+   like one repeated panel.
+
+   The contents list gets the lighter treatment, because it is the less
+   valuable of the two. The recap keeps the accent, because it is the
+   part a learner comes back to.
+   ==================================================================== */
+
+.nerdit-wrapper .nerdit-objective {
+  background: none;
+  border-left: 2px solid var(--bd);
+  padding: .2rem 0 .2rem 1rem;
+  margin: 1.2rem 0 1.6rem;
+}
+
+.nerdit-wrapper .nerdit-objective-label { color: var(--tx-m); }
+
+.nerdit-wrapper .nerdit-objective ul li,
+.nerdit-wrapper .nerdit-recap ul li {
+  padding: 1px 0;
+  line-height: 1.55;
+  font-size: .9375rem;
+}
+
+.nerdit-wrapper .nerdit-objective ul li::before { color: var(--tx-faint, var(--bd)); font-weight: 700; }
+.nerdit-wrapper .nerdit-recap ul li::before { color: var(--green); }
+
+/* ====================================================================
+   v10 · CODE BLOCK PADDING
+   ====================================================================
+   A code block reserved 2.6rem of top padding — about 42px — as an empty
+   strip for a 9px language badge and a Copy button pinned above the
+   code. On a one-line formula that is three times more empty space than
+   text, and it was the tallest thing on the page.
+
+   The badge goes: the surrounding prose already says whether this is a
+   formula, a shell command or Python, and the run line's tag says it
+   again. The Copy button moves to the right edge where it floats over
+   the code the way every code viewer does it, so the block only pays
+   for the code it holds.
+   ==================================================================== */
+
+.nerdit-wrapper pre,
+.nerdit-reader pre {
+  padding: .85rem 1rem;
+  box-shadow: none;
+}
+
+@media (min-width: 480px) {
+  .nerdit-wrapper pre,
+  .nerdit-reader pre { padding: .9rem 1.1rem; }
+}
+
+/* Blocks that carry a Copy button keep just enough right margin for it. */
+.nerdit-wrapper pre:has(> .nerdit-copy-btn),
+.nerdit-reader pre:has(> .nerdit-copy-btn) { padding-right: 4.5rem; }
+
+.nerdit-wrapper pre::before,
+.nerdit-reader pre::before { content: none; display: none; }
+
+.nerdit-wrapper .nerdit-copy-btn,
+.nerdit-reader .nerdit-copy-btn {
+  top: 50%;
+  left: auto;
+  right: 8px;
+  transform: translateY(-50%);
+  min-height: 24px;
+}
+
+/* ====================================================================
+   v10 · CALLOUT ICONS
+   ====================================================================
+   css8 hangs each callout's emoji off the block with position:absolute
+   and pays for it with a wide left padding. Flattening the callouts to a
+   left rule took that padding away, so the icon landed on top of its own
+   label — "🚫ARNING — SORTING ONLY PART OF A TABLE".
+
+   The icon joins the text flow instead. It sits beside the label with a
+   real gap, so no padding has to be reserved and nothing can collide.
+   ==================================================================== */
+
+.nerdit-wrapper .nerdit-concept::before,
+.nerdit-wrapper .nerdit-important::before,
+.nerdit-wrapper .nerdit-warning-block::before,
+.nerdit-wrapper .nerdit-memory-aid::before {
+  position: static;
+  float: left;
+  margin: 0 .45rem 0 0;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+/* The label sits on the same line as the icon rather than under it. */
+.nerdit-wrapper .nerdit-warning-label,
+.nerdit-wrapper .nerdit-important-label,
+.nerdit-wrapper .nerdit-memory-label,
+.nerdit-wrapper .nerdit-concept-title { overflow: hidden; }
+
+/* Callout text clears the floated icon. */
+.nerdit-wrapper .nerdit-warning-block p,
+.nerdit-wrapper .nerdit-important p,
+.nerdit-wrapper .nerdit-memory-aid p,
+.nerdit-wrapper .nerdit-concept p { clear: left; }
+
+/* ====================================================================
+   v10 · CHARTS AND FIGURES
+   ====================================================================
+   A chart is media: a figure and its caption, one hairline at most. The
+   chart wrapper used to be a full card — border, large radius, shadow —
+   and the matplotlib runner drew its result into a second bordered card
+   inside the Try It block, which is already a card. That is three edges
+   around one picture.
+   ==================================================================== */
+
+.nerdit-wrapper .nerdit-chart-wrap {
+  border: 1px solid var(--bd-soft);
+  border-radius: 8px;
+  box-shadow: none;
+  padding: .9rem;
+}
+
+/* The Try It block is the card. Its plot result is just the picture. */
+.nerdit-wrapper .nerdit-tryit .nerdit-plot-figure,
+.nerdit-wrapper .nerdit-tryit-result .nerdit-plot-figure {
+  border: 0;
+  border-radius: 0;
+  background: none;
+  padding: 0;
+}
+
+/* A chart delivered as the answer to code sits in the output half of the
+   run line, like any other result — the picture is what the machine
+   showed you. */
+.nerdit-wrapper .nerdit-out img,
+.nerdit-wrapper .nerdit-output img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  margin-top: .15rem;
+}
+
+.nerdit-wrapper .nerdit-plot-caption { color: var(--green); }
+
+/* ====================================================================
+   v10 · THE MAPPING BLOCK
+   ====================================================================
+   The reference course explains with mappings more than with sentences:
+   152 of them against 107 code blocks. The shape is always the same —
+   a thing on the left, an arrow, what it becomes on the right:
+
+       Dictionary Keys   → Column Names
+       Dictionary Values → Data inside the columns
+       pd.DataFrame()    → Creates the complete table
+
+   For a beginner reading English as a second language this beats a
+   paragraph: it is scannable, symmetrical, and the arrow carries the
+   verb. It renders as text, so it costs nothing and scales anywhere.
+   ==================================================================== */
+
+.nerdit-wrapper .nerdit-map {
+  background: var(--bg-soft);
+  border: 0;
+  border-left: 3px solid var(--bd);
+  border-radius: 0 8px 8px 0;
+  box-shadow: none;
+  margin: 1.1rem 0;
+  padding: .8rem 1rem;
+  font-family: var(--font-code);
+  font-size: .9375rem;
+  line-height: 1.9;
+  color: var(--tx);
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.nerdit-wrapper .nerdit-map::before,
+.nerdit-wrapper .nerdit-map::after { content: none; display: none; }
+
+/* The arrow is the verb, so it carries the accent. */
+.nerdit-wrapper .nerdit-map b,
+.nerdit-wrapper .nerdit-map .to {
+  color: var(--orange);
+  font-weight: 500;
+}
+
+/* An anatomy diagram is the same block doing a spatial job — the arrows
+   point at parts of a printed structure instead of across a pair. */
+.nerdit-wrapper .nerdit-map.anatomy {
+  border-left-color: var(--nb);
+  line-height: 1.65;
+}
+
+.nerdit-wrapper .nerdit-map-label {
+  display: block;
+  font-family: var(--font-body);
+  font-size: .6875rem;
+  font-weight: 800;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--tx-m);
+  margin-bottom: .35rem;
+}
+
+/* ====================================================================
+   v10 · THE RUN LINE FOR NON-CODE COURSES
+   ====================================================================
+   The run line is "what you do → what you get". Code is only the most
+   common case of that. A design lesson does something in a tool and
+   shows the frame; a business lesson applies a formula and shows the
+   number; a marketing lesson writes a line and shows how the ad reads.
+
+   So both halves accept prose, a numbered list of steps, a table or an
+   image — not only <pre>. The mono face is applied to code, not to the
+   block, so text halves read as text.
+   ==================================================================== */
+
+.nerdit-wrapper .nerdit-in > p,
+.nerdit-wrapper .nerdit-out > p {
+  margin: 0;
+  font-size: .9375rem;
+  line-height: 1.65;
+  color: var(--tx);
+}
+
+.nerdit-wrapper .nerdit-in > ol,
+.nerdit-wrapper .nerdit-in > ul,
+.nerdit-wrapper .nerdit-out > ol,
+.nerdit-wrapper .nerdit-out > ul {
+  margin: 0;
+  padding-left: 1.15rem;
+  font-size: .9375rem;
+  line-height: 1.7;
+  color: var(--tx);
+}
+
+.nerdit-wrapper .nerdit-in > ol > li + li,
+.nerdit-wrapper .nerdit-out > ol > li + li { margin-top: .2rem; }
+
+/* A result that is one figure — a price, a ratio, a score — is the whole
+   point of a business or marketing example, so let it be read at a
+   glance instead of buried in a sentence. */
+.nerdit-wrapper .nerdit-out > .nerdit-answer {
+  font-family: var(--font-code);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--tx);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+}
+
+.nerdit-wrapper .nerdit-out > .nerdit-answer small {
+  display: block;
+  font-family: var(--font-body);
+  font-size: .8125rem;
+  font-weight: 600;
+  color: var(--tx-m);
+  margin-top: .15rem;
+}
+
+/* Tables inside a run line scroll on their own rather than pushing the
+   page sideways. */
+.nerdit-wrapper .nerdit-in > table,
+.nerdit-wrapper .nerdit-out > table { margin: 0; }
+
+.nerdit-wrapper .nerdit-in,
+.nerdit-wrapper .nerdit-out { overflow-x: auto; }
+
+/* A run-line half is a light surface wherever it appears — inside a run line,
+   inside a revealed solution, inside a predict answer. Its text takes the page
+   ink, never the dark code block's light-on-dark colour. */
+.nerdit-wrapper .nerdit-in,
+.nerdit-wrapper .nerdit-out,
+.nerdit-wrapper .nerdit-in *,
+.nerdit-wrapper .nerdit-out * { color: var(--tx); }
+
+.nerdit-wrapper .nerdit-in > .nerdit-tag { color: var(--orange-deep); }
+.nerdit-wrapper .nerdit-out > .nerdit-tag { color: var(--green); }
+.nerdit-wrapper .nerdit-out > .nerdit-answer small { color: var(--tx-m); }
+
+/* A standalone half still needs its tint and edge — those only came from the
+   run-line rules before. */
+.nerdit-wrapper .nerdit-solution > .nerdit-out,
+.nerdit-wrapper .nerdit-predict-answer > .nerdit-out {
+  border-left: 3px solid var(--green);
+  background: var(--green-bg);
+  border-radius: 0 8px 8px 0;
+  padding: .6rem .9rem;
+  margin: .4rem 0 .6rem;
 }
