@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import json
 import os
 import sys
 
@@ -33,11 +34,17 @@ TRACKED = [
     "agents/nerdit-qa-validator.md",
 ]
 
-# The marketplace directory, not a specific plugin: the plugin's own directory name
-# is its plugin.json `name`, which changed at 3.0.0 (nerdit_try_plugin ->
-# nerdit_content_creator). Hardcoding either one breaks across that rename, so the
-# plugin directory is discovered rather than assumed.
-DEFAULT_CACHE_ROOT = os.path.expanduser("~/.claude/plugins/cache/nerdit-plugin")
+# The whole plugin cache. Its layout is
+#     <cache>/<marketplace>/<plugin name>/<version>/
+# and NONE of those three segments is stable: the plugin was renamed at 3.0.0
+# (nerdit_try_plugin -> nerdit_content_creator), and moving it to a shared catalog
+# moved it from cache/nerdit-plugin/ to cache/fv-analysis-marketplace/. Assuming any
+# of them means the check silently inspects the wrong install - which it did, on the
+# very run that installed 3.0.0. So the tree is searched and the manifest is read.
+DEFAULT_CACHE_ROOT = os.path.expanduser("~/.claude/plugins/cache")
+
+# Matched against plugin.json `name`, so a rename inside the family still resolves.
+PLUGIN_NAME_HINT = "nerdit"
 
 
 def _version_key(v: str):
@@ -45,25 +52,34 @@ def _version_key(v: str):
 
 
 def newest_installed(cache_root: str) -> str | None:
-    """Newest version directory of whichever nerdit plugin is installed.
+    """Newest installed version of the nerdit generator, wherever it is cached.
 
-    Layout is <cache_root>/<plugin name>/<version>/. Both levels are scanned so a
-    rename does not strand the check, and the most recent version across all
-    installed names wins.
+    Walks <cache>/<marketplace>/<plugin>/<version>/ and keeps any directory whose
+    plugin.json names a nerdit plugin. The highest version wins.
     """
     if not os.path.isdir(cache_root):
         return None
 
     candidates: list[tuple[list[int], str]] = []
-    for plugin_dir in os.listdir(cache_root):
-        full = os.path.join(cache_root, plugin_dir)
-        if not os.path.isdir(full):
+    for marketplace in os.listdir(cache_root):
+        mpath = os.path.join(cache_root, marketplace)
+        if not os.path.isdir(mpath):
             continue
-        for version in os.listdir(full):
-            vpath = os.path.join(full, version)
-            # A real install has the manifest; skip stray directories.
-            if os.path.isfile(os.path.join(vpath, ".claude-plugin", "plugin.json")):
-                candidates.append((_version_key(version), vpath))
+        for plugin in os.listdir(mpath):
+            ppath = os.path.join(mpath, plugin)
+            if not os.path.isdir(ppath):
+                continue
+            for version in os.listdir(ppath):
+                vpath = os.path.join(ppath, version)
+                manifest = os.path.join(vpath, ".claude-plugin", "plugin.json")
+                if not os.path.isfile(manifest):
+                    continue
+                try:
+                    name = json.load(open(manifest, encoding="utf-8")).get("name", "")
+                except (OSError, ValueError):
+                    continue
+                if PLUGIN_NAME_HINT in name.lower():
+                    candidates.append((_version_key(version), vpath))
 
     if not candidates:
         return None
