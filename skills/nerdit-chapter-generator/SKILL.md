@@ -66,9 +66,14 @@ multi-lesson chapters.
 4. Run `scripts/check_sequence.py --strict` (Step 4b) — deterministic, zero tokens. Exit 2
    means a lesson reaches for a construct a later lesson owns: regenerate that lesson with
    the violation lines, re-assemble, re-check, and do not proceed until it exits 0.
-5. Spawn `nerdit-qa-validator` once against the assembled output file (Step 5). On any `FAIL`,
-   re-run the broken lesson's `nerdit-lesson-writer` (it regenerates all three files),
-   re-assemble, re-validate. Then deliver (Step 6).
+5. Run `scripts/verify_course.py --contract v10` (Step 4c) — deterministic, zero tokens, and
+   the gate that keeps the model from regenerating good lessons. Fix everything it reports
+   before spawning QA; it is authoritative on every check it makes.
+6. Spawn `nerdit-qa-validator` once against the assembled output file (Step 5) for the
+   judgment-only checks the scripts cannot make. On a `FAIL` that is genuinely the agent's to
+   own, re-run that lesson's `nerdit-lesson-writer` with the exact lines, re-assemble,
+   re-verify. **At most 2 regeneration attempts per lesson** (Step 4c) — then stop and report.
+   Then deliver (Step 6).
 
 If the chapter has exactly one lesson, the parallelism in step 2 is moot but the same
 delegation still applies — do not write lesson content directly in the orchestrator.
@@ -341,51 +346,87 @@ in Step 5. It costs zero model tokens — always run it.
 
 ---
 
-## Step 5 — Validate the Assembled File (delegated)
+## Step 4c — Verify Deterministically (script, blocking, zero tokens)
 
-Spawn `nerdit-qa-validator` against the script-assembled `<workdir>/course-<chaptername>_output.json`
-from Step 4 — do not eyeball the checklist yourself first. Always pass it the input JSON
-path as well: it needs the lesson order for the concept-sequencing check. Pass the
-`<workdir>` too, so it can check each lesson's `<id>.concepts.json` against the lesson. It reports
-`FAIL` lines, read-only. If it
-reports failures, fix the specific lesson(s) by re-running that lesson's `nerdit-lesson-writer`
-(Step 2) — it regenerates both the HTML and the questions — then re-run the assembler (Step 4)
-and spawn `nerdit-qa-validator` again before moving to Step 6. The checklist it enforces:
+Run the course verifier on the assembled file **before** spawning the QA agent:
 
-- [ ] Output is a single course object, not an array
-- [ ] Every fixed-default course-level field matches the exact literals (see the `nerdit-qa-validator` course-level list)
-- [ ] `id` follows `course-<chaptername>-<epoch-ms>`
-- [ ] `createdAt` and `updatedAt` are valid ISO 8601, equal to each other, and consistent with the `id` suffix
-- [ ] `lessons.length` == input array length, one object per input lesson, none dropped/added
-- [ ] Each lesson's `id` and `title` copied exactly from input (no edits, no trimming) and it has **no** `description` field
-- [ ] Each lesson's `content` is non-empty and starts with `<div class="nerdit-wrapper"`
-- [ ] `content` does not contain markdown fences, extra commentary, or forbidden elements
-- [ ] **(simple/v9)** Wrapper carries the `nerdit-simple` class
-- [ ] **(simple/v9)** 3–5 numbered `<h2>` concept sections, each teaching exactly one concept
-- [ ] **(simple/v9)** Every `<pre>` code block is followed by a `nerdit-output` block (exceptions: `nerdit-syntax` boxes, `nerdit-terminal`, code inside `nerdit-compare`, tabbed variants sharing one output)
-- [ ] **(simple/v9)** Every concept section ends with a Try It block (`nerdit-predict`, `nerdit-fillblank`, or `nerdit-tryit`)
-- [ ] **Sequencing:** no lesson's code (examples, Try It, practice, quiz options) uses a construct owned by a later lesson in the input order — e.g. loops before the loops lesson, `LLMChain` before the chains lesson
-- [ ] **(simple/v9)** At most ONE callout per concept section; closing section has exactly one `nerdit-cheatsheet`, one `nerdit-recap` (≤5 bullets), and 2–3 `nerdit-practical` tasks
-- [ ] **(simple/v9)** NO banned components: stat-grid, donut, gauge, ring-grid, funnel, metric-compare, dashboard, cards-grid, card-grid, hbar-chart, bar-chart, callout bands, memory-aid, step-block, datatable-wrap
-- [ ] **(simple/v9)** Language spot-check on 2 random paragraphs: sentences ≤ ~15 words, ≤3 sentences per paragraph, second person, no undefined jargon
-- [ ] **(simple/v9)** Any SVG sits in `nerdit-figure`/`nerdit-flow-wrap` and teaches structure/flow/overlap — no decorative art; at most one live runner per lesson, with its seed/grid block id matching the widget's `data-seed`/`data-grid`
-- [ ] **(simple/v9, Excel)** Every documented formula output was verified against `nerdit-excel-engine.js` — a worked example claiming `301300` must actually evaluate to `301300`
-- [ ] **(simple/v9, data-viz)** Every documented chart description was verified by running the code — describe what actually renders, never a guess. Charts the learner's code produces are outputs and are always allowed; the decoration ban in §7 still applies to the page itself
-- [ ] Component markup matches `CORE.md` and the lesson's runner fragment exactly (correct nesting, label divs, variant classes)
-- [ ] All `id` attributes within each `content` block are unique within that lesson
-- [ ] Each lesson's `duration` is present and follows the `"NNm"` format
-- [ ] Each lesson's `questions` array has exactly 3 objects, ids matching `lesson-<QID_SESSION_TS>-<lesson.id>-qN-<QID_BATCH_TS>`
-- [ ] `assessment.questions.length` == `3 × lessons.length`, containing exactly 3 questions per lesson id, ids matching `assessment-<QID_SESSION_TS>-<lesson.id>-qN-<QID_BATCH_TS>`
-- [ ] Every question object has `id`, `correctOptionIndex`, `options` (4 items), and `text`
-- [ ] `correctOptionIndex` is a valid zero-based integer (0–3)
-- [ ] `QID_SESSION_TS` and `QID_BATCH_TS` are each the *same* value across every question id in the entire file
-- [ ] A lesson's `assessmentQuestions` are not verbatim restatements of its `lessonQuestions`
-- [ ] `assessment.passingScore` == 70 and `assessment.examQuestionCount` == 20
-- [ ] `lessonIds` length == `lessons.length`, values equal each lesson's `id` in the same order
-- [ ] The output JSON is syntactically valid (no trailing commas, no unescaped special characters)
-- [ ] No extra or missing top-level fields; no extra or missing lesson-level fields
+    python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/verify_course.py"       --input    <path to the input JSON>       --output   <workdir>/course-<chaptername>_output.json       --contract v10
 
-If any check fails, fix the issue before producing the output file.
+Exit 0 = every mechanical check passed. Exit 1 = at least one failed, one line each.
+
+**This step exists to stop needless regeneration.** Roughly three quarters of the Step 5
+checklist is decidable by reading the JSON or walking the DOM — field literals, id formats,
+counts, timestamps, banned and retired components, `<pre>`/output pairing, a Try It per
+section, unique element ids, cheatsheet markup, figures, the SVG contract, hex colours. A
+script decides those in milliseconds and is never wrong about them. A model asked to eyeball
+the same list produces confident false failures — on 2026-09-05 it invented an `assets` rule
+this plugin's own reference output contradicts, and called correct cheatsheet markup broken.
+Every one of those false failures used to trigger a full lesson regeneration.
+
+So: fix what this reports first, and only then spawn QA. The agent then sees a file that
+already clears the mechanical bar, and has far less surface on which to be wrong.
+
+**The script is authoritative on everything it checks.** If Step 5's agent reports a failure
+on an item listed in this script's output contract, the agent is wrong — do not regenerate.
+Say so in one line and move on.
+
+### Regeneration budget (applies to 4b, 4c and 5)
+
+Re-running a `nerdit-lesson-writer` regenerates **all three** of that lesson's files, so a
+single wrong question id rewrites content that was fine. Keep it bounded:
+
+- **At most 2 regeneration attempts per lesson per run.** Count them.
+- Pass the exact failure lines into the retry, never a paraphrase — a writer told "fix the
+  quiz" rewrites the lesson; one told `qid does not match lesson-<SESSION>-<id>-qN-<BATCH>`
+  fixes the ids.
+- On a third failure for the same lesson, **stop**. Report the lesson, the failing lines, and
+  what was tried. A writer that has missed the same check twice will miss it a third time,
+  and the user would rather see the defect than pay for another round.
+- Never regenerate a lesson that is not itself named in a failure line. A course-level
+  failure (a bad count, a timestamp mismatch) is the assembler's business, not a writer's —
+  re-run Step 4, not Step 2.
+
+### Re-running this skill on an existing workdir
+
+If `<workdir>/<id>.html`, `<id>.quiz.json` and `<id>.concepts.json` all already exist for a
+lesson, **do not spawn a writer for it.** Re-assemble (Step 4) and re-run 4b/4c: a lesson
+that passes needs nothing, and a lesson that fails will be named. Regenerating a chapter's
+worth of passing lessons to fix one is the single most expensive mistake this pipeline can
+make. Say which lessons were reused and which were written fresh.
+
+---
+
+## Step 5 — Validate What Only Judgment Can Check (delegated)
+
+Step 4c has already decided everything mechanical. Spawn `nerdit-qa-validator` against the
+assembled `<workdir>/course-<chaptername>_output.json` for the rest — the checks that need a
+reader, not a parser. Always pass the input JSON path (it needs lesson order) and the
+`<workdir>` (for each lesson's `<id>.concepts.json`).
+
+What the agent owns, and nothing else:
+
+- [ ] Each numbered `<h2>` section teaches **exactly one** concept — not two smuggled into one
+- [ ] Language: sentences ≤ ~15 words, ≤3 per paragraph, second person, no undefined jargon
+- [ ] **Conceptual** sequencing leaks that `check_sequence.py` cannot name mechanically — an
+      idea used before the lesson that explains it, where no shared term gives it away
+- [ ] The preset is respected and consistent across the chapter (CORE.md §2b)
+- [ ] **(Excel)** Every documented formula output actually evaluates to the stated value
+      against `nerdit-excel-engine.js` — a worked example claiming `301300` must produce it
+- [ ] **(data-viz)** Every documented chart description matches what the code really renders
+- [ ] Each figure teaches the thing its caption claims, and the caption is true of the picture
+- [ ] Quiz questions are answerable from the lesson, and a lesson's `assessmentQuestions` test
+      the same material as its `lessonQuestions` without restating them verbatim
+- [ ] The concept manifest's `teaches`/`uses` honestly describe the lesson
+
+**Do not re-check anything in Step 4c's contract.** Field literals, id formats, counts,
+timestamps, banned/retired components, `<pre>`/output pairing, Try It presence, unique ids,
+cheatsheet markup, figure wrappers, the SVG contract, hex colours — the script has already
+decided those and is authoritative. A `FAIL` from this agent on one of them is a false
+positive: note it in one line, do not regenerate.
+
+On a genuine failure, re-run that lesson's `nerdit-lesson-writer` with the exact reported
+lines, re-assemble (Step 4), and re-run 4b and 4c before validating again. Respect the
+2-attempt budget in Step 4c. Then deliver (Step 6).
 
 ---
 
