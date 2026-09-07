@@ -516,14 +516,35 @@ Every answer goes inside a `<details>` on the same page.
 
 Ask: **"What does this picture teach?"** No answer → no picture.
 
+**Every lesson ships at least one figure.** A learner scrolling a wall of prose and code
+has nothing to anchor a concept to, and the decision table below is wide enough that
+almost every concept has an honest answer in it. This is a floor, not a quota: the bar
+each figure must clear is unchanged, and the banned list below is unchanged. A lesson that
+genuinely cannot earn one is allowed to ship none — but that is a rare outcome to justify,
+not a default to fall back on.
+
+Read this table top to bottom and stop at the first row that matches. **`figures.md`
+carries the exact SVG for each — copy the template, swap the labels.** Do not improvise an
+SVG when a template fits; eight hand-drawn diagrams read as eight different hands.
+
 | Content shape | Visual to use | Example |
 |---|---|---|
-| Two sets overlapping | small inline SVG Venn | INNER vs LEFT JOIN |
-| Sequence / pipeline | `nerdit-flow-wrap` SVG flowchart (v8 markup) | query travels app → server → DB |
-| Syntax anatomy | labeled SVG: statement text + arrows + labels | parts of a SELECT statement |
-| Hierarchy / nesting | simple SVG tree | folder tree, DOM, scope chain |
-| Real measured numbers, comparison teaches something | `nerdit-chart-wrap` + Chart.js bar (v8 markup) | indexed vs full-scan query time |
-| Plain concept with no structure or numbers | **no visual** | most concepts |
+| Sequence / pipeline | `figures.md` §1 — flow, `nerdit-flow-*` classes | query travels app → server → DB |
+| Two sets overlapping | `figures.md` §2 — Venn | INNER vs LEFT JOIN |
+| **Two options a learner picks between** | `figures.md` §3 — comparison, same criteria both sides | list vs tuple, `.loc` vs `.iloc` |
+| **One operation changing data** | `figures.md` §4 — before / after | `drop_duplicates()`, a filter, a pivot |
+| **A rule for choosing** | `figures.md` §5 — decision, one question two outcomes | which join to reach for |
+| Syntax anatomy — parts of one artifact | `figures.md` §6 — labelled anatomy, ≤4 labels | parts of a SELECT, a VLOOKUP's arguments |
+| **Containers inside containers, ≤3 deep** | `figures.md` §7 — part / whole | workbook → sheet → cell |
+| Hierarchy / nesting, >3 deep | `figures.md` §8 — tree | folder tree, DOM, scope chain |
+| Real measured numbers, comparison teaches something | `figures.md` §9 — Chart.js (v8 `nerdit-chart-wrap`) | indexed vs full-scan query time |
+| Nothing above matches, after honestly trying | **no visual** — prose is the answer | a naming convention, a history note |
+
+> **The caption-first test.** Before drawing anything, write the one sentence the figure
+> must teach. If that sentence comes easily, the figure is worth drawing and you have its
+> caption. If it will not come, you do not yet understand the concept well enough to draw
+> it — and a decorative picture is worse than none. An empty figure slot beats a filled
+> one that teaches nothing.
 
 Inline SVG rules: `viewBox` set, `width:100%; max-width` via the `nerdit-figure` wrapper,
 `role="img"` + `aria-label`, and css8 flow classes (`nerdit-flow-rect`, `nerdit-flow-text`,

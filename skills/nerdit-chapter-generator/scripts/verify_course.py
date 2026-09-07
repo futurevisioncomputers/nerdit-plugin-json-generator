@@ -62,16 +62,25 @@ RETIRED_V10 = [
 ]
 
 TRY_IT = {"nerdit-predict", "nerdit-fillblank", "nerdit-tryit"}
+
+# A colour literal in fill=/stroke=/stop-color=, i.e. inside a diagram. Restricted to
+# those attributes so a hex inside prose text (a lesson ABOUT hex codes) is not flagged.
+HEX_IN_SVG = re.compile(
+    r'(?:fill|stroke|stop-color|flood-color|lighting-color)\s*=\s*.#[0-9a-fA-F]{3,8}.'
+)
 DEPTH_CAP = 2
 VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input",
         "link", "meta", "source", "track", "wbr"}
 
 
 class Node:
-    __slots__ = ("tag", "classes", "el_id", "parent", "children")
+    __slots__ = ("tag", "classes", "el_id", "parent", "children", "attrs")
 
-    def __init__(self, tag: str, classes, el_id, parent):
+    def __init__(self, tag: str, classes, el_id, parent, attrs=None):
         self.tag, self.classes, self.el_id, self.parent = tag, set(classes), el_id, parent
+        # Kept for the <svg> contract (viewBox / role / aria-label); everything else
+        # still decides on tag, class and id alone.
+        self.attrs: dict = attrs or {}
         self.children: list["Node"] = []
 
 
@@ -86,7 +95,7 @@ class Tree(HTMLParser):
 
     def handle_starttag(self, tag, attrs):
         a = dict(attrs)
-        node = Node(tag, (a.get("class") or "").split(), a.get("id"), self.cur)
+        node = Node(tag, (a.get("class") or "").split(), a.get("id"), self.cur, a)
         self.cur.children.append(node)
         self.all.append(node)
         if tag not in VOID:
@@ -94,7 +103,7 @@ class Tree(HTMLParser):
 
     def handle_startendtag(self, tag, attrs):
         a = dict(attrs)
-        node = Node(tag, (a.get("class") or "").split(), a.get("id"), self.cur)
+        node = Node(tag, (a.get("class") or "").split(), a.get("id"), self.cur, a)
         self.cur.children.append(node)
         self.all.append(node)
 
@@ -289,6 +298,39 @@ def verify_structure(rep: Report, out: dict, contract: str):
                 if n.tag != "table":
                     rep.check(any(c.tag == "table" for c in walk(n)),
                               f"{lid}: nerdit-cheatsheet wrapper contains no <table>")
+
+        # CORE.md section 7: every lesson ships at least one figure. A wall of prose and
+        # code gives a learner nothing to anchor a concept to, and the decision table is
+        # wide enough that almost every concept has an honest answer in it.
+        figures = [n for n in tree.all if "nerdit-figure" in n.classes]
+        rep.check(bool(figures), f"{lid}: no nerdit-figure - every lesson needs at least one")
+
+        for i, fig in enumerate(figures, 1):
+            where = f"{lid}: figure {i}"
+            rep.check(any("nerdit-figure-caption" in c.classes for c in walk(fig)),
+                      f"{where} has no nerdit-figure-caption")
+            # A caption-less figure fails the caption-first test in CORE.md section 7:
+            # if the sentence would not come, the figure should not have been drawn.
+
+        # Inline SVG contract - section 7 rules plus section 7b colour tokens.
+        for i, svg in enumerate([n for n in tree.all if n.tag == "svg"], 1):
+            where = f"{lid}: svg {i}"
+            # html.parser lowercases attribute names, so viewBox arrives as "viewbox".
+            rep.check("viewbox" in svg.attrs, f"{where} has no viewBox")
+            rep.check(svg.attrs.get("role") == "img", f'{where} needs role="img"')
+            rep.check(bool(svg.attrs.get("aria-label", "").strip()),
+                      f"{where} has no aria-label")
+            # section 7 wants the wrapper for width control; a bare svg ignores
+            # `.nerdit-figure svg { width:100% }` and renders at its intrinsic size.
+            rep.check(descends_from(svg, "nerdit-figure") or descends_from(svg, "nerdit-flow-wrap"),
+                      f"{where} is not wrapped in nerdit-figure / nerdit-flow-wrap")
+
+        # section 7b: a hex literal survives the theme switch and breaks it - a navy
+        # diagram stays navy on a dark ground. Tokens resolve per theme; hex does not.
+        # Checked on the raw HTML because colours live in attributes the tree drops.
+        for m in HEX_IN_SVG.finditer(html):
+            frag = m.group(0)
+            rep.check(False, f"{lid}: hex colour in lesson markup ({frag}) - use var(--token), see CORE.md 7b")
 
 
 def walk(node: Node):
