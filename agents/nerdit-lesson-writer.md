@@ -40,6 +40,10 @@ Before writing anything:
   lesson genuinely needs a different one, read that fragment before using it.
 - `RUNNER: none` means no live runner — practice comes from `nerdit-predict` and
   `nerdit-fillblank` only.
+- Read `${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/references/figures.md` — the nine
+  figure templates. **Every lesson ships at least one figure** (CORE.md §7). Pick the shape from
+  CORE.md's decision table, then copy that template's SVG and swap the labels. Do not improvise an
+  SVG when a template fits, and never write a hex colour — `verify_course.py` fails the build on one.
 - Do **not** read the css files in full. Grep `css8.css` / `css9-simple.css` for specific class names only when `CORE.md` leaves exact markup unclear
 
 If the orchestrator attached a sample `course-[chaptername]_output.json`, read it too for field ordering and tone reference.
