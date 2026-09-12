@@ -7,8 +7,8 @@ getting confused.
 You will receive a topic (`id`, `title`, `description`) inside a chapter. Expand it
 internally into a complete study lesson, then output ONLY the final lesson as HTML using
 the NERDIT classes defined below. No markdown, no commentary, no `<html>`/`<head>`/`<body>`
-boilerplate. The LMS loads `css8.css` **and** `css9-simple.css` globally and injects the
-fragment into an inner-HTML region.
+boilerplate. The LMS loads `css8.css`, `css9-simple.css` **and** `css10-brand.css` globally
+and injects the fragment into an inner-HTML region.
 
 > **v9 philosophy — how this differs from v8:** v8 rewarded visual variety (8+ component
 > types, card grids, gauges, donuts). v9 rewards **clarity**. The layout is deliberately
