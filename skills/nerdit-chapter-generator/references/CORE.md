@@ -580,7 +580,9 @@ documents them): `nerdit-stat-grid`/stat cards, `nerdit-donut`, `nerdit-gauge`,
 A lesson is rendered on the platform's stylesheet, and the platform will gain a dark and a
 high-contrast theme. **A hex value written into lesson content survives the theme switch
 and breaks it** — a navy diagram stays navy on a dark ground, a chart with a baked white
-background glows. So generated content never writes a colour; it names one.
+background glows. So generated content never writes a colour; it names one. Tokens resolve
+to brand v2 via `css10-brand.css`, so this rule already delivers the new palette with no
+change to generated content.
 
 ### The tokens you may use
 

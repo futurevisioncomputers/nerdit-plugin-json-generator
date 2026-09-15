@@ -16,6 +16,9 @@ has; picking one is a decision, drawing one is not.
 
 1. **Tokens only, never hex.** Every `fill` and `stroke` is a `var(--token)` from
    `CORE.md` §7b. `verify_course.py` fails the build on a hex literal inside a lesson SVG.
+   Tokens resolve to the brand v2 palette through `css10-brand.css`, so figures pick up
+   the new palette without any hex. Figures must remain readable on white; never bake
+   `#fffbf3` or use brown tints.
 2. **Give every shape an explicit fill.** An unfilled shape inherits black and vanishes on
    a dark ground.
 3. **Always wrapped**, always captioned:
