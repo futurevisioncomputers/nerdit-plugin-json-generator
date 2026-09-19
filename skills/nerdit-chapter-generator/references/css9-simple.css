@@ -44,7 +44,7 @@
 
 /* --------------------------------------------------------------------
    1b · SOLUTION PANEL TEXT
-   css8 gives `.nerdit-solution > div` a dark slate background (#332d27) but
+   css8 gives `.nerdit-solution > div` a dark slate background (#0F2747) but
    never sets a text colour, so anything inside inherits the page's dark body
    text — the same value as the background, i.e. invisible. v8 solutions only
    ever held a <pre>, which carries its own light text, so the gap never showed.
@@ -55,7 +55,7 @@
 .nerdit-solution > div > p,
 .nerdit-solution > div > ul,
 .nerdit-solution > div > ol {
-  color: #d9cbb2;
+  color: #CBD5E1;
   font-size: 15px;
   line-height: 1.75;
   margin: .85rem 1.1rem;
@@ -80,7 +80,7 @@
 
 .nerdit-solution > div > p strong,
 .nerdit-solution > div > ul strong,
-.nerdit-solution > div > ol strong { color: #faf3e6; }
+.nerdit-solution > div > ol strong { color: #F4F7FB; }
 
 .nerdit-solution > div > p a { color: #93c5fd; }
 
@@ -360,9 +360,9 @@
 /* Inside a dark code block, invert so it reads as part of the code. */
 .nerdit-wrapper pre .nerdit-blank,
 .nerdit-reader pre .nerdit-blank {
-  background: #231e1a;
+  background: #0A1A31;
   color: #fbbf24;
-  border-color: #6d6459;
+  border-color: #647890;
   font-size: 13px;
 }
 
@@ -425,9 +425,9 @@
   font-family: var(--font-code);
   font-size: 13.5px;
   line-height: 1.7;
-  color: #e7dcc7;
-  background: #332d27;
-  border: 1px solid #453e36;
+  color: #DCE4EE;
+  background: #0F2747;
+  border: 1px solid #14315A;
   border-radius: var(--r-sm, 8px);
   padding: .8rem 1rem;
   resize: vertical;
@@ -534,7 +534,7 @@
 .nerdit-xl-colhead,
 .nerdit-xl-rowhead,
 .nerdit-xl-corner {
-  background: #e7dcc7;
+  background: #DCE4EE;
   color: var(--tx-s);
   font-weight: 700;
   text-align: center;
