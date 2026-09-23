@@ -61,3 +61,20 @@
 .nerdit-wrapper .nerdit-recap {
   border-left: 4px solid #6EE7C8;
 }
+
+/* Callout text: css8 sets .nerdit-callout-text white (css8.css:1431), but
+   the generic `.nerdit-wrapper p` rule (css8.css:282) is more specific and
+   repaints it slate, leaving grey text on a dark band. Restate the colour at
+   wrapper specificity so it wins. The teal band moves onto brand navy → teal
+   so it matches the rest of the site. */
+.nerdit-wrapper .nerdit-callout-text, .nerdit-reader .nerdit-callout-text,
+.nerdit-wrapper .nerdit-callout p,    .nerdit-reader .nerdit-callout p {
+  color: #FFFFFF;
+}
+.nerdit-wrapper .nerdit-callout-label, .nerdit-reader .nerdit-callout-label {
+  color: #6EE7C8;
+  opacity: 1;
+}
+.nerdit-wrapper .nerdit-callout.teal, .nerdit-reader .nerdit-callout.teal {
+  background: linear-gradient(120deg, #0B1F3A, #0D6E63);
+}
