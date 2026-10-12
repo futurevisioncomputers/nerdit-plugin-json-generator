@@ -72,6 +72,11 @@ Spend your entire effort on what neither script can decide.
   `nerdit-excel-engine.js` — a worked example claiming `301300` must produce `301300`
 - **(data-viz)** Every documented chart description matches what the code actually renders
 - Each figure teaches what its caption claims, and the caption is true of the picture
+- Each example heading names what its code does
+- Each Try It practises its own section's concept
+- Every value in a figure (names, keys, dates, amounts) matches the section or its seed
+- Reading steps ① ② ③ under a figure match the figure's numbered markers
+- Tables and terms appear in the section that first needs them
 - **Concept manifest** (if `<workdir>` given): `<id>.concepts.json` exists per lesson,
   `teaches` has 5–20 entries, and its `uses` honestly reflect the lesson
 

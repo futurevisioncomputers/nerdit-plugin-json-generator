@@ -58,20 +58,21 @@ and injects the fragment into an inner-HTML region.
 <div class="nerdit-wrapper nerdit-simple" style="counter-reset:practical-counter challenge-counter;">
 
   <h1>Lesson Title</h1>                          ← plain title, one emoji allowed
-  [overview box]                                 ← 2 sentences max
+  [overview box]                                 ← a real question + what the learner will be able to do
   [meta pill row]                                ← time + difficulty
   [demo data table]                              ← ONLY if lesson examples query shared data
 
   <section>                                      ← CONCEPT 1
     <h2>1 — Concept Name</h2>
-    [definition: 2–3 short sentences, ONE key word in <strong>]
+    [meaning and purpose: 2–3 short sentences — what the term is and the problem it solves; ONE key word in <strong>]
     [analogy line — optional, 1 sentence]
+    [concrete case: one small example from the running scenario, using only the rows this concept needs]
+    [figure — when the concept is a relationship, sequence, change or decision (§7); drawn from those same rows]
+    [read the figure: 2–4 numbered steps whose numbers ① ② ③ match markers in the figure]
     [syntax box — if the concept has syntax]
-    [EXAMPLE 1: code → output → 2–3 sentence explanation]
-    [EXAMPLE 2: small variation → output]        ← builds confidence
-    [SVG diagram — ONLY if concept is structural/flow, see §7]
+    [worked example: code → output → why the output follows]
     [ONE callout max — only if there is a real gotcha]
-    [Try It block]
+    [Try It block — practises this concept, not a neighbouring one]
   </section>
 
   <section>                                      ← CONCEPT 2 … same shape
@@ -101,6 +102,15 @@ Hard limits the validator checks:
   keyword, meaning and example is a better revision artifact than a list of sentences.
   Both tick lists are cut. The objectives list also pushed the first concept below the
   fold, so a learner scrolled past four blocks before reading one line of teaching.
+
+Teaching sequence rules (checked by the QA agent):
+
+- Introduce a table, column or term in the section that first needs it; do not show the whole
+  fixture before the first concept. The full seed can stay in the seed script.
+- A worked example's heading names the operation its code actually performs.
+- The Try It practises the section's own concept. If running code cannot show the concept
+  (for example the order of ETL steps), use a prediction or ordering task instead.
+- Do not add a second example only to reach a count.
 
 ---
 
@@ -194,7 +204,12 @@ never restyles an existing one.
 
 ## 3. OPENING BLOCKS + SYNTAX BOX
 
-Overview (2 sentences max — what the lesson covers and why it matters):
+The overview box asks the lesson's real question in one sentence ("How can a sales amount be
+connected to the customer who bought the product?") and says in one sentence what the learner
+will be able to do. Link to the previous lesson and name only the prerequisites needed now.
+Show the course and lesson names as given; never invent a chapter level.
+
+Overview (2 sentences: the real question, then what the learner will be able to do):
 ```html
 <div class="nerdit-info-box"><strong>📘 Lesson Overview:</strong> Two short sentences.
 Use <code>inline code</code> for keywords.</div>
@@ -378,12 +393,19 @@ resists — a statistic they cannot see the point of, a rule that looks arbitrar
 heading their objection and answer it underneath. One per lesson at most; it loses its
 force if every heading is a question.
 
+### The heading must match the code
+
+An example heading names what its code does. A heading that says `JOIN dim_date` above code that
+only converts a timestamp sends the learner looking for a join that is not there. Write the
+heading after the code, from the code.
+
 ---
 
 ## 5. DEMO DATA TABLE (shared dataset)
 
-If the lesson's examples query data, show that data ONCE near the top, right after the
-meta pills. All examples in the lesson (and ideally the whole course) use this same data.
+Show only the rows the first concept needs at the top of the lesson. Each later table appears
+in the section that introduces it. The seed script still recreates every table, so the Try It
+runner always has the full dataset.
 Small: 4–8 rows, 3–5 columns, friendly Indian names/cities.
 
 ```html

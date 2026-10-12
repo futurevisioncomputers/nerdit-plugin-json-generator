@@ -292,6 +292,39 @@ figure: it belongs in the run line, and `tokenize_chart_svg.py` handles its colo
 
 ---
 
+## 10 · Key match — follow one record through its keys
+
+For: a fact row and its dimensions, a foreign key to its parent, an order line to its product.
+Use the lesson's own row and values. Number the parts the reading steps describe.
+
+```html
+<div class="nerdit-figure">
+  <svg viewBox="0 0 640 250" role="img" aria-label="Sales row O1 line 1 stores amount 200; customer_key 1 finds Aarav in Pune and product_key 10 finds Book.">
+    <rect x="225" y="50" width="190" height="150" rx="8" fill="var(--bg-soft)" stroke="var(--nb)"/>
+    <text class="nerdit-flow-text" x="320" y="76" text-anchor="middle" fill="var(--nb)">fact_sales</text>
+    <text class="nerdit-flow-text" x="240" y="104" fill="var(--tx)">order O1, line 1</text>
+    <text class="nerdit-flow-text" x="240" y="130" fill="var(--green)">① amount = 200</text>
+    <text class="nerdit-flow-text" x="240" y="156" fill="var(--orange)">② customer_key = 1</text>
+    <text class="nerdit-flow-text" x="240" y="182" fill="var(--orange)">③ product_key = 10</text>
+    <rect x="20" y="80" width="170" height="90" rx="8" fill="var(--white)" stroke="var(--nb)"/>
+    <text class="nerdit-flow-text" x="105" y="104" text-anchor="middle" fill="var(--nb)">dim_customer</text>
+    <text class="nerdit-flow-text" x="34" y="130" fill="var(--orange)">customer_key = 1</text>
+    <text class="nerdit-flow-text" x="34" y="154" fill="var(--tx)">Aarav, Pune</text>
+    <rect x="450" y="80" width="170" height="90" rx="8" fill="var(--white)" stroke="var(--nb)"/>
+    <text class="nerdit-flow-text" x="535" y="104" text-anchor="middle" fill="var(--nb)">dim_product</text>
+    <text class="nerdit-flow-text" x="464" y="130" fill="var(--orange)">product_key = 10</text>
+    <text class="nerdit-flow-text" x="464" y="154" fill="var(--tx)">Book, Reading</text>
+    <path d="M225 152 H205 V126 H190" stroke="var(--orange)" stroke-width="1.6" fill="none"/>
+    <path d="M415 178 H435 V126 H450" stroke="var(--orange)" stroke-width="1.6" fill="none"/>
+  </svg>
+  <div class="nerdit-figure-caption">The sales row stores the amount; matching keys supply customer and product details.</div>
+</div>
+```
+
+Draw one record, not a table. The reading steps under the figure follow ① ② ③ in order.
+
+---
+
 ## Choosing between them
 
 Work down this list and stop at the first match:
@@ -303,6 +336,7 @@ Work down this list and stop at the first match:
 | two options a learner picks between | 3 · Comparison |
 | one operation changing data | 4 · Before / after |
 | a rule for choosing | 5 · Decision |
+| one record linked to others through its keys | 10 · Key match |
 | one artifact whose parts need naming | 6 · Anatomy |
 | containers inside containers, ≤3 deep | 7 · Part / whole |
 | a branching structure, >3 deep | 8 · Tree |

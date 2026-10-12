@@ -371,6 +371,14 @@ already clears the mechanical bar, and has far less surface on which to be wrong
 on an item listed in this script's output contract, the agent is wrong — do not regenerate.
 Say so in one line and move on.
 
+For SQL lessons, also run the output checker and fix every mismatch before QA:
+
+    python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/check_sql_outputs.py" --course <workdir>/course-<chaptername>_output.json
+
+A mismatch means a shown result does not follow from the seed data: regenerate that lesson with
+the reported lines (counts toward the 2-attempt budget). Lines marked unchecked (query plans,
+non-table output) are read by hand, not regenerated.
+
 ### Regeneration budget (applies to 4b, 4c and 5)
 
 Re-running a `nerdit-lesson-writer` regenerates **all three** of that lesson's files, so a

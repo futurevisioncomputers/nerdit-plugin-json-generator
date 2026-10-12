@@ -52,7 +52,8 @@ If the orchestrator attached a sample `course-[chaptername]_output.json`, read i
 
 The rulebook is authoritative; these are the spine (violating any = rejected by QA):
 
-- **Skeleton fixed:** h1 → overview (≤2 sentences) → meta pills → optional demo data
+- **Skeleton fixed:** h1 → overview (the lesson's real question + what the learner will be
+  able to do, CORE.md §3) → meta pills → optional demo data
   table → 3–5 numbered concept `<section>`s → closing section (cheatsheet + 2–3 practice
   tasks). Wrapper class: `nerdit-wrapper nerdit-simple`.
 - **Pick the preset first** (CORE.md §2b). Explicit `preset` field → `runner` field →
@@ -76,9 +77,17 @@ The rulebook is authoritative; these are the spine (violating any = rejected by 
 - **No tick lists.** There is no "what you will learn" opener and no "what you learned"
   recap. The numbered section headings carry the contents while the learner reads, and
   the cheatsheet table carries it afterwards. Emitting either is rejected.
-- **One concept per section.** Definition (2–3 short sentences, one `<strong>` key word,
-  optional 1-line analogy) → syntax box if syntax exists → 2–3 **run lines** →
-  optional teaching SVG → ≤1 callout → one Try It block.
+- **One concept per section.** Meaning and purpose (2–3 short sentences, one `<strong>` key
+  word, optional 1-line analogy) → concrete case → figure when the concept is a relationship,
+  sequence, change or decision → numbered reading steps → syntax box if syntax exists →
+  worked **run line(s)** → ≤1 callout → one Try It block.
+- **Teaching sequence (CORE.md §2):** meaning → concrete case → figure → read the figure →
+  worked example → practice, using only the rows the concept needs.
+- **Figures come from the lesson's data.** Every label, key, name, date and amount in a figure
+  appears in the section or its seed. Number the parts and write matching ① ② ③ reading steps.
+- **Headings match code; practice matches the concept** (CORE.md §2 teaching rules, §4c).
+- **Reform mode and old images:** keep an old raster image only when every value in it matches
+  the lesson's data; otherwise drop it and draw the relationship as an SVG figure.
 - **Every code block shows its result.** A run line is `nerdit-runhead` heading + one
   sentence + `nerdit-run` holding a `nerdit-in` and a matching `nerdit-out`, each with
   its own `nerdit-tag`. No orphan code, and no `nerdit-in` without a `nerdit-out`.
@@ -101,8 +110,9 @@ The rulebook is authoritative; these are the spine (violating any = rejected by 
   memory-aid, step-block, datatable.
 - **One `<script>` after the wrapper**, only if widgets used, composed from the guarded
   helpers in the rulebook (`copyCode`, `switchTab`, `nerditCheckBlank`, `nerditRunSql`).
-- **Shared demo data:** if examples query data, show it once up top (`nerdit-demo-table`,
-  4–8 rows, friendly Indian names) and reuse it in every example and the runner seed.
+- **Shared demo data:** if examples query data, show only the rows the first concept needs
+  up top (`nerdit-demo-table`, 4–8 rows, friendly Indian names); each later table appears in
+  the section that introduces it (CORE.md §5). The runner seed still builds every table.
 - **Sequencing:** the learner has seen only `PRIOR_TOPICS` plus this lesson — nothing
   else. No code anywhere (examples, syntax boxes, Try It, practice tasks, quiz options)
   may use a construct owned by an `UPCOMING_TOPICS` lesson. See the Sequencing section.
