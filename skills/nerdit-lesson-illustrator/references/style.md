@@ -1,7 +1,8 @@
 # House style for NERDIT lesson illustrations
 
 `manifest.py` appends the block between the `style` fences to every prompt. Edit the style here
-and nowhere else. `{labels_clause}` is filled in per image.
+and nowhere else. `{text_clause}` is filled in per image: the slot's exact labels and its
+numbered markers, or no text at all. Diagrams never use this block; they are SVG.
 
 ```style
 Style: clean flat educational illustration, simple shapes, soft shadows, plain light background, one idea per picture, plenty of empty space.
@@ -12,31 +13,32 @@ No logos, screenshots, user-interface elements or watermarks.
 People, if any: Indian people in Indian settings. No real brands, companies or celebrities.
 ```
 
-## Planning rules
+## Choosing a visual
 
-- Consider numbered teaching sections only (`[teach]` in the outline). Never the opening,
-  practice blocks, the cheat sheet or the quiz.
-- Every slot needs a one-line teaching `reason`. A section qualifies when it introduces an
-  abstract idea a concrete picture makes memorable, describes a real-world process or scene, or
-  opens the lesson and benefits from a hook (section 1).
-- Skip a section when a figure caption in the outline already teaches the same idea, when the
-  section is pure syntax or calculation, or when the picture would need exact numbers or text.
-- 0 to 3 images per lesson; a lesson marked `[NO VISUAL]` gets at least 1; project and capstone
-  lessons get 1 scene. Drop any slot without a clear reason.
-- `subject`: the objects or metaphor to draw from this section, the composition (left to right
-  for a process) and the focal point. Never ask for text, numbers, charts or tables.
-- `labels`: at most 3 one-word labels, only when the idea needs them, spelled exactly.
-- `alt`: what the picture shows, 125 characters or less.
-- `caption`: the teaching point in one sentence of at most 15 words, in the lesson's terms.
-- `position`: `after-explanation` with an `anchor` copied exactly from a `¶` line of that section,
-  or `before-practice` (anchor empty).
+| Learner question | Kind | Must show |
+|---|---|---|
+| Where does a record go? | diagram (sequence) | each layer and its responsibility |
+| What happens first? | diagram (two aligned flows) | the steps in their real order |
+| How are tables related? | diagram (key match, template 10) | exact table/column names, the matching keys, one record |
+| What changed? | diagram (before/after) | input, rule, output rows |
+| Which date or period applies? | diagram (timeline) | exact timestamps, offset, boundaries |
+| Why is this unsafe to sum? | diagram or small table | grain, units, the repeated value |
+| Who does what? | illustration | the actors and actions, mapped to the lesson in the steps |
+
+- One objective per visual; split a crowded figure into two.
+- Diagrams use the lesson's own names, keys, dates and amounts — never invented ones.
+- No quota: add a visual only where it helps; an existing accurate figure may already do the job.
+- The intro sentence, caption, reading steps and check question are written for a student
+  meeting the topic for the first time.
 
 ## Visual check criteria
 
-Judge each preview against its slot's reason, prompt and caption. PASS only when all hold:
+PASS only when all hold:
 
-1. It shows what the reason says the section needs, so the caption is true of the picture.
-2. No garbled or extra text; any labels match the slot's `labels` exactly.
-3. No numbers, logos, real brands or watermarks.
-4. Brand palette, and an Indian context where people appear.
-5. Nothing contradicts the lesson's terms or facts.
+1. It answers the brief's question and shows the takeaway; the caption is true of it.
+2. Every label, value and name matches the section or its fixture.
+3. Markers ① ② ③ sit on the parts the reading steps describe, in the same order.
+4. Labels are readable on the phone-size preview.
+5. Illustrations: no extra text, numbers, logos or brands; Indian context where people appear;
+   the course's recurring cast when one is set.
+6. Nothing contradicts the lesson or invites the brief's stated misconception.
