@@ -8,18 +8,14 @@ import argparse
 import copy
 import html
 import json
-import re
 import sys
 from pathlib import Path
 
 import manifest as mf
 from check_images import check, json_bytes, new_verifier_failures
-from lessonhtml import AnchorNotFound, locate
+from lessonhtml import AnchorNotFound, locate, remove_visual_blocks
+from manifest import MARKERS
 from optimise_existing import default_fetch, optimise_existing
-
-MARKER = re.compile(
-    r'\n?<div class="nerdit-figure nerdit-illustration" data-nerdit-img="[^"]+">'
-    r'.*?<div class="nerdit-figure-caption">.*?</div>\s*</div>', re.S)
 
 
 def block(slot: dict) -> str:
@@ -31,11 +27,35 @@ def block(slot: dict) -> str:
             f'  <div class="nerdit-figure-caption">{caption}</div>\n</div>')
 
 
+def blocks_v2(slot: dict, svg: str | None) -> str:
+    vid, esc = slot["id"], (lambda s: html.escape(s, quote=False))
+    if slot["kind"] == "diagram":
+        figure = svg.strip()
+    else:
+        figure = (f'<img src="{slot["outputFile"]}" alt="{html.escape(slot["alt"], quote=True)}" '
+                  f'width="{slot["width"]}" height="{slot["height"]}" loading="lazy" decoding="async" '
+                  'style="display:block;width:100%;height:auto">')
+    out = [f'\n<p class="nerdit-visual-intro" data-nerdit-img="{vid}">{esc(slot["intro"])}</p>',
+           f'\n<div class="nerdit-figure" data-nerdit-img="{vid}">\n  {figure}\n'
+           f'  <div class="nerdit-figure-caption">{esc(slot["caption"])}</div>\n</div>']
+    steps = slot["explanation"]
+    marks = MARKERS[:len(steps)] if len(steps) >= 2 else [""] * len(steps)
+    items = "".join(f"<li>{(mk + ' ') if mk else ''}{esc(st)}</li>" for mk, st in zip(marks, steps))
+    out.append(f'\n<ol class="nerdit-visual-read" data-nerdit-img="{vid}" '
+               f'style="list-style:none;padding-left:0">{items}</ol>')
+    cq = slot["checkQuestion"]
+    out.append(f'\n<div class="nerdit-predict" data-nerdit-img="{vid}">'
+               '<div class="nerdit-predict-head">🤔 Try It — read the figure</div>'
+               f'<p>{esc(cq["question"])}</p><details class="nerdit-predict-answer"><summary>Show answer</summary>'
+               f'<p>{esc(cq["answer"])} {esc(cq["reasoning"])}</p></details></div>')
+    return "".join(out)
+
+
 def strip_inserted(content: str) -> str:
-    return MARKER.sub("", content)
+    return remove_visual_blocks(content)
 
 
-def insert_lessons(course: dict, m: dict) -> list[str]:
+def insert_lessons(course: dict, m: dict, diagrams_dir: Path | None = None) -> list[str]:
     errors = []
     by_lesson: dict[str, list[dict]] = {}
     for s in m["images"]:
@@ -54,9 +74,21 @@ def insert_lessons(course: dict, m: dict) -> list[str]:
                 errors.append(f"{s['id']}: {e}; re-plan with --replan {s['lessonId']}")
                 s["status"] = "passed"
                 continue
-            placed.append((off, s))
-        for off, s in sorted(placed, key=lambda p: (p[0], p[1]["id"]), reverse=True):
-            content = content[:off] + block(s) + content[off:]
+            if s.get("version") == 2:
+                svg = None
+                if s["kind"] == "diagram":
+                    f = Path(diagrams_dir or ".") / s["requestFile"]
+                    if not f.is_file():
+                        errors.append(f"{s['id']}: diagram file {s['requestFile']} not found")
+                        s["status"] = "passed"
+                        continue
+                    svg = f.read_text(encoding="utf-8")
+                markup = blocks_v2(s, svg)
+            else:
+                markup = block(s)
+            placed.append((off, s, markup))
+        for off, s, markup in sorted(placed, key=lambda p: (p[0], p[1]["id"]), reverse=True):
+            content = content[:off] + markup + content[off:]
             s["status"] = "inserted"
         lesson["content"] = content
     for lid, slots in by_lesson.items():
@@ -84,7 +116,7 @@ def build_output(course_path: Path, images_dir: Path, fetch=default_fetch, optim
         rep = optimise_existing(work, m, upload, fetch)
         lines += [f"  optimised: {x}" for x in rep["optimised"]]
         problems += rep["errors"]
-    problems += insert_lessons(work, m)
+    problems += insert_lessons(work, m, images_dir / "diagrams")
     errors, warnings = check(work, m, upload)
     problems += errors
     problems += [f"new verifier failure: {x}" for x in new_verifier_failures(original, work, contract)]
