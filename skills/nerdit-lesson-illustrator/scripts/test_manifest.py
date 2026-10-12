@@ -31,8 +31,8 @@ def test_add_slots_assigns_ids_files_and_full_prompts():
 def test_style_block_tolerates_crlf_files(tmp_path):
     p = tmp_path / "style.md"
     p.write_bytes(b"x\r\n```style\r\nLine one{labels_clause}.\r\n```\r\n")
-    assert style_block([], p) == "Line one."
-    assert style_block(["A"], p) == 'Line one, except these exact labels: "A".'
+    assert style_block([], path=p) == "Line one."
+    assert style_block(["A"], path=p) == 'Line one, except these exact labels: "A".'
 
 
 def test_add_slots_rejects_bad_items_without_partial_writes():

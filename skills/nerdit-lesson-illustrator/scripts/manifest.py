@@ -14,22 +14,37 @@ import re
 import sys
 from pathlib import Path
 
-from lessonhtml import AnchorNotFound, locate
+from lessonhtml import (AnchorNotFound, find_section, fixture_text, locate, remove_visual_blocks,
+                        section_fingerprint, section_text)
 
 STATUSES = ("planned", "converted", "passed", "failed", "inserted")
 POSITIONS = ("after-explanation", "before-practice")
 MAX_PER_LESSON = 3
 STYLE_FILE = Path(__file__).resolve().parent.parent / "references" / "style.md"
 PLAN_KEYS = ("lessonId", "section", "heading", "position", "reason", "subject", "alt", "caption")
+KINDS = ("diagram", "illustration")
+MARKERS = "①②③④⑤"
+V2_KEYS = ("lessonId", "section", "heading", "position", "kind", "question", "objective", "takeaway",
+           "misconception", "intro", "caption", "alt", "explanation", "checkQuestion")
 
 
-def style_block(labels: list[str], path: Path = STYLE_FILE) -> str:
+def style_block(labels: list[str], markers: int = 0, path: Path = STYLE_FILE) -> str:
     raw = path.read_text(encoding="utf-8").replace("\r\n", "\n")
     m = re.search(r"```style\n(.*?)\n```", raw, re.S)
     if not m:
         raise RuntimeError(f"no ```style block in {path}")
-    clause = (", except these exact labels: " + ", ".join(f'"{l}"' for l in labels)) if labels else ""
-    return m.group(1).replace("{labels_clause}", clause)
+    block = m.group(1)
+    if "{labels_clause}" in block:  # legacy v1 style file
+        clause = (", except these exact labels: " + ", ".join(f'"{l}"' for l in labels)) if labels else ""
+        return block.replace("{labels_clause}", clause)
+    allowed = []
+    if labels:
+        allowed.append("these exact labels: " + ", ".join(f'"{l}"' for l in labels))
+    if markers:
+        allowed.append("the numbered markers " + " ".join(MARKERS[:markers]))
+    clause = ("no words, letters or numbers except " + "; and ".join(allowed) + ".") if allowed \
+        else "no words, letters or numbers at all."
+    return block.replace("{text_clause}", clause)
 
 
 def new_manifest(course: dict, source: str) -> dict:
@@ -63,6 +78,9 @@ def validate(m: dict) -> list[str]:
             errors.append(f"{where}: unknown status {s['status']}")
         if s["position"] not in POSITIONS:
             errors.append(f"{where}: unknown position {s['position']}")
+        if s.get("version") == 2:
+            errors += _validate_v2(s)
+            continue
         for key in ("reason", "prompt", "alt", "caption"):
             if not str(s.get(key) or "").strip():
                 errors.append(f"{where}: empty {key}")
@@ -125,13 +143,119 @@ def add_slots(m: dict, course: dict, plan: list[dict], replan: str | None = None
     return errors + validate(m)
 
 
+def build_prompt(m: dict, s: dict) -> str:
+    lines = ["Educational illustration for a student meeting this topic for the first time.",
+             f"Course: {m['course']['title']}", f"Lesson: {s['lessonTitle']}",
+             f"Section: {s['section']['heading']}", f"Learning objective: {s['objective']}",
+             f"Question it answers: {s['question']}"]
+    if m["course"].get("cast"):
+        lines.append(f"Recurring characters and setting: {m['course']['cast']}")
+    steps = s["explanation"]
+    marks = MARKERS[:len(steps)] if len(steps) >= 2 else ""
+    body = [s["subject"].strip()]
+    if marks:
+        body.append("Numbered markers: " + "; ".join(
+            f"place {mk} on the part showing: {st}" for mk, st in zip(marks, steps)))
+    return "\n".join(lines) + "\n\n" + "\n".join(body) + "\n\n" + style_block(s["labels"], len(marks))
+
+
+def _validate_v2(s: dict) -> list[str]:
+    where, errors = s["id"], []
+    if s.get("kind") not in KINDS:
+        errors.append(f"{where}: unknown kind {s.get('kind')}")
+    for key in ("question", "objective", "takeaway", "misconception", "intro", "caption", "alt"):
+        if not str(s.get(key) or "").strip():
+            errors.append(f"{where}: empty {key}")
+    if len(s.get("alt") or "") > 150:
+        errors.append(f"{where}: alt is over 150 characters")
+    if not 1 <= len(s.get("explanation") or []) <= len(MARKERS):
+        errors.append(f"{where}: explanation needs 1-{len(MARKERS)} steps")
+    cq = s.get("checkQuestion") or {}
+    if not all(str(cq.get(k) or "").strip() for k in ("question", "answer", "reasoning")):
+        errors.append(f"{where}: checkQuestion needs question, answer and reasoning")
+    return errors
+
+
+def add_slots_v2(m: dict, course: dict, plan: dict, replan: str | None = None) -> list[str]:
+    lessons = {l["id"]: l for l in course.get("lessons", [])}
+    if plan.get("cast") is not None:
+        m["course"]["cast"] = plan["cast"]
+    if replan:
+        m["images"] = [s for s in m["images"] if s["lessonId"] != replan]
+    already = {s["lessonId"] for s in m["images"]}
+    m["styleVersion"] = 2
+    errors, added = [], set()
+    for i, p in enumerate(plan.get("items", []), 1):
+        where = f"plan item {i}"
+        missing = [k for k in V2_KEYS if p.get(k) in (None, "", [], {})]
+        if p.get("position") == "after-explanation" and not p.get("anchor"):
+            missing.append("anchor")
+        if p.get("kind") == "diagram":
+            missing += [k for k in ("labels", "sourceRefs") if not p.get(k)]
+        if p.get("kind") == "illustration" and not p.get("subject"):
+            missing.append("subject")
+        if missing:
+            errors.append(f"{where}: missing {', '.join(missing)}")
+            continue
+        lid = p["lessonId"]
+        if lid not in lessons:
+            errors.append(f"{where}: unknown lesson {lid}")
+            continue
+        if lid in already and lid not in added:
+            errors.append(f"{where}: {lid} is already planned; use --replan {lid}")
+            continue
+        if p["position"] not in POSITIONS or p["kind"] not in KINDS:
+            errors.append(f"{where}: unknown position or kind")
+            continue
+        content = remove_visual_blocks(lessons[lid].get("content") or "")
+        try:
+            locate(content, p["section"], p["heading"], p["position"], p.get("anchor") or None)
+        except AnchorNotFound as e:
+            errors.append(f"{where}: {e}")
+            continue
+        if p["kind"] == "diagram":
+            source = section_text(content, find_section(content, p["section"], p["heading"])) \
+                + "\n" + fixture_text(content)
+            absent = [l for l in p["labels"] if l not in source]
+            if absent:
+                errors.append(f"{where}: labels not found in the section or its fixture: {absent}")
+                continue
+        diagram = p["kind"] == "diagram"
+        n = 1 + sum(1 for s in m["images"] if s["lessonId"] == lid and s.get("kind", "illustration") == p["kind"])
+        image_id = f"{lid}-{'fig' if diagram else 'img'}{n}"
+        slot = {
+            "version": 2, "id": image_id, "lessonId": lid, "lessonTitle": lessons[lid].get("title", ""),
+            "section": {"number": p["section"], "heading": p["heading"]},
+            "position": p["position"], "anchor": p.get("anchor") or "", "kind": p["kind"],
+            "question": p["question"], "objective": p["objective"], "reason": p["objective"],
+            "sourceRefs": list(p.get("sourceRefs") or []), "knownTerms": list(p.get("knownTerms") or []),
+            "newTerms": list(p.get("newTerms") or []), "labels": list(p.get("labels") or []),
+            "takeaway": p["takeaway"], "misconception": p["misconception"], "intro": p["intro"],
+            "caption": p["caption"], "alt": p["alt"], "explanation": list(p["explanation"]),
+            "checkQuestion": dict(p["checkQuestion"]), "subject": p.get("subject", ""),
+            "sourceFingerprint": section_fingerprint(content, p["section"], p["heading"]),
+            "requestFile": f"{image_id}.{'svg' if diagram else 'png'}",
+            "outputFile": f"{image_id}.{'svg' if diagram else 'webp'}",
+            "aspect": "fit" if diagram else "4:3", "prompt": "",
+            "status": "planned", "check": {"result": None, "reason": None},
+            "sourceSha256": None, "bytes": None, "width": None, "height": None,
+        }
+        if not diagram:
+            slot["prompt"] = build_prompt(m, slot)
+        errors += _validate_v2(slot)
+        m["images"].append(slot)
+        added.add(lid)
+    return list(dict.fromkeys(errors + validate(m)))
+
+
 def render_prompts(m: dict) -> str:
-    todo = [s for s in m["images"] if s["status"] == "planned"]
+    todo = [s for s in m["images"] if s["status"] == "planned" and s.get("kind") != "diagram"]
     redo = [s for s in m["images"] if s["status"] == "failed"]
     done = sum(1 for s in m["images"] if s["status"] in ("converted", "passed", "inserted"))
     out = [f"# Image prompts — {m['course']['title']}", "",
            "Generate each image, then save it into `incoming/` with the exact filename shown.",
-           "PNG, JPG or WebP all work. Landscape 3:2. Deliver in any order and in batches.", ""]
+           "PNG, JPG or WebP all work. Use the shape each prompt's Format line asks for. "
+           "Deliver in any order and in batches.", ""]
     if redo:
         out += ["## Regenerate", ""]
         for s in redo:
@@ -142,6 +266,15 @@ def render_prompts(m: dict) -> str:
         out += [f"### {s['requestFile']}",
                 f"Lesson: {s['lessonTitle']} · Section {s['section']['number']}: {s['section']['heading']}",
                 f"Purpose: {s['reason']}", "", "```text", s["prompt"], "```", ""]
+    draw = [s for s in m["images"] if s["status"] in ("planned", "failed") and s.get("kind") == "diagram"]
+    if draw:
+        out += ["## Diagrams to draw", "",
+                "Claude writes each as inline SVG from the section and fixture (figures.md rules).", ""]
+        for s in draw:
+            out += [f"### diagrams/{s['requestFile']}", f"Objective: {s['objective']}",
+                    f"Labels (exact): {', '.join(s['labels'])}",
+                    f"Markers: {MARKERS[:len(s['explanation'])] if len(s['explanation']) >= 2 else 'none'}",
+                    f"Source: {'; '.join(s['sourceRefs'])}", ""]
     out.append(f"_{len(todo)} to generate · {len(redo)} to regenerate · {done} received_")
     return "\n".join(out) + "\n"
 
@@ -167,7 +300,11 @@ def record_checks(m: dict, results: list[dict]) -> list[str]:
             s["status"] = "failed"
             s["check"] = {"result": "fail", "reason": r["reason"]}
             if r.get("revisedSubject"):
-                s["prompt"] = r["revisedSubject"].strip() + "\n\n" + style_block(s["labels"])
+                if s.get("version") == 2:
+                    s["subject"] = r["revisedSubject"].strip()
+                    s["prompt"] = build_prompt(m, s) if s["kind"] == "illustration" else ""
+                else:
+                    s["prompt"] = r["revisedSubject"].strip() + "\n\n" + style_block(s["labels"])
         else:
             errors.append(f"{s['id']}: result must be pass or fail")
     return errors
@@ -212,13 +349,15 @@ def main() -> int:
         with open(args.plan, encoding="utf-8") as f:
             plan = json.load(f)
         m = load(images_dir) if (images_dir / "manifest.json").is_file() else new_manifest(course, Path(args.course).name)
-        errors = add_slots(m, course, plan, args.replan)
+        adder = add_slots_v2 if isinstance(plan, dict) else add_slots
+        errors = adder(m, course, plan, args.replan)
         if errors:
             print("Plan not saved:")
             print("\n".join(f"  - {e}" for e in errors))
             return 1
         images_dir.mkdir(parents=True, exist_ok=True)
         (images_dir / "incoming").mkdir(exist_ok=True)
+        (images_dir / "diagrams").mkdir(exist_ok=True)
         save(images_dir, m)
         _write_prompts(images_dir, m)
         counts = {}

@@ -4,10 +4,11 @@
 and nowhere else. `{labels_clause}` is filled in per image.
 
 ```style
-Style: flat educational illustration, clean simple shapes, soft shadows, plenty of empty space.
+Style: clean flat educational illustration, simple shapes, soft shadows, plain light background, one idea per picture, plenty of empty space.
 Colours: navy #0B1F3A, teal #14B8A6, light background #EEF3F9 and white, with at most one warm highlight colour.
-Format: landscape 3:2.
-Do not include any text, numbers, letters, logos, screenshots, user-interface elements or watermarks{labels_clause}.
+Format: landscape 4:3 unless the scene needs another shape. Any label or marker is large, bold and readable on a phone screen.
+Text: {text_clause}
+No logos, screenshots, user-interface elements or watermarks.
 People, if any: Indian people in Indian settings. No real brands, companies or celebrities.
 ```
 

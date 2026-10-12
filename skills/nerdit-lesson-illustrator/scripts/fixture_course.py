@@ -58,6 +58,40 @@ PLAN = [
      "caption": "Every lesson starts with one clear idea."},
 ]
 
+PLAN_V2 = {
+    "version": 2,
+    "cast": "Asha, a young analyst at a small Pune retailer.",
+    "items": [
+        {"lessonId": "load-basics-01", "section": 1, "heading": "1 — What a load does",
+         "position": "after-explanation", "anchor": ANCHOR_1, "kind": "diagram",
+         "question": "Where do checked rows end up?",
+         "objective": "See that a load copies only checked rows into the warehouse and logs the run.",
+         "sourceRefs": ["section 1, paragraphs 1-2"], "knownTerms": ["rows"], "newTerms": ["load", "run log"],
+         "labels": ["warehouse", "run log"],
+         "takeaway": "Only checked rows reach the warehouse, and each run is recorded.",
+         "misconception": "A load does not clean data; cleaning happened earlier.",
+         "intro": "Follow the rows from left to right.",
+         "caption": "A load moves checked rows into the warehouse and records the run.",
+         "alt": "Checked rows move into the warehouse while a run log records the load.",
+         "explanation": ["The rows arrive in the warehouse.", "The run log records the run."],
+         "checkQuestion": {"question": "Does the load change the row values?",
+                           "answer": "No.", "reasoning": "It copies checked rows; it does not edit them."}},
+        {"lessonId": "old-style-02", "section": 1, "heading": "Introduction",
+         "position": "before-practice", "anchor": "", "kind": "illustration",
+         "question": "What does a first lesson look like?",
+         "objective": "Picture a student starting the course with one clear idea.",
+         "sourceRefs": [], "knownTerms": [], "newTerms": [], "labels": [],
+         "takeaway": "Each lesson starts from one idea.", "misconception": "You do not need to know everything first.",
+         "intro": "Here is where every lesson starts.",
+         "caption": "Every lesson starts with one clear idea.",
+         "alt": "A student opens a notebook beside a laptop.",
+         "explanation": ["The student opens the notebook.", "The laptop shows the first lesson."],
+         "checkQuestion": {"question": "What does a lesson start from?", "answer": "One idea.",
+                           "reasoning": "The picture shows a single starting point."},
+         "subject": "A student opening a notebook beside a laptop."},
+    ],
+}
+
 
 def course() -> dict:
     return copy.deepcopy(_COURSE)
