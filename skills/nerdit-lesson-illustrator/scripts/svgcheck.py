@@ -12,6 +12,17 @@ MARKER_CHARS = "①②③④⑤"
 MAX_VIEWBOX_WIDTH = 400
 
 
+TEXT = re.compile(r"<text\b[^>]*>(.*?)</text>", re.S)
+# Numbers, dates, times and capitalised names: the words a diagram can get wrong (Boston for Pune).
+FACT_TOKEN = re.compile(r"\d+(?:[.,:/-]\d+)*|\b[A-Z][A-Za-z0-9_]*")
+
+
+def foreign_tokens(svg: str, source: str) -> list[str]:
+    """Numbers and capitalised words drawn in the SVG that do not appear in `source`."""
+    drawn = " ".join(text(t) for t in TEXT.findall(svg))
+    return sorted({t for t in FACT_TOKEN.findall(drawn) if t not in source})
+
+
 def check_svg(svg: str, labels: list[str], steps: int) -> list[str]:
     m = re.match(r"\s*<svg\b([^>]*)>", svg, re.S)
     if not m:

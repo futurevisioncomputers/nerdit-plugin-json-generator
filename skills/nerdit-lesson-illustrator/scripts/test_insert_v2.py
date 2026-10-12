@@ -1,4 +1,5 @@
 import copy
+import hashlib
 
 from fixture_course import PLAN_V2, course
 from insert_images import insert_lessons, strip_inserted
@@ -14,6 +15,7 @@ def ready(tmp_path):
     assert add_slots_v2(m, course(), copy.deepcopy(PLAN_V2)) == []
     for s in m["images"]:
         s.update(status="passed", width=1200, height=900)
+    m["images"][0]["sourceSha256"] = hashlib.sha256(SVG.encode("utf-8")).hexdigest()  # as convert records it
     (tmp_path / "load-basics-01-fig1.svg").write_text(SVG, encoding="utf-8")
     return m
 
@@ -38,7 +40,7 @@ def test_v2_diagram_block_has_intro_figure_steps_and_check(tmp_path):
 
 def test_v2_reinsert_is_idempotent_and_strip_restores(tmp_path):
     c, m = course(), ready(tmp_path)
-    insert_lessons(c, m, tmp_path)
+    assert insert_lessons(c, m, tmp_path) == []
     once = copy.deepcopy(c)
     insert_lessons(c, m, tmp_path)
     assert c == once

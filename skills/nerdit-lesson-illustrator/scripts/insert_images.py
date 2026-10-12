@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import hashlib
 import html
 import json
 import sys
@@ -87,6 +88,11 @@ def insert_lessons(course: dict, m: dict, diagrams_dir: Path | None = None) -> l
                         s["status"] = "passed"
                         continue
                     svg = f.read_text(encoding="utf-8")
+                    if hashlib.sha256(svg.encode("utf-8")).hexdigest() != s.get("sourceSha256"):
+                        errors.append(f"{s['id']}: diagram file {s['requestFile']} changed since it was "
+                                      "checked; run convert_images.py and review it again")
+                        s["status"] = "passed"
+                        continue
                 markup = blocks_v2(s, svg)
             else:
                 markup = block(s)

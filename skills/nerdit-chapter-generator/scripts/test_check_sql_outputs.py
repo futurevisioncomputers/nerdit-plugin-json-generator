@@ -62,3 +62,25 @@ def test_query_plans_are_left_for_a_human():
     shown = "+----+--------+\n| id | detail |\n+----+--------+\n| 2  | SCAN t |\n+----+--------+"
     r = check_lesson(SEED + run("EXPLAIN QUERY PLAN SELECT * FROM t;", shown))
     assert r["mismatch"] == [] and len(r["unchecked"]) == 1
+
+
+def canonical(sql, out_html):
+    """The run line exactly as CORE.md §4 writes it: a copy button inside the input <pre>."""
+    return ('<div class="nerdit-run">\n  <div class="nerdit-in">\n    <span class="nerdit-tag">You type</span>\n'
+            '    <pre data-lang="sql"><button class="nerdit-copy-btn" onclick="copyCode(this)">Copy</button>'
+            f'<code>{sql}</code></pre>\n  </div>\n  <div class="nerdit-out">\n'
+            f'    <span class="nerdit-tag">SQL shows</span>\n    {out_html}\n  </div>\n</div>')
+
+
+def test_canonical_run_line_with_copy_button_is_checked():
+    r = check_lesson(SEED + canonical("SELECT SUM(amount) AS total FROM t WHERE city='Pune';",
+                                      f"<pre><code>{TABLE}</code></pre>"))
+    assert r["examples"] == 1 and len(r["mismatch"]) == 1
+
+
+def test_prose_output_does_not_swallow_the_next_example():
+    html = (SEED + canonical("UPDATE t SET amount = amount;", "<p>2 rows changed.</p>")
+            + run("SELECT SUM(amount) AS total FROM t WHERE city='Pune';", TABLE))
+    r = check_lesson(html)
+    assert r["examples"] == 2 and len(r["unchecked"]) == 1 and len(r["mismatch"]) == 1
+    assert "example 2" in r["mismatch"][0]

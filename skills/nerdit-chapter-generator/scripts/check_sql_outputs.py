@@ -20,8 +20,45 @@ import sys
 
 SEED = re.compile(r'<script\b[^>]*type="text/plain"[^>]*>(.*?)</script>', re.S | re.I)
 EXPLAIN = re.compile(r"\bEXPLAIN\b", re.I)
-RUN = re.compile(r'<div class="nerdit-run">.*?<pre data-lang="sql"><code>(.*?)</code></pre>'
-                 r'.*?<div class="nerdit-out">.*?<pre><code>(.*?)</code></pre>', re.S)
+RUN_START = re.compile(r'<div\b[^>]*\bclass="[^"]*\bnerdit-run\b[^"]*"[^>]*>', re.I)
+DIV_TOKEN = re.compile(r"<div\b|</div\s*>", re.I)
+OUT_START = re.compile(r'<div\b[^>]*\bclass="[^"]*\bnerdit-out\b[^"]*"[^>]*>', re.I)
+PRE = re.compile(r"<pre\b([^>]*)>(.*?)</pre>", re.S | re.I)
+CODE = re.compile(r"<code\b[^>]*>(.*?)</code>", re.S | re.I)
+TAG = re.compile(r"<[^>]+>")
+
+
+def _block_end(content: str, start: int) -> int:
+    depth = 0
+    for t in DIV_TOKEN.finditer(content, start):
+        depth += -1 if t.group(0).startswith("</") else 1
+        if depth == 0:
+            return t.end()
+    return len(content)
+
+
+def _pre_text(inner: str) -> str:
+    code = CODE.search(inner)  # skips the copy button CORE.md §4 puts inside the <pre>
+    return code.group(1) if code else TAG.sub("", inner)
+
+
+def runs(content: str) -> list[tuple[str, str]]:
+    """(sql, shown output) for every SQL run line, each read from its own nerdit-run block.
+    A prose output (no <pre>) comes back as its plain text."""
+    out = []
+    for m in RUN_START.finditer(content):
+        block = content[m.start():_block_end(content, m.start())]
+        o = OUT_START.search(block)
+        if not o:
+            continue
+        pre_in = PRE.search(block, 0, o.start())
+        if not pre_in or 'data-lang="sql"' not in pre_in.group(1):
+            continue
+        out_html = block[o.end():]
+        pre_out = PRE.search(out_html)
+        shown = _pre_text(pre_out.group(2)) if pre_out else re.sub(r"\s+", " ", TAG.sub(" ", out_html)).strip()
+        out.append((_pre_text(pre_in.group(2)), shown))
+    return out
 
 
 def parse_table(txt: str) -> list[list[str]] | None:
@@ -91,7 +128,7 @@ def check_lesson(content: str) -> dict:
     seed = "\n".join(html.unescape(s) for s in SEED.findall(content))
     report = {"examples": 0, "match": 0, "mismatch": [], "unchecked": []}
     history: list[str] = []
-    for i, (code, shown) in enumerate(RUN.findall(content), 1):
+    for i, (code, shown) in enumerate(runs(content), 1):
         report["examples"] += 1
         sql, shown = html.unescape(code), html.unescape(shown)
         if EXPLAIN.search(sql):

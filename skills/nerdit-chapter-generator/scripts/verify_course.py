@@ -54,6 +54,8 @@ BANNED = [
     "nerdit-step-block", "nerdit-datatable-wrap",
 ]
 
+MAX_FIGURE_VIEWBOX_WIDTH = 400  # figures.md rule 9 (phone-readable figures), v10 only
+
 # Retired only under the flattened (v10) contract - see --contract.
 RETIRED_V10 = [
     "nerdit-example", "nerdit-example-head", "nerdit-example-lead",
@@ -324,6 +326,17 @@ def verify_structure(rep: Report, out: dict, contract: str):
             # `.nerdit-figure svg { width:100% }` and renders at its intrinsic size.
             rep.check(descends_from(svg, "nerdit-figure") or descends_from(svg, "nerdit-flow-wrap"),
                       f"{where} is not wrapped in nerdit-figure / nerdit-flow-wrap")
+            # figures.md rule 9: a phone column is ~314 px, so a wider viewBox shrinks figure
+            # labels below ~11.5 px (640 wide gives ~7 px). Run outputs (charts) are exempt.
+            vb = svg.attrs.get("viewbox", "").replace(",", " ").split()
+            if contract == "v10" and len(vb) == 4 and not descends_from(svg, "nerdit-out"):
+                try:
+                    width = float(vb[2])
+                except ValueError:
+                    width = 0
+                rep.check(width <= MAX_FIGURE_VIEWBOX_WIDTH,
+                          f"{where} viewBox is {width:g} wide; stack it to at most "
+                          f"{MAX_FIGURE_VIEWBOX_WIDTH} so labels stay readable on a phone (figures.md rule 9)")
 
         # section 7b: a hex literal survives the theme switch and breaks it - a navy
         # diagram stays navy on a dark ground. Tokens resolve per theme; hex does not.

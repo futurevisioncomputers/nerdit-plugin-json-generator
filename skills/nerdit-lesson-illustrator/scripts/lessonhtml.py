@@ -113,6 +113,7 @@ _TOKENS = {
 PRE = re.compile(r"<pre\b[^>]*>(.*?)</pre>", re.S | re.I)
 BLOCK_BREAK = re.compile(r"</?(?:p|div|h[1-6]|li|tr|table|section|details|summary|ol|ul|br)\b[^>]*>", re.I)
 SEED = re.compile(r'<script\b[^>]*type="text/plain"[^>]*>(.*?)</script>', re.S | re.I)
+IMG_REWRITTEN = re.compile(r'\s(?:src|width|height)="[^"]*"', re.I)
 DEMO = re.compile(r'<div\b[^>]*\bclass="[^"]*\bnerdit-demo-table\b[^"]*"[^>]*>', re.I)
 
 
@@ -173,6 +174,9 @@ def fixture_text(content: str) -> str:
 
 
 def section_fingerprint(content: str, number: int, heading: str) -> str:
+    """Hash of the section text and the lesson fixture, ignoring inserted visuals and the
+    src/width/height that optimise_existing rewrites on an existing image."""
     clean = remove_visual_blocks(content)
     sec = find_section(clean, number, heading)
-    return hashlib.sha256(clean[sec.start:sec.end].encode("utf-8")).hexdigest()[:16]
+    span = IMG.sub(lambda m: IMG_REWRITTEN.sub("", m.group(0)), clean[sec.start:sec.end])
+    return hashlib.sha256((span + "\x00" + fixture_text(clean)).encode("utf-8")).hexdigest()[:16]

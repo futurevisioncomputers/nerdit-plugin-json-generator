@@ -112,7 +112,7 @@ def convert_all(m: dict, images_dir: Path) -> dict:
         slot["check"] = {"result": None, "reason": None}
         report["converted"].append(image_id)
     for slot in m["images"]:
-        if slot.get("kind") != "diagram" or slot["status"] == "inserted":
+        if slot.get("kind") != "diagram":
             continue
         f = images_dir / "diagrams" / slot["requestFile"]
         if not f.is_file():

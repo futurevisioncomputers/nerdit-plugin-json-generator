@@ -13,7 +13,7 @@ from urllib.parse import urlparse
 
 from lessonhtml import (IMG, SRC, AnchorNotFound, find_section, fixture_text, remove_visual_blocks,
                         section_fingerprint, section_text, text, visual_elements)
-from svgcheck import check_svg
+from svgcheck import check_svg, foreign_tokens
 
 TARGET = 150_000
 HARD = 250_000
@@ -92,6 +92,10 @@ def _check_v2(lesson_content: str, slot: dict, upload_dir: Path) -> list[str]:
         absent = [l for l in slot["labels"] if l not in source]
         if absent:
             errors.append(f"{where}: labels no longer in the lesson: {absent}")
+        svg = re.search(r"<svg\b.*?</svg>", figure, re.S)
+        foreign = foreign_tokens(svg.group(0) if svg else "", source)
+        if foreign:
+            errors.append(f"{where}: drawn text not in the lesson: {foreign}")
     return errors
 
 

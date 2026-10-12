@@ -51,3 +51,17 @@ def test_fixture_text_reads_seed_scripts_and_demo_tables():
                '<script type="text/plain" id="s1">INSERT INTO t VALUES (1);</script>')
     out = fixture_text(content)
     assert "Aarav" in out and "Pune" in out and "INSERT INTO t VALUES (1);" in out
+
+
+def test_fingerprint_ignores_an_optimised_image_src_and_size():
+    old = course()["lessons"][1]["content"]
+    fp = section_fingerprint(old, 1, "Introduction")
+    optimised = old.replace("https://nerdit.in/lesson-images/test/old-diagram.png", "old-diagram.webp").replace(
+        'width="1536" height="1024"', 'width="1200" height="800"')
+    assert section_fingerprint(optimised, 1, "Introduction") == fp
+
+
+def test_fingerprint_tracks_the_lesson_fixture():
+    base = lesson0() + '<script type="text/plain" id="s1">INSERT INTO t VALUES (1, \'Pune\');</script>'
+    fp = section_fingerprint(base, 1, "1 — What a load does")
+    assert section_fingerprint(base.replace("'Pune'", "'Mumbai'"), 1, "1 — What a load does") != fp

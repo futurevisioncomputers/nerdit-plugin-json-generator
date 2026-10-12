@@ -91,3 +91,46 @@ def test_v2_illustration_missing_size_attributes_is_an_error(tmp_path):
     c["lessons"][1]["content"] = re.sub(r' width="\d+"', "", c["lessons"][1]["content"])
     errors, _ = check(c, m, images / "upload")
     assert any("old-style-02-img1: missing width" in e for e in errors)
+
+
+def heavy(url):
+    from io import BytesIO
+    import os
+    im = Image.frombytes("RGB", (900, 900), os.urandom(900 * 900 * 3))
+    buf = BytesIO()
+    im.save(buf, "PNG")
+    return buf.getvalue()
+
+
+def test_optimised_existing_image_is_not_a_section_edit(tmp_path):
+    src, images = setup(tmp_path)
+    assert build_output(src, images, fetch=heavy) == 0
+
+
+def test_diagram_edited_after_review_is_refused(tmp_path, capsys):
+    src, images = setup(tmp_path)
+    (images / "diagrams" / "load-basics-01-fig1.svg").write_text(SVG.replace("run log", "run log copy"),
+                                                                  encoding="utf-8")
+    assert build_output(src, images, fetch=tiny) == 1
+    assert "changed since it was checked" in capsys.readouterr().out
+
+
+def test_edited_inserted_diagram_goes_back_to_converted(tmp_path):
+    src, images = setup(tmp_path)
+    assert build_output(src, images, fetch=tiny) == 0
+    m = load(images)
+    (images / "diagrams" / "load-basics-01-fig1.svg").write_text(SVG.replace("run log", "run log copy"),
+                                                                  encoding="utf-8")
+    report = convert_all(m, images)
+    assert "load-basics-01-fig1" in report["converted"]
+    assert m["images"][0]["status"] == "converted"
+
+
+def test_drawn_text_missing_from_the_lesson_is_an_error(tmp_path):
+    src, images = setup(tmp_path)
+    c, m = course(), load(images)
+    insert_lessons(c, m, images / "diagrams")
+    c["lessons"][0]["content"] = c["lessons"][0]["content"].replace(
+        "② run log</text>", "② run log</text><text>Boston 9999</text>")
+    errors, _ = check(c, m, images / "upload")
+    assert any("drawn text not in the lesson: ['9999', 'Boston']" in e for e in errors)
