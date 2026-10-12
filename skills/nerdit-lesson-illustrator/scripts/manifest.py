@@ -146,6 +146,44 @@ def render_prompts(m: dict) -> str:
     return "\n".join(out) + "\n"
 
 
+def record_checks(m: dict, results: list[dict]) -> list[str]:
+    slots = {s["id"]: s for s in m["images"]}
+    errors = []
+    for r in results:
+        s = slots.get(r.get("id"))
+        if s is None:
+            errors.append(f"unknown image id {r.get('id')}")
+            continue
+        if s["status"] not in ("converted", "passed", "failed"):
+            errors.append(f"{s['id']}: status {s['status']} cannot be checked")
+            continue
+        if r.get("result") == "pass":
+            s["status"] = "passed"
+            s["check"] = {"result": "pass", "reason": r.get("reason")}
+        elif r.get("result") == "fail":
+            if not r.get("reason"):
+                errors.append(f"{s['id']}: a fail needs a reason")
+                continue
+            s["status"] = "failed"
+            s["check"] = {"result": "fail", "reason": r["reason"]}
+            if r.get("revisedSubject"):
+                s["prompt"] = r["revisedSubject"].strip() + "\n\n" + style_block(s["labels"])
+        else:
+            errors.append(f"{s['id']}: result must be pass or fail")
+    return errors
+
+
+def accept(m: dict, image_id: str) -> list[str]:
+    s = next((x for x in m["images"] if x["id"] == image_id), None)
+    if s is None:
+        return [f"unknown image id {image_id}"]
+    if s["status"] not in ("converted", "failed"):
+        return [f"{image_id}: only converted or failed images can be accepted"]
+    s["status"] = "passed"
+    s["check"] = {"result": "pass", "reason": "accepted by reviewer"}
+    return []
+
+
 def _write_prompts(images_dir: Path, m: dict) -> None:
     (Path(images_dir) / "PROMPTS.md").write_text(render_prompts(m), encoding="utf-8")
 
@@ -159,6 +197,12 @@ def main() -> int:
     a.add_argument("--plan", required=True)
     a.add_argument("--images-dir", required=True)
     a.add_argument("--replan")
+    r = sub.add_parser("record")
+    r.add_argument("--images-dir", required=True)
+    r.add_argument("--results", required=True)
+    c = sub.add_parser("accept")
+    c.add_argument("--images-dir", required=True)
+    c.add_argument("--id", required=True)
     args = ap.parse_args()
     images_dir = Path(args.images_dir)
 
@@ -183,7 +227,23 @@ def main() -> int:
         print(f"Planned {len(m['images'])} images across {len(counts)} lessons.")
         print(f"Prompt sheet: {images_dir / 'PROMPTS.md'}  ·  drop images into: {images_dir / 'incoming'}")
         return 0
-    return 2
+
+    m = load(images_dir)
+    if args.cmd == "record":
+        with open(args.results, encoding="utf-8") as f:
+            errors = record_checks(m, json.load(f))
+    else:
+        errors = accept(m, args.id)
+    if errors:
+        print("Not saved:")
+        print("\n".join(f"  - {e}" for e in errors))
+        return 1
+    save(images_dir, m)
+    _write_prompts(images_dir, m)
+    passed = sum(1 for s in m["images"] if s["status"] == "passed")
+    failed = sum(1 for s in m["images"] if s["status"] == "failed")
+    print(f"Saved. passed {passed} · failed {failed} (see Regenerate in PROMPTS.md)")
+    return 0
 
 
 if __name__ == "__main__":
