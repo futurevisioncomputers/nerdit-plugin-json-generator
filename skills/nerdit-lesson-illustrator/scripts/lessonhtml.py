@@ -6,6 +6,7 @@ inside practice boxes, info boxes and figures is never used as an image anchor.
 """
 from __future__ import annotations
 
+import hashlib
 import html
 import re
 from dataclasses import dataclass
@@ -101,3 +102,77 @@ def img_sources(content: str) -> list[str]:
         if m:
             out.append(html.unescape(m.group(1)))
     return out
+
+
+VISUAL_ATTR = re.compile(r'<(p|div|ol)\b[^>]*\bdata-nerdit-img="([^"]+)"[^>]*>', re.I)
+_TOKENS = {
+    "div": re.compile(r"<div\b|</div\s*>", re.I),
+    "p": re.compile(r"<p\b|</p\s*>", re.I),
+    "ol": re.compile(r"<ol\b|</ol\s*>", re.I),
+}
+PRE = re.compile(r"<pre\b[^>]*>(.*?)</pre>", re.S | re.I)
+BLOCK_BREAK = re.compile(r"</?(?:p|div|h[1-6]|li|tr|table|section|details|summary|ol|ul|br)\b[^>]*>", re.I)
+SEED = re.compile(r'<script\b[^>]*type="text/plain"[^>]*>(.*?)</script>', re.S | re.I)
+DEMO = re.compile(r'<div\b[^>]*\bclass="[^"]*\bnerdit-demo-table\b[^"]*"[^>]*>', re.I)
+
+
+def _element_end(content: str, start: int, tag: str) -> int:
+    """End offset of the element whose start tag begins at `start`, counting nested same tags."""
+    depth = 0
+    for t in _TOKENS[tag].finditer(content, start):
+        depth += -1 if t.group(0).startswith("</") else 1
+        if depth == 0:
+            return t.end()
+    raise ValueError(f"unclosed <{tag}> at offset {start}")
+
+
+def remove_visual_blocks(content: str) -> str:
+    while True:
+        m = VISUAL_ATTR.search(content)
+        if not m:
+            return content
+        end = _element_end(content, m.start(), m.group(1).lower())
+        start = m.start() - 1 if m.start() > 0 and content[m.start() - 1] == "\n" else m.start()
+        content = content[:start] + content[end:]
+
+
+def visual_elements(content: str, image_id: str) -> list[tuple[str, str]]:
+    out, pos = [], 0
+    while True:
+        m = VISUAL_ATTR.search(content, pos)
+        if not m:
+            return out
+        tag = m.group(1).lower()
+        end = _element_end(content, m.start(), tag)
+        if m.group(2) == image_id:
+            out.append((tag, content[m.start():end]))
+        pos = end
+
+
+def section_text(content: str, sec: Section) -> str:
+    span = remove_visual_blocks(content[sec.start:sec.end])
+    kept: list[str] = []
+
+    def stash(m: re.Match) -> str:
+        kept.append(html.unescape(TAG.sub("", m.group(1))).strip("\n"))
+        return f"\x00{len(kept) - 1}\x00"
+
+    span = PRE.sub(stash, span)
+    span = html.unescape(TAG.sub(" ", BLOCK_BREAK.sub("\n", span)))
+    lines = [re.sub(r"[ \t]+", " ", ln).strip() for ln in span.split("\n")]
+    joined = "\n".join(ln for ln in lines if ln)
+    return re.sub(r"\x00(\d+)\x00", lambda m: "\n" + kept[int(m.group(1))] + "\n", joined).strip()
+
+
+def fixture_text(content: str) -> str:
+    parts = [html.unescape(s).strip() for s in SEED.findall(content)]
+    for m in DEMO.finditer(content):
+        block = content[m.start():_element_end(content, m.start(), "div")]
+        parts.append(re.sub(r"[ \t]+", " ", html.unescape(TAG.sub(" ", BLOCK_BREAK.sub("\n", block)))).strip())
+    return "\n".join(p for p in parts if p)
+
+
+def section_fingerprint(content: str, number: int, heading: str) -> str:
+    clean = remove_visual_blocks(content)
+    sec = find_section(clean, number, heading)
+    return hashlib.sha256(clean[sec.start:sec.end].encode("utf-8")).hexdigest()[:16]
