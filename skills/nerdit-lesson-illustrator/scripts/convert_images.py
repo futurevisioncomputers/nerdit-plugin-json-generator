@@ -1,4 +1,5 @@
 """Match user images in incoming/ to manifest slots, convert them to WebP and write previews.
+Diagram slots are read from diagrams/ as SVG and checked against the figure contract.
 
 Usage: python convert_images.py --images-dir <dir>
 """
@@ -13,10 +14,12 @@ from pathlib import Path
 from PIL import Image, ImageOps, UnidentifiedImageError
 
 import manifest as mf
+from svgcheck import check_svg
 
 ACCEPTED = (".png", ".jpg", ".jpeg", ".webp")
 MAX_WIDTH = 1200
 PREVIEW_WIDTH = 640
+PHONE_WIDTH = 360
 TARGET_BYTES = 150_000
 HARD_LIMIT_BYTES = 250_000
 START_QUALITY = 80
@@ -51,16 +54,16 @@ def encode_webp(source: Path | bytes) -> tuple[bytes, int, int, int]:
         q = max(FLOOR_QUALITY, q - 5)
 
 
-def _write_preview(webp: bytes, dst: Path) -> None:
+def _write_preview(webp: bytes, dst: Path, width: int = PREVIEW_WIDTH) -> None:
     with Image.open(BytesIO(webp)) as im:
         img = im.convert("RGBA")
     flat = Image.new("RGB", img.size, (255, 255, 255))
     flat.paste(img, mask=img.split()[3])
-    _scaled(flat, PREVIEW_WIDTH).save(dst, "JPEG", quality=80)
+    _scaled(flat, width).save(dst, "JPEG", quality=80)
 
 
 def find_incoming(m: dict, incoming: Path) -> tuple[dict[str, Path], list[str], list[str]]:
-    wanted = {Path(s["requestFile"]).stem.lower(): s["id"] for s in m["images"]}
+    wanted = {Path(s["requestFile"]).stem.lower(): s["id"] for s in m["images"] if s.get("kind") != "diagram"}
     files, unexpected = {}, []
     if incoming.is_dir():
         for f in sorted(incoming.iterdir()):
@@ -73,7 +76,8 @@ def find_incoming(m: dict, incoming: Path) -> tuple[dict[str, Path], list[str], 
                 unexpected.append(f"{f.name} (duplicate)")
             else:
                 files[image_id] = f
-    missing = [s["id"] for s in m["images"] if s["id"] not in files and s["status"] in ("planned", "failed")]
+    missing = [s["id"] for s in m["images"]
+               if s.get("kind") != "diagram" and s["id"] not in files and s["status"] in ("planned", "failed")]
     return files, missing, unexpected
 
 
@@ -103,9 +107,30 @@ def convert_all(m: dict, images_dir: Path) -> dict:
             report["warnings"].append(f"{f.name}: {len(data) // 1000} KB at quality {q}, above the 150 KB target")
         (images_dir / "upload" / slot["outputFile"]).write_bytes(data)
         _write_preview(data, images_dir / "preview" / f"{image_id}.jpg")
+        _write_preview(data, images_dir / "preview" / f"{image_id}-phone.jpg", PHONE_WIDTH)
         slot.update(status="converted", sourceSha256=sha, bytes=len(data), width=w, height=h)
         slot["check"] = {"result": None, "reason": None}
         report["converted"].append(image_id)
+    for slot in m["images"]:
+        if slot.get("kind") != "diagram" or slot["status"] == "inserted":
+            continue
+        f = images_dir / "diagrams" / slot["requestFile"]
+        if not f.is_file():
+            if slot["status"] in ("planned", "failed"):
+                report["missing"].append(slot["id"])
+            continue
+        svg = f.read_text(encoding="utf-8")
+        sha = hashlib.sha256(svg.encode("utf-8")).hexdigest()
+        if sha == slot.get("sourceSha256") and slot["status"] != "planned":
+            report["unchanged"].append(slot["id"])
+            continue
+        problems = check_svg(svg, slot["labels"], len(slot["explanation"]))
+        if problems:
+            report["errors"] += [f"{f.name}: {p}" for p in problems]
+            continue
+        slot.update(status="converted", sourceSha256=sha, bytes=len(svg.encode("utf-8")))
+        slot["check"] = {"result": None, "reason": None}
+        report["converted"].append(slot["id"])
     return report
 
 
@@ -124,7 +149,9 @@ def main() -> int:
         for line in report[key]:
             print(f"  {key[:-1]}: {line}")
     if report["missing"]:
-        print("  waiting for: " + ", ".join(f"{i}.png" for i in report["missing"]))
+        files = {s["id"]: ("diagrams/" if s.get("kind") == "diagram" else "incoming/") + s["requestFile"]
+                 for s in m["images"]}
+        print("  waiting for: " + ", ".join(files[i] for i in report["missing"]))
     if report["unexpected"]:
         print("  ignored files: " + ", ".join(report["unexpected"]))
     print(f"Previews to check: {images_dir / 'preview'}")
