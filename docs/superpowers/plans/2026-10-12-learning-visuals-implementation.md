@@ -1502,6 +1502,19 @@ Teaching sequence rules (checked by the QA agent):
 - Do not add a second example only to reach a count.
 ```
 
+- [ ] **Step 1b: Change the overview box rule in `CORE.md` §2 and §3**
+
+Replace the skeleton line `[overview box]                                 ← 2 sentences max` with
+`[overview box]                                 ← a real question + what the learner will be able to do`,
+and add to §3:
+
+```
+The overview box asks the lesson's real question in one sentence ("How can a sales amount be
+connected to the customer who bought the product?") and says in one sentence what the learner
+will be able to do. Link to the previous lesson and name only the prerequisites needed now.
+Show the course and lesson names as given; never invent a chapter level.
+```
+
 - [ ] **Step 2: Add the heading rule to `CORE.md` §4c**
 
 At the end of §4c add:
@@ -1744,8 +1757,9 @@ G=skills/nerdit-chapter-generator/scripts
 python $G/assemble_course.py --chapter pilot-04 --input "$D/pilot-04/course-pilot-04_input.json" --html-dir "$D/pilot-04" --out "$D/pilot-04/course-pilot-04_output.json"
 python $G/verify_course.py --input "$D/pilot-04/course-pilot-04_input.json" --output "$D/pilot-04/course-pilot-04_output.json" --contract v10
 python $G/check_sql_outputs.py --course "$D/pilot-04/course-pilot-04_output.json"
+python $G/check_sequence.py --input "$D/course-data-modelling-etl-data-warehousing-for-analysts_input.json" --course "$D/pilot-04/course-pilot-04_output.json" --concepts-dir "$D/pilot-04" --allow "SQL SELECT, WHERE, GROUP BY, JOIN, Python, pandas" --strict
 ```
-Expected: verifier `PASS`; SQL checker `0 mismatch`. Any mismatch → regenerate with the exact lines (2-attempt budget).
+Expected: verifier `PASS`; SQL checker `0 mismatch`; sequencing clean (a single-lesson pilot checks only that lesson's own declared terms). Any mismatch → regenerate with the exact lines (2-attempt budget).
 
 - [ ] **Step 4: Trace every figure value to the fixture**
 
@@ -1795,6 +1809,7 @@ Expected: `Wrote …with-images.json`, the 16 optimised images still re-pointed,
 
 - [ ] **Step 3:** Inspect lesson 01's existing (re-encoded) warehouse-layers image against its section text and fixture; record keep or replace in the ledger. Re-encoding is not approval of its content.
 - [ ] **Step 4:** Preview lesson 01 from the with-images JSON at desktop and phone width (as Task 10 Step 5) and record the result.
+- [ ] **Step 5:** Record the limits of a backfill in the ledger: the added figure and check question do not fix lesson 01's existing Try It (it aggregates Pune orders while the section asks about ETL vs ELT order); that needs the lesson regenerated under Task 8's rules during rollout. Before any import of this course, each of the 16 re-encoded images needs the same keep/replace review as Step 3.
 
 ---
 
@@ -1822,6 +1837,14 @@ Expected: `Wrote …with-images.json`, the 16 optimised images still re-pointed,
       written and tested; uncommitted with the rest of this workstream's changes).
 - [ ] Caption or step edits made in the admin are overwritten if the illustrator's apply runs
       again on the same JSON; edit them in the illustrator manifest, or do not re-apply.
+- [ ] Show each figure in the lesson preview together with its intro, reading steps and check
+      question, using the public lesson renderer's styles and sanitizer, at desktop and phone width.
+- [ ] Keep "files ready" separate from "content reviewed by staff": an upload match is not a
+      teaching-quality approval.
+- [ ] Replacing an image in the admin flags its caption, intro and reading steps for review, so
+      no text describes an image that is no longer there.
+- [ ] Import and export one pilot through the local admin (emulators) and confirm captions,
+      steps, filenames, anchors and examples survive unchanged in meaning.
 ```
 
 - [ ] **Step 2:** Show the user the appended section; this repository is the admin workstream's, so do not commit it from this plan.
@@ -1831,4 +1854,5 @@ Expected: `Wrote …with-images.json`, the 16 optimised images still re-pointed,
 ### Task 14: Review gate
 
 - [ ] **Step 1:** Present to the user: both pilots' desktop and phone screenshots, the traced figure values, the SQL checker results before and after, and the backfill lesson preview.
-- [ ] **Step 2:** Record the user's decision in the ledger. Rolling the pattern out to other lessons, importing anything into the admin, and publishing are separate requests after this review.
+- [ ] **Step 2:** Suggest one real first-time student reads a pilot and answers its check questions before rollout; that is stronger evidence than editorial review.
+- [ ] **Step 3:** Record the user's decision in the ledger. Rolling the pattern out to other lessons, importing anything into the admin, and publishing are separate requests after this review.
