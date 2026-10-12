@@ -1,8 +1,14 @@
 # NERDIT Lesson Illustrator — design
 
+> **Proposed revision, 2026-10-12:** the learner-focused direction is documented in
+> [Lesson explanations, layout and teaching visuals](../plans/2026-10-12-nerdit-learning-content-and-visuals.md).
+> It addresses consistency between source content, labelled diagrams, worked examples and
+> practice. This original design records the earlier concept-illustration scope; the revised
+> teaching rules still need to be implemented in the skills and scripts.
+
 Date: 2026-10-10
-Status: approved in conversation, awaiting written-spec review
-Plugin: `nerdit_content_creator` (new skill `nerdit-lesson-illustrator`)
+Status: original implementation present in v3.1.0; incremental learning-quality revision proposed on 2026-10-12.
+Plugin: `nerdit_content_creator` (implemented skill `nerdit-lesson-illustrator`)
 
 ## Goal
 

@@ -1,5 +1,18 @@
 # NERDIT Lesson Illustrator Implementation Plan
 
+> **Implementation status, confirmed 2026-10-12:** the original illustrator is implemented
+> in plugin v3.1.0. Its scripts, skill instructions and upload caching code are present.
+> The original task checkboxes below are historical implementation instructions, not a current
+> list of missing features. The linked revision concerns additional learning-quality improvements;
+> production deployment was not reverified during this status update.
+
+> **Learning-design revision, 2026-10-12:** read
+> [Lesson explanations, layout and teaching visuals](2026-10-12-nerdit-learning-content-and-visuals.md)
+> before further content generation. It proposes full target-section context, exact labelled
+> technical diagrams, nearby interpretation and two beginner-focused pilots. The outline-only
+> planning, concept-only image scope, label limits and quotas below are the original baseline;
+> revising their implemented contracts is pending. Compression and upload work remain relevant.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** A `nerdit-lesson-illustrator` skill that plans concept illustrations for a NERDIT course JSON, emits ready-to-paste prompts and exact placements, and — once the user has generated the images — converts them to small WebP files, records a visual check, inserts them into the lessons, and produces a JSON plus image folder for the admin's "Import JSON + Images" page.
