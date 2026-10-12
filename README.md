@@ -106,3 +106,17 @@ content was empty are generated fresh.
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+## Lesson images (nerdit-lesson-illustrator)
+
+After a course is final, run the `nerdit-lesson-illustrator` skill on its output JSON (or on a
+JSON exported from the admin for an existing course).
+
+1. `plan` — writes `images/PROMPTS.md` (one ready-to-paste prompt per image, with the filename to
+   save as) and `images/manifest.json`.
+2. Generate the images in any tool and save them into `images/incoming/`.
+3. `apply` — converts to WebP (≤ 1200 px, ~150 KB), checks each image against its lesson, inserts
+   them and writes `course-<chapter>_output.with-images.json`.
+4. Admin → Import JSON + Images: the with-images JSON and the `images/upload/` folder.
+
+Tests: `cd skills/nerdit-lesson-illustrator/scripts && PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q`

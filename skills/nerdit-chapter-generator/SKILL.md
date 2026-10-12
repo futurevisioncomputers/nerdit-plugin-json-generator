@@ -475,6 +475,8 @@ After delivering, provide a brief summary listing:
 - Lesson titles generated
 - Total question counts (lesson-level total and `assessment.questions` total)
 - Any notable decisions made (e.g., which visualization type was chosen per lesson)
+- Next step: once the course is final, the `nerdit-lesson-illustrator` skill can plan concept
+  illustrations for it (`plan`), then insert the images the user generates (`apply`)
 
 ---
 
