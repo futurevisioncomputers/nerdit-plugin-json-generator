@@ -63,3 +63,9 @@ def test_cli_names_each_missing_file_with_its_folder_and_extension(tmp_path, mon
     convert_images.main()
     out = capsys.readouterr().out
     assert "diagrams/load-basics-01-fig1.svg" in out and "incoming/old-style-02-img1.png" in out
+
+
+def test_check_svg_rejects_a_viewbox_too_wide_to_read_on_a_phone():
+    wide = GOOD.replace('viewBox="0 0 200 80"', 'viewBox="0 0 640 250"')
+    assert any("viewBox is 640 wide" in e for e in check_svg(wide, ["warehouse", "run log"], 2))
+    assert check_svg(GOOD.replace('viewBox="0 0 200 80"', 'viewBox="0 0 400 300"'), ["warehouse", "run log"], 2) == []

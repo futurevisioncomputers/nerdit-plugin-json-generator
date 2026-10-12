@@ -17,6 +17,8 @@ from lessonhtml import AnchorNotFound, locate, remove_visual_blocks
 from manifest import MARKERS
 from optimise_existing import default_fetch, optimise_existing
 
+DIAGRAM_MAX_WIDTH = 440
+
 
 def block(slot: dict) -> str:
     alt = html.escape(slot["alt"], quote=True)
@@ -35,8 +37,10 @@ def blocks_v2(slot: dict, svg: str | None) -> str:
         figure = (f'<img src="{slot["outputFile"]}" alt="{html.escape(slot["alt"], quote=True)}" '
                   f'width="{slot["width"]}" height="{slot["height"]}" loading="lazy" decoding="async" '
                   'style="display:block;width:100%;height:auto">')
+    # A phone-width diagram (viewBox <= 400) would blow up to 680 px on desktop; cap it.
+    width = f' style="max-width:{DIAGRAM_MAX_WIDTH}px"' if slot["kind"] == "diagram" else ""
     out = [f'\n<p class="nerdit-visual-intro" data-nerdit-img="{vid}">{esc(slot["intro"])}</p>',
-           f'\n<div class="nerdit-figure" data-nerdit-img="{vid}">\n  {figure}\n'
+           f'\n<div class="nerdit-figure" data-nerdit-img="{vid}"{width}>\n  {figure}\n'
            f'  <div class="nerdit-figure-caption">{esc(slot["caption"])}</div>\n</div>']
     steps = slot["explanation"]
     marks = MARKERS[:len(steps)] if len(steps) >= 2 else [""] * len(steps)

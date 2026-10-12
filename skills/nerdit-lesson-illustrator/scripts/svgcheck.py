@@ -7,6 +7,9 @@ from lessonhtml import text
 
 HEX = re.compile(r"(?<!&)#[0-9a-fA-F]{3,8}\b")
 MARKER_CHARS = "①②③④⑤"
+# Lesson text in an SVG is ~14.7 user units and a phone column is ~314 px wide, so a viewBox
+# wider than this shrinks labels below ~11.5 px. Stack the parts vertically instead.
+MAX_VIEWBOX_WIDTH = 400
 
 
 def check_svg(svg: str, labels: list[str], steps: int) -> list[str]:
@@ -14,8 +17,12 @@ def check_svg(svg: str, labels: list[str], steps: int) -> list[str]:
     if not m:
         return ["not an <svg> element"]
     attrs, errors = m.group(1), []
-    if "viewBox=" not in attrs:
+    vb = re.search(r'viewBox="\s*[-\d.]+[\s,]+[-\d.]+[\s,]+([\d.]+)', attrs)
+    if not vb:
         errors.append("svg has no viewBox")
+    elif float(vb.group(1)) > MAX_VIEWBOX_WIDTH:
+        errors.append(f"viewBox is {float(vb.group(1)):g} wide; labels are unreadable on a phone above "
+                      f"{MAX_VIEWBOX_WIDTH} - stack the parts vertically")
     if not re.search(r'\brole="img"', attrs):
         errors.append('svg needs role="img"')
     if not re.search(r'\baria-label="[^"]+"', attrs):

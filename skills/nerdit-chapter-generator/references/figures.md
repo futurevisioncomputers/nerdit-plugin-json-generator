@@ -37,6 +37,12 @@ has; picking one is a decision, drawing one is not.
 7. **Text stays text.** No `<path>`-outlined glyphs — outlined text cannot re-theme.
 8. Use the css8 flow classes where they fit — `nerdit-flow-rect`, `nerdit-flow-text`,
    `nerdit-flow-edge` — rather than restating their fill/stroke inline.
+9. **Readable on a phone.** A phone column is about 314 px wide and figure text is about
+   14.7 units, so a 640-wide `viewBox` shrinks every label to about 7 px. New figures use a
+   `viewBox` at most 400 wide — stack the parts vertically — and put
+   `style="max-width:440px"` on the `nerdit-figure` wrapper so desktop does not blow them up.
+   Templates 1–9 below are drawn 640 wide: restack them to fit before use. Template 10 shows a
+   stacked layout.
 
 Two colours carry meaning across every template and must not be swapped:
 `var(--orange)` = **what the learner does**, `var(--green)` = **what they get back**.
@@ -298,24 +304,24 @@ For: a fact row and its dimensions, a foreign key to its parent, an order line t
 Use the lesson's own row and values. Number the parts the reading steps describe.
 
 ```html
-<div class="nerdit-figure">
-  <svg viewBox="0 0 640 250" role="img" aria-label="Sales row O1 line 1 stores amount 200; customer_key 1 finds Aarav in Pune and product_key 10 finds Book.">
-    <rect x="225" y="50" width="190" height="150" rx="8" fill="var(--bg-soft)" stroke="var(--nb)"/>
-    <text class="nerdit-flow-text" x="320" y="76" text-anchor="middle" fill="var(--nb)">fact_sales</text>
-    <text class="nerdit-flow-text" x="240" y="104" fill="var(--tx)">order O1, line 1</text>
-    <text class="nerdit-flow-text" x="240" y="130" fill="var(--green)">① amount = 200</text>
-    <text class="nerdit-flow-text" x="240" y="156" fill="var(--orange)">② customer_key = 1</text>
-    <text class="nerdit-flow-text" x="240" y="182" fill="var(--orange)">③ product_key = 10</text>
-    <rect x="20" y="80" width="170" height="90" rx="8" fill="var(--white)" stroke="var(--nb)"/>
-    <text class="nerdit-flow-text" x="105" y="104" text-anchor="middle" fill="var(--nb)">dim_customer</text>
-    <text class="nerdit-flow-text" x="34" y="130" fill="var(--orange)">customer_key = 1</text>
-    <text class="nerdit-flow-text" x="34" y="154" fill="var(--tx)">Aarav, Pune</text>
-    <rect x="450" y="80" width="170" height="90" rx="8" fill="var(--white)" stroke="var(--nb)"/>
-    <text class="nerdit-flow-text" x="535" y="104" text-anchor="middle" fill="var(--nb)">dim_product</text>
-    <text class="nerdit-flow-text" x="464" y="130" fill="var(--orange)">product_key = 10</text>
-    <text class="nerdit-flow-text" x="464" y="154" fill="var(--tx)">Book, Reading</text>
-    <path d="M225 152 H205 V126 H190" stroke="var(--orange)" stroke-width="1.6" fill="none"/>
-    <path d="M415 178 H435 V126 H450" stroke="var(--orange)" stroke-width="1.6" fill="none"/>
+<div class="nerdit-figure" style="max-width:440px">
+  <svg viewBox="0 0 360 300" role="img" aria-label="Sales row O1 line 1 stores amount 200; customer_key 1 finds Aarav in Pune and product_key 10 finds Book.">
+    <rect x="80" y="10" width="200" height="136" rx="8" fill="var(--bg-soft)" stroke="var(--nb)"/>
+    <text class="nerdit-flow-text" x="180" y="34" text-anchor="middle" fill="var(--nb)">fact_sales</text>
+    <text class="nerdit-flow-text" x="94" y="60" fill="var(--tx)">order O1, line 1</text>
+    <text class="nerdit-flow-text" x="94" y="84" fill="var(--green)">① amount = 200</text>
+    <text class="nerdit-flow-text" x="94" y="108" fill="var(--orange)">② customer_key = 1</text>
+    <text class="nerdit-flow-text" x="94" y="132" fill="var(--orange)">③ product_key = 10</text>
+    <rect x="5" y="200" width="170" height="90" rx="8" fill="var(--white)" stroke="var(--nb)"/>
+    <text class="nerdit-flow-text" x="90" y="224" text-anchor="middle" fill="var(--nb)">dim_customer</text>
+    <text class="nerdit-flow-text" x="17" y="250" fill="var(--orange)">customer_key = 1</text>
+    <text class="nerdit-flow-text" x="17" y="274" fill="var(--tx)">Aarav, Pune</text>
+    <rect x="185" y="200" width="170" height="90" rx="8" fill="var(--white)" stroke="var(--nb)"/>
+    <text class="nerdit-flow-text" x="270" y="224" text-anchor="middle" fill="var(--nb)">dim_product</text>
+    <text class="nerdit-flow-text" x="197" y="250" fill="var(--orange)">product_key = 10</text>
+    <text class="nerdit-flow-text" x="197" y="274" fill="var(--tx)">Book, Reading</text>
+    <path d="M80 103 H50 V200" stroke="var(--orange)" stroke-width="1.6" fill="none"/>
+    <path d="M280 127 H310 V200" stroke="var(--orange)" stroke-width="1.6" fill="none"/>
   </svg>
   <div class="nerdit-figure-caption">The sales row stores the amount; matching keys supply customer and product details.</div>
 </div>

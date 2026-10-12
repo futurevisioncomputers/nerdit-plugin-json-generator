@@ -568,6 +568,10 @@ SVG when a template fits; eight hand-drawn diagrams read as eight different hand
 > it — and a decorative picture is worse than none. An empty figure slot beats a filled
 > one that teaches nothing.
 
+Phone-readable figures: a `viewBox` at most 400 wide with the parts stacked, and
+`style="max-width:440px"` on the wrapper (figures.md rule 9). A 640-wide figure shrinks its
+labels to about 7 px on a phone.
+
 Inline SVG rules: `viewBox` set, `width:100%; max-width` via the `nerdit-figure` wrapper,
 `role="img"` + `aria-label`, and css8 flow classes (`nerdit-flow-rect`, `nerdit-flow-text`,
 `nerdit-flow-edge`). **Colour comes from tokens, never from hex** — see §7b. Wrap every
