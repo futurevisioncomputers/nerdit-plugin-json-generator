@@ -11,7 +11,9 @@ from collections import Counter
 from pathlib import Path
 from urllib.parse import urlparse
 
-from lessonhtml import IMG, SRC, text
+from lessonhtml import (IMG, SRC, AnchorNotFound, find_section, fixture_text, remove_visual_blocks,
+                        section_fingerprint, section_text, text, visual_elements)
+from svgcheck import check_svg
 
 TARGET = 150_000
 HARD = 250_000
@@ -36,6 +38,63 @@ def _host_ok(src: str) -> bool:
     return any(host == h or host.endswith("." + h) for h in ALLOWED_HOSTS)
 
 
+def _check_v2(lesson_content: str, slot: dict, upload_dir: Path) -> list[str]:
+    where, errors = f"{slot['lessonId']}: {slot['id']}", []
+    parts = visual_elements(lesson_content, slot["id"])
+    by = {}
+    for tag, el in parts:
+        cls = re.search(r'\bclass="([^"]*)"', el)
+        by[(cls.group(1) if cls else tag)] = el
+    intro = by.get("nerdit-visual-intro")
+    figure = by.get("nerdit-figure")
+    steps = by.get("nerdit-visual-read")
+    if intro is None or not text(intro):
+        errors.append(f"{where}: missing intro paragraph")
+    if figure is None:
+        return errors + [f"{where}: missing figure"]
+    if "nerdit-predict" not in by:
+        errors.append(f"{where}: missing check question")
+    cap = re.search(r'<div class="nerdit-figure-caption">(.*?)</div>', figure, re.S)
+    if not cap or not text(cap.group(1)):
+        errors.append(f"{where}: empty caption")
+    shown = len(re.findall(r"<li\b", steps or ""))
+    if shown != len(slot["explanation"]):
+        errors.append(f"{where}: {shown} reading steps shown, {len(slot['explanation'])} expected")
+    if slot["kind"] == "diagram":
+        svg = re.search(r"<svg\b.*?</svg>", figure, re.S)
+        errors += [f"{where}: {p}" for p in check_svg(svg.group(0) if svg else "", slot["labels"],
+                                                      len(slot["explanation"]))]
+    else:
+        tm = IMG.search(figure)
+        tag = tm.group(0) if tm else ""
+        for need in ('loading="lazy"', 'decoding="async"'):
+            if need not in tag:
+                errors.append(f"{where}: missing {need}")
+        for attr in ("alt", "width", "height"):
+            if not re.search(rf'\b{attr}="[^"]+"', tag):
+                errors.append(f"{where}: missing {attr}")
+        f = upload_dir / slot["outputFile"]
+        if not f.is_file():
+            errors.append(f"{where}: {slot['outputFile']} not in upload/")
+        elif f.stat().st_size > HARD:
+            errors.append(f"{where}: {f.stat().st_size // 1000} KB, over 250 KB")
+    try:
+        fp = section_fingerprint(lesson_content, slot["section"]["number"], slot["section"]["heading"])
+    except AnchorNotFound:
+        return errors + [f"{where}: its section no longer exists; re-plan with --replan {slot['lessonId']}"]
+    if fp != slot["sourceFingerprint"]:
+        errors.append(f"{where}: section changed since planning; re-review the visual "
+                      f"(--replan {slot['lessonId']})")
+    if slot["kind"] == "diagram":
+        clean = remove_visual_blocks(lesson_content)
+        source = section_text(clean, find_section(clean, slot["section"]["number"], slot["section"]["heading"])) \
+            + "\n" + fixture_text(clean)
+        absent = [l for l in slot["labels"] if l not in source]
+        if absent:
+            errors.append(f"{where}: labels no longer in the lesson: {absent}")
+    return errors
+
+
 def check(course: dict, m: dict, upload_dir: Path) -> tuple[list[str], list[str]]:
     upload_dir = Path(upload_dir)
     errors, warnings, seen = [], [], set()
@@ -58,6 +117,8 @@ def check(course: dict, m: dict, upload_dir: Path) -> tuple[list[str], list[str]
                 continue
             seen.add(image_id)
             slot = slots.get(image_id)
+            if slot is not None and slot.get("version") == 2:
+                continue
             if slot is None or slot["status"] != "inserted":
                 errors.append(f"{where}: not an inserted manifest slot")
                 continue
@@ -78,6 +139,10 @@ def check(course: dict, m: dict, upload_dir: Path) -> tuple[list[str], list[str]
                 errors.append(f"{where}: {f.stat().st_size // 1000} KB, over 250 KB")
             elif f.stat().st_size > TARGET:
                 warnings.append(f"{where}: {f.stat().st_size // 1000} KB, above 150 KB target")
+        for s in m.get("images", []):
+            if s.get("version") == 2 and s["lessonId"] == lid and s["status"] == "inserted":
+                seen.add(s["id"])
+                errors += _check_v2(content, s, upload_dir)
     for s in m.get("images", []):
         if s["status"] == "inserted" and s["id"] not in seen:
             errors.append(f"{s['id']}: marked inserted but not found in any lesson")
