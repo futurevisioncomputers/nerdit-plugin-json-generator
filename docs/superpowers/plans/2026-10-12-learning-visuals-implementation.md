@@ -1815,6 +1815,12 @@ Expected: `Wrote …with-images.json`, the 16 optimised images still re-pointed,
 
 ### Task 13: Admin follow-ups recorded in the admin plan
 
+**2026-10-13 integration update:** the follow-ups are implemented and tracked in
+the [admin release checklist](../../../../nerdit-admin/docs/course-json-images-import-plan.md).
+Follow the [shared import contract](../../course-import-contract.md). The migration
+instruction below to upload all 16 old WebPs is superseded: use the reviewed final
+course JSON and only its referenced raster assets. Inline SVG needs no upload.
+
 **Files:**
 - Modify: `../nerdit-admin/docs/course-json-images-import-plan.md` (append; owned by the admin workstream)
 
