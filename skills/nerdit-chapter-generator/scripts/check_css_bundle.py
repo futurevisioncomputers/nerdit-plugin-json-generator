@@ -10,7 +10,8 @@ def digest(d: Path) -> dict[str, str]:
         p = d / f
         if not p.exists():
             raise SystemExit(f"missing {p}")
-        out[f] = hashlib.sha256(p.read_bytes()).hexdigest()
+        # Git may check out CRLF on Windows; compare CSS content, not line endings.
+        out[f] = hashlib.sha256(p.read_text(encoding="utf-8").encode("utf-8")).hexdigest()
     return out
 
 def main(argv: list[str]) -> int:

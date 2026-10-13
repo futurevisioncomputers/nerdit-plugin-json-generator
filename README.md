@@ -6,6 +6,9 @@ quiz questions — from `course-[chaptername]_input.json` files.
 
 ## Architecture
 
+For course-wise image uploads and synchronized teaching blocks in admin and the
+learner site, follow the [course import contract](docs/course-import-contract.md).
+
 Multi-agent, **file-based**. The `nerdit-chapter-generator` skill is the orchestrator; it never
 writes lesson HTML or quiz questions itself, and it never holds either in its context. It
 delegates to two subagents and assembles the final JSON with a bundled Python script:
