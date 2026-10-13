@@ -27,3 +27,9 @@ The seed script recreates the demo table from §5 — the learner runs queries a
 exact data shown on the page. `data-seed` points at the seed block's `id`. sql.js
 (SQLite compiled to WebAssembly) is lazy-loaded from CDN only when the learner first
 clicks Run — zero page-load cost.
+
+**Editor size and colour are the website's job.** The website fits the textarea to its
+code and colours it like the lesson's code blocks, so `rows` is only the no-script
+fallback. Write a query of more than one clause on several lines (`FROM`, `WHERE`,
+`ORDER BY` each starting a line); a long one-line query is laid out that way
+automatically, but the written layout is what the plugin's own previews show.

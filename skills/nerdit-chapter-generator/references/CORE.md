@@ -280,6 +280,11 @@ Rules:
 - **The output half is mandatory.** Every `nerdit-in` has a matching `nerdit-out`.
   For SQL show an ASCII result table; for Python show printed output; for Excel show the
   cell value; for HTML/CSS describe what renders in one line.
+- **Input code is plain text with a `data-lang`; the website colours it.** Keywords,
+  strings, comments, numbers and the learner's own names each get a colour, and the
+  input half wraps instead of scrolling. Never hand-write colour spans. Write SQL one
+  clause per line (`SELECT …` / `FROM …` / `WHERE …`) — a one-line query wider than the
+  column is the thing that used to need a sideways scroll.
 - **Tags name the two sides in the learner's words.** `You type` on the input.
   On the output, name the thing that answered: `Python shows`, `Excel shows`,
   `SQL shows`, `The page shows`. Never `Input` / `Output`.

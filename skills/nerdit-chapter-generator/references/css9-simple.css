@@ -1511,3 +1511,109 @@
   padding: .6rem .9rem;
   margin: .4rem 0 .6rem;
 }
+
+/* ====================================================================
+   v11 · CODE THAT READS LIKE CODE
+   ====================================================================
+   The website tokenises lesson code (lessonHighlight.ts): keywords,
+   strings, comments, numbers, built-ins, and — new here — `.ident`, the
+   names a learner writes (variables, columns, tables, aliases). The
+   palette above is tuned for the dark code ground; these rules give the
+   same tokens readable colours on the light surfaces too, and turn the
+   try-it textarea into a fitted, coloured editor. All of it is additive:
+   without the website's script the markup renders exactly as before.
+   ==================================================================== */
+
+/* Names on the dark ground: a pale blue, apart from the plain text. */
+.ident { color: #9CDCFE; }
+
+/* A run line's input half is a light surface. The flattening rule above
+   (`.nerdit-in *` takes the page ink) made every token the same colour;
+   these win over it and keep each kind of word distinct. */
+.nerdit-wrapper .nerdit-in pre .kw,
+.nerdit-code-light .kw          { color: #7C3AED; }
+.nerdit-wrapper .nerdit-in pre .fn,
+.nerdit-wrapper .nerdit-in pre .bltin,
+.nerdit-code-light .bltin       { color: #1D4ED8; }
+.nerdit-wrapper .nerdit-in pre .cls-n,
+.nerdit-code-light .cls-n       { color: #B45309; }
+.nerdit-wrapper .nerdit-in pre .str,
+.nerdit-code-light .str         { color: #047857; }
+.nerdit-wrapper .nerdit-in pre .num,
+.nerdit-code-light .num         { color: #BE123C; }
+.nerdit-wrapper .nerdit-in pre .cmt,
+.nerdit-code-light .cmt         { color: #64748B; font-style: italic; }
+.nerdit-wrapper .nerdit-in pre .op,
+.nerdit-code-light .op          { color: #475569; }
+.nerdit-wrapper .nerdit-in pre .dec,
+.nerdit-code-light .dec         { color: #C2410C; }
+.nerdit-wrapper .nerdit-in pre .slf,
+.nerdit-wrapper .nerdit-in pre .param,
+.nerdit-code-light .slf,
+.nerdit-code-light .param       { color: #A16207; }
+.nerdit-wrapper .nerdit-in pre .ident,
+.nerdit-code-light .ident       { color: #0E7490; }
+
+/* What the learner types wraps instead of scrolling sideways: a long query
+   is read in one glance, not dragged into view. Only the input half — the
+   output half holds text tables whose columns must not break. */
+.nerdit-wrapper .nerdit-in pre,
+.nerdit-wrapper .nerdit-in pre code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Try-it editor. The textarea stays the real input (the runners read its
+   value); its own text is transparent, and a coloured copy of the code is
+   drawn exactly behind it. Both boxes share every metric below — font,
+   size, line height, padding, border, wrapping — or the caret drifts away
+   from the letters. The website sizes the textarea to its code. */
+.nerdit-editor {
+  position: relative;
+}
+
+.nerdit-editor > .nerdit-editor-hl {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--font-code);
+  font-size: 13.5px;
+  line-height: 1.7;
+  padding: .8rem 1rem;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm, 8px);
+  background: #0F2747;
+  color: #DCE4EE;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  tab-size: 4;
+  pointer-events: none;
+}
+
+/* Bold is wider than regular in some fallback fonts; under a caret it would
+   push the letters out of line. The editor shows keywords by colour alone. */
+.nerdit-editor > .nerdit-editor-hl .kw { font-weight: inherit; }
+
+.nerdit-tryit-editor.nerdit-editor-input {
+  position: relative;
+  background: transparent;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  caret-color: #FFFFFF;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  tab-size: 4;
+  resize: none;
+}
+
+.nerdit-tryit-editor.nerdit-editor-input::selection {
+  background: rgba(96, 165, 250, .35);
+}
+
+@media print {
+  .ident { color: #000 !important; }
+}
