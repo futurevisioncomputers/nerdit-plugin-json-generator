@@ -1,0 +1,148 @@
+#!/usr/bin/env python3
+"""Human-voice check for lesson prose (CORE.md §10, references/voice.md).
+
+Lessons that read as machine-written share a small set of phrases and one rhythm. This fails
+a lesson on a banned phrase and warns on long sentences, long paragraphs, em-dash habits and
+concept sections that all open the same way. Code, tables and figures are not prose.
+
+    python check_prose.py --course <course_output.json> [--lesson <id>]
+
+Exit 0 = no banned phrase, 1 = at least one, 2 = could not read a file. Stdlib only.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import sys
+from pathlib import Path
+
+from verify_course import Node, parse, walk
+
+VOICE = Path(__file__).resolve().parent.parent / "references" / "voice.md"
+SKIP = {"pre", "code", "textarea", "svg", "script", "style", "table"}
+MAX_WORDS = 15
+MAX_SENTENCES = 3
+MAX_DASHES = 1
+
+
+def banned_patterns(path: Path = VOICE) -> list[tuple[str, re.Pattern]]:
+    """The ```banned block of voice.md: one phrase per line, or `re:<regex>`."""
+    block = re.search(r"```banned\n(.*?)```", path.read_text(encoding="utf-8"), re.S)
+    if block is None:
+        raise ValueError(f"{path} has no ```banned block")
+    out = []
+    for line in block.group(1).splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        if line.startswith("re:"):
+            out.append((line[3:], re.compile(line[3:], re.I)))
+        else:
+            out.append((line, re.compile(r"(?<!\w)" + re.escape(line) + r"(?!\w)", re.I)))
+    return out
+
+
+def prose(node: Node) -> str:
+    """Visible prose under `node`, in page order, skipping code, tables and SVG."""
+    parts, stack = [], list(reversed(node.content))
+    while stack:
+        item = stack.pop()
+        if isinstance(item, str):
+            parts.append(item)
+        elif item.tag not in SKIP:
+            stack.extend(reversed(item.content))
+    return re.sub(r"\s+", " ", "".join(parts)).strip()
+
+
+def _inside(node: Node, tags: set[str]) -> bool:
+    n = node.parent
+    while n is not None:
+        if n.tag in tags:
+            return True
+        n = n.parent
+    return False
+
+
+def sentences(text: str) -> list[str]:
+    return [s for s in re.split(r"(?<=[.!?])\s+", text) if s.strip()]
+
+
+def _first_paragraph(sec: Node) -> Node | None:
+    stack = list(reversed(sec.content))
+    while stack:
+        item = stack.pop()
+        if isinstance(item, str):
+            continue
+        if item.tag == "p":
+            return item
+        stack.extend(reversed(item.content))
+    return None
+
+
+def check_lesson(content: str, patterns) -> tuple[list[str], list[str]]:
+    """(failures, warnings) for one lesson's HTML."""
+    tree = parse(content)
+    fails, warns = [], []
+
+    text = prose(tree.root)
+    for phrase, pat in patterns:
+        m = pat.search(text)
+        if m:
+            fails.append(f'banned phrase "{m.group(0)}" (references/voice.md: {phrase})')
+
+    long_s, long_p, dashy = [], 0, 0
+    for para in [n for n in tree.all if n.tag in ("p", "li") and not _inside(n, SKIP)]:
+        body = prose(para)
+        sents = sentences(body)
+        long_s += [s for s in sents if len(s.split()) > MAX_WORDS]
+        long_p += len(sents) > MAX_SENTENCES
+        dashy += body.count("—") > MAX_DASHES
+    if long_s:
+        warns.append(f'{len(long_s)} sentence(s) over {MAX_WORDS} words, e.g. "{long_s[0][:60]}"')
+    if long_p:
+        warns.append(f"{long_p} paragraph(s) with more than {MAX_SENTENCES} sentences")
+    if dashy:
+        warns.append(f"{dashy} paragraph(s) with more than {MAX_DASHES} em dash")
+
+    openers = []
+    for sec in [n for n in tree.all if n.tag == "section"]:
+        if any(n.classes & {"nerdit-cheatsheet", "nerdit-practical"} for n in walk(sec)):
+            continue
+        p = _first_paragraph(sec)
+        if p is not None:
+            openers.append(" ".join(prose(p).lower().split()[:2]))
+    if len(openers) >= 3 and len(set(openers)) == 1:
+        warns.append(f'every concept section opens with the same words ("{openers[0]}"); vary the openings')
+    return fails, warns
+
+
+def main() -> int:
+    sys.stdout.reconfigure(encoding="utf-8")
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--course", required=True)
+    ap.add_argument("--lesson")
+    args = ap.parse_args()
+    try:
+        course = json.loads(Path(args.course).read_text(encoding="utf-8"))
+        patterns = banned_patterns()
+    except (OSError, ValueError) as e:
+        print(f"ERROR: {e}", file=sys.stderr)
+        return 2
+    bad = 0
+    for lesson in course.get("lessons", []):
+        if args.lesson and lesson.get("id") != args.lesson:
+            continue
+        fails, warns = check_lesson(lesson.get("content") or "", patterns)
+        if fails or warns:
+            print(f"{lesson.get('id')}: {len(fails)} banned, {len(warns)} warnings")
+            for f in fails:
+                print(f"  - {f}")
+            for w in warns:
+                print(f"  WARN {w}")
+        bad += len(fails)
+    return 1 if bad else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

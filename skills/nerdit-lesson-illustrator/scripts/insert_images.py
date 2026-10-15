@@ -24,7 +24,7 @@ DIAGRAM_MAX_WIDTH = 440
 def block(slot: dict) -> str:
     alt = html.escape(slot["alt"], quote=True)
     caption = html.escape(slot["caption"], quote=False)
-    return (f'\n<div class="nerdit-figure nerdit-illustration" data-nerdit-img="{slot["id"]}">\n'
+    return (f'\n<div class="nerdit-figure nerdit-illustration" data-nerdit-img="{slot["id"]}" data-visual="illustration">\n'
             f'  <img src="{slot["outputFile"]}" alt="{alt}" width="{slot["width"]}" height="{slot["height"]}"'
             ' loading="lazy" decoding="async" style="display:block;width:100%;height:auto">\n'
             f'  <div class="nerdit-figure-caption">{caption}</div>\n</div>')
@@ -40,8 +40,10 @@ def blocks_v2(slot: dict, svg: str | None) -> str:
                   'style="display:block;width:100%;height:auto">')
     # A phone-width diagram (viewBox <= 400) would blow up to 680 px on desktop; cap it.
     width = f' style="max-width:{DIAGRAM_MAX_WIDTH}px"' if slot["kind"] == "diagram" else ""
+    # CORE.md §7: every figure names its visual; a plan item may say which (e.g. time-window).
+    visual = slot.get("visual") or ("diagram" if slot["kind"] == "diagram" else "illustration")
     out = [f'\n<p class="nerdit-visual-intro" data-nerdit-img="{vid}">{esc(slot["intro"])}</p>',
-           f'\n<div class="nerdit-figure" data-nerdit-img="{vid}"{width}>\n  {figure}\n'
+           f'\n<div class="nerdit-figure" data-nerdit-img="{vid}" data-visual="{visual}"{width}>\n  {figure}\n'
            f'  <div class="nerdit-figure-caption">{esc(slot["caption"])}</div>\n</div>']
     steps = slot["explanation"]
     marks = MARKERS[:len(steps)] if len(steps) >= 2 else [""] * len(steps)

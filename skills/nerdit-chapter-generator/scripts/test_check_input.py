@@ -110,3 +110,10 @@ def test_cli_warning_only_input_exits_zero_under_strict(tmp_path):
                        capture_output=True, text=True)
     assert r.returncode == 0
     assert "WARN" in r.stdout
+
+
+def test_focus_must_be_concept_or_hands_on():
+    bad = [dict(GOOD[0], focus="theory")] + GOOD[1:]
+    sev, lid, msg = audit(bad)[0]
+    assert (sev, lid) == ("ERROR", "a-01") and "unknown focus" in msg
+    assert audit([dict(GOOD[0], focus="concept"), dict(GOOD[1], focus="hands-on")]) == []

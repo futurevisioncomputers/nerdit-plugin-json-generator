@@ -28,6 +28,8 @@ planning and before checking.
    workdir. Existing course: the file the user exported with "Export output JSON" in the admin.
    If neither is given, ask for it.
 2. `python scripts/extract_outline.py --course <course.json>` to find candidate sections.
+   Add `--hints <workdir>` when the chapter generator's workdir is available, to see each
+   section's planned visual and image idea.
 3. For each candidate, read the whole section and its data:
    `python scripts/extract_outline.py --course <course.json> --full <lesson-id>:<section>`.
    Inspect any existing figure in that section before deciding it already covers the idea.
@@ -77,6 +79,11 @@ planning and before checking.
 Apply can run as often as needed: images arrive in batches, and re-running gives the same lessons.
 A new course whose JSON the chapter generator rebuilt loses inserted images; run apply again — the
 manifest and `upload/` restore them without generating anything.
+
+When a course world is supplied, read its cast and story beats before planning.
+Keep invented characters' `look` consistent across lessons. Respect the course map
+and the writer's `visuals` hints. Never invent a business permission record or
+replace exact world data with an illustration. Keep real business logos out of images.
 
 ## Never
 

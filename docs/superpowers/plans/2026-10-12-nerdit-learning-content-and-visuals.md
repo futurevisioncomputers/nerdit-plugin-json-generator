@@ -26,6 +26,8 @@ Related plans:
 - [Original illustrator implementation](2026-10-10-nerdit-lesson-illustrator.md).
 - [Original illustrator design](../specs/2026-10-10-nerdit-lesson-illustrator-design.md).
 - [Admin JSON and images import](../../../../nerdit-admin/docs/course-json-images-import-plan.md).
+- [Live Excel course sample review](../../reviews/2026-10-12-excel-data-analysis-course-review.md)
+  adds fixture/result consistency, workbook-state clarity and mobile image-readability cases.
 
 The changes below extend the existing implementation and revise selected teaching rules.
 Existing scripts, validators and skills continue to use their current contracts until the

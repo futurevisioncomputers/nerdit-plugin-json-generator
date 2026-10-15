@@ -38,3 +38,16 @@ def test_cli_writes_json_and_prints_outline(tmp_path):
     assert r.returncode == 0, r.stderr
     assert "L01 load-basics-01" in r.stdout
     assert json.loads(out.read_text(encoding="utf-8"))[0]["lessonId"] == "load-basics-01"
+
+
+def test_hints_from_concept_manifests_reach_the_outline(tmp_path):
+    c = course()
+    lid = c["lessons"][0]["id"]
+    (tmp_path / f"{lid}.concepts.json").write_text(json.dumps({
+        "teaches": [], "uses": [],
+        "visuals": [{"section": 1, "visual": "value-table", "illustration": "drafts of an essay"}]}),
+        encoding="utf-8")
+    from extract_outline import load_hints
+    lessons = outline(c, load_hints(str(tmp_path)))
+    assert lessons[0]["sections"][0]["hint"]["illustration"] == "drafts of an essay"
+    assert "image: drafts of an essay" in render(lessons)

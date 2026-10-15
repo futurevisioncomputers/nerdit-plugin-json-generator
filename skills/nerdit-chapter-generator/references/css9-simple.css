@@ -1617,3 +1617,52 @@
 @media print {
   .ident { color: #000 !important; }
 }
+
+/* ====================================================================
+   v11 · TEACHING VISUALS
+   ====================================================================
+   figures.md templates 11-13 (value table, decision grid, unit tiles),
+   visible spaces and NULL (R11), trap cells (R12), the spotlight record
+   (R15) and the synthetic-data note. Tokens only: both themes resolve.
+   ==================================================================== */
+.nerdit-wrapper .nerdit-vtable { width: 100%; border-collapse: collapse; font-size: .95rem; background: var(--white); border-radius: 8px; overflow: hidden; margin: 0 auto; }
+.nerdit-wrapper .nerdit-vtable th { text-align: left; font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--tx-m); padding: .45rem .6rem; border-bottom: 1px solid var(--bd); background: var(--bg-soft); }
+.nerdit-wrapper .nerdit-vtable th code { text-transform: none; letter-spacing: 0; }
+.nerdit-wrapper .nerdit-vtable td { padding: .45rem .6rem; border-bottom: 1px solid var(--bd-soft); vertical-align: middle; color: var(--tx); }
+.nerdit-wrapper .nerdit-vgroup td { background: var(--bg-soft); font-weight: 700; font-size: .9rem; padding-top: .6rem; }
+.nerdit-wrapper .nerdit-varrow { color: var(--tx-m); text-align: center; width: 2rem; }
+.nerdit-wrapper .nerdit-val { font-family: var(--font-code); background: var(--white); border: 1px solid var(--bd); border-radius: 4px; padding: .05rem .3rem; white-space: pre; }
+.nerdit-wrapper .nerdit-ws { color: var(--tx-m); background: var(--slate-bg); border-radius: 2px; padding: 0 .05rem; }
+.nerdit-wrapper .nerdit-null { font-family: var(--font-code); font-style: italic; font-size: .85em; color: var(--tx-s); background: var(--slate-bg); border: 1px dashed var(--bd); border-radius: 999px; padding: .05rem .5rem; }
+.nerdit-wrapper .nerdit-vnote { display: block; font-size: .72rem; font-weight: 700; margin-top: .1rem; }
+/* td.nerdit-cell-* outranks `.nerdit-vtable td { color }` (0,2,1), so the trap text stays coloured. */
+.nerdit-wrapper .nerdit-cell-bad, .nerdit-wrapper .nerdit-vtable td.nerdit-cell-bad { background: var(--rose-bg); color: var(--rose); font-weight: 700; }
+.nerdit-wrapper .nerdit-cell-good, .nerdit-wrapper .nerdit-vtable td.nerdit-cell-good { background: var(--green-bg); color: var(--green); font-weight: 700; }
+.nerdit-wrapper .nerdit-row-kept td { background: var(--green-bg); color: var(--green); font-weight: 700; }
+.nerdit-wrapper .nerdit-row-dropped td { color: var(--tx-m); }
+.nerdit-wrapper .nerdit-vtitle { font-weight: 700; font-size: .9rem; margin: 0 0 .4rem; text-align: center; }
+.nerdit-wrapper .nerdit-vlegend { font-size: .78rem; color: var(--tx-s); margin: .5rem 0 0; line-height: 1.5; }
+.nerdit-wrapper .nerdit-grid td, .nerdit-wrapper .nerdit-grid th { text-align: center; padding: .4rem .3rem; }
+.nerdit-wrapper .nerdit-grid td:first-child, .nerdit-wrapper .nerdit-grid th:first-child,
+.nerdit-wrapper .nerdit-grid td:last-child, .nerdit-wrapper .nerdit-grid th:last-child { text-align: left; }
+.nerdit-wrapper .nerdit-grid td:last-child { font-family: var(--font-code); font-size: .8rem; }
+.nerdit-wrapper .nerdit-chk.ok { color: var(--green); font-weight: 800; }
+/* outline, not a shadow: the reading-column shadow reset above wins at specificity 0,5,0. */
+.nerdit-wrapper .nerdit-chk.first { color: var(--rose); font-weight: 800; background: var(--rose-bg); outline: 2px solid var(--rose); outline-offset: -2px; border-radius: 6px; }
+.nerdit-wrapper .nerdit-chk.skip { color: var(--tx-m); }
+.nerdit-wrapper .nerdit-tiles { display: flex; flex-wrap: wrap; gap: .9rem; justify-content: center; }
+.nerdit-wrapper .nerdit-tilegroup { display: flex; flex-direction: column; align-items: center; gap: .35rem; font-size: .82rem; color: var(--tx-s); }
+.nerdit-wrapper .nerdit-tilegroup > div { display: flex; gap: .3rem; padding-bottom: .35rem; border-bottom: 2px solid var(--bd); }
+.nerdit-wrapper .nerdit-tile { width: 2.3rem; height: 2.3rem; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; border: 1.5px solid; }
+.nerdit-wrapper .nerdit-tile.sup { background: var(--slate-bg); border-color: var(--bd); color: var(--tx-m); }
+.nerdit-wrapper .nerdit-tile.acc { background: var(--green-bg); border-color: var(--green); color: var(--green); }
+.nerdit-wrapper .nerdit-tile.rej { background: var(--amber-bg); border-color: var(--amber); color: var(--amber); }
+.nerdit-wrapper .nerdit-vsum { text-align: center; font-weight: 600; margin: .7rem 0 0; }
+.nerdit-wrapper .nerdit-spot, .nerdit-wrapper tr.nerdit-spot td { background: var(--blue-bg); }
+.nerdit-wrapper td.nerdit-spot, .nerdit-wrapper tr.nerdit-spot td:first-child { border-left: 3px solid var(--blue); }
+.nerdit-wrapper svg .nerdit-spot { fill: var(--blue-bg); stroke: var(--blue); }
+.nerdit-wrapper .nerdit-data-note { font-size: .78rem; color: var(--tx-m); font-style: italic; margin: .3rem 0 1rem; }
+/* Keep the bin colour while making the tracked record distinct in unit tiles. */
+.nerdit-wrapper .nerdit-tile.nerdit-spot { outline: 2px solid var(--blue); outline-offset: 2px; }
+/* The base flow-text rule overrides SVG fill attributes; keep the active stage readable. */
+.nerdit-wrapper [data-visual="course-map"] .nerdit-flow-text[fill="var(--white)"] { fill: var(--white); }

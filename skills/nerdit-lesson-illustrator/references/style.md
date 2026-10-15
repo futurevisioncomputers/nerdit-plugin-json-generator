@@ -15,15 +15,12 @@ People, if any: Indian people in Indian settings. No real brands, companies or c
 
 ## Choosing a visual
 
-| Learner question | Kind | Must show |
-|---|---|---|
-| Where does a record go? | diagram (sequence) | each layer and its responsibility |
-| What happens first? | diagram (two aligned flows) | the steps in their real order |
-| How are tables related? | diagram (key match, template 10) | exact table/column names, the matching keys, one record |
-| What changed? | diagram (before/after) | input, rule, output rows |
-| Which date or period applies? | diagram (timeline) | exact timestamps, offset, boundaries |
-| Why is this unsafe to sum? | diagram or small table | grain, units, the repeated value |
-| Who does what? | illustration | the actors and actions, mapped to the lesson in the steps |
+`nerdit-chapter-generator/references/CORE.md` §7 (the Visual Map) decides which visual each
+place in a lesson gets. Illustrations are only for a real scene or an analogy the text already
+uses. Everything with exact names, values or times is a diagram or table drawn from the
+lesson's data (figures.md templates 1–15), with `data-visual` set; a plan item may name it in
+`visual`. When the course workdir has concept manifests, `extract_outline.py --hints <workdir>`
+shows each section's planned `visual` and suggested `illustration`; plan from those.
 
 - One objective per visual; split a crowded figure into two.
 - Diagrams use the lesson's own names, keys, dates and amounts — never invented ones.

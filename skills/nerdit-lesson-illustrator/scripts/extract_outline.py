@@ -13,6 +13,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from pathlib import Path
 
 from lessonhtml import (FIG_CAPTION, PRACTICE, SVG, fixture_text, img_sources, remove_visual_blocks,
                         section_fingerprint, section_text, sections, text, top_paragraphs)
@@ -20,7 +21,19 @@ from lessonhtml import (FIG_CAPTION, PRACTICE, SVG, fixture_text, img_sources, r
 MAX_ANCHORS = 6
 
 
-def outline(course: dict) -> list[dict]:
+def load_hints(workdir: str | None) -> dict[str, dict[int, dict]]:
+    """`visuals` lists from <workdir>/<id>.concepts.json, by lesson id and section number."""
+    if not workdir:
+        return {}
+    hints: dict[str, dict[int, dict]] = {}
+    for p in Path(workdir).glob("*.concepts.json"):
+        data = json.loads(p.read_text(encoding="utf-8"))
+        hints[p.name[: -len(".concepts.json")]] = {
+            int(v["section"]): v for v in data.get("visuals", []) if "section" in v}
+    return hints
+
+
+def outline(course: dict, hints: dict | None = None) -> list[dict]:
     lessons = []
     for lesson in course.get("lessons", []):
         content = lesson.get("content") or ""
@@ -34,6 +47,7 @@ def outline(course: dict) -> list[dict]:
                 "hasPractice": bool(PRACTICE.search(span)),
                 "figures": [text(c) for c in FIG_CAPTION.findall(span)],
                 "anchors": [a for _, a in top_paragraphs(content, sec)][:MAX_ANCHORS],
+                "hint": (hints or {}).get(lesson["id"], {}).get(sec.number),
             })
         lessons.append({
             "lessonId": lesson["id"],
@@ -56,6 +70,10 @@ def render(lessons: list[dict]) -> str:
             lines.append(f"  §{s['number']} {s['heading']} [{tag}]")
             lines += [f"     fig: {c}" for c in s["figures"]]
             lines += [f"     ¶ {a}" for a in s["anchors"]]
+            h = s.get("hint")
+            if h:
+                lines.append(f"     hint: {h.get('visual')}"
+                             + (f" · image: {h['illustration']}" if h.get("illustration") else ""))
     return "\n".join(lines)
 
 
@@ -84,6 +102,7 @@ def main() -> int:
     ap.add_argument("--course", required=True)
     ap.add_argument("--out")
     ap.add_argument("--full", help="<lesson-id>:<section-number>")
+    ap.add_argument("--hints", help="<workdir> holding <id>.concepts.json with visuals")
     args = ap.parse_args()
     with open(args.course, encoding="utf-8") as f:
         course = json.load(f)
@@ -95,7 +114,7 @@ def main() -> int:
             print(f"error: {e}")
             return 2
         return 0
-    lessons = outline(course)
+    lessons = outline(course, load_hints(args.hints))
     if args.out:
         with open(args.out, "w", encoding="utf-8") as f:
             json.dump(lessons, f, ensure_ascii=False, indent=2)

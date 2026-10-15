@@ -1,0 +1,55 @@
+{
+  "seed": 20261015,
+  "business": {
+    "name": "Practice Retail",
+    "fictional": true,
+    "type": "fictional teaching retailer",
+    "city": "Surat",
+    "branches": ["Central", "West"],
+    "channels": ["store", "web"],
+    "currency": "INR",
+    "moneyUnit": "paise",
+    "tax": "Synthetic examples exclude tax unless a lesson states a rate.",
+    "fiscalYear": "April–March",
+    "seasons": "An invented October peak, not observed business statistics."
+  },
+  "cast": [
+    {"name": "Mira", "role": "analyst", "trait": "checks totals by hand", "look": "invented adult with a blue shirt and short hair"},
+    {"name": "Dev", "role": "data engineer", "trait": "records each pipeline run", "look": "invented adult with glasses and a green shirt"}
+  ],
+  "stages": ["source", "staging", "clean", "warehouse", "report"],
+  "messiness": ["amount_paise", "customer_name", "sold_on"],
+  "arc": {
+    "example-01": "Mira checks that the daily report counts each order once.",
+    "example-02": "Dev catches a data-entry typo before loading a batch."
+  },
+  "entities": {
+    "stores": {
+      "rows": 2,
+      "columns": {
+        "store_id": {"generator": "id", "prefix": "S"},
+        "branch": {"generator": "choice", "values": ["Central", "West"]}
+      }
+    },
+    "products": {
+      "rows": 4,
+      "columns": {
+        "product_id": {"generator": "id", "prefix": "P"},
+        "product_name": {"generator": "choice", "values": ["Notebook", "Pen", "Folder", "Pencil"]},
+        "price_paise": {"generator": "money_range", "min": 1000, "max": 15000}
+      }
+    },
+    "orders": {
+      "rows": 24,
+      "columns": {
+        "order_id": {"generator": "id", "prefix": "O"},
+        "store_id": {"generator": "fk", "entity": "stores", "column": "store_id"},
+        "product_id": {"generator": "fk", "entity": "products", "column": "product_id"},
+        "customer_name": {"generator": "person_name", "values": ["Aarav", "Diya", "Riya", "Kabir"]},
+        "amount_paise": {"generator": "money_range", "min": 1000, "max": 30000},
+        "channel": {"generator": "weighted_choice", "values": ["store", "web"], "weights": [3, 2]},
+        "sold_on": {"generator": "date_range", "start": "2026-09-01", "end": "2026-11-30", "monthWeights": {"9": 1, "10": 3, "11": 1}}
+      }
+    }
+  }
+}

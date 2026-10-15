@@ -7,7 +7,7 @@ shape. Copy a template, swap the labels, ship it.
 **Why templates instead of improvising an SVG per lesson.** An improvised diagram varies
 in stroke weight, corner radius, font size and padding from one lesson to the next, so a
 course reads as eight different hands. It also drifts off the token palette the moment a
-hex feels convenient. Nine fixed shapes cover the concept structures a lesson actually
+hex feels convenient. Fifteen fixed shapes cover the concept structures a lesson actually
 has; picking one is a decision, drawing one is not.
 
 ---
@@ -23,7 +23,7 @@ has; picking one is a decision, drawing one is not.
    a dark ground.
 3. **Always wrapped**, always captioned:
    ```html
-   <div class="nerdit-figure">
+   <div class="nerdit-figure" data-visual="diagram">
      <svg viewBox="0 0 640 200" role="img" aria-label="…">…</svg>
      <div class="nerdit-figure-caption">…</div>
    </div>
@@ -44,6 +44,30 @@ has; picking one is a decision, drawing one is not.
    Templates 1–9 below are drawn 640 wide: restack them to fit before use. Template 10 shows a
    stacked layout.
 
+10. **Columns go in a table (R10).** A record with more than one field — `row 1`, `09:00`,
+    `10000` — is a row of a value table (template 11), never an SVG label joined with `·`.
+    `verify_course.py --contract v11` fails a label that packs a row into dots. SVG stays for
+    shapes that carry meaning: flows, overlaps, time scales, key matches.
+11. **Make invisible values visible (R11).** A raw string sits in `<span class="nerdit-val">`,
+    which marks where it starts and ends. Each space is `<span class="nerdit-ws">␣</span>`.
+    NULL is `<span class="nerdit-null">NULL</span>`. Never use square brackets to show spaces in
+    a figure (an SQL result may, because that is real output).
+12. **Highlight the surprise (R12).** The cell that springs the trap gets `nerdit-cell-bad`; the
+    safe result gets `nerdit-cell-good`. Each carries a 2–4 word `<span class="nerdit-vnote">`
+    saying what happened. Colour one cell, not the whole row.
+13. **Show each idea once (R13).** In one section, a text map (`nerdit-map`), a figure and its
+    reading steps never restate the same facts. Steps add order or reasons, not the figure's
+    labels again. When a figure covers it, drop the map.
+14. **Every figure names its visual.** `data-visual` on each `nerdit-figure`: `diagram`,
+    `value-table`, `decision-grid`, `time-window`, `unit-tiles`, `chart`, `course-map` or
+    `illustration`. `CORE.md` §7 decides which; v11 fails a figure without it.
+15. **Spotlight one record.** The record the lesson follows carries `nerdit-spot` (a table row,
+    a cell or an SVG shape) in every figure where it appears.
+
+**Icons in tables — closed list:** `✓` passes · `✗` fails · `–` not checked · `⚠` needs
+attention · `🔑` primary key · `🔗` foreign key. A table that uses one carries a legend
+(`nerdit-vlegend`) or says it in text. No other icons, the same rule as heading emoji.
+
 Two colours carry meaning across every template and must not be swapped:
 `var(--orange)` = **what the learner does**, `var(--green)` = **what they get back**.
 
@@ -54,7 +78,7 @@ Two colours carry meaning across every template and must not be swapped:
 For: a query travelling app → server → DB, an ETL path, a request lifecycle.
 
 ```html
-<div class="nerdit-figure">
+<div class="nerdit-figure" data-visual="diagram">
   <svg viewBox="0 0 640 90" role="img" aria-label="A query passes through the parser, then the planner, then the executor, before rows come back.">
     <rect class="nerdit-flow-rect" x="8"   y="22" width="130" height="46"/>
     <text class="nerdit-flow-text" x="73"  y="50" text-anchor="middle">Parser</text>
@@ -88,7 +112,7 @@ For: a query travelling app → server → DB, an ETL path, a request lifecycle.
 For: INNER vs LEFT JOIN, union vs intersection, "which rows survive".
 
 ```html
-<div class="nerdit-figure">
+<div class="nerdit-figure" data-visual="diagram">
   <svg viewBox="0 0 420 180" role="img" aria-label="INNER JOIN returns only the customers that appear in both tables; rows unique to either side are dropped.">
     <circle cx="160" cy="90" r="70" fill="var(--bg-soft)" stroke="var(--nb)" stroke-width="1.5"/>
     <circle cx="260" cy="90" r="70" fill="var(--bg-soft)" stroke="var(--nb)" stroke-width="1.5"/>
@@ -109,7 +133,7 @@ For: list vs tuple, INNER vs LEFT, `.loc` vs `.iloc`, VLOOKUP vs XLOOKUP.
 The single most reusable shape: most "plain concepts" are really a comparison.
 
 ```html
-<div class="nerdit-figure">
+<div class="nerdit-figure" data-visual="diagram">
   <svg viewBox="0 0 640 172" role="img" aria-label="A list can be changed after creation and is written with square brackets; a tuple cannot be changed and is written with parentheses.">
     <rect x="8"   y="8" width="304" height="156" rx="10" fill="var(--bg-soft)" stroke="var(--bd)" stroke-width="1"/>
     <rect x="328" y="8" width="304" height="156" rx="10" fill="var(--bg-soft)" stroke="var(--bd)" stroke-width="1"/>
@@ -141,7 +165,7 @@ of each side is not a comparison.
 For: a de-duplicate, a filter, a pivot, a sort, a rename.
 
 ```html
-<div class="nerdit-figure">
+<div class="nerdit-figure" data-visual="diagram">
   <svg viewBox="0 0 640 168" role="img" aria-label="drop_duplicates removes the second Mumbai row, taking five rows down to four.">
     <text class="nerdit-flow-text" x="120" y="22" text-anchor="middle" fill="var(--tx-m)">before — 5 rows</text>
     <rect x="30" y="34" width="180" height="112" rx="8" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
@@ -180,7 +204,7 @@ the eye then finds the difference without reading a word.
 For: which join to reach for, which chart type, when a formula returns `#N/A`.
 
 ```html
-<div class="nerdit-figure">
+<div class="nerdit-figure" data-visual="diagram">
   <svg viewBox="0 0 560 190" role="img" aria-label="If unmatched rows still matter, use a LEFT JOIN; if they do not, use an INNER JOIN.">
     <path d="M280 12 L392 62 L280 112 L168 62 z" fill="var(--bg-soft)" stroke="var(--nb)" stroke-width="1.5"/>
     <text class="nerdit-flow-text" x="280" y="58" text-anchor="middle">Keep unmatched</text>
@@ -212,7 +236,7 @@ One question, two outcomes. A third branch means the question is wrong; split it
 For: a SELECT statement, a function signature, a formula, a file path, a URL.
 
 ```html
-<div class="nerdit-figure">
+<div class="nerdit-figure" data-visual="diagram">
   <svg viewBox="0 0 640 132" role="img" aria-label="In VLOOKUP, the first argument is the value to find, the second is the table to search, the third is which column to return.">
     <text x="24" y="52" font-family="var(--font-code)" font-size="17" fill="var(--tx)">=VLOOKUP(</text>
     <text x="126" y="52" font-family="var(--font-code)" font-size="17" fill="var(--orange)">E2</text>
@@ -242,7 +266,7 @@ readable — split the anatomy across two figures instead.
 For: a workbook holding sheets holding cells, a database → table → row, scope nesting.
 
 ```html
-<div class="nerdit-figure">
+<div class="nerdit-figure" data-visual="diagram">
   <svg viewBox="0 0 480 168" role="img" aria-label="A workbook contains worksheets, and each worksheet contains cells.">
     <rect x="12" y="12" width="456" height="144" rx="10" fill="var(--bg-soft)" stroke="var(--nb)" stroke-width="1.5"/>
     <text class="nerdit-flow-text" x="28" y="36" fill="var(--nb)">Workbook — the .xlsx file</text>
@@ -264,7 +288,7 @@ Three levels maximum. Deeper is a tree (§8), not a nesting.
 For: a folder tree, a DOM, an inheritance chain, a decision tree's shape.
 
 ```html
-<div class="nerdit-figure">
+<div class="nerdit-figure" data-visual="diagram">
   <svg viewBox="0 0 520 176" role="img" aria-label="The project folder holds a data folder and a notebooks folder; the data folder holds two CSV files.">
     <rect x="188" y="8" width="144" height="36" rx="8" fill="var(--bg-soft)" stroke="var(--nb)" stroke-width="1.5"/>
     <text class="nerdit-flow-text" x="260" y="31" text-anchor="middle">project/</text>
@@ -304,7 +328,7 @@ For: a fact row and its dimensions, a foreign key to its parent, an order line t
 Use the lesson's own row and values. Number the parts the reading steps describe.
 
 ```html
-<div class="nerdit-figure" style="max-width:440px">
+<div class="nerdit-figure" data-visual="diagram" style="max-width:440px">
   <svg viewBox="0 0 360 300" role="img" aria-label="Sales row O1 line 1 stores amount 200; customer_key 1 finds Aarav in Pune and product_key 10 finds Book.">
     <rect x="80" y="10" width="200" height="136" rx="8" fill="var(--bg-soft)" stroke="var(--nb)"/>
     <text class="nerdit-flow-text" x="180" y="34" text-anchor="middle" fill="var(--nb)">fact_sales</text>
@@ -331,25 +355,177 @@ Draw one record, not a table. The reading steps under the figure follow ① ② 
 
 ---
 
+## 11 · Value table — values before and after a rule
+
+For: TRIM, CAST, NULLIF, date parsing; any rule applied value by value. Variant A groups by
+rule, variant B puts two rules side by side to expose a trap, and variant C ranks rows with a kept one.
+
+```html
+<div class="nerdit-figure" data-visual="value-table" style="max-width:440px">
+  <table class="nerdit-vtable">
+    <thead><tr><th>raw value <small>(␣ = space)</small></th><th></th><th>clean value</th></tr></thead>
+    <tbody>
+      <tr class="nerdit-vgroup"><td colspan="3">① <code>TRIM(customer)</code></td></tr>
+      <tr><td><span class="nerdit-val"><span class="nerdit-ws">␣</span>Aarav<span class="nerdit-ws">␣</span></span></td><td class="nerdit-varrow">→</td><td><span class="nerdit-val">Aarav</span></td></tr>
+      <tr class="nerdit-vgroup"><td colspan="3">② <code>NULLIF(TRIM(amount_text), '')</code></td></tr>
+      <tr><td><span class="nerdit-val"><span class="nerdit-ws">␣</span></span></td><td class="nerdit-varrow">→</td><td><span class="nerdit-null">NULL</span><span class="nerdit-vnote">blank = missing</span></td></tr>
+      <tr><td><span class="nerdit-val">0</span></td><td class="nerdit-varrow">→</td><td><span class="nerdit-val">0</span><span class="nerdit-vnote">zero is a real value</span></td></tr>
+    </tbody>
+  </table>
+  <div class="nerdit-figure-caption">Each rule tidies text but keeps its meaning: a blank becomes NULL, and zero stays 0.</div>
+</div>
+```
+
+```html
+<div class="nerdit-figure" data-visual="value-table" style="max-width:440px">
+  <table class="nerdit-vtable">
+    <thead><tr><th>amount_text</th><th>① <code>CAST(… AS INTEGER)</code></th><th>② digit rule</th></tr></thead>
+    <tbody>
+      <tr><td><span class="nerdit-val">12500</span></td><td>12500</td><td>12500</td></tr>
+      <tr><td><span class="nerdit-val">12x</span></td><td class="nerdit-cell-bad">12<span class="nerdit-vnote">invented, no error</span></td><td class="nerdit-cell-good"><span class="nerdit-null">NULL</span><span class="nerdit-vnote">caught</span></td></tr>
+      <tr><td><span class="nerdit-val"><span class="nerdit-ws">␣</span></span></td><td class="nerdit-cell-bad">0<span class="nerdit-vnote">blank became 0</span></td><td class="nerdit-cell-good"><span class="nerdit-null">NULL</span><span class="nerdit-vnote">caught</span></td></tr>
+    </tbody>
+  </table>
+  <div class="nerdit-figure-caption">CAST never complains: 12x becomes 12 and a blank becomes 0. The digit rule refuses both.</div>
+</div>
+```
+
+```html
+<div class="nerdit-figure" data-visual="value-table" style="max-width:440px">
+  <p class="nerdit-vtitle">O1's three versions, newest first</p>
+  <table class="nerdit-vtable">
+    <thead><tr><th>rn</th><th>row_id</th><th>time</th><th>amount</th></tr></thead>
+    <tbody>
+      <tr class="nerdit-row-kept"><td>1 ✓</td><td>3</td><td>10:00</td><td>12500</td></tr>
+      <tr class="nerdit-row-dropped"><td>2</td><td>2</td><td>10:00</td><td>12000</td></tr>
+      <tr class="nerdit-row-dropped"><td>3</td><td>1</td><td>09:00</td><td>10000</td></tr>
+    </tbody>
+  </table>
+  <p class="nerdit-vlegend">Rows 3 and 2 tie at 10:00, so the larger row_id goes first. ✓ = kept; grey = superseded.</p>
+  <div class="nerdit-figure-caption">The newest version gets number 1, and only rn = 1 is kept.</div>
+</div>
+```
+
+At most 4 columns and short cell text, so it fits a 280px phone column.
+
+---
+
+## 12 · Decision grid — rules checked per row, first failure wins
+
+For: a CASE that assigns reasons, validation rules, eligibility checks.
+
+```html
+<div class="nerdit-figure" data-visual="decision-grid" style="max-width:440px">
+  <table class="nerdit-vtable nerdit-grid">
+    <thead><tr><th>order</th><th>①</th><th>②</th><th>③</th><th>④</th><th>outcome</th></tr></thead>
+    <tbody>
+      <tr><td><b>O1</b> <small>row 3</small></td><td class="nerdit-chk ok">✓</td><td class="nerdit-chk ok">✓</td><td class="nerdit-chk ok">✓</td><td class="nerdit-chk ok">✓</td><td class="nerdit-cell-good">ACCEPT</td></tr>
+      <tr><td><b>O3</b> <small>row 5</small></td><td class="nerdit-chk ok">✓</td><td class="nerdit-chk first">✗</td><td class="nerdit-chk skip">–</td><td class="nerdit-chk skip">–</td><td class="nerdit-cell-bad">BAD_AMOUNT</td></tr>
+      <tr><td><b>O4</b> <small>row 6</small></td><td class="nerdit-chk ok">✓</td><td class="nerdit-chk ok">✓</td><td class="nerdit-chk first">✗</td><td class="nerdit-chk skip">–</td><td class="nerdit-cell-bad">BAD_DATE</td></tr>
+      <tr><td><b>O5</b> <small>row 7</small></td><td class="nerdit-chk first">✗</td><td class="nerdit-chk skip">–</td><td class="nerdit-chk skip">–</td><td class="nerdit-chk skip">–</td><td class="nerdit-cell-bad">MISSING_AMOUNT</td></tr>
+    </tbody>
+  </table>
+  <p class="nerdit-vlegend">① amount present · ② amount is digits · ③ date is real · ④ category is approved<br>✓ passes · ✗ first failed check · – not checked</p>
+  <div class="nerdit-figure-caption">CASE checks in order and stops at the first ✗. O4 also has an unknown category, but its bad date is found first.</div>
+</div>
+```
+
+Columns are numbered ①–④ in CASE order, and the legend names them.
+
+---
+
+## 13 · Unit tiles — parts that add up to a total
+
+For: reconciliation, row counts per bin, where every unit lands in exactly one place.
+
+```html
+<div class="nerdit-figure" data-visual="unit-tiles" style="max-width:440px">
+  <div class="nerdit-tiles">
+    <div class="nerdit-tilegroup"><div><span class="nerdit-tile sup">1</span><span class="nerdit-tile sup">2</span></div><span>superseded <b>2</b></span></div>
+    <div class="nerdit-tilegroup"><div><span class="nerdit-tile acc">3</span><span class="nerdit-tile acc">4</span></div><span>accepted <b>2</b></span></div>
+    <div class="nerdit-tilegroup"><div><span class="nerdit-tile rej">5</span><span class="nerdit-tile rej">6</span><span class="nerdit-tile rej">7</span></div><span>rejected <b>3</b></span></div>
+  </div>
+  <p class="nerdit-vsum">2 + 2 + 3 = <b>7</b> staged rows</p>
+  <div class="nerdit-figure-caption">Each staged row lands in exactly one bin, so the bins add up to the source count.</div>
+</div>
+```
+
+One tile per real row, up to about 20. Above that, show counts in a value table instead.
+
+---
+
+## 14 · Time window — a range on a clock, drawn to scale
+
+For: watermarks, batch bounds, late data, any `>` / `<=` window on time. ○ marks an excluded bound
+and ● an included one. A second lane shows a second clock.
+
+```html
+<div class="nerdit-figure" data-visual="time-window" style="max-width:440px">
+  <svg viewBox="0 0 360 186" role="img" aria-label="The batch reads changes after 10:00 up to and including 11:00: O3 and O4 load, O6 at 11:30 waits for the next batch, and O2, stamped 10:00 but arrived at 10:20, is never read.">
+    <text class="nerdit-flow-text" x="8" y="18" fill="var(--tx-m)">source_updated_at</text>
+    <rect x="40" y="46" width="200" height="20" fill="var(--green-bg)"/>
+    <line x1="16" y1="56" x2="350" y2="56" stroke="var(--bd)" stroke-width="1.5"/>
+    <circle cx="40" cy="56" r="6" fill="var(--white)" stroke="var(--nb)" stroke-width="2"/>
+    <circle cx="240" cy="56" r="6" fill="var(--nb)"/>
+    <circle cx="140" cy="56" r="4" fill="var(--green)"/>
+    <circle cx="190" cy="56" r="4" fill="var(--green)"/>
+    <circle cx="340" cy="56" r="4" fill="var(--tx-m)"/>
+    <text class="nerdit-flow-text" x="140" y="40" text-anchor="middle" fill="var(--green)">O3</text>
+    <text class="nerdit-flow-text" x="190" y="40" text-anchor="middle" fill="var(--green)">O4</text>
+    <text class="nerdit-flow-text" x="340" y="40" text-anchor="end" fill="var(--tx-m)">O6</text>
+    <text class="nerdit-flow-text" x="40" y="84" text-anchor="middle" fill="var(--tx)">10:00</text>
+    <text class="nerdit-flow-text" x="140" y="84" text-anchor="middle" fill="var(--tx-m)">10:30</text>
+    <text class="nerdit-flow-text" x="240" y="84" text-anchor="middle" fill="var(--tx)">11:00</text>
+    <text class="nerdit-flow-text" x="340" y="84" text-anchor="end" fill="var(--tx-m)">11:30</text>
+    <text class="nerdit-flow-text" x="8" y="108" fill="var(--nb)">① ○ 10:00 left out (&gt;)</text>
+    <text class="nerdit-flow-text" x="200" y="108" fill="var(--nb)">② ● 11:00 kept (&lt;=)</text>
+    <text class="nerdit-flow-text" x="8" y="138" fill="var(--tx-m)">arrived in staging</text>
+    <line x1="16" y1="156" x2="350" y2="156" stroke="var(--bd)" stroke-width="1.5"/>
+    <line x1="40" y1="146" x2="40" y2="166" stroke="var(--nb)" stroke-width="2"/>
+    <circle cx="107" cy="156" r="5" fill="var(--amber)"/>
+    <text class="nerdit-flow-text" x="48" y="180" fill="var(--nb)">batch 1 ran</text>
+    <text class="nerdit-flow-text" x="122" y="150" fill="var(--amber)">③ O2 arrives 10:20</text>
+  </svg>
+  <div class="nerdit-figure-caption">A window keeps rows after the watermark up to the frozen upper bound. A row that arrives after its batch ran is never read.</div>
+</div>
+```
+
+Scale: one hour = 200 units. Place every point by its real time; never space the ticks evenly
+by hand.
+
+---
+
+## 15 · Course map — "you are here"
+
+For: the strip under each lesson's overview showing the course's stages. It is drawn once per
+course and each lesson fills its own stage. At most 5 stages per row, with names of 8
+characters or fewer.
+
+```html
+<div class="nerdit-figure" data-visual="course-map" style="max-width:440px">
+  <svg viewBox="0 0 360 78" role="img" aria-label="Course map: this lesson is the clean stage, third of five: source, staging, clean, load, mart.">
+    <rect x="4" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+    <text class="nerdit-flow-text" x="36" y="35" text-anchor="middle" fill="var(--tx-m)">source</text>
+    <rect x="76" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+    <text class="nerdit-flow-text" x="108" y="35" text-anchor="middle" fill="var(--tx-m)">staging</text>
+    <rect x="148" y="14" width="64" height="32" rx="6" fill="var(--nb)" stroke="var(--nb)" stroke-width="1"/>
+    <text class="nerdit-flow-text" x="180" y="35" text-anchor="middle" fill="var(--white)">clean</text>
+    <rect x="220" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+    <text class="nerdit-flow-text" x="252" y="35" text-anchor="middle" fill="var(--tx-m)">load</text>
+    <rect x="292" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+    <text class="nerdit-flow-text" x="324" y="35" text-anchor="middle" fill="var(--tx-m)">mart</text>
+    <text class="nerdit-flow-text" x="180" y="68" text-anchor="middle" fill="var(--nb)">▲ you are here</text>
+  </svg>
+  <div class="nerdit-figure-caption">You are here: cleaning staged rows, before they load into the warehouse.</div>
+</div>
+```
+
+---
+
 ## Choosing between them
 
-Work down this list and stop at the first match:
-
-| The concept is… | Template |
-|---|---|
-| an ordered path through stages | 1 · Sequence |
-| membership — what is in, what is out | 2 · Venn |
-| two options a learner picks between | 3 · Comparison |
-| one operation changing data | 4 · Before / after |
-| a rule for choosing | 5 · Decision |
-| one record linked to others through its keys | 10 · Key match |
-| one artifact whose parts need naming | 6 · Anatomy |
-| containers inside containers, ≤3 deep | 7 · Part / whole |
-| a branching structure, >3 deep | 8 · Tree |
-| measured numbers worth comparing | 9 · Chart.js |
-
-Nothing matches and the concept still needs a picture? It usually means the concept has
-not been pinned down yet. Write the caption first — the one sentence the figure must
-teach. If that sentence will not come, there is no figure to draw, and §7's fallback
-applies: **prose is the correct answer, and an empty figure slot is better than a
-decorative one.**
+`CORE.md` §7 (the Visual Map) decides which visual a place in the lesson gets; this file only
+supplies the markup. Nothing in the map fits and the concept still seems to need a picture?
+Write the caption first: the one sentence the figure must teach. If that sentence will not
+come, there is no figure to draw. **Prose is the correct answer, and an empty figure slot is
+better than a decorative one.**

@@ -282,14 +282,19 @@ Rules:
   cell value; for HTML/CSS describe what renders in one line.
 - **Input code is plain text with a `data-lang`; the website colours it.** Keywords,
   strings, comments, numbers and the learner's own names each get a colour, and the
-  input half wraps instead of scrolling. Never hand-write colour spans. Write SQL one
-  clause per line (`SELECT …` / `FROM …` / `WHERE …`) — a one-line query wider than the
-  column is the thing that used to need a sideways scroll.
+  input half wraps instead of scrolling. Never hand-write colour spans. Lay SQL out by
+  `runners/sql.md` §Layout: no line over 60 characters, one column per line, `CASE`
+  blocks indented. The input half wraps, so a longer line breaks mid-statement.
 - **Tags name the two sides in the learner's words.** `You type` on the input.
   On the output, name the thing that answered: `Python shows`, `Excel shows`,
   `SQL shows`, `The page shows`. Never `Input` / `Output`.
-- **2–3 run lines per concept.** The second is a small variation of the first — change
-  one thing. Never jump complexity.
+- **Run lines follow the lesson's `focus`.** `concept` (the input's optional `focus` field):
+  one run line per concept, and the Try It may be a prediction or a decision ("Which grain is
+  this table?") instead of running code. `hands-on` (the default): 2–3 run lines per concept;
+  the second is a small variation of the first, changing one thing. Never jump complexity.
+  Either way a shown block is at most 15 lines; move repeated setup into the seed or a view.
+  Shown code per lesson: at most 40 lines for `concept`, 100 for `hands-on`
+  (`verify_course.py` v11 warns).
 - **Colour is never the only signal.** The tags stay, because a learner who cannot
   distinguish the clay and green edges still needs to know which half is which.
 
@@ -397,6 +402,11 @@ in the reference course, and they are the best ones in it. When a concept is one
 resists — a statistic they cannot see the point of, a rule that looks arbitrary — make the
 heading their objection and answer it underneath. One per lesson at most; it loses its
 force if every heading is a question.
+
+### The why is not the next sentence
+
+The run-line heading's `.why` says why the example matters. The paragraph under it says, in one
+sentence, what the code does. Never repeat the why as that paragraph; v11 fails it.
 
 ### The heading must match the code
 
@@ -543,29 +553,41 @@ Every answer goes inside a `<details>` on the same page.
 
 Ask: **"What does this picture teach?"** No answer → no picture.
 
-**Every lesson ships at least one figure.** A learner scrolling a wall of prose and code
-has nothing to anchor a concept to, and the decision table below is wide enough that
-almost every concept has an honest answer in it. This is a floor, not a quota: the bar
-each figure must clear is unchanged, and the banned list below is unchanged. A lesson that
-genuinely cannot earn one is allowed to ship none — but that is a rare outcome to justify,
-not a default to fall back on.
+**Every concept section has one main visual** (a figure, a value table or a chart). This is
+a floor, not a quota: the caption-first test below still decides, the banned list below is
+unchanged, and a section that honestly cannot earn one may ship none (`verify_course.py`
+v11 warns, it does not fail).
 
-Read this table top to bottom and stop at the first row that matches. **`figures.md`
-carries the exact SVG for each — copy the template, swap the labels.** Do not improvise an
-SVG when a template fits; eight hand-drawn diagrams read as eight different hands.
+### The Visual Map — where each visual goes
 
-| Content shape | Visual to use | Example |
-|---|---|---|
-| Sequence / pipeline | `figures.md` §1 — flow, `nerdit-flow-*` classes | query travels app → server → DB |
-| Two sets overlapping | `figures.md` §2 — Venn | INNER vs LEFT JOIN |
-| **Two options a learner picks between** | `figures.md` §3 — comparison, same criteria both sides | list vs tuple, `.loc` vs `.iloc` |
-| **One operation changing data** | `figures.md` §4 — before / after | `drop_duplicates()`, a filter, a pivot |
-| **A rule for choosing** | `figures.md` §5 — decision, one question two outcomes | which join to reach for |
-| Syntax anatomy — parts of one artifact | `figures.md` §6 — labelled anatomy, ≤4 labels | parts of a SELECT, a VLOOKUP's arguments |
-| **Containers inside containers, ≤3 deep** | `figures.md` §7 — part / whole | workbook → sheet → cell |
-| Hierarchy / nesting, >3 deep | `figures.md` §8 — tree | folder tree, DOM, scope chain |
-| Real measured numbers, comparison teaches something | `figures.md` §9 — Chart.js (v8 `nerdit-chart-wrap`) | indexed vs full-scan query time |
-| Nothing above matches, after honestly trying | **no visual** — prose is the answer | a naming convention, a history note |
+This is the only table that chooses visuals. `figures.md` holds the markup (copy the
+template, swap the labels; never improvise an SVG when a template fits), and the illustrator
+reads its image slots from here.
+
+| Where in the lesson | The content is… | Visual (`data-visual`) | Made by |
+| --- | --- | --- | --- |
+| Overview / hook | a real-world scene | `illustration` | illustrator; the user generates it |
+| Under the overview | the course's stages | `course-map` (figures.md §15) | writer |
+| Concept: meaning | an analogy | `illustration` (optional) | illustrator |
+| Concept: meaning | a structure or relationship | `diagram` (figures.md §1–8, §10) | writer |
+| Concept: case | records with fields, values changing | `value-table` (§11) or `decision-grid` (§12) | writer |
+| Concept: case | events in time, a window | `time-window` (§14) | writer |
+| Concept: case | parts that add up to a total | `unit-tiles` (§13) | writer |
+| Concept: case | real measured numbers to compare | `chart` (§9, Chart.js) | writer |
+| Worked example | code → result | run line with a result table | writer |
+| Practice | — | Try It (predict, run or decide) | writer |
+| Closing | summary | cheat-sheet table | writer |
+
+Nothing matches after honestly trying: **no visual**. Prose is the answer.
+
+**Balance:**
+
+- One main visual per concept section.
+- No two visuals restating the same facts (figures.md R13).
+- 0–3 illustrations per lesson, only where the text has a scene or analogy.
+- Charts only for real measured numbers.
+- Not the same `data-visual` in every section.
+- Icons in tables come from the closed list in figures.md, always with a legend.
 
 > **The caption-first test.** Before drawing anything, write the one sentence the figure
 > must teach. If that sentence comes easily, the figure is worth drawing and you have its
@@ -846,6 +868,14 @@ Chart.js (rare in v9): reuse the v8 `withChart` lazy-load pattern inside this sa
 - One real-life analogy per concept where natural ("A table is like one Excel sheet.").
   Skip forced analogies.
 - No stacked jargon: never define a term using another undefined term.
+- Sound like a person: no phrase from `references/voice.md` (`check_prose.py` fails it);
+  contractions are welcome; open sections in different ways.
+- **One real mistake per lesson:** a wrong result an analyst would really get, its output, why
+  it happened, the fix (`nerdit-compare`). The mistake belongs to the data work, never to a
+  business.
+- **Spotlight one record** with `nerdit-spot` wherever it appears (figures.md rule 15).
+- **Check it by hand:** under one key result, one line of arithmetic the learner can verify
+  ("12,000 + 500 = 12,500 ✓").
 
 ---
 

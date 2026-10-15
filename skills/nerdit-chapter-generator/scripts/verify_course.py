@@ -56,6 +56,26 @@ BANNED = [
 
 MAX_FIGURE_VIEWBOX_WIDTH = 400  # figures.md rule 9 (phone-readable figures), v10 only
 
+# Contracts that use the flattened (v10) checks. v11 adds the teaching-visuals checks
+# (spec 2026-10-15): SQL layout, run-line headings, figure data-visual and dotted labels.
+FLAT = {"v10", "v11"}
+# CORE.md §7 Visual Map: every nerdit-figure names the visual it is.
+VISUALS = {"diagram", "value-table", "decision-grid", "time-window", "unit-tiles",
+           "chart", "course-map", "illustration"}
+DOT_SEP = "·"
+_SHAPES = (
+    ("time", re.compile(r"\d{1,2}:\d{2}(:\d{2})?")),
+    ("date", re.compile(r"\d{4}-\d{2}-\d{2}( \d{1,2}:\d{2}(:\d{2})?)?")),
+    ("number", re.compile(r"[-−]?[₹$]?[\d,]+(\.\d+)?[%kKmM]?")),
+)
+# An id like `O1` or `customer_sk 1`; its letter prefix says which column it belongs to.
+_CODE = re.compile(r"([A-Za-z_]+) ?\d+")
+# Reading-step markers (① …) label a figure part; they are not a field.
+_MARKERS = re.compile(r"^[\s①②③④⑤⑥⑦⑧⑨⑩]+")
+BLOCK_LINES = 15                                   # CORE.md §4: one shown code block
+LESSON_LINES = {"concept": 40, "hands-on": 100}    # CORE.md §4: shown code per lesson
+MAX_SQL_LINE = 60  # runners/sql.md: the input half wraps, so a longer line breaks mid-statement
+
 # Retired only under the flattened (v10) contract - see --contract.
 RETIRED_V10 = [
     "nerdit-example", "nerdit-example-head", "nerdit-example-lead",
@@ -76,7 +96,7 @@ VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input",
 
 
 class Node:
-    __slots__ = ("tag", "classes", "el_id", "parent", "children", "attrs")
+    __slots__ = ("tag", "classes", "el_id", "parent", "children", "attrs", "content")
 
     def __init__(self, tag: str, classes, el_id, parent, attrs=None):
         self.tag, self.classes, self.el_id, self.parent = tag, set(classes), el_id, parent
@@ -84,10 +104,12 @@ class Node:
         # still decides on tag, class and id alone.
         self.attrs: dict = attrs or {}
         self.children: list["Node"] = []
+        # Children and text in page order, for checks that read labels and code.
+        self.content: list = []
 
 
 class Tree(HTMLParser):
-    """Minimal DOM. Only tags/classes/ids matter here, so text is discarded."""
+    """Minimal DOM: tags, classes, ids, attributes and text in page order."""
 
     def __init__(self):
         super().__init__(convert_charrefs=True)
@@ -99,6 +121,7 @@ class Tree(HTMLParser):
         a = dict(attrs)
         node = Node(tag, (a.get("class") or "").split(), a.get("id"), self.cur, a)
         self.cur.children.append(node)
+        self.cur.content.append(node)
         self.all.append(node)
         if tag not in VOID:
             self.cur = node
@@ -107,6 +130,7 @@ class Tree(HTMLParser):
         a = dict(attrs)
         node = Node(tag, (a.get("class") or "").split(), a.get("id"), self.cur, a)
         self.cur.children.append(node)
+        self.cur.content.append(node)
         self.all.append(node)
 
     def handle_endtag(self, tag):
@@ -116,11 +140,27 @@ class Tree(HTMLParser):
         if n is not self.root and n.parent is not None:
             self.cur = n.parent
 
+    def handle_data(self, data):
+        self.cur.content.append(data)
+
 
 def parse(html: str) -> Tree:
     t = Tree()
     t.feed(html)
     return t
+
+
+def text_of(node: Node) -> str:
+    """All text under `node`, in page order, entities already decoded."""
+    out: list[str] = []
+    stack: list = list(reversed(node.content))
+    while stack:
+        item = stack.pop()
+        if isinstance(item, str):
+            out.append(item)
+        else:
+            stack.extend(reversed(item.content))
+    return "".join(out)
 
 
 def box_depth(node: Node) -> int:
@@ -141,16 +181,73 @@ def descends_from(node: Node, cls: str) -> bool:
     return False
 
 
+
+def ancestor(node: Node, cls: str) -> Node | None:
+    n = node.parent
+    while n is not None:
+        if cls in n.classes:
+            return n
+        n = n.parent
+    return None
+
+
+def _norm_sentence(s: str) -> str:
+    s = re.sub(r"\s+", " ", s).strip().lower()
+    return s.lstrip("—–- ").rstrip(". ")
+
+
+def field_shape(field: str) -> str | None:
+    """The kind of value a dotted-label field holds; None when it holds no digit."""
+    f = field.strip()
+    if not re.search(r"\d", f):
+        return None
+    for name, pat in _SHAPES:
+        if pat.fullmatch(f):
+            return name
+    code = _CODE.fullmatch(f)
+    if code:
+        return "code:" + code.group(1).lower()
+    return "mixed"
+
+
+def is_dotted_record(text: str) -> bool:
+    """`row 1 · 09:00 · 10000` packs a table row into one label (figures.md R10);
+    `O1 · O2 · O3` is a list of like values and is fine."""
+    fields = _MARKERS.sub("", text).split(DOT_SEP)
+    if len(fields) < 3:
+        return False
+    shapes = [s for s in (field_shape(f) for f in fields) if s]
+    return len(shapes) >= 2 and len(set(shapes)) >= 2
+
+
+def sql_code_blocks(tree: "Tree") -> list[tuple[str, str]]:
+    """(where, code) for SQL a learner reads or edits: run-line input and SQL Try It editors."""
+    out = []
+    for n in tree.all:
+        if n.tag == "pre" and n.attrs.get("data-lang", "").lower() == "sql" and descends_from(n, "nerdit-in"):
+            out.append(("run line", text_of(n)))
+        elif n.tag == "textarea" and "nerdit-tryit-editor" in n.classes:
+            box = ancestor(n, "nerdit-tryit")
+            if box is not None and ("data-seed" in box.attrs or box.attrs.get("data-lang", "").lower() == "sql"):
+                out.append(("try-it editor", text_of(n)))
+    return out
+
 class Report:
     def __init__(self):
         self.passed = 0
         self.failures: list[str] = []
+        self.warnings: list[str] = []
 
     def check(self, ok: bool, msg: str):
         if ok:
             self.passed += 1
         else:
             self.failures.append(msg)
+
+    def warn(self, ok: bool, msg: str):
+        """Advisory: printed after the result, never changes the exit code."""
+        if not ok:
+            self.warnings.append(msg)
 
 
 def verify_schema(rep: Report, out: dict, inp: list):
@@ -241,7 +338,7 @@ def verify_structure(rep: Report, out: dict, contract: str):
         # The depth cap arrived with the flattened contract. Under v9 the practice block
         # is legitimately practical > task > solution > output, so enforcing it there
         # would fail every correct v9 lesson.
-        if contract == "v10":
+        if contract in FLAT:
             worst = max((box_depth(n) for n in tree.all), default=0)
             rep.check(worst <= DEPTH_CAP,
                       f"{lid}: box nesting depth {worst} exceeds cap {DEPTH_CAP}")
@@ -250,7 +347,7 @@ def verify_structure(rep: Report, out: dict, contract: str):
         hits = sorted(present & set(BANNED))
         rep.check(not hits, f"{lid}: banned components present: {hits}")
 
-        if contract == "v10":
+        if contract in FLAT:
             retired = sorted(present & set(RETIRED_V10))
             rep.check(not retired, f"{lid}: retired v10 components present: {retired}")
 
@@ -329,7 +426,7 @@ def verify_structure(rep: Report, out: dict, contract: str):
             # figures.md rule 9: a phone column is ~314 px, so a wider viewBox shrinks figure
             # labels below ~11.5 px (640 wide gives ~7 px). Run outputs (charts) are exempt.
             vb = svg.attrs.get("viewbox", "").replace(",", " ").split()
-            if contract == "v10" and len(vb) == 4 and not descends_from(svg, "nerdit-out"):
+            if contract in FLAT and len(vb) == 4 and not descends_from(svg, "nerdit-out"):
                 try:
                     width = float(vb[2])
                 except ValueError:
@@ -345,6 +442,67 @@ def verify_structure(rep: Report, out: dict, contract: str):
             frag = m.group(0)
             rep.check(False, f"{lid}: hex colour in lesson markup ({frag}) - use var(--token), see CORE.md 7b")
 
+        if contract == "v11":
+            for where, code in sql_code_blocks(tree):
+                long = [ln.rstrip() for ln in code.splitlines() if len(ln.rstrip()) > MAX_SQL_LINE]
+                rep.check(not long, f"{lid}: SQL {where} has {len(long)} line(s) over {MAX_SQL_LINE} "
+                                    f"characters (runners/sql.md), first: {long[0].strip()[:40] if long else ''}")
+            for h in [n for n in tree.all if n.tag == "h3" and "nerdit-runhead" in n.classes]:
+                why = next((c for c in walk(h) if "why" in c.classes), None)
+                sibs = h.parent.children if h.parent is not None else []
+                nxt = sibs[sibs.index(h) + 1] if sibs.index(h) + 1 < len(sibs) else None
+                if why is not None and nxt is not None and nxt.tag == "p":
+                    rep.check(_norm_sentence(text_of(why)) != _norm_sentence(text_of(nxt)),
+                              f"{lid}: run-line heading's why text is repeated as the next paragraph "
+                              f"(CORE.md §4c): {text_of(why).strip()[:50]}")
+            for i, fig in enumerate(figures, 1):
+                rep.check(fig.attrs.get("data-visual") in VISUALS,
+                          f"{lid}: figure {i} needs data-visual, one of {', '.join(sorted(VISUALS))} "
+                          f"(CORE.md §7)")
+            for t in tree.all:
+                if t.tag == "text" and descends_from(t, "nerdit-figure"):
+                    label = text_of(t).strip()
+                    rep.check(not is_dotted_record(label),
+                              f"{lid}: figure label packs a table row into dots ({label[:40]}); "
+                              f"use a value table (figures.md R10)")
+            mains = []
+            concept = [s for s in sections if not any(
+                n.classes & {"nerdit-cheatsheet", "nerdit-practical"} for n in walk(s))]
+            for k, sec in enumerate(concept, 1):
+                # A figure missing data-visual is already a failure above; it still counts as
+                # the section's visual, so it must not also raise "no main visual".
+                kinds = {n.attrs.get("data-visual") or "unnamed" for n in walk(sec) if "nerdit-figure" in n.classes}
+                if any("nerdit-chart-wrap" in n.classes for n in walk(sec)):
+                    kinds.add("chart")
+                main = kinds - {"illustration", "course-map"}
+                rep.warn(bool(main), f"{lid}: concept section {k} has no main visual (CORE.md §7 Visual Map)")
+                mains.append(main - {"unnamed"})
+            used = [m for m in mains if m]
+            only = set().union(*used) if used else set()
+            rep.warn(not (len(used) >= 3 and len(only) == 1),
+                     f"{lid}: every concept section uses the same visual ({', '.join(sorted(only))}); "
+                     f"pick each one from the Visual Map")
+
+
+
+def shown_code_blocks(tree: Tree) -> list[str]:
+    return [text_of(n).strip("\n") for n in tree.all if n.tag == "pre" and descends_from(n, "nerdit-in")]
+
+
+def verify_density(rep: Report, out: dict, inp: list):
+    """CORE.md §4: code where the learner must produce or check a number. Advisory only."""
+    focus = {s.get("id"): str(s.get("focus") or "hands-on").lower() for s in inp}
+    for lesson in out.get("lessons", []):
+        lid = lesson.get("id", "?")
+        blocks = shown_code_blocks(parse(lesson.get("content", "")))
+        for i, code in enumerate(blocks, 1):
+            n = len(code.splitlines())
+            rep.warn(n <= BLOCK_LINES, f"{lid}: code block {i} shows {n} lines (max {BLOCK_LINES}); "
+                                       f"move setup into the seed or a view")
+        kind = focus.get(lid, "hands-on")
+        cap = LESSON_LINES.get(kind, LESSON_LINES["hands-on"])
+        total = sum(len(c.splitlines()) for c in blocks)
+        rep.warn(total <= cap, f"{lid}: lesson shows {total} code lines (max {cap} for {kind})")
 
 def walk(node: Node):
     stack = list(node.children)
@@ -355,12 +513,15 @@ def walk(node: Node):
 
 
 def main() -> int:
+    # Messages quote lesson text (①, ·, ₹, §). A Windows pipe defaults to cp1252 and would crash.
+    sys.stdout.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser()
     ap.add_argument("--input", required=True)
     ap.add_argument("--output", required=True)
-    ap.add_argument("--contract", choices=["v9", "v10"], default="v9",
-                    help="v10 also rejects the retired example/output/objective/recap blocks")
+    ap.add_argument("--contract", choices=["v9", "v10", "v11"], default="v9",
+                    help="v10 rejects retired blocks; v11 adds the teaching-visuals checks")
     ap.add_argument("--quiet", action="store_true", help="print failures only")
+    ap.add_argument("--world", help="optional world file; v11 checks records and course-map continuity")
     args = ap.parse_args()
 
     try:
@@ -373,17 +534,36 @@ def main() -> int:
     rep = Report()
     verify_schema(rep, out, inp)
     verify_structure(rep, out, args.contract)
+    if args.contract == "v11":
+        verify_density(rep, out, inp)
+        if args.world:
+            # Lazy import keeps the standalone DOM helpers usable by check_world.py.
+            from pathlib import Path
+            from make_world_data import generate, load_world
+            from check_world import check_lesson as check_world
+            try:
+                world = load_world(Path(args.world))
+                data = generate(world)
+                for lesson in out.get("lessons", []):
+                    failures, warnings = check_world(lesson.get("content", ""), world, data)
+                    for failure in failures:
+                        rep.check(False, f"{lesson.get('id', '?')}: world: {failure}")
+                    for warning in warnings:
+                        rep.warn(False, f"{lesson.get('id', '?')}: world: {warning}")
+            except (OSError, ValueError, KeyError, TypeError) as exc:
+                print(f"ERROR: world: {exc}", file=sys.stderr)
+                return 2
 
     total = rep.passed + len(rep.failures)
     if rep.failures:
         print(f"FAIL  {len(rep.failures)} of {total} checks (contract {args.contract})")
         for f in rep.failures:
             print(f"  - {f}")
-        return 1
-
-    if not args.quiet:
+    elif not args.quiet:
         print(f"PASS  {rep.passed}/{total} checks (contract {args.contract})")
-    return 0
+    for w in rep.warnings:
+        print(f"  WARN {w}")
+    return 1 if rep.failures else 0
 
 
 if __name__ == "__main__":

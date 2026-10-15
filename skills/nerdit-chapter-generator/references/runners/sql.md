@@ -33,3 +33,34 @@ code and colours it like the lesson's code blocks, so `rows` is only the no-scri
 fallback. Write a query of more than one clause on several lines (`FROM`, `WHERE`,
 `ORDER BY` each starting a line); a long one-line query is laid out that way
 automatically, but the written layout is what the plugin's own previews show.
+
+## Layout
+
+The input half of a run line wraps instead of scrolling, so a long line breaks in the middle of
+a statement. Lay every query out so it never needs to:
+
+- No line longer than **60 characters**.
+- `CREATE TABLE`: one column per line. A `SELECT` list of more than three expressions: one per line.
+- Two-space indent per level. No alignment indent deeper than 12 spaces; break the line instead.
+- `CASE`, each `WHEN`, `ELSE` and `END` on their own lines, indented under `CASE`.
+- A space after every comma and around `=`, `<>`, `<=`, `>=`, `||`.
+
+`verify_course.py --contract v11` fails a run line or SQL Try It with a longer line.
+
+```html
+<pre data-lang="sql"><code>CREATE TABLE classified (
+  row_id      INTEGER PRIMARY KEY,
+  amount_text TEXT,
+  reason      TEXT
+);
+
+SELECT
+  row_id,
+  CASE
+    WHEN TRIM(amount_text) = '' THEN 'MISSING_AMOUNT'
+    WHEN amount_text GLOB '*[^0-9]*' THEN 'BAD_AMOUNT'
+    ELSE 'ACCEPT'
+  END AS reason
+FROM staged
+ORDER BY row_id;</code></pre>
+```

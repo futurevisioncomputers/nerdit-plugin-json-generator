@@ -16,7 +16,7 @@ def passed():
 def test_block_markup_is_exact_and_escaped():
     s = dict(passed()["images"][0], alt='Boxes "ride" a belt', caption="Rows & checks")
     assert block(s) == (
-        '\n<div class="nerdit-figure nerdit-illustration" data-nerdit-img="load-basics-01-img1">\n'
+        '\n<div class="nerdit-figure nerdit-illustration" data-nerdit-img="load-basics-01-img1" data-visual="illustration">\n'
         '  <img src="load-basics-01-img1.webp" alt="Boxes &quot;ride&quot; a belt" width="1200" height="800"'
         ' loading="lazy" decoding="async" style="display:block;width:100%;height:auto">\n'
         '  <div class="nerdit-figure-caption">Rows &amp; checks</div>\n</div>')
@@ -26,9 +26,9 @@ def test_inserts_at_both_placement_kinds_and_marks_inserted():
     c, m = course(), passed()
     assert insert_lessons(c, m) == []
     new = c["lessons"][0]["content"]
-    assert 'totals 📦.</p>\n<div class="nerdit-figure nerdit-illustration" data-nerdit-img="load-basics-01-img1">' in new
+    assert 'totals 📦.</p>\n<div class="nerdit-figure nerdit-illustration" data-nerdit-img="load-basics-01-img1" data-visual="illustration">' in new
     old = c["lessons"][1]["content"]
-    assert 'Old lessons start like this.</p>\n<div class="nerdit-figure nerdit-illustration" data-nerdit-img="old-style-02-img1">' in old
+    assert 'Old lessons start like this.</p>\n<div class="nerdit-figure nerdit-illustration" data-nerdit-img="old-style-02-img1" data-visual="illustration">' in old
     assert all(s["status"] == "inserted" for s in m["images"])
 
 

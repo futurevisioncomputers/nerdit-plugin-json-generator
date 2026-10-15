@@ -21,7 +21,7 @@ JSON_LIMIT = 1_048_576
 ALLOWED_HOSTS = ("firebasestorage.googleapis.com", "storage.googleapis.com", "nerdit.in",
                  "future-vision-skill-learning.web.app")
 VERIFY = Path(__file__).resolve().parents[2] / "nerdit-chapter-generator" / "scripts" / "verify_course.py"
-BLOCK = re.compile(r'<div class="nerdit-figure nerdit-illustration" data-nerdit-img="([^"]+)">'
+BLOCK = re.compile(r'<div class="nerdit-figure nerdit-illustration" data-nerdit-img="([^"]+)"[^>]*>'
                    r'(.*?)<div class="nerdit-figure-caption">(.*?)</div>\s*</div>', re.S)
 
 

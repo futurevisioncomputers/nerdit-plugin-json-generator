@@ -26,7 +26,7 @@ def test_v2_diagram_block_has_intro_figure_steps_and_check(tmp_path):
     html = c["lessons"][0]["content"]
     assert ('totals 📦.</p>\n<p class="nerdit-visual-intro" data-nerdit-img="load-basics-01-fig1">'
             'Follow the rows from left to right.</p>') in html
-    assert ('<div class="nerdit-figure" data-nerdit-img="load-basics-01-fig1" style="max-width:440px">'
+    assert ('<div class="nerdit-figure" data-nerdit-img="load-basics-01-fig1" data-visual="diagram" style="max-width:440px">'
             '\n  <svg viewBox') in html
     assert ('<ol class="nerdit-visual-read" data-nerdit-img="load-basics-01-fig1" '
             'style="list-style:none;padding-left:0"><li>① The rows arrive in the warehouse.</li>'
