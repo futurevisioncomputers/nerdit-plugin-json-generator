@@ -1,0 +1,80 @@
+/* ====================================================================
+   NERDIT LMS — css10-brand.css
+   Token override loaded AFTER css8.css and css9-simple.css.
+   Remaps the warm notebook palette to brand v2 (navy #0B1F3A / teal
+   #14B8A6 / mint #6EE7C8). Declares NO component classes: lesson HTML
+   and class names are untouched. Semantic tokens (--orange, --rose,
+   --green, --amber, --syn-*) are deliberately NOT remapped — callouts,
+   practice badges and difficulty chips keep their existing colours.
+   Spec: nerdit/docs/design/DESIGN-SYSTEM.md §1
+   ==================================================================== */
+.nerdit-wrapper {
+  /* brand navy */
+  --nb:       #0B1F3A;
+  --nb-mid:   #14315A;
+  --nb-soft:  #EAF8F4;
+  --nb-vivid: #14B8A6;
+
+  /* surfaces */
+  --bg:       #EEF3F9;
+  --bg-soft:  #F4F7FB;
+  --bg-code:  rgba(20,184,166,.10);
+  --white:    #FFFFFF;
+
+  /* ink */
+  --tx:       #0F1F33;
+  --tx-b:     #0F1F33;
+  --tx-s:     #3E5068;
+  --tx-m:     #647890;
+  --tx-inv:   #FFFFFF;
+
+  /* rules */
+  --bd:       #CBD5E1;
+  --bd-soft:  #DCE4EE;
+
+  /* shadows: navy-tinted instead of brown */
+  --sh-xs: 0 1px 4px  rgba(11,31,58,.06);
+  --sh-sm: 0 2px 8px  rgba(11,31,58,.08);
+  --sh:    0 8px 24px rgba(11,31,58,.08);
+  --sh-lg: 0 14px 40px rgba(11,31,58,.12);
+
+  /* teal/blue family aligns with brand accent (semantic --orange/--rose/
+     --green/--amber and --syn-* are untouched, see header) */
+  --teal:    #0D6E63;  --teal-bg:  #EAF8F4;  --teal-bd:  #BFE9E0;
+  --blue:    #0B1F3A;  --blue-bg:  #EEF3F9;  --blue-bd:  #CBD5E1;
+}
+
+/* Inline code: css8's rule hard-codes background/color instead of using
+   tokens (css8.css:307-318), so remapping --bg-code alone does nothing
+   here. Match css8's exact selector shape and override both properties
+   to DESIGN-SYSTEM's --nd-code-bg / --nd-code-ink. */
+.nerdit-wrapper p code, .nerdit-wrapper li code,
+.nerdit-reader  p code, .nerdit-reader  li code {
+  background: rgba(20,184,166,.10);
+  color: #0B6E63;
+}
+
+/* Recap band: css9-simple.css already repaints .nerdit-recap flat with a
+   navy border-left (css9-simple.css:1178-1186); add the brand mint edge
+   on top, loaded last so it wins the tie against css9's equal-specificity
+   selector. */
+.nerdit-wrapper .nerdit-recap {
+  border-left: 4px solid #6EE7C8;
+}
+
+/* Callout text: css8 sets .nerdit-callout-text white (css8.css:1431), but
+   the generic `.nerdit-wrapper p` rule (css8.css:282) is more specific and
+   repaints it slate, leaving grey text on a dark band. Restate the colour at
+   wrapper specificity so it wins. The teal band moves onto brand navy → teal
+   so it matches the rest of the site. */
+.nerdit-wrapper .nerdit-callout-text, .nerdit-reader .nerdit-callout-text,
+.nerdit-wrapper .nerdit-callout p,    .nerdit-reader .nerdit-callout p {
+  color: #FFFFFF;
+}
+.nerdit-wrapper .nerdit-callout-label, .nerdit-reader .nerdit-callout-label {
+  color: #6EE7C8;
+  opacity: 1;
+}
+.nerdit-wrapper .nerdit-callout.teal, .nerdit-reader .nerdit-callout.teal {
+  background: linear-gradient(120deg, #0B1F3A, #0D6E63);
+}

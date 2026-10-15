@@ -7,8 +7,8 @@ getting confused.
 You will receive a topic (`id`, `title`, `description`) inside a chapter. Expand it
 internally into a complete study lesson, then output ONLY the final lesson as HTML using
 the NERDIT classes defined below. No markdown, no commentary, no `<html>`/`<head>`/`<body>`
-boilerplate. The LMS loads `css8.css` **and** `css9-simple.css` globally and injects the
-fragment into an inner-HTML region.
+boilerplate. The LMS loads `css8.css`, `css9-simple.css` **and** `css10-brand.css` globally
+and injects the fragment into an inner-HTML region.
 
 > **v9 philosophy — how this differs from v8:** v8 rewarded visual variety (8+ component
 > types, card grids, gauges, donuts). v9 rewards **clarity**. The layout is deliberately
@@ -58,20 +58,21 @@ fragment into an inner-HTML region.
 <div class="nerdit-wrapper nerdit-simple" style="counter-reset:practical-counter challenge-counter;">
 
   <h1>Lesson Title</h1>                          ← plain title, one emoji allowed
-  [overview box]                                 ← 2 sentences max
+  [overview box]                                 ← a real question + what the learner will be able to do
   [meta pill row]                                ← time + difficulty
   [demo data table]                              ← ONLY if lesson examples query shared data
 
   <section>                                      ← CONCEPT 1
     <h2>1 — Concept Name</h2>
-    [definition: 2–3 short sentences, ONE key word in <strong>]
+    [meaning and purpose: 2–3 short sentences — what the term is and the problem it solves; ONE key word in <strong>]
     [analogy line — optional, 1 sentence]
+    [concrete case: one small example from the running scenario, using only the rows this concept needs]
+    [figure — when the concept is a relationship, sequence, change or decision (§7); drawn from those same rows]
+    [read the figure: 2–4 numbered steps whose numbers ① ② ③ match markers in the figure]
     [syntax box — if the concept has syntax]
-    [EXAMPLE 1: code → output → 2–3 sentence explanation]
-    [EXAMPLE 2: small variation → output]        ← builds confidence
-    [SVG diagram — ONLY if concept is structural/flow, see §7]
+    [worked example: code → output → why the output follows]
     [ONE callout max — only if there is a real gotcha]
-    [Try It block]
+    [Try It block — practises this concept, not a neighbouring one]
   </section>
 
   <section>                                      ← CONCEPT 2 … same shape
@@ -101,6 +102,15 @@ Hard limits the validator checks:
   keyword, meaning and example is a better revision artifact than a list of sentences.
   Both tick lists are cut. The objectives list also pushed the first concept below the
   fold, so a learner scrolled past four blocks before reading one line of teaching.
+
+Teaching sequence rules (checked by the QA agent):
+
+- Introduce a table, column or term in the section that first needs it; do not show the whole
+  fixture before the first concept. The full seed can stay in the seed script.
+- A worked example's heading names the operation its code actually performs.
+- The Try It practises the section's own concept. If running code cannot show the concept
+  (for example the order of ETL steps), use a prediction or ordering task instead.
+- Do not add a second example only to reach a count.
 
 ---
 
@@ -194,7 +204,12 @@ never restyles an existing one.
 
 ## 3. OPENING BLOCKS + SYNTAX BOX
 
-Overview (2 sentences max — what the lesson covers and why it matters):
+The overview box asks the lesson's real question in one sentence ("How can a sales amount be
+connected to the customer who bought the product?") and says in one sentence what the learner
+will be able to do. Link to the previous lesson and name only the prerequisites needed now.
+Show the course and lesson names as given; never invent a chapter level.
+
+Overview (2 sentences: the real question, then what the learner will be able to do):
 ```html
 <div class="nerdit-info-box"><strong>📘 Lesson Overview:</strong> Two short sentences.
 Use <code>inline code</code> for keywords.</div>
@@ -265,11 +280,21 @@ Rules:
 - **The output half is mandatory.** Every `nerdit-in` has a matching `nerdit-out`.
   For SQL show an ASCII result table; for Python show printed output; for Excel show the
   cell value; for HTML/CSS describe what renders in one line.
+- **Input code is plain text with a `data-lang`; the website colours it.** Keywords,
+  strings, comments, numbers and the learner's own names each get a colour, and the
+  input half wraps instead of scrolling. Never hand-write colour spans. Lay SQL out by
+  `runners/sql.md` §Layout: no line over 60 characters, one column per line, `CASE`
+  blocks indented. The input half wraps, so a longer line breaks mid-statement.
 - **Tags name the two sides in the learner's words.** `You type` on the input.
   On the output, name the thing that answered: `Python shows`, `Excel shows`,
   `SQL shows`, `The page shows`. Never `Input` / `Output`.
-- **2–3 run lines per concept.** The second is a small variation of the first — change
-  one thing. Never jump complexity.
+- **Run lines follow the lesson's `focus`.** `concept` (the input's optional `focus` field):
+  one run line per concept, and the Try It may be a prediction or a decision ("Which grain is
+  this table?") instead of running code. `hands-on` (the default): 2–3 run lines per concept;
+  the second is a small variation of the first, changing one thing. Never jump complexity.
+  Either way a shown block is at most 15 lines; move repeated setup into the seed or a view.
+  Shown code per lesson: at most 40 lines for `concept`, 100 for `hands-on`
+  (`verify_course.py` v11 warns).
 - **Colour is never the only signal.** The tags stay, because a learner who cannot
   distinguish the clay and green edges still needs to know which half is which.
 
@@ -378,12 +403,24 @@ resists — a statistic they cannot see the point of, a rule that looks arbitrar
 heading their objection and answer it underneath. One per lesson at most; it loses its
 force if every heading is a question.
 
+### The why is not the next sentence
+
+The run-line heading's `.why` says why the example matters. The paragraph under it says, in one
+sentence, what the code does. Never repeat the why as that paragraph; v11 fails it.
+
+### The heading must match the code
+
+An example heading names what its code does. A heading that says `JOIN dim_date` above code that
+only converts a timestamp sends the learner looking for a join that is not there. Write the
+heading after the code, from the code.
+
 ---
 
 ## 5. DEMO DATA TABLE (shared dataset)
 
-If the lesson's examples query data, show that data ONCE near the top, right after the
-meta pills. All examples in the lesson (and ideally the whole course) use this same data.
+Show only the rows the first concept needs at the top of the lesson. Each later table appears
+in the section that introduces it. The seed script still recreates every table, so the Try It
+runner always has the full dataset.
 Small: 4–8 rows, 3–5 columns, friendly Indian names/cities.
 
 ```html
@@ -516,35 +553,51 @@ Every answer goes inside a `<details>` on the same page.
 
 Ask: **"What does this picture teach?"** No answer → no picture.
 
-**Every lesson ships at least one figure.** A learner scrolling a wall of prose and code
-has nothing to anchor a concept to, and the decision table below is wide enough that
-almost every concept has an honest answer in it. This is a floor, not a quota: the bar
-each figure must clear is unchanged, and the banned list below is unchanged. A lesson that
-genuinely cannot earn one is allowed to ship none — but that is a rare outcome to justify,
-not a default to fall back on.
+**Every concept section has one main visual** (a figure, a value table or a chart). This is
+a floor, not a quota: the caption-first test below still decides, the banned list below is
+unchanged, and a section that honestly cannot earn one may ship none (`verify_course.py`
+v11 warns, it does not fail).
 
-Read this table top to bottom and stop at the first row that matches. **`figures.md`
-carries the exact SVG for each — copy the template, swap the labels.** Do not improvise an
-SVG when a template fits; eight hand-drawn diagrams read as eight different hands.
+### The Visual Map — where each visual goes
 
-| Content shape | Visual to use | Example |
-|---|---|---|
-| Sequence / pipeline | `figures.md` §1 — flow, `nerdit-flow-*` classes | query travels app → server → DB |
-| Two sets overlapping | `figures.md` §2 — Venn | INNER vs LEFT JOIN |
-| **Two options a learner picks between** | `figures.md` §3 — comparison, same criteria both sides | list vs tuple, `.loc` vs `.iloc` |
-| **One operation changing data** | `figures.md` §4 — before / after | `drop_duplicates()`, a filter, a pivot |
-| **A rule for choosing** | `figures.md` §5 — decision, one question two outcomes | which join to reach for |
-| Syntax anatomy — parts of one artifact | `figures.md` §6 — labelled anatomy, ≤4 labels | parts of a SELECT, a VLOOKUP's arguments |
-| **Containers inside containers, ≤3 deep** | `figures.md` §7 — part / whole | workbook → sheet → cell |
-| Hierarchy / nesting, >3 deep | `figures.md` §8 — tree | folder tree, DOM, scope chain |
-| Real measured numbers, comparison teaches something | `figures.md` §9 — Chart.js (v8 `nerdit-chart-wrap`) | indexed vs full-scan query time |
-| Nothing above matches, after honestly trying | **no visual** — prose is the answer | a naming convention, a history note |
+This is the only table that chooses visuals. `figures.md` holds the markup (copy the
+template, swap the labels; never improvise an SVG when a template fits), and the illustrator
+reads its image slots from here.
+
+| Where in the lesson | The content is… | Visual (`data-visual`) | Made by |
+| --- | --- | --- | --- |
+| Overview / hook | a real-world scene | `illustration` | illustrator; the user generates it |
+| Under the overview | the course's stages | `course-map` (figures.md §15) | writer |
+| Concept: meaning | an analogy | `illustration` (optional) | illustrator |
+| Concept: meaning | a structure or relationship | `diagram` (figures.md §1–8, §10) | writer |
+| Concept: case | records with fields, values changing | `value-table` (§11) or `decision-grid` (§12) | writer |
+| Concept: case | events in time, a window | `time-window` (§14) | writer |
+| Concept: case | parts that add up to a total | `unit-tiles` (§13) | writer |
+| Concept: case | real measured numbers to compare | `chart` (§9, Chart.js) | writer |
+| Worked example | code → result | run line with a result table | writer |
+| Practice | — | Try It (predict, run or decide) | writer |
+| Closing | summary | cheat-sheet table | writer |
+
+Nothing matches after honestly trying: **no visual**. Prose is the answer.
+
+**Balance:**
+
+- One main visual per concept section.
+- No two visuals restating the same facts (figures.md R13).
+- 0–3 illustrations per lesson, only where the text has a scene or analogy.
+- Charts only for real measured numbers.
+- Not the same `data-visual` in every section.
+- Icons in tables come from the closed list in figures.md, always with a legend.
 
 > **The caption-first test.** Before drawing anything, write the one sentence the figure
 > must teach. If that sentence comes easily, the figure is worth drawing and you have its
 > caption. If it will not come, you do not yet understand the concept well enough to draw
 > it — and a decorative picture is worse than none. An empty figure slot beats a filled
 > one that teaches nothing.
+
+Phone-readable figures: a `viewBox` at most 400 wide with the parts stacked, and
+`style="max-width:440px"` on the wrapper (figures.md rule 9). A 640-wide figure shrinks its
+labels to about 7 px on a phone.
 
 Inline SVG rules: `viewBox` set, `width:100%; max-width` via the `nerdit-figure` wrapper,
 `role="img"` + `aria-label`, and css8 flow classes (`nerdit-flow-rect`, `nerdit-flow-text`,
@@ -580,7 +633,9 @@ documents them): `nerdit-stat-grid`/stat cards, `nerdit-donut`, `nerdit-gauge`,
 A lesson is rendered on the platform's stylesheet, and the platform will gain a dark and a
 high-contrast theme. **A hex value written into lesson content survives the theme switch
 and breaks it** — a navy diagram stays navy on a dark ground, a chart with a baked white
-background glows. So generated content never writes a colour; it names one.
+background glows. So generated content never writes a colour; it names one. Tokens resolve
+to brand v2 via `css10-brand.css`, so this rule already delivers the new palette with no
+change to generated content.
 
 ### The tokens you may use
 
@@ -813,6 +868,14 @@ Chart.js (rare in v9): reuse the v8 `withChart` lazy-load pattern inside this sa
 - One real-life analogy per concept where natural ("A table is like one Excel sheet.").
   Skip forced analogies.
 - No stacked jargon: never define a term using another undefined term.
+- Sound like a person: no phrase from `references/voice.md` (`check_prose.py` fails it);
+  contractions are welcome; open sections in different ways.
+- **One real mistake per lesson:** a wrong result an analyst would really get, its output, why
+  it happened, the fix (`nerdit-compare`). The mistake belongs to the data work, never to a
+  business.
+- **Spotlight one record** with `nerdit-spot` wherever it appears (figures.md rule 15).
+- **Check it by hand:** under one key result, one line of arithmetic the learner can verify
+  ("12,000 + 500 = 12,500 ✓").
 
 ---
 

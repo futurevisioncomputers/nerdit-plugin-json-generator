@@ -14,6 +14,27 @@ description: >
 
 # NERDIT Chapter Content Generator
 
+## Course world (optional; required when a course declares one)
+
+When `course-<chapter>_world.json` accompanies the input, resolve it with
+`scripts/make_world_data.py --world <world.json> --out-dir <workdir>` and pass
+`--world <world.json>` to `scripts/check_input.py --strict`, `scripts/gate_lesson.py`
+and `scripts/verify_course.py --contract v11`. Run `scripts/check_world.py --world
+<world.json> --course <output.json>` before QA. Follow `references/worlds/README.md`.
+Without a world file, existing course behavior is unchanged.
+
+Every writer receives WORLD_PATH, WORLD_DATA_PATH and its LESSON_STAGE, along with
+the world's cast, arc and generated-row summary. Pass the same world and cast to
+the illustrator. Use slices of those records, not new names or prices. Show the
+course map below the overview, mark the current stage, and disclose synthetic data
+before its first table. Intentional defects must name entity, row, column and exact
+JSON value in a seed comment and use a column listed in `messiness`.
+
+For an existing course, preserve its reviewed records. A freshly generated sample
+world is never a substitute for its live export. Compare the live export against
+the reviewed local lessons before starting an update. Follow any course-specific
+pilot review checkpoint before refreshing the remaining lessons.
+
 ## Overview
 
 This skill processes an uploaded `course-[chaptername]_input.json` file — a JSON array
@@ -66,7 +87,7 @@ multi-lesson chapters.
 4. Run `scripts/check_sequence.py --strict` (Step 4b) — deterministic, zero tokens. Exit 2
    means a lesson reaches for a construct a later lesson owns: regenerate that lesson with
    the violation lines, re-assemble, re-check, and do not proceed until it exits 0.
-5. Run `scripts/verify_course.py --contract v10` (Step 4c) — deterministic, zero tokens, and
+5. Run `scripts/verify_course.py --contract v11` (Step 4c) — deterministic, zero tokens, and
    the gate that keeps the model from regenerating good lessons. Fix everything it reports
    before spawning QA; it is authoritative on every check it makes.
 6. Spawn `nerdit-qa-validator` once against the assembled output file (Step 5) for the
@@ -89,10 +110,12 @@ structure, and formatting rule.
 | File | Authority for |
 |------|---------------|
 | `references/CORE.md` | **The lesson rules, subject-agnostic.** Fixed skeleton, language rules, example units with mandatory outputs, predict/fill-blank practice, visual decision table, banned-component list, shared script helpers |
-| `references/figures.md` | **The nine figure templates.** CORE.md §7 picks the shape; this file carries the exact SVG for it. Every lesson ships at least one figure — copy a template, swap the labels, never improvise an SVG when one fits |
+| `references/figures.md` | **The fifteen figure templates** and the figure rules (R10–R15, icon set). CORE.md §7's Visual Map picks the visual; this file carries the exact markup for it. Every concept section gets one main visual — copy a template, swap the labels, never improvise an SVG when one fits |
+| `references/voice.md` | Banned phrases and voice rules, enforced by `check_prose.py` |
 | `references/runners/<runner>.md` | **One runner's markup contract.** `sql`, `python`, `excel`, `plot`. Exactly one is passed per lesson — see Step 2b |
 | `references/css8.css` | The base NERDIT LMS stylesheet — class names, color tokens, design variables (v9 lessons use these base classes; `css9-simple.css` is additive on top). When in doubt about exact markup a class expects, grep this file |
 | `references/css9-simple.css` | Additive v9 patch loaded after `css8.css` — defines `nerdit-syntax`, `nerdit-example`, `nerdit-output`, `nerdit-demo-table`, `nerdit-figure`, `nerdit-predict`, `nerdit-fillblank`, `nerdit-tryit`, and the Excel widgets |
+| `references/css10-brand.css` | Brand v2 token override (colours only). Never target it from lesson HTML; it declares no component classes |
 | `references/nerdit-excel-engine.js` | Formula evaluator, sheet renderer, and pivot builder for Excel lessons. Ship it alongside the lesson HTML (Excel has no embeddable engine like sql.js or Pyodide) |
 | `references/nerdit-plot-runner.js` | Runs Matplotlib via Pyodide and renders the resulting figure. Ship it alongside data-visualization lesson HTML |
 
@@ -139,6 +162,27 @@ run the converter first, then the normal pipeline in reform mode:
 
 For a brand-new course (no old JSON), skip this section and start at Step 1.
 
+## Refreshing a finished course (optional — refresh mode)
+
+To improve finished lessons without rewriting them (new figures, SQL layout, less code):
+
+1. Copy each lesson's three files into `<workdir>/_before/`.
+2. Run one `nerdit-lesson-writer` at a time with `SOURCE_PATH = <workdir>/_before/<id>.html`,
+   `REFRESH = figures[,sql-layout][,trim]` and the usual `HTML_PATH`, `QUIZ_PATH` and `CONCEPTS_PATH`.
+3. Gate the lesson:
+
+       python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/gate_lesson.py" --input <input.json> --dir <workdir> --id <id> --before-dir <workdir>/_before --modes figures,sql-layout
+
+   It runs verify (v11), the SQL output check, the SVG checks, `check_prose.py` and
+   `scripts/check_refresh.py`. At most 2 attempts per lesson, then stop and report.
+4. Assemble as in Step 4.
+
+## Previewing a course
+
+    python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/build_preview.py" --course <course.json> --out <preview.html>
+
+One page with every lesson, the site's styles and the site's code colours. Open it in a browser.
+
 ## Step 1 — Detect and Read the Input File
 
 1. Look for the uploaded file matching the pattern `course-[chaptername]_input.json`.
@@ -155,6 +199,8 @@ For a brand-new course (no old JSON), skip this section and start at Step 1.
    - `runner` — *optional*. One of `sql`, `python`, `excel`, `plot`, `none`. Selects the
      runner fragment passed to that lesson's writer. Generation context only: it is never
      copied into the output, and the assembler ignores it.
+   - `focus` — *optional*. `concept` or `hands-on` (default `hands-on`). Sets how much code the
+     lesson shows (CORE.md §4). Like `runner`, it never reaches the output.
 3. Resolve the runner for every lesson before spawning anything.
    - If `runner` is absent on some or all lessons, infer it from the chapter name and the
      lesson descriptions, then **print your per-lesson choice and get the user's
@@ -215,7 +261,7 @@ the same way `title` is used to inform content, but it does not appear in the as
 Do not generate the HTML lesson yourself. Spawn the `nerdit-lesson-writer` agent for this
 lesson (in parallel with the other lessons' agents — see Multi-Agent Architecture above),
 passing it: `id`, `title`, `description`, chapter name, whether this is a multi-lesson chapter,
-`RUNNER` (the value resolved in Step 1), `PRIOR_TOPICS` + `UPCOMING_TOPICS` (the curriculum
+`RUNNER` (the value resolved in Step 1), `FOCUS` (the lesson's `focus`, default `hands-on`), `PRIOR_TOPICS` + `UPCOMING_TOPICS` (the curriculum
 context — see below), `HTML_PATH = <workdir>/<id>.html`,
 `QUIZ_PATH = <workdir>/<id>.quiz.json`, and
 `CONCEPTS_PATH = <workdir>/<id>.concepts.json`.
@@ -350,7 +396,7 @@ in Step 5. It costs zero model tokens — always run it.
 
 Run the course verifier on the assembled file **before** spawning the QA agent:
 
-    python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/verify_course.py"       --input    <path to the input JSON>       --output   <workdir>/course-<chaptername>_output.json       --contract v10
+    python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/verify_course.py"       --input    <path to the input JSON>       --output   <workdir>/course-<chaptername>_output.json       --contract v11
 
 Exit 0 = every mechanical check passed. Exit 1 = at least one failed, one line each.
 
@@ -369,6 +415,20 @@ already clears the mechanical bar, and has far less surface on which to be wrong
 **The script is authoritative on everything it checks.** If Step 5's agent reports a failure
 on an item listed in this script's output contract, the agent is wrong — do not regenerate.
 Say so in one line and move on.
+
+For SQL lessons, also run the output checker and fix every mismatch before QA:
+
+    python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/check_sql_outputs.py" --course <workdir>/course-<chaptername>_output.json
+
+A mismatch means a shown result does not follow from the seed data: regenerate that lesson with
+the reported lines (counts toward the 2-attempt budget). Lines marked unchecked (query plans,
+non-table output) are read by hand, not regenerated.
+
+Then the voice check, which fails on any phrase in `references/voice.md`:
+
+    python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/check_prose.py" --course <workdir>/course-<chaptername>_output.json
+
+`WARN` lines from both scripts are advice: fix them when cheap, never loop on them.
 
 ### Regeneration budget (applies to 4b, 4c and 5)
 
@@ -474,6 +534,8 @@ After delivering, provide a brief summary listing:
 - Lesson titles generated
 - Total question counts (lesson-level total and `assessment.questions` total)
 - Any notable decisions made (e.g., which visualization type was chosen per lesson)
+- Next step: once the course is final, the `nerdit-lesson-illustrator` skill can plan concept
+  illustrations for it (`plan`), then insert the images the user generates (`apply`)
 
 ---
 

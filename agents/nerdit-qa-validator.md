@@ -47,6 +47,16 @@ lesson owns. Do not repeat that scan.
 
 Spend your entire effort on what neither script can decide.
 
+## World review
+
+When WORLD_PATH is supplied, review its cast, stages, messiness and arc. Check that
+source rows agree with WORLD_DATA_PATH, the active course-map stage matches this
+lesson, and the synthetic-data disclosure precedes the first table. Review derived
+figure values and SVG labels against SQL results; the world domain checker does not
+prove their arithmetic. Reject defect declarations used to excuse invented normal
+records. For a real business, confirm recorded permission, invented cast and records,
+no real logos, and mistakes confined to data work rather than allegations about it.
+
 ## Your checklist
 
 - Each numbered `<h2>` teaches **exactly one** concept — not two smuggled into one
@@ -72,6 +82,18 @@ Spend your entire effort on what neither script can decide.
   `nerdit-excel-engine.js` — a worked example claiming `301300` must produce `301300`
 - **(data-viz)** Every documented chart description matches what the code actually renders
 - Each figure teaches what its caption claims, and the caption is true of the picture
+- Each example heading names what its code does
+- Each Try It practises its own section's concept
+- Every value in a figure (names, keys, dates, amounts) matches the section or its seed
+- Reading steps ① ② ③ under a figure match the figure's numbered markers
+- Tables and terms appear in the section that first needs them
+- **One representation per idea** (figures.md R13): no section shows the same facts as a text map,
+  a figure and reading steps
+- **Charts only for real measured numbers**; every table icon is explained by a legend
+- **One real mistake per lesson**, belonging to the data work (a report bug, a typo, a pipeline
+  error); never fraud, losses or complaints about a business
+- **Spotlight record**: the same record, marked `nerdit-spot`, wherever it appears
+- **Check it by hand**: the arithmetic line is true
 - **Concept manifest** (if `<workdir>` given): `<id>.concepts.json` exists per lesson,
   `teaches` has 5–20 entries, and its `uses` honestly reflect the lesson
 

@@ -23,20 +23,20 @@
 
   /* Backgrounds */
   --bg:       #f3ead9;
-  --bg-soft:  #faf3e6;
+  --bg-soft:  #F4F7FB;
   --bg-code:  #fbf0e2;
-  --white:    #fffbf3;
+  --white:    #FFFFFF;
 
   /* Text */
-  --tx:       #2b2620;
-  --tx-b:     #2b2620;
-  --tx-s:     #5a5248;
-  --tx-m:     #6d6459;
-  --tx-inv:   #fffbf3;
+  --tx:       #0F1F33;
+  --tx-b:     #0F1F33;
+  --tx-s:     #3E5068;
+  --tx-m:     #647890;
+  --tx-inv:   #FFFFFF;
 
   /* Borders */
-  --bd:       #d9cbb2;
-  --bd-soft:  #e7dcc7;
+  --bd:       #CBD5E1;
+  --bd-soft:  #DCE4EE;
 
   /* Shadows */
   --sh-xs: 0 1px 4px  rgba(43,38,32,.07);
@@ -57,7 +57,7 @@
      10px uppercase size the run-line tag uses - under AA. This is 6.37:1 there. */
   --orange-deep: #8f4109;
   --indigo: #3f3aa8;  --indigo-bg: #f0effa;  --indigo-bd: #cbc8e8;
-  --slate:  #5a5248;  --slate-bg:  #faf3e6;  --slate-bd:  #e7dcc7;
+  --slate:  #3E5068;  --slate-bg:  #F4F7FB;  --slate-bd:  #DCE4EE;
 
   /* Syntax tokens (dark code blocks) */
   --syn-kw:    #c084fc;
@@ -376,8 +376,8 @@ a { color: var(--nb-vivid); }
    7 · CODE BLOCKS  (dark theme, mobile-first)
    ==================================================================== */
 .nerdit-wrapper pre, .nerdit-reader pre {
-  background: #332d27;
-  color: #e7dcc7;
+  background: #0F2747;
+  color: #DCE4EE;
   border-radius: var(--r);
   padding: 2.6rem 1rem 1rem;
   overflow-x: auto;
@@ -386,7 +386,7 @@ a { color: var(--nb-vivid); }
   box-shadow: var(--sh);
   font-size: 13px;
   line-height: 1.75;
-  border: 1px solid #453e36;
+  border: 1px solid #14315A;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -404,7 +404,7 @@ a { color: var(--nb-vivid); }
   font-size: inherit;
   white-space: pre;
   display: block;
-  color: #e7dcc7;
+  color: #DCE4EE;
 }
 
 /* Language badge */
@@ -420,13 +420,13 @@ a { color: var(--nb-vivid); }
   text-transform: uppercase;
 }
 
-pre:not([data-lang])::before   { content:"CODE"; background:var(--nb);  color:#fffbf3;    }
+pre:not([data-lang])::before   { content:"CODE"; background:var(--nb);  color:#FFFFFF;    }
 pre[data-lang="python"]::before { background:#306998; color:#ffd43b; }
 pre[data-lang="bash"]::before   { background:#1a1a1a; color:#4af626; }
-pre[data-lang="sql"]::before    { background:#e38c00; color:#fffbf3;    }
-pre[data-lang="json"]::before   { background:var(--indigo); color:#fffbf3; }
-pre[data-lang="html"]::before   { background:var(--orange); color:#fffbf3; }
-pre[data-lang="css"]::before    { background:var(--blue);   color:#fffbf3; }
+pre[data-lang="sql"]::before    { background:#e38c00; color:#FFFFFF;    }
+pre[data-lang="json"]::before   { background:var(--indigo); color:#FFFFFF; }
+pre[data-lang="html"]::before   { background:var(--orange); color:#FFFFFF; }
+pre[data-lang="css"]::before    { background:var(--blue);   color:#FFFFFF; }
 pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
 
 /* Copy button */
@@ -434,10 +434,9 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
   position: absolute;
   top: 8px; left: 8px;
   background: rgba(255,255,255,.08);
-  /* Was #9a9086, which measures 4.34:1 on the dark code surface — just under AA.
-     This lifts it to ~6.3:1 while staying quieter than the code text itself. */
-  color: #b8afa4;
-  border: 1px solid #453e36;
+  /* A light slate on the navy code surface: ~7:1, quieter than the code text. */
+  color: #B6C2D1;
+  border: 1px solid #14315A;
   padding: 3px 9px;
   font-size: 10px;
   font-weight: 700;
@@ -453,11 +452,11 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
 
 .nerdit-copy-btn:hover, .nerdit-copy-btn:active {
   background: var(--nb-vivid);
-  color: #fffbf3;
+  color: #FFFFFF;
   border-color: var(--nb-vivid);
 }
 
-.nerdit-copy-btn.copied { background: var(--green); color: #fffbf3; border-color: var(--green); }
+.nerdit-copy-btn.copied { background: var(--green); color: #FFFFFF; border-color: var(--green); }
 
 /* Syntax token classes */
 .kw    { color: var(--syn-kw);   font-weight: 700; }
@@ -485,11 +484,11 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
   position: absolute; left: 0;
   width: 2.2rem;
   text-align: right;
-  color: #5a5248;
+  color: #8A9BB0;
   font-size: .8em;
   user-select: none;
   padding-right: .4rem;
-  border-right: 1px solid #453e36;
+  border-right: 1px solid #14315A;
 }
 .nerdit-lined-code .line.hl {
   background: rgba(96,165,250,.1);
@@ -511,7 +510,7 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
 
 /* Code language tabs */
 .nerdit-code-tabs {
-  border: 1px solid #453e36;
+  border: 1px solid #14315A;
   border-radius: var(--r);
   overflow: hidden;
   margin: 1rem 0;
@@ -520,8 +519,8 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
 
 .nerdit-tab-buttons {
   display: flex;
-  background: #231e1a;
-  border-bottom: 1px solid #453e36;
+  background: #0A1A31;
+  border-bottom: 1px solid #14315A;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -533,7 +532,7 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
   font-weight: 700;
   border: none;
   background: transparent;
-  color: #6d6459;
+  color: #94A3B8;
   transition: all .2s;
   white-space: nowrap;
   border-bottom: 3px solid transparent;
@@ -545,8 +544,8 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
   .nerdit-tab-btn { padding: 9px 18px; font-size: 12.5px; }
 }
 
-.nerdit-tab-btn:hover, .nerdit-tab-btn:active { background:#332d27; color:#9a9086; }
-.nerdit-tab-btn.active { background:#332d27; color:#60a5fa; border-bottom-color:#60a5fa; }
+.nerdit-tab-btn:hover, .nerdit-tab-btn:active { background:#0F2747; color:#94A3B8; }
+.nerdit-tab-btn.active { background:#0F2747; color:#60a5fa; border-bottom-color:#60a5fa; }
 
 .nerdit-tab-content        { display: none; }
 .nerdit-tab-content.active { display: block; }
@@ -557,7 +556,7 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
    ==================================================================== */
 .nerdit-terminal {
   background: #020617;
-  color: #e7dcc7;
+  color: #DCE4EE;
   border-radius: var(--r);
   padding: 2.4rem 1rem 1rem;
   margin: 1rem 0;
@@ -567,7 +566,7 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
   line-height: 1.8;
   box-shadow: var(--sh-lg);
   overflow-x: auto;
-  border: 1px solid #332d27;
+  border: 1px solid #0F2747;
   -webkit-overflow-scrolling: touch;
 }
 
@@ -598,19 +597,19 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 1.5px;
-  color: #453e36;
+  color: #14315A;
   font-family: var(--font-body);
 }
 
 .nerdit-terminal .nerdit-prompt  { color: #22c55e; }
 .nerdit-terminal .nerdit-cmd     { color: #93c5fd; }
-.nerdit-terminal .nerdit-out     { color: #d9cbb2; }
+.nerdit-terminal .nerdit-out     { color: #CBD5E1; }
 .nerdit-terminal .nerdit-err     { color: #f87171; }
-.nerdit-terminal .nerdit-comment { color: #5a5248; font-style: italic; }
+.nerdit-terminal .nerdit-comment { color: #8A9BB0; font-style: italic; }
 
 /* Inline run output */
 .nerdit-run-output {
-  background: #faf3e6;
+  background: #F4F7FB;
   border: 1px solid var(--bd);
   border-top: 3px solid var(--teal);
   border-radius: 0 0 var(--r) var(--r);
@@ -764,7 +763,7 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
 /* Collapsible solution */
 .nerdit-solution {
   margin-top: 10px;
-  border: 1px solid #453e36;
+  border: 1px solid #14315A;
   border-radius: var(--r-sm);
   overflow: hidden;
 }
@@ -772,7 +771,7 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
 .nerdit-solution summary {
   cursor: pointer;
   padding: 12px 14px;
-  background: #231e1a;
+  background: #0A1A31;
   font-weight: 700;
   font-size: .88rem;
   color: #60a5fa;
@@ -787,9 +786,9 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
 
 .nerdit-solution summary::before { content: "▶"; font-size: 9px; transition: transform .2s; }
 .nerdit-solution[open] summary::before { transform: rotate(90deg); }
-.nerdit-solution summary:hover, .nerdit-solution summary:active { background: #332d27; }
+.nerdit-solution summary:hover, .nerdit-solution summary:active { background: #0F2747; }
 
-.nerdit-solution > div { padding: 0; background: #332d27; }
+.nerdit-solution > div { padding: 0; background: #0F2747; }
 .nerdit-solution > div pre { margin:0; border-radius:0; border:none; box-shadow:none; }
 
 /* ====================================================================
@@ -811,7 +810,7 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
 /* 1. CONCEPT */
 .nerdit-concept {
   position: relative;
-  background: linear-gradient(135deg, #eef3f8 0%, #faf3e6 100%);
+  background: linear-gradient(135deg, #eef3f8 0%, #F4F7FB 100%);
   border: 2px solid var(--blue);
   border-radius: var(--r);
   padding: 14px 14px 13px 50px;
@@ -905,7 +904,7 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
   display: flex;
   gap: 11px;
   align-items: flex-start;
-  background: #faf3e6;
+  background: #F4F7FB;
   border: 1px solid var(--bd);
   border-left: 5px solid var(--slate);
   border-radius: var(--r-sm);
@@ -1100,7 +1099,7 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
 .nerdit-step::before {
   content: counter(step-counter);
   background: var(--nb);
-  color: #fffbf3;
+  color: #FFFFFF;
   font-weight: 800;
   font-size: .85rem;
   min-width: 28px;
@@ -1371,7 +1370,7 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
 }
 
 .nerdit-cheatsheet table { width:100%; border-collapse:collapse; font-size:.88rem; min-width: 400px; }
-.nerdit-cheatsheet thead tr { background:var(--nb); color:#fffbf3; }
+.nerdit-cheatsheet thead tr { background:var(--nb); color:#FFFFFF; }
 .nerdit-cheatsheet th { padding:9px 12px; text-align:left; font-weight:700; font-size:.78rem; letter-spacing:.04em; white-space:nowrap; }
 .nerdit-cheatsheet td { padding:8px 12px; border-bottom:1px solid var(--bd-soft); color:var(--tx-s); vertical-align:top; }
 .nerdit-cheatsheet tbody tr:nth-child(even) { background:var(--bg-soft); }
@@ -1396,7 +1395,7 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
 /* 21. CALLOUT */
 .nerdit-callout {
   background: var(--nb);
-  color: #fffbf3;
+  color: #FFFFFF;
   border-radius: var(--r);
   padding: 15px 18px;
   margin: 1.6rem 0;
@@ -1428,7 +1427,7 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
   margin-bottom: 5px;
 }
 
-.nerdit-callout-text { font-size:1rem; font-weight:600; line-height:1.6; margin:0; color:#fffbf3; }
+.nerdit-callout-text { font-size:1rem; font-weight:600; line-height:1.6; margin:0; color:#FFFFFF; }
 
 @media (min-width: 480px) {
   .nerdit-callout-text { font-size:1.05rem; }
@@ -1524,7 +1523,7 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
 }
 
 .nerdit-trytable table { width:100%; border-collapse:collapse; font-size:.86rem; min-width:360px; }
-.nerdit-trytable thead tr { background:#231e1a; color:#e7dcc7; }
+.nerdit-trytable thead tr { background:#0A1A31; color:#DCE4EE; }
 .nerdit-trytable th { padding:8px 12px; text-align:left; font-weight:700; font-size:.76rem; letter-spacing:.06em; white-space:nowrap; }
 .nerdit-trytable td { padding:8px 12px; border-bottom:1px solid var(--bd-soft); vertical-align:top; font-family:var(--font-code); font-size:12.5px; color:var(--tx-s); }
 .nerdit-trytable tbody tr:nth-child(even) { background:var(--bg-soft); }
@@ -1542,7 +1541,7 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
 
 .nerdit-exception-header {
   background: var(--rose);
-  color: #fffbf3;
+  color: #FFFFFF;
   padding: 10px 14px;
   font-weight: 800;
   font-size: .88rem;
@@ -1555,7 +1554,7 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
 .nerdit-exception-header::before { content:"🔴"; }
 
 .nerdit-exception-body {
-  background: #332d27;
+  background: #0F2747;
   color: #fca5a5;
   padding: 11px 14px;
   font-family: var(--font-code);
@@ -1624,7 +1623,7 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
 /* 27. RECAP STRIP */
 .nerdit-recap {
   background: linear-gradient(120deg, var(--nb), var(--nb-mid));
-  color: #fffbf3;
+  color: #FFFFFF;
   border-radius: var(--r);
   padding: 16px 18px;
   margin: 2rem 0 1.2rem;
@@ -1780,7 +1779,7 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
   gap: 6px;
   width: 100%;
   background: var(--nb);
-  color: #fffbf3;
+  color: #FFFFFF;
   padding: 12px 20px;
   border-radius: var(--r-sm);
   font-weight: 700;
@@ -1824,13 +1823,13 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
    12 · PRINT
    ==================================================================== */
 @media print {
-  body { background:#fffbf3; font-size:14px; }
+  body { background:#FFFFFF; font-size:14px; }
   .nerdit-wrapper, .nerdit-reader { box-shadow:none; padding:0; max-width:none; }
   .nerdit-copy-btn,
   .nerdit-reading-progress, .nerdit-next, .nerdit-btn { display:none !important; }
-  pre { background:#faf3e6 !important; color:#000 !important; border:1px solid #ddd; font-size:11px; }
+  pre { background:#F4F7FB !important; color:#000 !important; border:1px solid #ddd; font-size:11px; }
   pre code, .kw, .fn, .str, .num, .cmt, .op, .bltin, .dec, .slf, .param { color:#000 !important; }
-  .nerdit-terminal { background:#fffbf3; color:#000; border:1px solid #ccc; }
+  .nerdit-terminal { background:#FFFFFF; color:#000; border:1px solid #ccc; }
   .nerdit-terminal::before, .nerdit-terminal::after { display:none; }
   .nerdit-compare { grid-template-columns: 1fr 1fr; }
   .nerdit-card-grid { grid-template-columns: repeat(2,1fr); }
@@ -1861,11 +1860,11 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
   --ch-5-a:  rgba(225,29,72,.18);
   --ch-6-a:  rgba(21,128,61,.18);
 
-  --ch-bg:         #faf3e6;
+  --ch-bg:         #F4F7FB;
   --ch-grid:       rgba(203,213,225,.55);
-  --ch-axis:       #9a9086;
-  --ch-axis-label: #6d6459;
-  --ch-tooltip-bg: #332d27;
+  --ch-axis:       #94A3B8;
+  --ch-axis-label: #647890;
+  --ch-tooltip-bg: #0F2747;
 
   --ch-bar-gap:   4px;
   --ch-bar-r:     4px;
@@ -2012,7 +2011,7 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
 .nerdit-chart-tooltip {
   position: absolute;
   background: var(--ch-tooltip-bg);
-  color: #faf3e6;
+  color: #F4F7FB;
   padding: 9px 13px;
   border-radius: var(--r);
   font-size: .78rem;
@@ -2034,7 +2033,7 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: .08em;
-  color: #6d6459;
+  color: #94A3B8;
   margin-bottom: 5px;
 }
 
@@ -2054,7 +2053,7 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
 
 .nerdit-tooltip-val {
   font-weight: 700;
-  color: #faf3e6;
+  color: #F4F7FB;
   margin-left: auto;
   padding-left: 12px;
 }
@@ -2768,7 +2767,7 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
 
 .nerdit-datatable thead tr {
   background: var(--nb);
-  color: #fffbf3;
+  color: #FFFFFF;
 }
 
 .nerdit-datatable th {
@@ -2997,7 +2996,7 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
 .nerdit-tl-bar-label {
   font-size: .62rem;
   font-weight: 700;
-  color: #fffbf3;
+  color: #FFFFFF;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -3053,7 +3052,7 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
 .nerdit-funnel-bar:hover { filter: brightness(1.1); }
 
 .nerdit-funnel-bar-label {
-  color: #fffbf3;
+  color: #FFFFFF;
   font-size: .76rem;
   font-weight: 700;
   white-space: nowrap;
@@ -3170,7 +3169,7 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
 }
 
 .nerdit-chart-tab-btn:hover  { border-color: var(--nb); color: var(--nb); background: var(--nb-soft); }
-.nerdit-chart-tab-btn.active { border-color: var(--nb); color: #fffbf3; background: var(--nb); }
+.nerdit-chart-tab-btn.active { border-color: var(--nb); color: #FFFFFF; background: var(--nb); }
 
 /* S. TIME RANGE PICKER */
 .nerdit-time-range {

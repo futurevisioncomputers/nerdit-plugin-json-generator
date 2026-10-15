@@ -44,7 +44,7 @@
 
 /* --------------------------------------------------------------------
    1b · SOLUTION PANEL TEXT
-   css8 gives `.nerdit-solution > div` a dark slate background (#332d27) but
+   css8 gives `.nerdit-solution > div` a dark slate background (#0F2747) but
    never sets a text colour, so anything inside inherits the page's dark body
    text — the same value as the background, i.e. invisible. v8 solutions only
    ever held a <pre>, which carries its own light text, so the gap never showed.
@@ -55,7 +55,7 @@
 .nerdit-solution > div > p,
 .nerdit-solution > div > ul,
 .nerdit-solution > div > ol {
-  color: #d9cbb2;
+  color: #CBD5E1;
   font-size: 15px;
   line-height: 1.75;
   margin: .85rem 1.1rem;
@@ -80,7 +80,7 @@
 
 .nerdit-solution > div > p strong,
 .nerdit-solution > div > ul strong,
-.nerdit-solution > div > ol strong { color: #faf3e6; }
+.nerdit-solution > div > ol strong { color: #F4F7FB; }
 
 .nerdit-solution > div > p a { color: #93c5fd; }
 
@@ -360,9 +360,9 @@
 /* Inside a dark code block, invert so it reads as part of the code. */
 .nerdit-wrapper pre .nerdit-blank,
 .nerdit-reader pre .nerdit-blank {
-  background: #231e1a;
+  background: #0A1A31;
   color: #fbbf24;
-  border-color: #6d6459;
+  border-color: #647890;
   font-size: 13px;
 }
 
@@ -425,9 +425,9 @@
   font-family: var(--font-code);
   font-size: 13.5px;
   line-height: 1.7;
-  color: #e7dcc7;
-  background: #332d27;
-  border: 1px solid #453e36;
+  color: #DCE4EE;
+  background: #0F2747;
+  border: 1px solid #14315A;
   border-radius: var(--r-sm, 8px);
   padding: .8rem 1rem;
   resize: vertical;
@@ -534,7 +534,7 @@
 .nerdit-xl-colhead,
 .nerdit-xl-rowhead,
 .nerdit-xl-corner {
-  background: #e7dcc7;
+  background: #DCE4EE;
   color: var(--tx-s);
   font-weight: 700;
   text-align: center;
@@ -1511,3 +1511,158 @@
   padding: .6rem .9rem;
   margin: .4rem 0 .6rem;
 }
+
+/* ====================================================================
+   v11 · CODE THAT READS LIKE CODE
+   ====================================================================
+   The website tokenises lesson code (lessonHighlight.ts): keywords,
+   strings, comments, numbers, built-ins, and — new here — `.ident`, the
+   names a learner writes (variables, columns, tables, aliases). The
+   palette above is tuned for the dark code ground; these rules give the
+   same tokens readable colours on the light surfaces too, and turn the
+   try-it textarea into a fitted, coloured editor. All of it is additive:
+   without the website's script the markup renders exactly as before.
+   ==================================================================== */
+
+/* Names on the dark ground: a pale blue, apart from the plain text. */
+.ident { color: #9CDCFE; }
+
+/* A run line's input half is a light surface. The flattening rule above
+   (`.nerdit-in *` takes the page ink) made every token the same colour;
+   these win over it and keep each kind of word distinct. */
+.nerdit-wrapper .nerdit-in pre .kw,
+.nerdit-code-light .kw          { color: #7C3AED; }
+.nerdit-wrapper .nerdit-in pre .fn,
+.nerdit-wrapper .nerdit-in pre .bltin,
+.nerdit-code-light .bltin       { color: #1D4ED8; }
+.nerdit-wrapper .nerdit-in pre .cls-n,
+.nerdit-code-light .cls-n       { color: #B45309; }
+.nerdit-wrapper .nerdit-in pre .str,
+.nerdit-code-light .str         { color: #047857; }
+.nerdit-wrapper .nerdit-in pre .num,
+.nerdit-code-light .num         { color: #BE123C; }
+.nerdit-wrapper .nerdit-in pre .cmt,
+.nerdit-code-light .cmt         { color: #64748B; font-style: italic; }
+.nerdit-wrapper .nerdit-in pre .op,
+.nerdit-code-light .op          { color: #475569; }
+.nerdit-wrapper .nerdit-in pre .dec,
+.nerdit-code-light .dec         { color: #C2410C; }
+.nerdit-wrapper .nerdit-in pre .slf,
+.nerdit-wrapper .nerdit-in pre .param,
+.nerdit-code-light .slf,
+.nerdit-code-light .param       { color: #A16207; }
+.nerdit-wrapper .nerdit-in pre .ident,
+.nerdit-code-light .ident       { color: #0E7490; }
+
+/* What the learner types wraps instead of scrolling sideways: a long query
+   is read in one glance, not dragged into view. Only the input half — the
+   output half holds text tables whose columns must not break. */
+.nerdit-wrapper .nerdit-in pre,
+.nerdit-wrapper .nerdit-in pre code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Try-it editor. The textarea stays the real input (the runners read its
+   value); its own text is transparent, and a coloured copy of the code is
+   drawn exactly behind it. Both boxes share every metric below — font,
+   size, line height, padding, border, wrapping — or the caret drifts away
+   from the letters. The website sizes the textarea to its code. */
+.nerdit-editor {
+  position: relative;
+}
+
+.nerdit-editor > .nerdit-editor-hl {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  margin: 0;
+  overflow: hidden;
+  font-family: var(--font-code);
+  font-size: 13.5px;
+  line-height: 1.7;
+  padding: .8rem 1rem;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm, 8px);
+  background: #0F2747;
+  color: #DCE4EE;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  tab-size: 4;
+  pointer-events: none;
+}
+
+/* Bold is wider than regular in some fallback fonts; under a caret it would
+   push the letters out of line. The editor shows keywords by colour alone. */
+.nerdit-editor > .nerdit-editor-hl .kw { font-weight: inherit; }
+
+.nerdit-tryit-editor.nerdit-editor-input {
+  position: relative;
+  background: transparent;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  caret-color: #FFFFFF;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  tab-size: 4;
+  resize: none;
+}
+
+.nerdit-tryit-editor.nerdit-editor-input::selection {
+  background: rgba(96, 165, 250, .35);
+}
+
+@media print {
+  .ident { color: #000 !important; }
+}
+
+/* ====================================================================
+   v11 · TEACHING VISUALS
+   ====================================================================
+   figures.md templates 11-13 (value table, decision grid, unit tiles),
+   visible spaces and NULL (R11), trap cells (R12), the spotlight record
+   (R15) and the synthetic-data note. Tokens only: both themes resolve.
+   ==================================================================== */
+.nerdit-wrapper .nerdit-vtable { width: 100%; border-collapse: collapse; font-size: .95rem; background: var(--white); border-radius: 8px; overflow: hidden; margin: 0 auto; }
+.nerdit-wrapper .nerdit-vtable th { text-align: left; font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--tx-m); padding: .45rem .6rem; border-bottom: 1px solid var(--bd); background: var(--bg-soft); }
+.nerdit-wrapper .nerdit-vtable th code { text-transform: none; letter-spacing: 0; }
+.nerdit-wrapper .nerdit-vtable td { padding: .45rem .6rem; border-bottom: 1px solid var(--bd-soft); vertical-align: middle; color: var(--tx); }
+.nerdit-wrapper .nerdit-vgroup td { background: var(--bg-soft); font-weight: 700; font-size: .9rem; padding-top: .6rem; }
+.nerdit-wrapper .nerdit-varrow { color: var(--tx-m); text-align: center; width: 2rem; }
+.nerdit-wrapper .nerdit-val { font-family: var(--font-code); background: var(--white); border: 1px solid var(--bd); border-radius: 4px; padding: .05rem .3rem; white-space: pre; }
+.nerdit-wrapper .nerdit-ws { color: var(--tx-m); background: var(--slate-bg); border-radius: 2px; padding: 0 .05rem; }
+.nerdit-wrapper .nerdit-null { font-family: var(--font-code); font-style: italic; font-size: .85em; color: var(--tx-s); background: var(--slate-bg); border: 1px dashed var(--bd); border-radius: 999px; padding: .05rem .5rem; }
+.nerdit-wrapper .nerdit-vnote { display: block; font-size: .72rem; font-weight: 700; margin-top: .1rem; }
+/* td.nerdit-cell-* outranks `.nerdit-vtable td { color }` (0,2,1), so the trap text stays coloured. */
+.nerdit-wrapper .nerdit-cell-bad, .nerdit-wrapper .nerdit-vtable td.nerdit-cell-bad { background: var(--rose-bg); color: var(--rose); font-weight: 700; }
+.nerdit-wrapper .nerdit-cell-good, .nerdit-wrapper .nerdit-vtable td.nerdit-cell-good { background: var(--green-bg); color: var(--green); font-weight: 700; }
+.nerdit-wrapper .nerdit-row-kept td { background: var(--green-bg); color: var(--green); font-weight: 700; }
+.nerdit-wrapper .nerdit-row-dropped td { color: var(--tx-m); }
+.nerdit-wrapper .nerdit-vtitle { font-weight: 700; font-size: .9rem; margin: 0 0 .4rem; text-align: center; }
+.nerdit-wrapper .nerdit-vlegend { font-size: .78rem; color: var(--tx-s); margin: .5rem 0 0; line-height: 1.5; }
+.nerdit-wrapper .nerdit-grid td, .nerdit-wrapper .nerdit-grid th { text-align: center; padding: .4rem .3rem; }
+.nerdit-wrapper .nerdit-grid td:first-child, .nerdit-wrapper .nerdit-grid th:first-child,
+.nerdit-wrapper .nerdit-grid td:last-child, .nerdit-wrapper .nerdit-grid th:last-child { text-align: left; }
+.nerdit-wrapper .nerdit-grid td:last-child { font-family: var(--font-code); font-size: .8rem; }
+.nerdit-wrapper .nerdit-chk.ok { color: var(--green); font-weight: 800; }
+/* outline, not a shadow: the reading-column shadow reset above wins at specificity 0,5,0. */
+.nerdit-wrapper .nerdit-chk.first { color: var(--rose); font-weight: 800; background: var(--rose-bg); outline: 2px solid var(--rose); outline-offset: -2px; border-radius: 6px; }
+.nerdit-wrapper .nerdit-chk.skip { color: var(--tx-m); }
+.nerdit-wrapper .nerdit-tiles { display: flex; flex-wrap: wrap; gap: .9rem; justify-content: center; }
+.nerdit-wrapper .nerdit-tilegroup { display: flex; flex-direction: column; align-items: center; gap: .35rem; font-size: .82rem; color: var(--tx-s); }
+.nerdit-wrapper .nerdit-tilegroup > div { display: flex; gap: .3rem; padding-bottom: .35rem; border-bottom: 2px solid var(--bd); }
+.nerdit-wrapper .nerdit-tile { width: 2.3rem; height: 2.3rem; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; border: 1.5px solid; }
+.nerdit-wrapper .nerdit-tile.sup { background: var(--slate-bg); border-color: var(--bd); color: var(--tx-m); }
+.nerdit-wrapper .nerdit-tile.acc { background: var(--green-bg); border-color: var(--green); color: var(--green); }
+.nerdit-wrapper .nerdit-tile.rej { background: var(--amber-bg); border-color: var(--amber); color: var(--amber); }
+.nerdit-wrapper .nerdit-vsum { text-align: center; font-weight: 600; margin: .7rem 0 0; }
+.nerdit-wrapper .nerdit-spot, .nerdit-wrapper tr.nerdit-spot td { background: var(--blue-bg); }
+.nerdit-wrapper td.nerdit-spot, .nerdit-wrapper tr.nerdit-spot td:first-child { border-left: 3px solid var(--blue); }
+.nerdit-wrapper svg .nerdit-spot { fill: var(--blue-bg); stroke: var(--blue); }
+.nerdit-wrapper .nerdit-data-note { font-size: .78rem; color: var(--tx-m); font-style: italic; margin: .3rem 0 1rem; }
+/* Keep the bin colour while making the tracked record distinct in unit tiles. */
+.nerdit-wrapper .nerdit-tile.nerdit-spot { outline: 2px solid var(--blue); outline-offset: 2px; }
+/* The base flow-text rule overrides SVG fill attributes; keep the active stage readable. */
+.nerdit-wrapper [data-visual="course-map"] .nerdit-flow-text[fill="var(--white)"] { fill: var(--white); }

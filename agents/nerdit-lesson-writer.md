@@ -40,10 +40,15 @@ Before writing anything:
   lesson genuinely needs a different one, read that fragment before using it.
 - `RUNNER: none` means no live runner — practice comes from `nerdit-predict` and
   `nerdit-fillblank` only.
-- Read `${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/references/figures.md` — the nine
-  figure templates. **Every lesson ships at least one figure** (CORE.md §7). Pick the shape from
-  CORE.md's decision table, then copy that template's SVG and swap the labels. Do not improvise an
+- Read `${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/references/figures.md` — the figure
+  templates. **Every concept section gets one main visual** (CORE.md §7). Pick it from
+  CORE.md's Visual Map, then copy that template's markup and swap the labels. Do not improvise an
   SVG when a template fits, and never write a hex colour — `verify_course.py` fails the build on one.
+  **Phone width (figures.md rule 9):** templates 1–9 are drawn 640 wide; restack the parts
+  vertically into a `viewBox` at most 400 wide and add `style="max-width:440px"` to the wrapper.
+  `verify_course.py --contract v10` fails any wider figure.
+- Read `${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/references/voice.md` — the
+  banned-phrase list `check_prose.py` enforces, and how a lesson should sound.
 - Do **not** read the css files in full. Grep `css8.css` / `css9-simple.css` for specific class names only when `CORE.md` leaves exact markup unclear
 
 If the orchestrator attached a sample `course-[chaptername]_output.json`, read it too for field ordering and tone reference.
@@ -52,7 +57,8 @@ If the orchestrator attached a sample `course-[chaptername]_output.json`, read i
 
 The rulebook is authoritative; these are the spine (violating any = rejected by QA):
 
-- **Skeleton fixed:** h1 → overview (≤2 sentences) → meta pills → optional demo data
+- **Skeleton fixed:** h1 → overview (the lesson's real question + what the learner will be
+  able to do, CORE.md §3) → meta pills → optional demo data
   table → 3–5 numbered concept `<section>`s → closing section (cheatsheet + 2–3 practice
   tasks). Wrapper class: `nerdit-wrapper nerdit-simple`.
 - **Pick the preset first** (CORE.md §2b). Explicit `preset` field → `runner` field →
@@ -76,9 +82,17 @@ The rulebook is authoritative; these are the spine (violating any = rejected by 
 - **No tick lists.** There is no "what you will learn" opener and no "what you learned"
   recap. The numbered section headings carry the contents while the learner reads, and
   the cheatsheet table carries it afterwards. Emitting either is rejected.
-- **One concept per section.** Definition (2–3 short sentences, one `<strong>` key word,
-  optional 1-line analogy) → syntax box if syntax exists → 2–3 **run lines** →
-  optional teaching SVG → ≤1 callout → one Try It block.
+- **One concept per section.** Meaning and purpose (2–3 short sentences, one `<strong>` key
+  word, optional 1-line analogy) → concrete case → figure when the concept is a relationship,
+  sequence, change or decision → numbered reading steps → syntax box if syntax exists →
+  worked **run line(s)** → ≤1 callout → one Try It block.
+- **Teaching sequence (CORE.md §2):** meaning → concrete case → figure → read the figure →
+  worked example → practice, using only the rows the concept needs.
+- **Figures come from the lesson's data.** Every label, key, name, date and amount in a figure
+  appears in the section or its seed. Number the parts and write matching ① ② ③ reading steps.
+- **Headings match code; practice matches the concept** (CORE.md §2 teaching rules, §4c).
+- **Reform mode and old images:** keep an old raster image only when every value in it matches
+  the lesson's data; otherwise drop it and draw the relationship as an SVG figure.
 - **Every code block shows its result.** A run line is `nerdit-runhead` heading + one
   sentence + `nerdit-run` holding a `nerdit-in` and a matching `nerdit-out`, each with
   its own `nerdit-tag`. No orphan code, and no `nerdit-in` without a `nerdit-out`.
@@ -101,11 +115,23 @@ The rulebook is authoritative; these are the spine (violating any = rejected by 
   memory-aid, step-block, datatable.
 - **One `<script>` after the wrapper**, only if widgets used, composed from the guarded
   helpers in the rulebook (`copyCode`, `switchTab`, `nerditCheckBlank`, `nerditRunSql`).
-- **Shared demo data:** if examples query data, show it once up top (`nerdit-demo-table`,
-  4–8 rows, friendly Indian names) and reuse it in every example and the runner seed.
+- **Shared demo data:** if examples query data, show only the rows the first concept needs
+  up top (`nerdit-demo-table`, 4–8 rows, friendly Indian names); each later table appears in
+  the section that introduces it (CORE.md §5). The runner seed still builds every table.
 - **Sequencing:** the learner has seen only `PRIOR_TOPICS` plus this lesson — nothing
   else. No code anywhere (examples, syntax boxes, Try It, practice tasks, quiz options)
   may use a construct owned by an `UPCOMING_TOPICS` lesson. See the Sequencing section.
+- **Pick each visual from the Visual Map** (CORE.md §7). Every `nerdit-figure` carries
+  `data-visual`. Records with fields go in a value table (figures.md §11), never in an SVG label
+  joined with `·`. Show each idea once (figures.md R13).
+- **SQL layout** (runners/sql.md §Layout): no line over 60 characters, one column per line in
+  `CREATE TABLE`, `CASE`/`WHEN`/`END` on their own lines, a space after every comma.
+- **Focus** (CORE.md §4): `FOCUS = concept` means one run line per concept and a predict or decide
+  Try It; `hands-on` means 2–3 run lines. A shown block is at most 15 lines; move setup into the seed.
+- **Sound like a person** (references/voice.md): no banned phrase, contractions welcome, sections
+  that open in different ways.
+- **One real mistake per lesson** (its wrong output, why, the fix), **spotlight one record**
+  with `nerdit-spot`, and **check one key result by hand** (CORE.md §10).
 
 **Forbidden inside the HTML:** self-check quiz section, next-lesson nav links, app chrome
 (topbar/sidebar/bottom-nav/lesson-shell/hamburger), markdown fences, commentary outside HTML.
@@ -184,6 +210,38 @@ its teaching into the v9 skeleton above — do not generate from the title alone
 
 When no `SOURCE_PATH` is given, generate normally from `id` / `title` / `description`.
 
+## Course world and continuity
+
+When WORLD_PATH is supplied, read it and WORLD_DATA_PATH before writing. Follow
+`skills/nerdit-chapter-generator/references/worlds/README.md`. Use only its synthetic
+records and invented cast. Reuse LESSON_STAGE in its course map under the overview.
+Put the synthetic-data note before the first table; real business names additionally
+require recorded permission and the business-name permission notice. Keep the error
+in the data work, never an allegation about the business. Annotate source figure tables
+with `data-world-entity` and source column headers; label computed tables with a
+`data-world-derived` explanation and verify their SQL. Declare every permitted
+intentional defect with entity, one-based row, column and exact JSON scalar value.
+Do not alter existing course records to match a new sample world.
+
+## Refresh mode (optional — improving a finished lesson)
+
+If the orchestrator passes `SOURCE_PATH` **and** `REFRESH` (a list from `figures`, `sql-layout`,
+`trim`), you are not rewriting the lesson. Copy `SOURCE_PATH` and change only what `REFRESH` names:
+
+- `figures` — redraw figures that break figures.md R10–R13 or have a better template, with their
+  captions and reading steps. Remove a text map (`nerdit-map`) a figure now covers. Add
+  `data-visual` to every figure.
+- `sql-layout` — re-lay out SQL in run lines and Try Its to runners/sql.md §Layout. Whitespace
+  only: no token may change.
+- `trim` — shorten shown code to the CORE.md §4 limits by moving repeated setup into the seed or a
+  view. Every shown output must still be exactly what SQLite returns. A run-line heading and its
+  one-sentence lead may change to match.
+
+Everything else stays exactly as it is: headings, prose, Try It prompts, the cheat sheet, the
+quiz file and the concept manifest (except its `visuals` list). `check_refresh.py` compares your
+files with the originals and rejects any other change. Write the quiz and concept files back
+unchanged.
+
 ## Quiz rules
 
 After `HTML_PATH` is written, derive exactly 6 multiple-choice questions from it, split into
@@ -233,6 +291,10 @@ downstream sequencing check from a guess about who owns a concept into a fact.
 - `uses` — terms the lesson leans on without defining. Every one must come from this lesson
   or a `PRIOR_TOPICS` lesson. If a term belongs to `UPCOMING_TOPICS`, you have a sequencing
   bug: fix the lesson, do not list it here.
+- `visuals` (optional, written whenever you write the lesson) — one entry per concept section,
+  `{"section": 2, "visual": "value-table", "illustration": "numbering drafts of an essay, newest first"}`.
+  `visual` is the section's main `data-visual` or `none`. `illustration` names the scene or analogy
+  the text already uses, or is `null`. The illustrator plans image slots from it.
 
 ## Output format
 

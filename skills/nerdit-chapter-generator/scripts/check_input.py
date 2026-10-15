@@ -13,6 +13,9 @@ import argparse
 import json
 import re
 import sys
+from pathlib import Path
+
+from make_world_data import load_world
 
 MIN_DESCRIPTION_WORDS = 12
 
@@ -21,6 +24,8 @@ MIN_DESCRIPTION_WORDS = 12
 # by inference -- but a misspelled one would fall through to inference silently.
 PRESETS = {"code", "spreadsheet", "visual", "quantitative", "conversational"}
 RUNNER_PRESET = {"python": "code", "sql": "code", "plot": "code", "excel": "spreadsheet"}
+# CORE.md §4: concept lessons use one run line per concept; hands-on lessons 2-3.
+FOCUS = {"concept", "hands-on"}
 
 
 def _norm(text):
@@ -54,6 +59,10 @@ def audit(input_lessons):
             out.append(("ERROR", lid, f"unknown preset {preset!r} -- one of "
                                       f"{', '.join(sorted(PRESETS))}"))
 
+        focus = src.get("focus")
+        if focus is not None and str(focus).lower() not in FOCUS:
+            out.append(("ERROR", lid, f"unknown focus {focus!r} -- one of concept, hands-on (CORE.md §4)"))
+
     presets = {str(s.get("preset")).lower() for s in input_lessons if s.get("preset")}
     if len(presets) > 1:
         out.append(("ERROR", "<chapter>", f"chapter mixes presets ({', '.join(sorted(presets))}) "
@@ -81,12 +90,18 @@ def main():
     ap.add_argument("--input", required=True)
     ap.add_argument("--strict", action="store_true",
                     help="exit non-zero when any ERROR is found")
+    ap.add_argument("--world", help="optional course world file or library reference")
     args = ap.parse_args()
 
     with open(args.input, encoding="utf-8") as f:
         lessons = json.load(f)
 
     findings = audit(lessons)
+    if args.world:
+        try:
+            load_world(Path(args.world))
+        except (OSError, ValueError, KeyError, TypeError) as exc:
+            findings.append(("ERROR", "<world>", str(exc)))
     if not findings:
         print(f"INPUT: clean -- {len(lessons)} lessons")
         return

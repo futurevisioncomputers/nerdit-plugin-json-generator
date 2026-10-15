@@ -84,3 +84,67 @@ def test_cli_check_exits_zero_when_clean(tmp_path):
     r = subprocess.run([sys.executable, SCRIPT, "--in", str(p), "--check"],
                        capture_output=True, text=True)
     assert r.returncode == 0
+
+
+# --- brand v2 literals (css10-brand.css remap; task 14) ---------------------------------
+
+def test_brand_v2_navy_is_rewritten():
+    out, left = tokenize('<rect fill="#0b1f3a"/>')
+    assert out == '<rect fill="var(--nb)"/>'
+    assert left == []
+
+
+def test_brand_v2_ink_is_rewritten():
+    out, left = tokenize('<rect fill="#0f1f33"/>')
+    assert out == '<rect fill="var(--tx)"/>'
+    assert left == []
+
+
+def test_brand_v2_muted_ink_is_rewritten():
+    out, left = tokenize('<rect fill="#647890"/>')
+    assert out == '<rect fill="var(--tx-m)"/>'
+    assert left == []
+
+
+def test_brand_v2_border_is_rewritten():
+    out, left = tokenize('<rect stroke="#cbd5e1"/>')
+    assert out == '<rect stroke="var(--bd)"/>'
+    assert left == []
+
+
+def test_brand_v2_border_soft_is_rewritten():
+    out, left = tokenize('<rect stroke="#dce4ee"/>')
+    assert out == '<rect stroke="var(--bd-soft)"/>'
+    assert left == []
+
+
+def test_brand_v2_bg_soft_is_rewritten():
+    out, left = tokenize('<rect fill="#f4f7fb"/>')
+    assert out == '<rect fill="var(--bg-soft)"/>'
+    assert left == []
+
+
+def test_brand_v2_white_is_rewritten():
+    out, left = tokenize('<rect fill="#ffffff"/>')
+    assert out == '<rect fill="var(--white)"/>'
+    assert left == []
+
+
+def test_brand_v2_white_shorthand_is_rewritten():
+    out, left = tokenize('<rect fill="#fff"/>')
+    assert out == '<rect fill="var(--white)"/>'
+    assert left == []
+
+
+def test_brand_v2_literals_are_case_insensitive():
+    out, left = tokenize('<path fill="#0B1F3A" stroke="#CBD5E1"/>')
+    assert out == '<path fill="var(--nb)" stroke="var(--bd)"/>'
+    assert left == []
+
+
+def test_teal_mint_gold_have_no_token_and_are_reported():
+    # Brand v2 accent colours are not part of the token set; leave them for
+    # verify_course.py / CORE.md sec7b to catch as leftover, unknown colours.
+    out, left = tokenize('<rect fill="#14b8a6"/><rect fill="#6ee7c8"/><rect fill="#fbbf24"/>')
+    assert out == '<rect fill="#14b8a6"/><rect fill="#6ee7c8"/><rect fill="#fbbf24"/>'
+    assert left == ["#14b8a6", "#6ee7c8", "#fbbf24"]

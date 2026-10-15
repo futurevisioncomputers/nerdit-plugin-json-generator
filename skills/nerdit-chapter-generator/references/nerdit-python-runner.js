@@ -2,15 +2,15 @@
  *
  * Lazy-loads on the learner's first Run click; the first load takes a few
  * seconds and roughly 6 MB, so lessons warn the learner in one sentence.
- * NumPy, pandas, matplotlib and scikit-learn ship inside Pyodide and are
- * importable without extra setup.
+ * NumPy, pandas, matplotlib and scikit-learn ship inside Pyodide; each run
+ * loads whatever the learner's code imports before executing it.
  *
  * Served by the website at /nerdit-python-runner.js. Source of truth lives in
  * the nerdit plugin's references/ directory.
  */
 (function () {
   if (typeof window.nerditRunPython !== "function") {
-    window.nerditRunPython = function(btn){
+    window.nerditRunPython = function (btn) {
       var box = btn.closest('.nerdit-tryit');
       var status = box.querySelector('.nerdit-tryit-status');
       var out = box.querySelector('.nerdit-tryit-result');
@@ -38,7 +38,18 @@
         if (!errLine) return String(msg);
         return (lineNo ? 'Line ' + lineNo + ' — ' : '') + errLine;
       };
+      // NumPy, pandas, sqlite3 and the rest ship with Pyodide but are not
+      // installed until asked for: without this step `import pandas` fails with
+      // ModuleNotFoundError. Packages already loaded resolve at once.
       var run = function(py){
+        var code = box.querySelector('.nerdit-tryit-editor').value;
+        status.textContent = 'Loading packages…';
+        py.loadPackagesFromImports(code).then(
+          function(){ execute(py, code); },
+          function(){ show('Could not load the Python packages this code needs. Check your internet connection and try again.', true); }
+        );
+      };
+      var execute = function(py, code){
         var buf = [];
         var collect = { batched: function(s){ buf.push(s); } };
         py.setStdout(collect);
@@ -47,7 +58,7 @@
         // removes it instead of silently surviving from the previous run.
         var ns = py.toPy({});
         try {
-          py.runPython(box.querySelector('.nerdit-tryit-editor').value, { globals: ns });
+          py.runPython(code, { globals: ns });
           show(buf.join('\n'), false);
         } catch (err) {
           show((buf.length ? buf.join('\n') + '\n' : '') + friendlyError(err.message || err), true);

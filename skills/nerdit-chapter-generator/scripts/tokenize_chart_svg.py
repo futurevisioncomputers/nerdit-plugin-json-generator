@@ -33,6 +33,11 @@ import sys
 
 # Palette literal -> token. Values mirror the :root block of css8.css; see CORE.md §7b for
 # what each role means. Keys are lowercase -- input is normalised before lookup.
+#
+# Brand v2 (css10-brand.css) remaps --nb/--tx/--tx-m/--bd/--bd-soft/--bg-soft/--white to a
+# cool navy palette; the literals below are those brand v2 hex values, kept alongside the
+# older warm-palette entries above because older figures still contain those. Teal/mint/gold
+# brand v2 accents have no token -- left unmapped so they surface as reported leftovers.
 PALETTE = {
     "#003b6c": "var(--nb)",          # brand navy: bars, primary series
     "#163c6b": "var(--nb)",          # pre-v10 navy, still present in older figures
@@ -46,6 +51,15 @@ PALETTE = {
     "#fffbf3": "var(--white)",       # paper, when a figure is not transparent
     "#000000": "var(--tx)",          # matplotlib's default black
     "#000": "var(--tx)",
+    # Brand v2 literals (css10-brand.css)
+    "#0b1f3a": "var(--nb)",          # brand v2 navy
+    "#0f1f33": "var(--tx)",          # brand v2 ink
+    "#647890": "var(--tx-m)",        # brand v2 muted ink
+    "#cbd5e1": "var(--bd)",          # brand v2 border
+    "#dce4ee": "var(--bd-soft)",     # brand v2 soft border
+    "#f4f7fb": "var(--bg-soft)",     # brand v2 soft surface
+    "#ffffff": "var(--white)",       # brand v2 white
+    "#fff": "var(--white)",
 }
 
 # SVG grows one element per drawn mark, so these explode. Render them as a transparent PNG
