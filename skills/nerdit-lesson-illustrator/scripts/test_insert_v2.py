@@ -53,3 +53,14 @@ def test_v2_missing_diagram_file_fails_only_that_slot(tmp_path):
     errors = insert_lessons(c, m, tmp_path)
     assert len(errors) == 1 and "load-basics-01-fig1.svg" in errors[0]
     assert m["images"][1]["status"] == "inserted"
+
+
+def test_screen_inserts_with_data_visual_screen():
+    from fixture_course import screen_plan
+    c = course()
+    m = new_manifest(c, "c.json")
+    assert add_slots_v2(m, c, screen_plan()) == []
+    m["images"][0].update(status="passed", width=1200, height=900)
+    assert insert_lessons(c, m, None) == []
+    html = c["lessons"][1]["content"]
+    assert '<div class="nerdit-figure" data-nerdit-img="old-style-02-img1" data-visual="screen">' in html

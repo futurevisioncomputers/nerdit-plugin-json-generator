@@ -95,3 +95,14 @@ PLAN_V2 = {
 
 def course() -> dict:
     return copy.deepcopy(_COURSE)
+
+
+def screen_plan() -> dict:
+    """PLAN_V2 with its illustration turned into a simple app screen (kind "screen")."""
+    plan = copy.deepcopy(PLAN_V2)
+    item = plan["items"][1]
+    item.update(kind="screen", app="Excel", labels=["Data", "Remove Duplicates", "OK"],
+                subject="Excel window: Remove repeated rows",
+                explanation=["Click Data, then Remove Duplicates.", "Click OK."])
+    plan["items"] = [item]
+    return plan

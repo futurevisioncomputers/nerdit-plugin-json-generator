@@ -81,19 +81,21 @@ multi-lesson chapters.
    `CONCEPTS:` path lines — no file content ever enters your context. The curriculum context
    is static per lesson (computed from the input array alone), so it does not break the
    parallel batch.
-3. Run `scripts/assemble_course.py` (Step 4) to build the full `course-<chapter>_output.json`
+3. Run `scripts/render_screens.py` (Step 3b) to draw every complex app screen the writers
+   described, then run `scripts/assemble_course.py` (Step 4) to build the full `course-<chapter>_output.json`
    from the input, the `<id>.html` files, and the `<id>.quiz.json` files. The script owns all
    course defaults, ids, timestamps, durations, and `assets`.
 4. Run `scripts/check_sequence.py --strict` (Step 4b) — deterministic, zero tokens. Exit 2
    means a lesson reaches for a construct a later lesson owns: regenerate that lesson with
-   the violation lines, re-assemble, re-check, and do not proceed until it exits 0.
+   the violation lines, re-draw its screens (Step 3b), re-assemble, re-check, and do not
+   proceed until it exits 0.
 5. Run `scripts/verify_course.py --contract v11` (Step 4c) — deterministic, zero tokens, and
    the gate that keeps the model from regenerating good lessons. Fix everything it reports
    before spawning QA; it is authoritative on every check it makes.
 6. Spawn `nerdit-qa-validator` once against the assembled output file (Step 5) for the
    judgment-only checks the scripts cannot make. On a `FAIL` that is genuinely the agent's to
-   own, re-run that lesson's `nerdit-lesson-writer` with the exact lines, re-assemble,
-   re-verify. **At most 2 regeneration attempts per lesson** (Step 4c) — then stop and report.
+   own, re-run that lesson's `nerdit-lesson-writer` with the exact lines, re-draw its screens
+   (Step 3b), re-assemble, re-verify. **At most 2 regeneration attempts per lesson** (Step 4c) — then stop and report.
    Then deliver (Step 6).
 
 If the chapter has exactly one lesson, the parallelism in step 2 is moot but the same
@@ -110,7 +112,7 @@ structure, and formatting rule.
 | File | Authority for |
 |------|---------------|
 | `references/CORE.md` | **The lesson rules, subject-agnostic.** Fixed skeleton, language rules, example units with mandatory outputs, predict/fill-blank practice, visual decision table, banned-component list, shared script helpers |
-| `references/figures.md` | **The fifteen figure templates** and the figure rules (R10–R15, icon set). CORE.md §7's Visual Map picks the visual; this file carries the exact markup for it. Every concept section gets one main visual — copy a template, swap the labels, never improvise an SVG when one fits |
+| `references/figures.md` | **The fifteen figure templates, plus app screens (§16) and scenes (§17)** and the figure rules (R10–R15, icon set). CORE.md §7's Visual Map picks the visual; this file carries the exact markup for it. Every concept section gets one main visual — copy a template, swap the labels, never improvise an SVG when one fits |
 | `references/voice.md` | Banned phrases and voice rules, enforced by `check_prose.py` |
 | `references/runners/<runner>.md` | **One runner's markup contract.** `sql`, `python`, `excel`, `plot`. Exactly one is passed per lesson — see Step 2b |
 | `references/css8.css` | The base NERDIT LMS stylesheet — class names, color tokens, design variables (v9 lessons use these base classes; `css9-simple.css` is additive on top). When in doubt about exact markup a class expects, grep this file |
@@ -169,13 +171,15 @@ To improve finished lessons without rewriting them (new figures, SQL layout, les
 1. Copy each lesson's three files into `<workdir>/_before/`.
 2. Run one `nerdit-lesson-writer` at a time with `SOURCE_PATH = <workdir>/_before/<id>.html`,
    `REFRESH = figures[,sql-layout][,trim]` and the usual `HTML_PATH`, `QUIZ_PATH` and `CONCEPTS_PATH`.
-3. Gate the lesson:
+3. Draw the lesson's screens (figures.md §16), then gate it:
 
+       python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/render_screens.py" --dir <workdir> --id <id>
        python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/gate_lesson.py" --input <input.json> --dir <workdir> --id <id> --before-dir <workdir>/_before --modes figures,sql-layout
 
-   It runs verify (v11), the SQL output check, the SVG checks, `check_prose.py` and
-   `scripts/check_refresh.py`. At most 2 attempts per lesson, then stop and report.
-4. Assemble as in Step 4.
+   The gate runs verify (v11), the SQL output check, the SVG checks, `scripts/check_screens.py`
+   (screen specs, the sync rule, stale drawings, click-paths with no screen), `check_prose.py`
+   and `scripts/check_refresh.py`. At most 2 attempts per lesson, then stop and report.
+4. Assemble as in Step 4, then write the image briefs as in Step 5b.
 
 ## Previewing a course
 
@@ -315,12 +319,24 @@ a lesson that explains embeddings three lessons early has no telltale code to sc
 
 The `meta.json` sidecar is gone: `nerdit-lesson-writer` writes each lesson's questions
 straight to `<workdir>/<id>.quiz.json`, and `id`/`title` reach the assembler from the input
-file it already reads. Nothing to do here — go to Step 4.
+file it already reads. Nothing to do here — go to Step 3b.
 
 `description` remains generation context only — it is passed to the agent but never appears in
 the assembled output.
 
 ---
+
+## Step 3b — Draw the screens (deterministic script)
+
+Writers describe app click-paths and scenes as specs (figures.md §16–17); they never draw them.
+Before assembling, draw every complex screen (type A) in the app's own colours:
+
+    python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/render_screens.py" --dir <workdir>
+
+Exit 1 lists each spec problem: a word the lesson does not contain, a view too wide for a phone,
+a formula the Excel engine cannot compute. Nothing is written until every lesson is clean. Fix
+it with the lesson's writer (it counts toward the regeneration budget), then run it again.
+`scripts/check_screens.py` is the same check, run by `gate_lesson.py`.
 
 ## Step 4 — Assemble the Output JSON (deterministic script)
 
@@ -373,7 +389,7 @@ construct before the lesson that teaches it. For each reported lesson:
 
 1. Re-run that lesson's `nerdit-lesson-writer` (Step 2) with a `VIOLATIONS` block holding
    that lesson's exact report lines. It regenerates all three files.
-2. Re-run the assembler (Step 4).
+2. Re-draw its screens (Step 3b), then re-run the assembler (Step 4).
 3. Re-run this check.
 
 Repeat until it exits 0. Do not continue to Step 5 with known violations, and never deliver
@@ -399,6 +415,13 @@ Run the course verifier on the assembled file **before** spawning the QA agent:
     python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/verify_course.py"       --input    <path to the input JSON>       --output   <workdir>/course-<chaptername>_output.json       --contract v11
 
 Exit 0 = every mechanical check passed. Exit 1 = at least one failed, one line each.
+
+Then check every lesson's screens and scenes on the same file. A lesson the writer regenerated
+after Step 3b fails here until its screens are drawn again:
+
+    python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/check_screens.py" --course <workdir>/course-<chaptername>_output.json
+
+Exit 1 lists each failure with its lesson id. Re-run Step 3b, then Step 4, and check again.
 
 **This step exists to stop needless regeneration.** Roughly three quarters of the Step 5
 checklist is decidable by reading the JSON or walking the DOM — field literals, id formats,
@@ -502,10 +525,25 @@ decided those and is authoritative. A `FAIL` from this agent on one of them is a
 positive: note it in one line, do not regenerate.
 
 On a genuine failure, re-run that lesson's `nerdit-lesson-writer` with the exact reported
-lines, re-assemble (Step 4), and re-run 4b and 4c before validating again. Respect the
+lines, re-draw its screens (Step 3b), re-assemble (Step 4), and re-run 4b and 4c before
+validating again. Respect the
 2-attempt budget in Step 4c. Then deliver (Step 6).
 
 ---
+
+## Step 5b — Image briefs in the same run (deterministic script)
+
+Simple screens (type B) and scenes become images. Their briefs come straight from the specs,
+so the owner gets the course and its image prompts together:
+
+    python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/visual_briefs.py" \
+      --course <workdir>/course-<chaptername>_output.json --out <workdir>/images/plan.json
+    python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-lesson-illustrator/scripts/manifest.py" add \
+      --course <workdir>/course-<chaptername>_output.json --plan <workdir>/images/plan.json \
+      --images-dir <workdir>/images
+
+Skip this step when `visual_briefs.py` reports 0 briefs. The illustrator's `apply` step
+converts, checks and inserts the images once they are saved into `<workdir>/images/incoming/`.
 
 ## Step 6 — Deliver Output File
 
@@ -551,8 +589,10 @@ After delivering, provide a brief summary listing:
 - Lesson titles generated
 - Total question counts (lesson-level total and `assessment.questions` total)
 - Any notable decisions made (e.g., which visualization type was chosen per lesson)
-- Next step: once the course is final, the `nerdit-lesson-illustrator` skill can plan concept
-  illustrations for it (`plan`), then insert the images the user generates (`apply`)
+- Visuals: drawn screens (A), image screens (B) and scenes per lesson, plus the path of
+  `<workdir>/images/PROMPTS.md` when Step 5b wrote briefs
+- Next step: generate the images in `PROMPTS.md` into `<workdir>/images/incoming/`, then run
+  the `nerdit-lesson-illustrator` skill's `apply` to check and insert them
 
 ---
 

@@ -6,7 +6,7 @@
 
 Builds a one-lesson course from <dir>/<id>.html, .quiz.json and .concepts.json, then runs:
 verify_course (schema, structure, density) -> check_sql_outputs -> check_python_outputs (only
-when the lesson has Python; a missing engine fails it) -> SVG checks -> check_prose
+when the lesson has Python; a missing engine fails it) -> SVG checks -> check_screens -> check_prose
 -> check_refresh (only with --before-dir). Replaces the course-specific rollout/gate.py.
 Exit 0 = pass, 1 = a check failed, 2 = a file or the lesson id is missing. Stdlib only.
 """
@@ -26,6 +26,7 @@ from check_prose import banned_patterns, check_lesson as check_voice  # noqa: E4
 from check_python_outputs import check_lesson as check_python, has_python  # noqa: E402
 from pyodide_engine import EngineError, engine_available  # noqa: E402
 from check_refresh import check as check_refresh  # noqa: E402
+from check_screens import check_lesson as check_screens  # noqa: E402
 from check_sql_outputs import check_lesson as check_sql  # noqa: E402
 from check_world import check_lesson as check_world  # noqa: E402
 from make_world_data import generate, load_world  # noqa: E402
@@ -80,6 +81,9 @@ def gate(input_path: Path, lesson_dir: Path, lid: str, contract: str = "v11",
 
     for n, svg in enumerate(SVG_RE.findall(html), 1):
         fails += [f"svg {n}: {e}" for e in check_svg(svg, [], 0)]
+    s_fails, s_warns = check_screens(html)
+    fails += [f"screen: {f}" for f in s_fails]
+    warns += [f"screen: {w}" for w in s_warns]
 
     patterns = banned_patterns()
     v_fails, v_warns = check_voice(html, patterns)

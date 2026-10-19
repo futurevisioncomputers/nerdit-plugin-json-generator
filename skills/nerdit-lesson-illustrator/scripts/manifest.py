@@ -22,18 +22,22 @@ POSITIONS = ("after-explanation", "before-practice")
 MAX_PER_LESSON = 3
 STYLE_FILE = Path(__file__).resolve().parent.parent / "references" / "style.md"
 PLAN_KEYS = ("lessonId", "section", "heading", "position", "reason", "subject", "alt", "caption")
-KINDS = ("diagram", "illustration")
+KINDS = ("diagram", "illustration", "screen")
 MARKERS = "①②③④⑤"
 V2_KEYS = ("lessonId", "section", "heading", "position", "kind", "question", "objective", "takeaway",
            "misconception", "intro", "caption", "alt", "explanation", "checkQuestion")
 
 
-def style_block(labels: list[str], markers: int = 0, path: Path = STYLE_FILE) -> str:
+def style_block(labels: list[str], markers: int = 0, path: Path = STYLE_FILE,
+                kind: str = "illustration", app: str = "") -> str:
+    """The house style, or for kind "screen" the screen style: a realistic, logo-free window
+    of `app` in its own colours, allowed to show only the listed labels."""
     raw = path.read_text(encoding="utf-8").replace("\r\n", "\n")
-    m = re.search(r"```style\n(.*?)\n```", raw, re.S)
+    fence = "screen-style" if kind == "screen" else "style"
+    m = re.search(rf"```{fence}\n(.*?)\n```", raw, re.S)
     if not m:
-        raise RuntimeError(f"no ```style block in {path}")
-    block = m.group(1)
+        raise RuntimeError(f"no ```{fence} block in {path}")
+    block = m.group(1).replace("{app}", app)
     if "{labels_clause}" in block:  # legacy v1 style file
         clause = (", except these exact labels: " + ", ".join(f'"{l}"' for l in labels)) if labels else ""
         return block.replace("{labels_clause}", clause)
@@ -144,7 +148,9 @@ def add_slots(m: dict, course: dict, plan: list[dict], replan: str | None = None
 
 
 def build_prompt(m: dict, s: dict) -> str:
-    lines = ["Educational illustration for a student meeting this topic for the first time.",
+    opener = (f"Realistic {s.get('app') or 'app'} screen" if s.get("kind") == "screen"
+              else "Educational illustration")
+    lines = [f"{opener} for a student meeting this topic for the first time.",
              f"Course: {m['course']['title']}", f"Lesson: {s['lessonTitle']}",
              f"Section: {s['section']['heading']}", f"Learning objective: {s['objective']}",
              f"Question it answers: {s['question']}"]
@@ -156,7 +162,8 @@ def build_prompt(m: dict, s: dict) -> str:
     if marks:
         body.append("Numbered markers: " + "; ".join(
             f"place {mk} on the part showing: {st}" for mk, st in zip(marks, steps)))
-    return "\n".join(lines) + "\n\n" + "\n".join(body) + "\n\n" + style_block(s["labels"], len(marks))
+    style = style_block(s["labels"], len(marks), kind=s.get("kind", "illustration"), app=s.get("app", ""))
+    return "\n".join(lines) + "\n\n" + "\n".join(body) + "\n\n" + style
 
 
 def _validate_v2(s: dict) -> list[str]:
@@ -192,8 +199,10 @@ def add_slots_v2(m: dict, course: dict, plan: dict, replan: str | None = None) -
             missing.append("anchor")
         if p.get("kind") == "diagram":
             missing += [k for k in ("labels", "sourceRefs") if not p.get(k)]
-        if p.get("kind") == "illustration" and not p.get("subject"):
+        if p.get("kind") in ("illustration", "screen") and not p.get("subject"):
             missing.append("subject")
+        if p.get("kind") == "screen":
+            missing += [k for k in ("app", "labels") if not p.get(k)]
         if missing:
             errors.append(f"{where}: missing {', '.join(missing)}")
             continue
@@ -233,6 +242,7 @@ def add_slots_v2(m: dict, course: dict, plan: dict, replan: str | None = None) -
             "takeaway": p["takeaway"], "misconception": p["misconception"], "intro": p["intro"],
             "caption": p["caption"], "alt": p["alt"], "explanation": list(p["explanation"]),
             "checkQuestion": dict(p["checkQuestion"]), "subject": p.get("subject", ""),
+            "app": p.get("app", ""),
             "sourceFingerprint": section_fingerprint(content, p["section"], p["heading"]),
             "requestFile": f"{image_id}.{'svg' if diagram else 'png'}",
             "outputFile": f"{image_id}.{'svg' if diagram else 'webp'}",

@@ -13,6 +13,19 @@ No logos, screenshots, user-interface elements or watermarks.
 People, if any: Indian people in Indian settings. No real brands, companies or celebrities.
 ```
 
+Simple app screens (kind `screen`, briefed by the chapter generator's `visual_briefs.py` from
+a lesson's screen spec) use the block between the `screen-style` fences instead. `{app}` is the
+app the lesson names. A screen looks like its own app, in that app's colours, so a learner
+recognises it; the house colours above do not apply to it.
+
+```screen-style
+Style: a clean, realistic {app} screen in {app}'s own usual colours and theme, cropped to the working area only: the menu, tab or panel in use and the content the steps touch. No title bar, no window controls, no taskbar, no browser chrome.
+Format: 4:3 or 3:4, sized so every label is readable on a phone screen; text large and bold where it matters.
+Text: {text_clause}
+Markers: numbered circles ① ② ③ next to the parts named in the steps, in order.
+No logos, no brand marks, no watermarks, no extra values, names or menu items beyond the listed text.
+```
+
 ## Choosing a visual
 
 `nerdit-chapter-generator/references/CORE.md` §7 (the Visual Map) decides which visual each
@@ -39,3 +52,14 @@ PASS only when all hold:
 5. Illustrations: no extra text, numbers, logos or brands; Indian context where people appear;
    the course's recurring cast when one is set.
 6. Nothing contradicts the lesson or invites the brief's stated misconception.
+
+## Screen check criteria
+
+A `screen` image passes only when all hold:
+
+1. Every listed label and value appears exactly as written.
+2. Nothing else is written: no extra rows, values, names or menu items.
+3. Markers ① ② ③ sit on the parts the reading steps name, in order.
+4. It looks like the named app in that app's own colours, and every label is readable on the
+   phone-size preview.
+5. No logo or brand mark.

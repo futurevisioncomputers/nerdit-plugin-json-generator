@@ -22,6 +22,10 @@ so data row 1 sits on sheet row 2 (exactly like a real sheet):
 </script>
 ```
 
+**Show a click-path** (a ribbon button, a dialog, a formula and its result) with a screen spec
+whose `data-grid` names this block: figures.md template 16. Never paste a screenshot; the
+plugin draws the screen from this data, or briefs an image of it, so it cannot drift.
+
 **Render the sheet** anywhere (usually inside `nerdit-demo-table`) — the engine fills it:
 ```html
 <div class="nerdit-xl-sheet" data-grid="xl-sales"></div>
