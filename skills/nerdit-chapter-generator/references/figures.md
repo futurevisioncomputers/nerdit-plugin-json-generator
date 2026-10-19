@@ -58,7 +58,8 @@ are specs, not SVG: the plugin draws or briefs them from the lesson's own words.
     saying what happened. Colour one cell, not the whole row.
 13. **Show each idea once (R13).** In one section, a text map (`nerdit-map`), a figure and its
     reading steps never restate the same facts. Steps add order or reasons, not the figure's
-    labels again. When a figure covers it, drop the map.
+    labels again. When a figure covers it, drop the map. One exception: A screen may picture the
+    worked example beside it (template 16), because it shows where to click and type.
 14. **Every figure names its visual.** `data-visual` on each `nerdit-figure`: `diagram`,
     `value-table`, `decision-grid`, `time-window`, `unit-tiles`, `chart`, `course-map` or
     `illustration`. `CORE.md` §7 decides which; v11 fails a figure without it.
@@ -583,8 +584,9 @@ ribbon below it.
   and Excel's ribbon tab names are known.
 - The drawing is regenerated, never edited. Change the spec or the lesson, then run
   `render_screens.py` again.
-- Do not repeat the run line beside the screen in a second form (R13). The screen shows where
-  you click; the run line shows what you get.
+- A screen may picture the worked example beside it (owner, 2026-10-19): the example shows
+  what you type and get, the screen shows where. Place it right after that example. It is still
+  never a second text copy of the same facts, such as a text map of the same steps (R13).
 
 ---
 

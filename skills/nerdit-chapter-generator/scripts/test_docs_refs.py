@@ -96,3 +96,18 @@ def test_skill_draws_and_checks_screens_after_every_regeneration():
     skill = " ".join((HERE.parent / "SKILL.md").read_text(encoding="utf-8").split())
     assert re.search(r"check_screens.py\"? --course", skill)
     assert skill.count("Step 3b") >= 4  # the overview, Step 3, and the regeneration loops
+
+
+SCREEN_EXCEPTION = "A screen may picture the worked example beside it"
+
+
+def test_r13_lets_a_screen_picture_its_worked_example():
+    # Owner, 2026-10-19: screens follow the lesson's own examples, as the hand-made images did,
+    # because they show where to click and type. QA must not flag that as a repeat.
+    refs = HERE.parent / "references"
+    for path in (refs / "CORE.md", refs / "figures.md", ROOT / "agents" / "nerdit-qa-validator.md"):
+        text = " ".join(path.read_text(encoding="utf-8").split())
+        assert SCREEN_EXCEPTION in text, path.name
+        for old in ("never repeats the run line", "no screen repeats the run line",
+                    "Do not repeat the run line beside the screen"):
+            assert old not in text, (path.name, old)

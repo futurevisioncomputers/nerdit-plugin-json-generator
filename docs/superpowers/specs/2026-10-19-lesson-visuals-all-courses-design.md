@@ -70,8 +70,9 @@ with it, for **every course where a visual helps**, using one rule:
 
 - A picture that shows a value, name, button or step the lesson does not contain.
 - Text a learner cannot read on a 390 px phone.
-- The same facts shown twice. A screen must not repeat a run line or figure next to it
-  (figures.md R13).
+- The same facts shown twice as text (figures.md R13). Owner ruling, 2026-10-19: a screen
+  may picture the worked example beside it, because it shows where to click and type, as the
+  hand-made images did.
 - Real logos or brand marks. App and button names as plain text are fine; logos are not.
 - Decorative pictures. The caption-first test (CORE.md §7) still decides whether a visual earns
   its place.

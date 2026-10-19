@@ -597,8 +597,8 @@ Nothing matches after honestly trying: **no visual**. Prose is the answer.
 **Balance:**
 
 - One main visual per concept section.
-- No two visuals restating the same facts (figures.md R13). A screen never repeats the run
-  line beside it.
+- No two visuals restating the same facts (figures.md R13). A screen may picture the worked
+  example beside it: it shows where to click and type, which the text cannot.
 - 0–3 illustrations per lesson, only where the text has a scene or analogy.
 - Charts only for real measured numbers.
 - Not the same `data-visual` in every section.

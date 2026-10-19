@@ -95,7 +95,8 @@ no real logos, and mistakes confined to data work rather than allegations about 
 - **Screens and scenes** (`nerdit-screen` / `nerdit-scene` specs, figures.md §16–17):
   `check_screens.py` already proves every drawn word is in the lesson, so judge the teaching.
   A click-path a learner must follow has a screen; each screen sits right after the paragraph
-  that explains it; no screen repeats the run line beside it; every "image forced to A|B"
+  that explains it; A screen may picture the worked example beside it (do not flag that as
+  R13), but no text map restates the same steps; every "image forced to A|B"
   warning has a reason that holds; a scene's subject is an analogy the text already uses
 - **Charts only for real measured numbers**; every table icon is explained by a legend
 - **One real mistake per lesson**, belonging to the data work (a report bug, a typo, a pipeline
