@@ -62,7 +62,7 @@ MAX_FIGURE_VIEWBOX_WIDTH = 400  # figures.md rule 9 (phone-readable figures), v1
 FLAT = {"v10", "v11"}
 # CORE.md §7 Visual Map: every nerdit-figure names the visual it is.
 VISUALS = {"diagram", "value-table", "decision-grid", "time-window", "unit-tiles",
-           "chart", "course-map", "illustration"}
+           "chart", "course-map", "illustration", "screen"}
 DOT_SEP = "·"
 _SHAPES = (
     ("time", re.compile(r"\d{1,2}:\d{2}(:\d{2})?")),

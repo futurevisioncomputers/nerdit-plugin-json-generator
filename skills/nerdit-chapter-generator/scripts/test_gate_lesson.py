@@ -112,3 +112,16 @@ def test_gate_fails_when_engine_missing_for_python_lessons(tmp_path, monkeypatch
     sql_dir.mkdir()
     inp, d = setup(sql_dir)  # an SQL lesson does not need the engine
     assert not [f for f in gate(inp, d, "c-01")[0] if f.startswith("python:")]
+
+
+def test_gate_reports_stale_screen(tmp_path):
+    from render_screens import render_lesson
+    from test_screens import ADS, ADS_TEXT, block
+    with_screen = LESSON.replace("<p>You count rows with one query.</p>",
+                                 f"<p>You count rows with one query.</p><p>{ADS_TEXT}</p>{block(ADS)}")
+    drawn, problems = render_lesson(with_screen)
+    assert problems == []
+    stale = drawn.replace('"goal": "Start a sales campaign"', '"goal": "Begin a sales campaign"')
+    inp, d = setup(tmp_path, stale)
+    fails, _ = gate(inp, d, "c-01")
+    assert "screen: ads-new: drawn screen is out of date; run render_screens.py" in fails

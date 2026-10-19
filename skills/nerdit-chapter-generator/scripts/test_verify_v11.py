@@ -261,3 +261,7 @@ def test_dataset_block_size_and_json_are_checked():
 
 def test_v10_ignores_dataset_blocks():
     assert dataset_failures(dataset(None, "{broken") * 2, "v10") == []
+
+
+def test_screen_is_a_known_visual():
+    assert not any("needs data-visual" in f for f in run(fig("screen")).failures)
