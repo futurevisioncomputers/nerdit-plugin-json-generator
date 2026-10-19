@@ -323,6 +323,42 @@ Every drawn string must appear in the lesson's visible text: path items, labels,
 - [ ] **Step 4:** Run tests; then the whole generator suite.
 - [ ] **Step 5:** Commit: `feat(visuals): draw complex walkthroughs as phone-sized SVG`.
 
+### Task 3b: App colours (owner request, 2026-10-19)
+
+**Files:**
+- Modify:
+  - `GS/screens.py`: `APP_THEMES` (ordered `(key, patterns)`) and `app_theme(app: str) -> str | None`.
+  - `GS/render_screens.py`: every app-part colour goes through `paint(theme, role, fallback)`. It returns `var(--app-<theme>-<role>, var(--<fallback>))`, or `var(--<fallback>)` when there is no theme.
+  - `G/references/css10-brand.css`: a token block on `.nerdit-wrapper` with seven roles per theme: `bar`, `bar-ink`, `accent`, `accent-ink`, `surface`, `soft`, `ink`.
+- Tests: `GS/test_screens.py`, `GS/test_render_screens.py`.
+
+**Roles:**
+
+| Role | Used for |
+|---|---|
+| `bar` | the app bar fill |
+| `bar-ink` | the app name |
+| `accent` | the clicked chip, the active cell, the primary button, your chat bubble's edge |
+| `accent-ink` | text on a button |
+| `surface` | the frame, cells, fields and editor background |
+| `soft` | grid headers, keycaps, dialog title bars |
+| `ink` | text |
+
+Markers stay `var(--orange)` and results stay `var(--green)` on every theme. A terminal-tool screen with no app theme uses the `terminal` theme.
+
+**Themes (first set):** excel, sheets, powerbi, tableau, vscode, jupyter, colab, terminal, chatgpt, meta-ads, google-ads, ga4, wordpress, shopify, aws, docker, canva.
+
+- [ ] **Step 1: Failing tests:**
+  - `test_app_theme_matches_names`: "Excel" and "Microsoft Excel" → excel; "VS Code" and "Visual Studio Code" → vscode; "Meta Ads Manager" → meta-ads; "Google Ads" → google-ads; "Google Sheets" → sheets; "New App" → `None`.
+  - `test_excel_screen_uses_excel_colours`: the bar fill is `var(--app-excel-bar, var(--bg-soft))`.
+  - `test_unknown_app_uses_nerdit_colours`: no `--app-` in the SVG.
+  - `test_markers_stay_nerdit_orange`
+  - `test_every_theme_has_all_roles_in_css`: for each `APP_THEMES` key, all seven `--app-<key>-<role>` tokens are defined in `css10-brand.css`.
+- [ ] **Step 2:** Run; expect failures.
+- [ ] **Step 3:** Implement.
+- [ ] **Step 4:** Run both suites.
+- [ ] **Step 5:** Commit: `feat(visuals): screens drawn in their app's own colours`.
+
 ### Task 4: Gate check, visual type and the "needed here" warning
 
 **Files:**
@@ -346,6 +382,7 @@ Every drawn string must appear in the lesson's visible text: path items, labels,
     - a B spec with a drawn figure.
   - **Warns:**
     - every override: `"<id>: image forced to A|B: <why>"`;
+    - an A screen whose app has no theme: `"<id>: no colour theme for '<app>'; drawn in NerdIT colours (add one to APP_THEMES and css10-brand.css)"` (test `test_unthemed_app_warns`);
     - a concept section (a `<section>` without `nerdit-cheatsheet` or `nerdit-practical`) that holds a click-path and no `nerdit-screen` spec: `"section <n>: click-path with no screen (figures.md template 16)"`.
   - A click-path is an `<ol>` that is not `nerdit-visual-read` and not inside `<details>`, where both hold:
     - at least 2 items start with one of `Click, Select, Open, Go to, Choose, Press, Type, Drag, Set, Tap, Enter`;
@@ -442,7 +479,7 @@ Every drawn string must appear in the lesson's visible text: path items, labels,
 - [ ] **Step 3:** Implement. The `screen-style` block, verbatim:
 
 ```screen-style
-Style: a clean, realistic {app} screen in its light theme, cropped to the working area only: the menu, tab or panel in use and the content the steps touch. No title bar, no window controls, no taskbar, no browser chrome.
+Style: a clean, realistic {app} screen in {app}'s own usual colours and theme, cropped to the working area only: the menu, tab or panel in use and the content the steps touch. No title bar, no window controls, no taskbar, no browser chrome.
 Format: 4:3 or 3:4, sized so every label is readable on a phone screen; text large and bold where it matters.
 Text: {text_clause}
 Markers: numbered circles ① ② ③ next to the parts named in the steps, in order.
@@ -535,6 +572,6 @@ No logos, no brand marks, no watermarks, no extra values, names or menu items be
 ### Task 9: Final verification
 
 - [ ] **Step 1:** Both suites pass; record counts.
-- [ ] **Step 2:** `check_css_bundle.py` and `check_runtime_bundle.py` exit 0. No runtime file changed; the engine is only read.
+- [ ] **Step 2:** Copy `css10-brand.css` (Task 3b app themes) into `nerdit/future-vision/src/lesson-css/` and `nerdit-admin/src/lesson-css/`. Then `check_css_bundle.py` and `check_runtime_bundle.py` exit 0. The site and admin need a deploy, with the owner's approval, before themes show; until then screens draw in NerdIT fallback colours.
 - [ ] **Step 3:** The v11 gate still passes the Data Modelling lessons 08 and 10 unchanged (no specs, so no screen checks).
 - [ ] **Step 4:** Report test counts, pilot results, the rollout list (courses still without visuals), and anything skipped.

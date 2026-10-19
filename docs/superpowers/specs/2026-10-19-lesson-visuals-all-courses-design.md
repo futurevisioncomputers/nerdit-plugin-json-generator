@@ -180,6 +180,15 @@ unchanged: no text and no app screens inside a scene.
     - at most 8 code lines;
     - at most 6 panel items;
     - each value short enough to stay readable.
+  - **App colours (owner, 2026-10-19: "color of images should match to application color").**
+    A screen looks like its app: an Excel screen has Excel's green bar and accent, VS Code is
+    dark, Ads Manager is blue. Each known app has a theme of seven colour roles (bar, bar
+    text, accent, text on accent, surface, soft surface, text). The roles are CSS tokens such
+    as `--app-excel-bar` in `css10-brand.css`, so lesson HTML still holds no hex colour. Every
+    use carries a NerdIT fallback (`var(--app-excel-bar, var(--bg-soft))`), so a page whose CSS
+    predates the theme still draws a readable screen. Markers stay NerdIT orange on every
+    app, because they mean "your step", not part of the app. An app with no theme is drawn
+    in NerdIT colours, and the gate warns so a theme can be added.
   - Colour tokens only; markers on the parts the steps name.
   - The render is deterministic, so the gate can re-render it and compare.
 - **Concepts.** The writer draws them from the figure templates, unchanged.
@@ -190,8 +199,9 @@ unchanged: no text and no app screens inside a scene.
   items: kinds `screen` and `illustration`, with the anchor taken from the paragraph before the
   spec.
 - The illustrator writes prompts:
-  - **`screen`** uses a new screen style block: a realistic, logo-free window of the named app,
-    cropped to the working area, showing only the listed labels.
+  - **`screen`** uses a new screen style block: a realistic, logo-free window of the named app
+    in that app's own colours and theme, cropped to the working area, showing only the listed
+    labels.
   - **`illustration`** keeps the house style.
 - The owner (or a working image tool) saves images into `<images>/incoming/`. The apply step
   converts them, checks each against its brief (every listed label present, nothing extra,
