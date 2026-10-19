@@ -1,0 +1,104 @@
+{
+  "seed": 20261021,
+  "profile": "analytics",
+  "business": {
+    "name": "Ironleaf Wire Works",
+    "fictional": true,
+    "type": "wire mesh and fencing products",
+    "city": "Ahmedabad",
+    "currency": "INR",
+    "moneyUnit": "paise",
+    "products": "Chain link fencing, barbed and concertina wire, welded, woven, crimped and stainless steel mesh, hexagonal netting, mosquito mesh.",
+    "units": "Sold by the roll; widths in feet, mesh openings in millimetres, wire thickness by SWG gauge (a lower gauge is a thicker wire).",
+    "specsNote": "Every gauge, mesh size, roll size and price is invented for teaching.",
+    "dataNote": "An invented manufacturer. All products, prices and measurements are synthetic."
+  },
+  "cast": [
+    {"name": "Dhruv", "role": "quality engineer", "trait": "writes down every out-of-range reading", "look": "invented adult with a hard hat and safety glasses"},
+    {"name": "Leela", "role": "pricing analyst", "trait": "asks what drives a price before setting one", "look": "invented adult with a blue saree and a tablet"}
+  ],
+  "stages": ["collect", "clean", "explore", "model", "report"],
+  "messiness": ["wire_diameter_mm", "tensile_kgf", "zinc_coating_gsm"],
+  "arc": {
+    "numpy": "Dhruv summarises a day of wire-diameter readings as arrays.",
+    "regression": "Leela models price per roll from width, mesh size, material and gauge.",
+    "ensembles": "Dhruv predicts which rolls will fail inspection; a tree model finds the line-speed threshold.",
+    "statistics-and-probability": "Dhruv asks whether the die has drifted since September."
+  },
+  "entities": {
+    "products": {
+      "rows": 400,
+      "columns": {
+        "product_id": {"generator": "id", "prefix": "WM"},
+        "product_type": {"generator": "weighted_choice",
+                         "values": ["chain link fencing", "barbed wire", "concertina wire", "welded wire mesh",
+                                    "woven wire mesh", "crimped wire mesh", "stainless steel mesh",
+                                    "hexagonal netting", "mosquito mesh"],
+                         "weights": [18, 10, 6, 16, 10, 8, 6, 16, 10]},
+        "gauge": {"generator": "weighted_choice", "values": [8, 10, 12, 14, 16, 18, 20], "weights": [5, 15, 25, 25, 15, 10, 5]},
+        "mesh_size_mm": {"generator": "weighted_choice", "values": [6, 12, 19, 25, 50, 75, 100], "weights": [10, 15, 15, 20, 20, 10, 10]},
+        "roll_width_ft": {"generator": "weighted_choice", "values": [3, 4, 5, 6], "weights": [30, 35, 20, 15]},
+        "roll_length_ft": {"generator": "weighted_choice", "values": [50, 100], "weights": [60, 40]},
+        "material": {"generator": "weighted_choice", "values": ["galvanised iron", "PVC coated", "stainless steel"],
+                     "weights": [65, 25, 10]}
+      }
+    },
+    "prices": {
+      "rows": 2500,
+      "columns": {
+        "price_id": {"generator": "id", "prefix": "PR"},
+        "product_type": {"generator": "weighted_choice",
+                         "values": ["chain link fencing", "barbed wire", "concertina wire", "welded wire mesh",
+                                    "woven wire mesh", "crimped wire mesh", "stainless steel mesh",
+                                    "hexagonal netting", "mosquito mesh"],
+                         "weights": [18, 10, 6, 16, 10, 8, 6, 16, 10]},
+        "gauge": {"generator": "weighted_choice", "values": [8, 10, 12, 14, 16, 18, 20], "weights": [5, 15, 25, 25, 15, 10, 5]},
+        "mesh_size_mm": {"generator": "weighted_choice", "values": [6, 12, 19, 25, 50, 75, 100], "weights": [10, 15, 15, 20, 20, 10, 10]},
+        "roll_width_ft": {"generator": "weighted_choice", "values": [3, 4, 5, 6], "weights": [30, 35, 20, 15]},
+        "material": {"generator": "weighted_choice", "values": ["galvanised iron", "PVC coated", "stainless steel"],
+                     "weights": [65, 25, 10]},
+        "thick_wire_premium": {"generator": "binned_effect", "column": "gauge", "edges": [11, 15],
+                               "deltas": [90000, 40000, 0]},
+        "price_per_roll_paise": {"generator": "linear", "intercept": 150000,
+                                 "terms": {"roll_width_ft": 60000, "mesh_size_mm": -1200, "thick_wire_premium": 1},
+                                 "effects": {"material": {"PVC coated": 80000, "stainless steel": 450000},
+                                             "product_type": {"concertina wire": 120000, "stainless steel mesh": 200000,
+                                                              "mosquito mesh": -60000}},
+                                 "noise_sd": 25000, "min": 50000, "round": 0}
+      }
+    },
+    "qc_measurements": {
+      "rows": 6000,
+      "columns": {
+        "reading_id": {"generator": "id", "prefix": "QC"},
+        "line": {"generator": "weighted_choice", "values": ["line A", "line B", "line C"], "weights": [40, 35, 25]},
+        "measured_on": {"generator": "date_range", "start": "2025-01-01", "end": "2025-12-31"},
+        "wire_diameter_mm": {"generator": "normal", "mean": 2.64, "sd": 0.05, "round": 3},
+        "tensile_kgf": {"generator": "normal", "mean": 450, "sd": 30, "round": 0},
+        "zinc_coating_gsm": {"generator": "normal", "mean": 240, "sd": 15, "round": 0}
+      },
+      "defects": {
+        "drift": {"after": "2025-09-01", "column": "wire_diameter_mm", "shift": 0.04},
+        "outliers": [{"column": "tensile_kgf", "rate": 0.01, "factor": 0.4}],
+        "missing": [{"column": "zinc_coating_gsm", "rate": 0.02}]
+      }
+    },
+    "roll_defects": {
+      "rows": 8000,
+      "columns": {
+        "roll_id": {"generator": "id", "prefix": "RL"},
+        "line": {"generator": "weighted_choice", "values": ["line A", "line B", "line C"], "weights": [40, 35, 25]},
+        "shift": {"generator": "choice", "values": ["day", "night"]},
+        "gauge": {"generator": "weighted_choice", "values": [10, 12, 14, 16], "weights": [20, 35, 30, 15]},
+        "machine_age_years": {"generator": "int_range", "min": 1, "max": 15},
+        "line_speed_mpm": {"generator": "normal", "mean": 30, "sd": 5, "min": 10, "round": 1},
+        "humidity_pct": {"generator": "normal", "mean": 60, "sd": 12, "min": 20, "max": 95, "round": 0},
+        "speed_risk": {"generator": "binned_effect", "column": "line_speed_mpm", "edges": [35, 40], "deltas": [0, 0.8, 1.6]},
+        "defective": {"generator": "logistic",
+                      "terms": {"machine_age_years": 0.08, "humidity_pct": 0.02, "speed_risk": 1},
+                      "effects": {"shift": {"night": 0.4}, "line": {"line C": 0.5}},
+                      "target_rate": 0.05}
+      }
+    }
+  }
+}

@@ -12,11 +12,86 @@
 
    Public API:
      window.nerditRunPlot(btn)   - run the editor inside one .nerdit-tryit
+     window.nerditDatasetRecipe(root) - the lesson's dataset recipe, or null
+
+   Lesson datasets work as in nerdit-python-runner.js: before the first
+   run the CSV files of the page's .nerdit-dataset recipe are built inside
+   this runner's Pyodide with /nerdit_world_gen.py.
    =================================================================== */
 (function () {
   'use strict';
 
   var PYODIDE_URL = 'https://cdn.jsdelivr.net/pyodide/v0.26.2/full/';
+
+  if (typeof window.nerditDatasetRecipe !== 'function') {
+    // The parsed recipe, or null when the page has none or its JSON is broken.
+    window.nerditDatasetRecipe = function (root) {
+      var el = (root || document).querySelector('script.nerdit-dataset');
+      if (!el) return null;
+      try {
+        var recipe = JSON.parse(el.textContent);
+        return recipe && typeof recipe === 'object' && !Array.isArray(recipe) ? recipe : null;
+      } catch (e) {
+        return null;
+      }
+    };
+  }
+  var DATA_ERROR = "Could not prepare this lesson's data. Check your internet connection and try again.";
+  var BUILD = 'import json\njson.dumps(build_files(json.loads(_nerdit_recipe)))';
+  var dataset = null; // { py, key, promise }: built once per page and Pyodide instance
+
+  function addDownloads(files) {
+    var anchor = document.querySelector('.nerdit-tryit');
+    if (!anchor) return;
+    Object.keys(files).forEach(function (name) {
+      var have = document.querySelectorAll('a.nerdit-dataset-download');
+      for (var i = 0; i < have.length; i++) {
+        if (have[i].getAttribute('download') === name) { anchor = have[i]; return; }
+      }
+      var a = document.createElement('a');
+      a.className = 'nerdit-dataset-download';
+      a.setAttribute('download', name);
+      a.href = URL.createObjectURL(new Blob([files[name]], { type: 'text/csv' }));
+      a.textContent = 'Download ' + name;
+      anchor.parentNode.insertBefore(a, anchor.nextSibling);
+      anchor = a;
+    });
+  }
+
+  function prepareDataset(py) {
+    var recipe = window.nerditDatasetRecipe(document);
+    if (!recipe) return Promise.resolve(null);
+    // The block's exact text goes to Python: a JS round trip would turn 100.0 into 100 and
+    // round big seeds, giving other CSVs than the ones check_python_outputs.py verified.
+    var key = document.querySelector('script.nerdit-dataset').textContent;
+    if (dataset && dataset.py === py && dataset.key === key) {
+      // The classroom replaces the lesson DOM on every visit; the files persist, the links do not.
+      return dataset.promise.then(function (files) { addDownloads(files); return files; });
+    }
+    var promise = fetch('/nerdit_world_gen.py')
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.text();
+      })
+      .then(function (src) {
+        // A private namespace: the generator never appears in the learner's variables.
+        var ns = py.toPy({});
+        try {
+          py.runPython(src, { globals: ns });
+          ns.set('_nerdit_recipe', key);
+          var files = JSON.parse(py.runPython(BUILD, { globals: ns }));
+          Object.keys(files).forEach(function (name) { py.FS.writeFile(name, files[name]); });
+          addDownloads(files);
+          return files;
+        } finally {
+          if (ns && ns.destroy) ns.destroy();
+        }
+      });
+    // A failed build is forgotten, so the next Run tries again.
+    promise.catch(function () { if (dataset && dataset.promise === promise) dataset = null; });
+    dataset = { py: py, key: key, promise: promise };
+    return promise;
+  }
 
   // Runs before the learner's code: force a non-interactive backend and
   // clear any figure left behind by a previous run.
@@ -130,7 +205,21 @@
     if (!box) return;
     var status = box.querySelector('.nerdit-tryit-status');
 
-    if (window.__nerditPlotPy) return execute(box, window.__nerditPlotPy);
+    var run = function (py) {
+      status.textContent = 'Preparing…';
+      return prepareDataset(py).then(function () {
+        status.textContent = 'Loading packages used by your code...';
+        return py.loadPackagesFromImports(box.querySelector('.nerdit-tryit-editor').value)
+          .then(function () { execute(box, py); })
+          .catch(function (err) {
+            show(box, friendlyError(err.message || err), '', true);
+          });
+      }, function () {
+        show(box, DATA_ERROR, '', true);
+      });
+    };
+
+    if (window.__nerditPlotPy) return run(window.__nerditPlotPy);
 
     status.textContent = 'Loading Python and Matplotlib… the first run takes a little while.';
 
@@ -140,7 +229,7 @@
           status.textContent = 'Loading Matplotlib…';
           return py.loadPackage(['matplotlib']).then(function () {
             window.__nerditPlotPy = py;
-            execute(box, py);
+            return run(py);
           });
         })
         .catch(function () {

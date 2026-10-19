@@ -1,0 +1,112 @@
+{
+  "seed": 20261018,
+  "profile": "analytics",
+  "business": {
+    "name": "Kesar Loom Sarees",
+    "fictional": true,
+    "type": "saree manufacturer and wholesaler with an online store",
+    "city": "Surat",
+    "currency": "INR",
+    "moneyUnit": "paise",
+    "categories": ["Embroidery", "Black Special", "Pure Batik", "Pure Chanderi", "Georgette", "Linen", "Printed",
+                   "Pure Ajrakh", "Cotton Crepe"],
+    "terms": "Factory-direct net rates, no minimum quantity, fully prepaid, no returns except damage, GST invoice on every parcel.",
+    "shipping": "Extra, by parcel size: courier for 1 saree, surface courier for 10-30, transport for 40-100.",
+    "seasons": "Orders rise for Diwali (October-November) and the wedding season (November-February).",
+    "dataNote": "An invented wholesaler. All retailers, orders and amounts are synthetic."
+  },
+  "cast": [
+    {"name": "Kavya", "role": "sales analyst", "trait": "reconciles every order list with the invoices", "look": "invented adult with a maroon dupatta and a laptop bag"},
+    {"name": "Rohan", "role": "dispatch lead", "trait": "counts parcels before they leave", "look": "invented adult with a cap and a clipboard"}
+  ],
+  "stages": ["collect", "clean", "explore", "model", "report"],
+  "messiness": ["quantity", "parcel"],
+  "arc": {
+    "pandas-data-cleaning": "Kavya finds blank parcel types, double-entered lines and one quantity typed with an extra zero.",
+    "sql-for-data-science": "Kavya totals festive-season orders by city for the dispatch plan.",
+    "unsupervised-learning": "Kavya groups retailers by how often and how much they order.",
+    "time-series": "Kavya forecasts weekly saree orders before the Diwali rush."
+  },
+  "entities": {
+    "retailers": {
+      "rows": 600,
+      "segments": {
+        "showroom": {"weight": 0.25, "overrides": {"monthly_orders": {"lam": 6}, "avg_order_sarees": {"median": 40}}},
+        "reseller": {"weight": 0.45, "overrides": {"monthly_orders": {"lam": 3}, "avg_order_sarees": {"median": 12}}},
+        "online seller": {"weight": 0.30, "overrides": {"monthly_orders": {"lam": 8}, "avg_order_sarees": {"median": 5}}}
+      },
+      "columns": {
+        "retailer_id": {"generator": "id", "prefix": "R"},
+        "city": {"generator": "weighted_choice",
+                 "values": ["Surat", "Ahmedabad", "Mumbai", "Jaipur", "Kolkata", "Hyderabad", "Pune", "Indore"],
+                 "weights": [18, 15, 17, 10, 10, 10, 10, 10]},
+        "monthly_orders": {"generator": "poisson", "lam": 4},
+        "avg_order_sarees": {"generator": "lognormal", "median": 15, "sigma": 0.5, "max": 300, "round": 0},
+        "gst_registered": {"generator": "bernoulli", "p": 0.7},
+        "drop_shipping": {"generator": "bernoulli", "p": 0.2}
+      }
+    },
+    "skus": {
+      "rows": 120,
+      "columns": {
+        "sku": {"generator": "id", "prefix": "KL-", "start": 1001},
+        "category": {"generator": "weighted_choice",
+                     "values": ["Embroidery", "Black Special", "Pure Batik", "Pure Chanderi", "Georgette", "Linen",
+                                "Printed", "Pure Ajrakh", "Cotton Crepe"],
+                     "weights": [14, 8, 10, 10, 14, 10, 18, 8, 8]},
+        "net_rate_paise": {"generator": "linear", "intercept": 90000,
+                           "effects": {"category": {"Pure Ajrakh": 85000, "Embroidery": 50000, "Pure Chanderi": 40000,
+                                                    "Pure Batik": 30000, "Black Special": 15000, "Printed": -20000,
+                                                    "Cotton Crepe": -10000}},
+                           "noise_sd": 8000, "min": 40000, "round": 0}
+      }
+    },
+    "weekly_orders": {
+      "kind": "series",
+      "start": "2023-01-02",
+      "end": "2025-12-29",
+      "freq": "week",
+      "base": 220,
+      "trend_per_period": 0.4,
+      "monthly": {"1": 1.25, "2": 1.3, "6": 0.8, "7": 0.75, "10": 1.7, "11": 1.8, "12": 1.3},
+      "holidays": [
+        {"date": "2023-11-06", "lift": 0.5, "days": 14},
+        {"date": "2024-10-21", "lift": 0.5, "days": 14},
+        {"date": "2025-10-13", "lift": 0.5, "days": 14}
+      ],
+      "noise_sd": 15,
+      "value_column": "sarees_ordered",
+      "date_column": "week_start"
+    },
+    "retailer_sku": {
+      "kind": "interactions",
+      "users": "retailers",
+      "items": "skus",
+      "user_column": "retailer_id",
+      "item_column": "sku",
+      "rating_column": "times_bought",
+      "k": 3,
+      "density": 0.08,
+      "scale": [1, 8],
+      "noise_sd": 0.6
+    },
+    "order_lines": {
+      "rows": 9000,
+      "columns": {
+        "line_id": {"generator": "id", "prefix": "OL"},
+        "retailer_id": {"generator": "fk", "entity": "retailers", "column": "retailer_id"},
+        "sku": {"generator": "fk", "entity": "skus", "column": "sku"},
+        "order_date": {"generator": "date_range", "start": "2025-01-01", "end": "2025-12-31",
+                       "monthWeights": {"1": 1.2, "2": 1.3, "6": 0.8, "7": 0.75, "10": 1.8, "11": 1.9, "12": 1.2}},
+        "quantity": {"generator": "lognormal", "median": 6, "sigma": 0.7, "max": 200, "round": 0},
+        "parcel": {"generator": "weighted_choice", "values": ["courier", "surface courier", "transport"],
+                   "weights": [45, 40, 15]}
+      },
+      "defects": {
+        "outliers": [{"column": "quantity", "rate": 0.005, "factor": 10}],
+        "missing": [{"column": "parcel", "rate": 0.03}, {"column": "quantity", "rate": 0.02}],
+        "duplicates": 0.015
+      }
+    }
+  }
+}

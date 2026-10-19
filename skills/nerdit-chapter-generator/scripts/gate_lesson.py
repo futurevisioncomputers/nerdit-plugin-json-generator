@@ -5,7 +5,8 @@
                           [--contract v11] [--before-dir <dir> --modes figures,sql-layout]
 
 Builds a one-lesson course from <dir>/<id>.html, .quiz.json and .concepts.json, then runs:
-verify_course (schema, structure, density) -> check_sql_outputs -> SVG checks -> check_prose
+verify_course (schema, structure, density) -> check_sql_outputs -> check_python_outputs (only
+when the lesson has Python; a missing engine fails it) -> SVG checks -> check_prose
 -> check_refresh (only with --before-dir). Replaces the course-specific rollout/gate.py.
 Exit 0 = pass, 1 = a check failed, 2 = a file or the lesson id is missing. Stdlib only.
 """
@@ -22,6 +23,8 @@ sys.path.insert(0, str(HERE.parent.parent / "nerdit-lesson-illustrator" / "scrip
 
 from assemble_course import build_course  # noqa: E402
 from check_prose import banned_patterns, check_lesson as check_voice  # noqa: E402
+from check_python_outputs import check_lesson as check_python, has_python  # noqa: E402
+from pyodide_engine import EngineError, engine_available  # noqa: E402
 from check_refresh import check as check_refresh  # noqa: E402
 from check_sql_outputs import check_lesson as check_sql  # noqa: E402
 from check_world import check_lesson as check_world  # noqa: E402
@@ -63,6 +66,17 @@ def gate(input_path: Path, lesson_dir: Path, lid: str, contract: str = "v11",
     sql = check_sql(html)
     fails += [f"sql: {m}" for m in sql["mismatch"]]
     warns += [f"sql: {u}" for u in sql["unchecked"]]
+    if has_python(html):
+        # Python outputs are checked on the website's engine; without it nothing is verified.
+        if not engine_available()[0]:
+            fails.append("python: engine missing (tools/pyodide/README.md)")
+        else:
+            try:
+                py = check_python(html)
+                fails += [f"python: {m}" for m in py["mismatch"] + py["tryit_fail"]]
+                warns += [f"python: {o}" for o in py["offline"]]
+            except EngineError as exc:
+                fails.append(f"python: engine error: {exc}")
 
     for n, svg in enumerate(SVG_RE.findall(html), 1):
         fails += [f"svg {n}: {e}" for e in check_svg(svg, [], 0)]

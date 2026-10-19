@@ -236,7 +236,9 @@
   margin: 1.2rem 0;
   border: 1px solid var(--bd-soft);
   border-radius: var(--r);
-  overflow: hidden;
+  /* auto, not hidden: still clips to the rounded corners, but a table wider than a
+     phone scrolls instead of losing its last columns. */
+  overflow-x: auto;
 }
 
 .nerdit-demo-table-label {

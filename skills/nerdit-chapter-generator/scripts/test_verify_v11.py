@@ -202,3 +202,62 @@ def test_dotted_record_ignores_markers_and_keys_codes_by_prefix():
     # Plain number lists, signed or with a k suffix, are lists, not records.
     assert not is_dotted_record("1 · 2 · -1")
     assert not is_dotted_record("0.5 · 1 · 1.5k")
+
+
+def cell_fig(cell):
+    return (f'<div class="nerdit-figure" data-visual="value-table"><table class="nerdit-vtable"><tr><td>{cell}</td>'
+            '</tr></table><div class="nerdit-figure-caption">Cap.</div></div>')
+
+
+def test_v11_fails_square_brackets_that_show_spaces_in_a_figure():
+    # figures.md R11; lesson 08 attempt 3 (2026-10-17) bracketed `[ Aarav ]` in a value table.
+    for cell in ("[ Aarav ]", "[ ]", "[home ]", "[ home]"):
+        assert any("R11" in f for f in run(cell_fig(cell)).failures), cell
+    for cell in ('<span class="nerdit-val"><span class="nerdit-ws">␣</span>Aarav</span>', "[1, 2]", "[0]"):
+        assert not any("R11" in f for f in run(cell_fig(cell)).failures), cell
+    assert not any("R11" in f for f in run(cell_fig("[ Aarav ]"), "v10").failures)
+
+
+import json  # noqa: E402
+
+from test_world_data import world as small_world  # noqa: E402
+
+
+def dataset(recipe, raw=None) -> str:
+    text = raw if raw is not None else json.dumps(recipe)
+    return f'<script type="application/json" class="nerdit-dataset">{text}</script>'
+
+
+def good_recipe() -> dict:
+    return {"seed": 7, "files": {"orders.csv": {"entity": "orders", "drop": []}}, "world": small_world()}
+
+
+def dataset_failures(body: str, contract: str = "v11") -> list:
+    return [f for f in run(body, contract).failures if "dataset" in f]
+
+
+def test_valid_dataset_block_passes():
+    assert dataset_failures(dataset(good_recipe())) == []
+
+
+def test_dataset_block_must_be_self_contained():
+    rec = dict(good_recipe(), world={"use": "fvc-institute"})
+    assert any("use" in f for f in dataset_failures(dataset(rec)))
+
+
+def test_dataset_block_size_and_json_are_checked():
+    text = json.dumps(good_recipe())
+    padded = text + " " * (40_961 - len(text.encode("utf-8")))
+    assert any("40960" in f for f in dataset_failures(dataset(None, padded)))
+    assert dataset_failures(dataset(None, text + " " * (40_960 - len(text.encode("utf-8"))))) == []
+    assert any("not valid JSON" in f for f in dataset_failures(dataset(None, text[:-1])))
+    rec = good_recipe()
+    rec["files"]["x.csv"] = {"entity": "nobody"}
+    assert any("nobody" in f or "entity" in f for f in dataset_failures(dataset(rec)))
+    assert any("at most one" in f for f in dataset_failures(dataset(good_recipe()) * 2))
+    bad = dict(good_recipe(), seed="7")
+    assert any("seed" in f for f in dataset_failures(dataset(bad)))
+
+
+def test_v10_ignores_dataset_blocks():
+    assert dataset_failures(dataset(None, "{broken") * 2, "v10") == []

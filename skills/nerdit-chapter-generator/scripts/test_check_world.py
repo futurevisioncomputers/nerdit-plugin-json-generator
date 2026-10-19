@@ -83,3 +83,18 @@ def test_existing_foreign_key_enable_pragma_is_allowed_but_storage_pragmas_are_n
     data = generate(w)
     assert check_lesson(lesson('PRAGMA foreign_keys=ON;'), w, data)[0] == []
     assert any('seed' in e for e in check_lesson(lesson('PRAGMA journal_mode=WAL;'), w, data)[0])
+
+
+def test_a_dataset_lesson_file_table_marked_derived_passes_the_world_check():
+    from check_world import check_lesson
+    from test_world_data import world as small_world
+    w = small_world()
+    note = '<div class="nerdit-data-note">All records, people and amounts are synthetic, made for teaching.</div>'
+    table = ('<div class="nerdit-figure" data-visual="value-table"{attr}><table class="nerdit-vtable">'
+             '<tr><th>File</th><th>Columns</th></tr><tr><td>orders.csv</td><td>order_id, units</td></tr>'
+             '</table><div class="nerdit-figure-caption">One file.</div></div>')
+    marked = note + table.format(attr=' data-world-derived="dataset block: files and columns"')
+    fails, _ = check_lesson(marked, w, generate(w))
+    assert not [f for f in fails if "figure" in f]
+    fails, _ = check_lesson(note + table.format(attr=""), w, generate(w))
+    assert any("data-world-derived" in f for f in fails)

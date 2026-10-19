@@ -1,0 +1,6064 @@
+{
+  "seed": 20261015,
+  "business": {
+    "name": "Course practice retailer",
+    "type": "fictional retailer from existing lesson records",
+    "city": "Surat",
+    "currency": "INR",
+    "moneyUnit": "paise",
+    "fictional": true,
+    "channels": [
+      "store"
+    ],
+    "tax": "No new tax assumptions.",
+    "fiscalYear": "April-March"
+  },
+  "cast": [
+    {
+      "name": "Mira",
+      "role": "analyst",
+      "trait": "checks totals by hand",
+      "look": "invented adult in a blue shirt"
+    },
+    {
+      "name": "Dev",
+      "role": "data engineer",
+      "trait": "records each pipeline run",
+      "look": "invented adult with glasses in a green shirt"
+    }
+  ],
+  "stages": [
+    "source",
+    "staging",
+    "clean",
+    "load",
+    "mart"
+  ],
+  "messiness": [
+    "amount_text",
+    "sale_date",
+    "customer",
+    "category_text"
+  ],
+  "arc": {
+    "dw-analyst-warehouse-purpose-and-layers-01": "Why Analysts Need a Data Warehouse",
+    "dw-grain-entities-keys-and-relationships-02": "Define Grain, Keys and Table Relationships",
+    "dw-normalisation-and-operational-models-03": "Normalise Operational Data Before Designing Reports",
+    "dw-dimensional-models-and-star-schemas-04": "Build a Star Schema Around a Business Process",
+    "dw-fact-grains-and-safe-measures-05": "Choose Fact Grains and Aggregate Measures Safely",
+    "dw-date-dimensions-and-reporting-calendars-06": "Model Dates and Reporting Calendars",
+    "dw-extraction-raw-data-and-staging-07": "Extract Source Data into an Auditable Staging Layer",
+    "dw-transform-clean-deduplicate-and-map-08": "Transform Staged Data into Consistent Records",
+    "dw-loading-transactions-and-idempotent-runs-09": "Load Data Safely and Make Reruns Idempotent",
+    "dw-incremental-loads-watermarks-and-late-data-10": "Process Incremental Changes and Late Arrivals",
+    "dw-slowly-changing-dimensions-and-history-11": "Preserve Customer History with Slowly Changing Dimensions",
+    "dw-data-quality-reconciliation-and-run-audits-12": "Test Data Quality and Reconcile Every Load",
+    "dw-data-marts-semantic-models-and-metrics-13": "Publish Analyst Marts with Consistent Metric Definitions",
+    "dw-warehouse-performance-and-cost-awareness-14": "Read Warehouse Queries with Performance and Cost in Mind",
+    "dw-orchestration-lineage-and-data-access-15": "Operate Pipelines with Dependencies, Lineage and Safe Access",
+    "dw-capstone-trusted-retail-sales-warehouse-16": "Capstone: Build and Audit a Trusted Retail Sales Warehouse"
+  },
+  "entities": {
+    "orders": {
+      "rows": 9,
+      "columns": {
+        "amount": {
+          "generator": "choice",
+          "values": [
+            400,
+            900,
+            200,
+            600,
+            ""
+          ]
+        },
+        "city": {
+          "generator": "choice",
+          "values": [
+            "Pune",
+            "Mumbai",
+            ""
+          ]
+        },
+        "customer": {
+          "generator": "choice",
+          "values": [
+            "Aarav",
+            "Diya",
+            "Meera",
+            ""
+          ]
+        },
+        "customer_id": {
+          "generator": "choice",
+          "values": [
+            1,
+            2,
+            ""
+          ]
+        },
+        "order_date_key": {
+          "generator": "choice",
+          "values": [
+            20250331,
+            20250401,
+            ""
+          ]
+        },
+        "order_id": {
+          "generator": "choice",
+          "values": [
+            "O1",
+            "O2",
+            "O3",
+            "O4",
+            ""
+          ]
+        },
+        "ordered_at_utc": {
+          "generator": "choice",
+          "values": [
+            "2025-03-31T06:15:00+00:00",
+            "2025-03-31T20:00:00+00:00",
+            ""
+          ]
+        },
+        "revenue_paise": {
+          "generator": "choice",
+          "values": [
+            10000,
+            20000,
+            ""
+          ]
+        },
+        "sale_day": {
+          "generator": "choice",
+          "values": [
+            "2025-01-10",
+            "2025-02-10",
+            ""
+          ]
+        },
+        "ship_date_key": {
+          "generator": "choice",
+          "values": [
+            20250401,
+            20250402,
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "amount": 400,
+          "city": "Pune",
+          "customer": "Aarav",
+          "customer_id": null,
+          "order_date_key": null,
+          "order_id": "O1",
+          "ordered_at_utc": null,
+          "revenue_paise": null,
+          "sale_day": "2025-01-10",
+          "ship_date_key": null
+        },
+        {
+          "amount": 900,
+          "city": "Mumbai",
+          "customer": "Diya",
+          "customer_id": null,
+          "order_date_key": null,
+          "order_id": "O2",
+          "ordered_at_utc": null,
+          "revenue_paise": null,
+          "sale_day": "2025-01-10",
+          "ship_date_key": null
+        },
+        {
+          "amount": 200,
+          "city": "Pune",
+          "customer": "Aarav",
+          "customer_id": null,
+          "order_date_key": null,
+          "order_id": "O3",
+          "ordered_at_utc": null,
+          "revenue_paise": null,
+          "sale_day": "2025-02-10",
+          "ship_date_key": null
+        },
+        {
+          "amount": 600,
+          "city": "Mumbai",
+          "customer": "Meera",
+          "customer_id": null,
+          "order_date_key": null,
+          "order_id": "O4",
+          "ordered_at_utc": null,
+          "revenue_paise": null,
+          "sale_day": "2025-02-10",
+          "ship_date_key": null
+        },
+        {
+          "amount": null,
+          "city": null,
+          "customer": null,
+          "customer_id": 1,
+          "order_date_key": null,
+          "order_id": "O1",
+          "ordered_at_utc": null,
+          "revenue_paise": null,
+          "sale_day": null,
+          "ship_date_key": null
+        },
+        {
+          "amount": null,
+          "city": null,
+          "customer": null,
+          "customer_id": 1,
+          "order_date_key": null,
+          "order_id": "O2",
+          "ordered_at_utc": null,
+          "revenue_paise": null,
+          "sale_day": null,
+          "ship_date_key": null
+        },
+        {
+          "amount": null,
+          "city": null,
+          "customer": null,
+          "customer_id": 2,
+          "order_date_key": null,
+          "order_id": "O3",
+          "ordered_at_utc": null,
+          "revenue_paise": null,
+          "sale_day": null,
+          "ship_date_key": null
+        },
+        {
+          "amount": null,
+          "city": null,
+          "customer": "Aarav",
+          "customer_id": null,
+          "order_date_key": 20250331,
+          "order_id": "O1",
+          "ordered_at_utc": "2025-03-31T06:15:00+00:00",
+          "revenue_paise": 10000,
+          "sale_day": null,
+          "ship_date_key": 20250401
+        },
+        {
+          "amount": null,
+          "city": null,
+          "customer": "Diya",
+          "customer_id": null,
+          "order_date_key": 20250401,
+          "order_id": "O2",
+          "ordered_at_utc": "2025-03-31T20:00:00+00:00",
+          "revenue_paise": 20000,
+          "sale_day": null,
+          "ship_date_key": 20250402
+        }
+      ]
+    },
+    "customers": {
+      "rows": 4,
+      "columns": {
+        "business_code": {
+          "generator": "choice",
+          "values": [
+            "C101",
+            "C102",
+            ""
+          ]
+        },
+        "city": {
+          "generator": "choice",
+          "values": [
+            "Pune",
+            "Mumbai",
+            ""
+          ]
+        },
+        "customer_id": {
+          "generator": "choice",
+          "values": [
+            1,
+            2,
+            ""
+          ]
+        },
+        "name": {
+          "generator": "choice",
+          "values": [
+            "Aarav",
+            "Diya",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "business_code": "C101",
+          "city": null,
+          "customer_id": 1,
+          "name": "Aarav"
+        },
+        {
+          "business_code": "C102",
+          "city": null,
+          "customer_id": 2,
+          "name": "Diya"
+        },
+        {
+          "business_code": null,
+          "city": "Pune",
+          "customer_id": 1,
+          "name": "Aarav"
+        },
+        {
+          "business_code": null,
+          "city": "Mumbai",
+          "customer_id": 2,
+          "name": "Diya"
+        }
+      ]
+    },
+    "order_lines": {
+      "rows": 8,
+      "columns": {
+        "line_no": {
+          "generator": "choice",
+          "values": [
+            1,
+            2,
+            ""
+          ]
+        },
+        "order_id": {
+          "generator": "choice",
+          "values": [
+            "O1",
+            "O2",
+            "O3",
+            ""
+          ]
+        },
+        "product": {
+          "generator": "choice",
+          "values": [
+            "Books",
+            "Games",
+            ""
+          ]
+        },
+        "product_code": {
+          "generator": "choice",
+          "values": [
+            "B1",
+            "G1",
+            ""
+          ]
+        },
+        "quantity": {
+          "generator": "choice",
+          "values": [
+            2,
+            1,
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "line_no": 1,
+          "order_id": "O1",
+          "product": "Books",
+          "product_code": null,
+          "quantity": 2
+        },
+        {
+          "line_no": 2,
+          "order_id": "O1",
+          "product": "Games",
+          "product_code": null,
+          "quantity": 1
+        },
+        {
+          "line_no": 1,
+          "order_id": "O2",
+          "product": "Books",
+          "product_code": null,
+          "quantity": 1
+        },
+        {
+          "line_no": 1,
+          "order_id": "O3",
+          "product": "Games",
+          "product_code": null,
+          "quantity": 2
+        },
+        {
+          "line_no": 1,
+          "order_id": "O1",
+          "product": null,
+          "product_code": "B1",
+          "quantity": 2
+        },
+        {
+          "line_no": 2,
+          "order_id": "O1",
+          "product": null,
+          "product_code": "G1",
+          "quantity": 1
+        },
+        {
+          "line_no": 1,
+          "order_id": "O2",
+          "product": null,
+          "product_code": "B1",
+          "quantity": 1
+        },
+        {
+          "line_no": 1,
+          "order_id": "O3",
+          "product": null,
+          "product_code": "G1",
+          "quantity": 2
+        }
+      ]
+    },
+    "incoming_orders": {
+      "rows": 3,
+      "columns": {
+        "customer_id": {
+          "generator": "choice",
+          "values": [
+            1,
+            99,
+            2,
+            ""
+          ]
+        },
+        "order_id": {
+          "generator": "choice",
+          "values": [
+            "O4",
+            "O5",
+            "O6",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "customer_id": 1,
+          "order_id": "O4"
+        },
+        {
+          "customer_id": 99,
+          "order_id": "O5"
+        },
+        {
+          "customer_id": 2,
+          "order_id": "O6"
+        }
+      ]
+    },
+    "order_sheet": {
+      "rows": 4,
+      "columns": {
+        "city": {
+          "generator": "choice",
+          "values": [
+            "Pune",
+            "Mumbai",
+            ""
+          ]
+        },
+        "customer_id": {
+          "generator": "choice",
+          "values": [
+            1,
+            2,
+            ""
+          ]
+        },
+        "customer_name": {
+          "generator": "choice",
+          "values": [
+            "Aarav",
+            "Diya",
+            ""
+          ]
+        },
+        "line_no": {
+          "generator": "choice",
+          "values": [
+            1,
+            2,
+            ""
+          ]
+        },
+        "order_id": {
+          "generator": "choice",
+          "values": [
+            "O1",
+            "O2",
+            "O3",
+            ""
+          ]
+        },
+        "product_code": {
+          "generator": "choice",
+          "values": [
+            "B1",
+            "G1",
+            ""
+          ]
+        },
+        "product_name": {
+          "generator": "choice",
+          "values": [
+            "Book",
+            "Game",
+            ""
+          ]
+        },
+        "quantity": {
+          "generator": "choice",
+          "values": [
+            2,
+            1,
+            ""
+          ]
+        },
+        "unit_price": {
+          "generator": "choice",
+          "values": [
+            100,
+            400,
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "city": "Pune",
+          "customer_id": 1,
+          "customer_name": "Aarav",
+          "line_no": 1,
+          "order_id": "O1",
+          "product_code": "B1",
+          "product_name": "Book",
+          "quantity": 2,
+          "unit_price": 100
+        },
+        {
+          "city": "Pune",
+          "customer_id": 1,
+          "customer_name": "Aarav",
+          "line_no": 2,
+          "order_id": "O1",
+          "product_code": "G1",
+          "product_name": "Game",
+          "quantity": 1,
+          "unit_price": 400
+        },
+        {
+          "city": "Pune",
+          "customer_id": 1,
+          "customer_name": "Aarav",
+          "line_no": 1,
+          "order_id": "O2",
+          "product_code": "B1",
+          "product_name": "Book",
+          "quantity": 1,
+          "unit_price": 100
+        },
+        {
+          "city": "Mumbai",
+          "customer_id": 2,
+          "customer_name": "Diya",
+          "line_no": 1,
+          "order_id": "O3",
+          "product_code": "G1",
+          "product_name": "Game",
+          "quantity": 2,
+          "unit_price": 400
+        }
+      ]
+    },
+    "packed_orders": {
+      "rows": 3,
+      "columns": {
+        "customer_name": {
+          "generator": "choice",
+          "values": [
+            "Aarav",
+            "Diya",
+            ""
+          ]
+        },
+        "order_id": {
+          "generator": "choice",
+          "values": [
+            "O1",
+            "O2",
+            "O3",
+            ""
+          ]
+        },
+        "product_codes": {
+          "generator": "choice",
+          "values": [
+            "B1,G1",
+            "B1",
+            "G1",
+            ""
+          ]
+        },
+        "quantities": {
+          "generator": "choice",
+          "values": [
+            "2,1",
+            "1",
+            "2",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "customer_name": "Aarav",
+          "order_id": "O1",
+          "product_codes": "B1,G1",
+          "quantities": "2,1"
+        },
+        {
+          "customer_name": "Aarav",
+          "order_id": "O2",
+          "product_codes": "B1",
+          "quantities": "1"
+        },
+        {
+          "customer_name": "Diya",
+          "order_id": "O3",
+          "product_codes": "G1",
+          "quantities": "2"
+        }
+      ]
+    },
+    "products": {
+      "rows": 2,
+      "columns": {
+        "name": {
+          "generator": "choice",
+          "values": [
+            "Book",
+            "Game",
+            ""
+          ]
+        },
+        "product_code": {
+          "generator": "choice",
+          "values": [
+            "B1",
+            "G1",
+            ""
+          ]
+        },
+        "unit_price": {
+          "generator": "choice",
+          "values": [
+            100,
+            400,
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "name": "Book",
+          "product_code": "B1",
+          "unit_price": 100
+        },
+        {
+          "name": "Game",
+          "product_code": "G1",
+          "unit_price": 400
+        }
+      ]
+    },
+    "dim_customer": {
+      "rows": 16,
+      "columns": {
+        "city": {
+          "generator": "choice",
+          "values": [
+            "Pune",
+            "Mumbai",
+            "Unknown",
+            "Surat",
+            ""
+          ]
+        },
+        "customer_bk": {
+          "generator": "choice",
+          "values": [
+            "UNKNOWN",
+            "C1",
+            ""
+          ]
+        },
+        "customer_code": {
+          "generator": "choice",
+          "values": [
+            "C101",
+            "C102",
+            "UNKNOWN",
+            "C1",
+            "C2",
+            ""
+          ]
+        },
+        "customer_key": {
+          "generator": "choice",
+          "values": [
+            1,
+            2,
+            0,
+            ""
+          ]
+        },
+        "customer_name": {
+          "generator": "choice",
+          "values": [
+            "Aarav",
+            ""
+          ]
+        },
+        "customer_sk": {
+          "generator": "choice",
+          "values": [
+            0,
+            1,
+            2,
+            ""
+          ]
+        },
+        "is_current": {
+          "generator": "choice",
+          "values": [
+            1,
+            0,
+            ""
+          ]
+        },
+        "name": {
+          "generator": "choice",
+          "values": [
+            "Aarav",
+            "Diya",
+            "Unknown customer",
+            ""
+          ]
+        },
+        "valid_from": {
+          "generator": "choice",
+          "values": [
+            "0001-01-01",
+            "2025-01-01",
+            "2025-02-01",
+            "0001-01-01 00:00:00",
+            "2025-01-01 00:00:00",
+            "2025-01-30 00:00:00",
+            "",
+            "2025-02-01 00:00:00"
+          ]
+        },
+        "valid_to": {
+          "generator": "choice",
+          "values": [
+            "9999-12-31",
+            "2025-02-01",
+            "9999-12-31 00:00:00",
+            "2025-01-30 00:00:00",
+            "",
+            "2025-02-01 00:00:00"
+          ]
+        }
+      },
+      "records": [
+        {
+          "city": "Pune",
+          "customer_bk": null,
+          "customer_code": "C101",
+          "customer_key": 1,
+          "customer_name": null,
+          "customer_sk": null,
+          "is_current": null,
+          "name": "Aarav",
+          "valid_from": null,
+          "valid_to": null
+        },
+        {
+          "city": "Mumbai",
+          "customer_bk": null,
+          "customer_code": "C102",
+          "customer_key": 2,
+          "customer_name": null,
+          "customer_sk": null,
+          "is_current": null,
+          "name": "Diya",
+          "valid_from": null,
+          "valid_to": null
+        },
+        {
+          "city": null,
+          "customer_bk": null,
+          "customer_code": "UNKNOWN",
+          "customer_key": 0,
+          "customer_name": null,
+          "customer_sk": null,
+          "is_current": null,
+          "name": "Unknown customer",
+          "valid_from": null,
+          "valid_to": null
+        },
+        {
+          "city": null,
+          "customer_bk": null,
+          "customer_code": "C1",
+          "customer_key": 1,
+          "customer_name": null,
+          "customer_sk": null,
+          "is_current": null,
+          "name": "Aarav",
+          "valid_from": null,
+          "valid_to": null
+        },
+        {
+          "city": null,
+          "customer_bk": null,
+          "customer_code": "C2",
+          "customer_key": 2,
+          "customer_name": null,
+          "customer_sk": null,
+          "is_current": null,
+          "name": "Diya",
+          "valid_from": null,
+          "valid_to": null
+        },
+        {
+          "city": "Unknown",
+          "customer_bk": "UNKNOWN",
+          "customer_code": null,
+          "customer_key": null,
+          "customer_name": null,
+          "customer_sk": 0,
+          "is_current": 1,
+          "name": null,
+          "valid_from": "0001-01-01",
+          "valid_to": "9999-12-31"
+        },
+        {
+          "city": "Surat",
+          "customer_bk": "C1",
+          "customer_code": null,
+          "customer_key": null,
+          "customer_name": null,
+          "customer_sk": 1,
+          "is_current": 0,
+          "name": null,
+          "valid_from": "2025-01-01",
+          "valid_to": "2025-02-01"
+        },
+        {
+          "city": "Pune",
+          "customer_bk": "C1",
+          "customer_code": null,
+          "customer_key": null,
+          "customer_name": null,
+          "customer_sk": 2,
+          "is_current": 1,
+          "name": null,
+          "valid_from": "2025-02-01",
+          "valid_to": "9999-12-31"
+        },
+        {
+          "city": null,
+          "customer_bk": "C1",
+          "customer_code": null,
+          "customer_key": null,
+          "customer_name": "Aarav",
+          "customer_sk": 1,
+          "is_current": 1,
+          "name": null,
+          "valid_from": "2025-01-01",
+          "valid_to": "9999-12-31"
+        },
+        {
+          "city": "Surat",
+          "customer_bk": null,
+          "customer_code": null,
+          "customer_key": null,
+          "customer_name": null,
+          "customer_sk": 1,
+          "is_current": null,
+          "name": null,
+          "valid_from": null,
+          "valid_to": null
+        },
+        {
+          "city": "Pune",
+          "customer_bk": null,
+          "customer_code": null,
+          "customer_key": null,
+          "customer_name": null,
+          "customer_sk": 2,
+          "is_current": null,
+          "name": null,
+          "valid_from": null,
+          "valid_to": null
+        },
+        {
+          "city": "Unknown",
+          "customer_bk": "UNKNOWN",
+          "customer_code": null,
+          "customer_key": null,
+          "customer_name": null,
+          "customer_sk": 0,
+          "is_current": 1,
+          "name": null,
+          "valid_from": "0001-01-01 00:00:00",
+          "valid_to": "9999-12-31 00:00:00"
+        },
+        {
+          "city": "Surat",
+          "customer_bk": "C1",
+          "customer_code": null,
+          "customer_key": null,
+          "customer_name": null,
+          "customer_sk": 1,
+          "is_current": 0,
+          "name": null,
+          "valid_from": "2025-01-01 00:00:00",
+          "valid_to": "2025-01-30 00:00:00"
+        },
+        {
+          "city": "Pune",
+          "customer_bk": "C1",
+          "customer_code": null,
+          "customer_key": null,
+          "customer_name": null,
+          "customer_sk": 2,
+          "is_current": 1,
+          "name": null,
+          "valid_from": "2025-01-30 00:00:00",
+          "valid_to": "9999-12-31 00:00:00"
+        },
+        {
+          "city": "Surat",
+          "customer_bk": "C1",
+          "customer_code": null,
+          "customer_key": null,
+          "customer_name": null,
+          "customer_sk": 1,
+          "is_current": 0,
+          "name": null,
+          "valid_from": "2025-01-01 00:00:00",
+          "valid_to": "2025-02-01 00:00:00"
+        },
+        {
+          "city": "Pune",
+          "customer_bk": "C1",
+          "customer_code": null,
+          "customer_key": null,
+          "customer_name": null,
+          "customer_sk": 2,
+          "is_current": 1,
+          "name": null,
+          "valid_from": "2025-02-01 00:00:00",
+          "valid_to": "9999-12-31 00:00:00"
+        }
+      ]
+    },
+    "dim_product": {
+      "rows": 2,
+      "columns": {
+        "category": {
+          "generator": "choice",
+          "values": [
+            "Reading",
+            "Play",
+            ""
+          ]
+        },
+        "name": {
+          "generator": "choice",
+          "values": [
+            "Book",
+            "Game",
+            ""
+          ]
+        },
+        "product_code": {
+          "generator": "choice",
+          "values": [
+            "B1",
+            "G1",
+            ""
+          ]
+        },
+        "product_key": {
+          "generator": "choice",
+          "values": [
+            10,
+            20,
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "category": "Reading",
+          "name": "Book",
+          "product_code": "B1",
+          "product_key": 10
+        },
+        {
+          "category": "Play",
+          "name": "Game",
+          "product_code": "G1",
+          "product_key": 20
+        }
+      ]
+    },
+    "fact_sales": {
+      "rows": 16,
+      "columns": {
+        "amount": {
+          "generator": "choice",
+          "values": [
+            200,
+            400,
+            100,
+            800,
+            ""
+          ]
+        },
+        "amount_paise": {
+          "generator": "choice",
+          "values": [
+            "",
+            10000,
+            20000,
+            12000,
+            5000
+          ]
+        },
+        "customer_key": {
+          "generator": "choice",
+          "values": [
+            1,
+            2,
+            ""
+          ]
+        },
+        "customer_sk": {
+          "generator": "choice",
+          "values": [
+            "",
+            1,
+            2,
+            0
+          ]
+        },
+        "line_bk": {
+          "generator": "choice",
+          "values": [
+            "",
+            "L1",
+            "L2",
+            "L3"
+          ]
+        },
+        "line_no": {
+          "generator": "choice",
+          "values": [
+            1,
+            2,
+            ""
+          ]
+        },
+        "order_id": {
+          "generator": "choice",
+          "values": [
+            "O1",
+            "O2",
+            "O3",
+            "OLD",
+            ""
+          ]
+        },
+        "partition_date": {
+          "generator": "choice",
+          "values": [
+            "2025-03-31",
+            ""
+          ]
+        },
+        "product_key": {
+          "generator": "choice",
+          "values": [
+            10,
+            20,
+            ""
+          ]
+        },
+        "revenue_paise": {
+          "generator": "choice",
+          "values": [
+            5000,
+            ""
+          ]
+        },
+        "line_sk": {
+          "generator": "choice",
+          "values": [
+            1,
+            2,
+            3,
+            4,
+            ""
+          ]
+        },
+        "order_date": {
+          "generator": "choice",
+          "values": [
+            "2025-05-01",
+            "2025-05-02",
+            "2025-05-03",
+            ""
+          ]
+        },
+        "status": {
+          "generator": "choice",
+          "values": [
+            "completed",
+            "cancelled",
+            ""
+          ]
+        },
+        "sales_paise": {
+          "generator": "choice",
+          "values": [
+            10000,
+            5000,
+            22000,
+            9999,
+            "",
+            20000
+          ]
+        },
+        "sale_date": {
+          "generator": "choice",
+          "values": [
+            "2025-05-12",
+            ""
+          ]
+        },
+        "date_key": {
+          "generator": "choice",
+          "values": [
+            20250131,
+            20250201,
+            20250202,
+            ""
+          ]
+        },
+        "event_local": {
+          "generator": "choice",
+          "values": [
+            "2025-01-31 23:30:00",
+            "2025-02-01 00:00:00",
+            "2025-02-02 10:00:00",
+            ""
+          ]
+        },
+        "batch_id": {
+          "generator": "choice",
+          "values": [
+            "B1",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "amount": 200,
+          "amount_paise": null,
+          "customer_key": 1,
+          "customer_sk": null,
+          "line_bk": null,
+          "line_no": 1,
+          "order_id": "O1",
+          "partition_date": null,
+          "product_key": 10,
+          "revenue_paise": null,
+          "line_sk": null,
+          "order_date": null,
+          "status": null,
+          "sales_paise": null,
+          "sale_date": null,
+          "date_key": null,
+          "event_local": null,
+          "batch_id": null
+        },
+        {
+          "amount": 400,
+          "amount_paise": null,
+          "customer_key": 1,
+          "customer_sk": null,
+          "line_bk": null,
+          "line_no": 2,
+          "order_id": "O1",
+          "partition_date": null,
+          "product_key": 20,
+          "revenue_paise": null,
+          "line_sk": null,
+          "order_date": null,
+          "status": null,
+          "sales_paise": null,
+          "sale_date": null,
+          "date_key": null,
+          "event_local": null,
+          "batch_id": null
+        },
+        {
+          "amount": 100,
+          "amount_paise": null,
+          "customer_key": 1,
+          "customer_sk": null,
+          "line_bk": null,
+          "line_no": 1,
+          "order_id": "O2",
+          "partition_date": null,
+          "product_key": 10,
+          "revenue_paise": null,
+          "line_sk": null,
+          "order_date": null,
+          "status": null,
+          "sales_paise": null,
+          "sale_date": null,
+          "date_key": null,
+          "event_local": null,
+          "batch_id": null
+        },
+        {
+          "amount": 800,
+          "amount_paise": null,
+          "customer_key": 2,
+          "customer_sk": null,
+          "line_bk": null,
+          "line_no": 1,
+          "order_id": "O3",
+          "partition_date": null,
+          "product_key": 20,
+          "revenue_paise": null,
+          "line_sk": null,
+          "order_date": null,
+          "status": null,
+          "sales_paise": null,
+          "sale_date": null,
+          "date_key": null,
+          "event_local": null,
+          "batch_id": null
+        },
+        {
+          "amount": null,
+          "amount_paise": null,
+          "customer_key": 1,
+          "customer_sk": null,
+          "line_bk": null,
+          "line_no": null,
+          "order_id": "OLD",
+          "partition_date": "2025-03-31",
+          "product_key": null,
+          "revenue_paise": 5000,
+          "line_sk": null,
+          "order_date": null,
+          "status": null,
+          "sales_paise": null,
+          "sale_date": null,
+          "date_key": null,
+          "event_local": null,
+          "batch_id": null
+        },
+        {
+          "amount": null,
+          "amount_paise": null,
+          "customer_key": null,
+          "customer_sk": 1,
+          "line_bk": null,
+          "line_no": null,
+          "order_id": "O1",
+          "partition_date": null,
+          "product_key": null,
+          "revenue_paise": null,
+          "line_sk": 1,
+          "order_date": "2025-05-01",
+          "status": "completed",
+          "sales_paise": 10000,
+          "sale_date": null,
+          "date_key": null,
+          "event_local": null,
+          "batch_id": null
+        },
+        {
+          "amount": null,
+          "amount_paise": null,
+          "customer_key": null,
+          "customer_sk": 1,
+          "line_bk": null,
+          "line_no": null,
+          "order_id": "O1",
+          "partition_date": null,
+          "product_key": null,
+          "revenue_paise": null,
+          "line_sk": 2,
+          "order_date": "2025-05-01",
+          "status": "completed",
+          "sales_paise": 5000,
+          "sale_date": null,
+          "date_key": null,
+          "event_local": null,
+          "batch_id": null
+        },
+        {
+          "amount": null,
+          "amount_paise": null,
+          "customer_key": null,
+          "customer_sk": 2,
+          "line_bk": null,
+          "line_no": null,
+          "order_id": "O2",
+          "partition_date": null,
+          "product_key": null,
+          "revenue_paise": null,
+          "line_sk": 3,
+          "order_date": "2025-05-02",
+          "status": "completed",
+          "sales_paise": 22000,
+          "sale_date": null,
+          "date_key": null,
+          "event_local": null,
+          "batch_id": null
+        },
+        {
+          "amount": null,
+          "amount_paise": null,
+          "customer_key": null,
+          "customer_sk": 1,
+          "line_bk": null,
+          "line_no": null,
+          "order_id": "O3",
+          "partition_date": null,
+          "product_key": null,
+          "revenue_paise": null,
+          "line_sk": 4,
+          "order_date": "2025-05-03",
+          "status": "cancelled",
+          "sales_paise": 9999,
+          "sale_date": null,
+          "date_key": null,
+          "event_local": null,
+          "batch_id": null
+        },
+        {
+          "amount": null,
+          "amount_paise": 10000,
+          "customer_key": null,
+          "customer_sk": 1,
+          "line_bk": "L1",
+          "line_no": null,
+          "order_id": null,
+          "partition_date": null,
+          "product_key": null,
+          "revenue_paise": null,
+          "line_sk": null,
+          "order_date": null,
+          "status": null,
+          "sales_paise": null,
+          "sale_date": "2025-05-12",
+          "date_key": null,
+          "event_local": null,
+          "batch_id": null
+        },
+        {
+          "amount": null,
+          "amount_paise": 20000,
+          "customer_key": null,
+          "customer_sk": 2,
+          "line_bk": "L2",
+          "line_no": null,
+          "order_id": null,
+          "partition_date": null,
+          "product_key": null,
+          "revenue_paise": null,
+          "line_sk": null,
+          "order_date": null,
+          "status": null,
+          "sales_paise": null,
+          "sale_date": "2025-05-12",
+          "date_key": null,
+          "event_local": null,
+          "batch_id": null
+        },
+        {
+          "amount": null,
+          "amount_paise": 12000,
+          "customer_key": null,
+          "customer_sk": 2,
+          "line_bk": "L1",
+          "line_no": null,
+          "order_id": "O1",
+          "partition_date": null,
+          "product_key": null,
+          "revenue_paise": null,
+          "line_sk": null,
+          "order_date": null,
+          "status": null,
+          "sales_paise": null,
+          "sale_date": null,
+          "date_key": 20250131,
+          "event_local": "2025-01-31 23:30:00",
+          "batch_id": "B1"
+        },
+        {
+          "amount": null,
+          "amount_paise": 20000,
+          "customer_key": null,
+          "customer_sk": 2,
+          "line_bk": "L2",
+          "line_no": null,
+          "order_id": "O2",
+          "partition_date": null,
+          "product_key": null,
+          "revenue_paise": null,
+          "line_sk": null,
+          "order_date": null,
+          "status": null,
+          "sales_paise": null,
+          "sale_date": null,
+          "date_key": 20250201,
+          "event_local": "2025-02-01 00:00:00",
+          "batch_id": "B1"
+        },
+        {
+          "amount": null,
+          "amount_paise": 5000,
+          "customer_key": null,
+          "customer_sk": 0,
+          "line_bk": "L3",
+          "line_no": null,
+          "order_id": "O3",
+          "partition_date": null,
+          "product_key": null,
+          "revenue_paise": null,
+          "line_sk": null,
+          "order_date": null,
+          "status": null,
+          "sales_paise": null,
+          "sale_date": null,
+          "date_key": 20250202,
+          "event_local": "2025-02-02 10:00:00",
+          "batch_id": "B1"
+        },
+        {
+          "amount": null,
+          "amount_paise": null,
+          "customer_key": null,
+          "customer_sk": 2,
+          "line_bk": null,
+          "line_no": null,
+          "order_id": "O2",
+          "partition_date": null,
+          "product_key": null,
+          "revenue_paise": null,
+          "line_sk": 3,
+          "order_date": "2025-05-02",
+          "status": "completed",
+          "sales_paise": 20000,
+          "sale_date": null,
+          "date_key": null,
+          "event_local": null,
+          "batch_id": null
+        },
+        {
+          "amount": null,
+          "amount_paise": 12000,
+          "customer_key": null,
+          "customer_sk": 1,
+          "line_bk": "L1",
+          "line_no": null,
+          "order_id": "O1",
+          "partition_date": null,
+          "product_key": null,
+          "revenue_paise": null,
+          "line_sk": null,
+          "order_date": null,
+          "status": null,
+          "sales_paise": null,
+          "sale_date": null,
+          "date_key": 20250131,
+          "event_local": "2025-01-31 23:30:00",
+          "batch_id": "B1"
+        }
+      ]
+    },
+    "dim_category": {
+      "rows": 2,
+      "columns": {
+        "category_key": {
+          "generator": "choice",
+          "values": [
+            100,
+            200,
+            ""
+          ]
+        },
+        "label": {
+          "generator": "choice",
+          "values": [
+            "Reading",
+            "Play",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "category_key": 100,
+          "label": "Reading"
+        },
+        {
+          "category_key": 200,
+          "label": "Play"
+        }
+      ]
+    },
+    "snow_product": {
+      "rows": 2,
+      "columns": {
+        "category_key": {
+          "generator": "choice",
+          "values": [
+            100,
+            200,
+            ""
+          ]
+        },
+        "product_key": {
+          "generator": "choice",
+          "values": [
+            10,
+            20,
+            ""
+          ]
+        },
+        "product_name": {
+          "generator": "choice",
+          "values": [
+            "Book",
+            "Game",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "category_key": 100,
+          "product_key": 10,
+          "product_name": "Book"
+        },
+        {
+          "category_key": 200,
+          "product_key": 20,
+          "product_name": "Game"
+        }
+      ]
+    },
+    "duplicate_product_keys": {
+      "rows": 3,
+      "columns": {
+        "label": {
+          "generator": "choice",
+          "values": [
+            "Book",
+            "Book copy",
+            "Game",
+            ""
+          ]
+        },
+        "product_key": {
+          "generator": "choice",
+          "values": [
+            10,
+            20,
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "label": "Book",
+          "product_key": 10
+        },
+        {
+          "label": "Book copy",
+          "product_key": 10
+        },
+        {
+          "label": "Game",
+          "product_key": 20
+        }
+      ]
+    },
+    "sales": {
+      "rows": 10,
+      "columns": {
+        "cost": {
+          "generator": "choice",
+          "values": [
+            60,
+            120,
+            80,
+            420,
+            ""
+          ]
+        },
+        "line_no": {
+          "generator": "choice",
+          "values": [
+            1,
+            2,
+            ""
+          ]
+        },
+        "order_id": {
+          "generator": "choice",
+          "values": [
+            "O1",
+            "O2",
+            "O3",
+            ""
+          ]
+        },
+        "revenue": {
+          "generator": "choice",
+          "values": [
+            100,
+            200,
+            600,
+            ""
+          ]
+        },
+        "store": {
+          "generator": "choice",
+          "values": [
+            "Pune",
+            "Mumbai",
+            ""
+          ]
+        },
+        "line_sk": {
+          "generator": "choice",
+          "values": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            ""
+          ]
+        },
+        "sale_date": {
+          "generator": "choice",
+          "values": [
+            "2025-01-10",
+            "2025-01-20",
+            "2025-02-05",
+            "2025-02-20",
+            "2025-03-05",
+            "2025-03-10",
+            ""
+          ]
+        },
+        "customer_sk": {
+          "generator": "choice",
+          "values": [
+            1,
+            2,
+            ""
+          ]
+        },
+        "amount_paise": {
+          "generator": "choice",
+          "values": [
+            10000,
+            15000,
+            20000,
+            5000,
+            30000,
+            2000,
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "cost": 60,
+          "line_no": 1,
+          "order_id": "O1",
+          "revenue": 100,
+          "store": "Pune",
+          "line_sk": null,
+          "sale_date": null,
+          "customer_sk": null,
+          "amount_paise": null
+        },
+        {
+          "cost": 120,
+          "line_no": 2,
+          "order_id": "O1",
+          "revenue": 200,
+          "store": "Pune",
+          "line_sk": null,
+          "sale_date": null,
+          "customer_sk": null,
+          "amount_paise": null
+        },
+        {
+          "cost": 80,
+          "line_no": 1,
+          "order_id": "O2",
+          "revenue": 100,
+          "store": "Pune",
+          "line_sk": null,
+          "sale_date": null,
+          "customer_sk": null,
+          "amount_paise": null
+        },
+        {
+          "cost": 420,
+          "line_no": 1,
+          "order_id": "O3",
+          "revenue": 600,
+          "store": "Mumbai",
+          "line_sk": null,
+          "sale_date": null,
+          "customer_sk": null,
+          "amount_paise": null
+        },
+        {
+          "cost": null,
+          "line_no": null,
+          "order_id": null,
+          "revenue": null,
+          "store": null,
+          "line_sk": 1,
+          "sale_date": "2025-01-10",
+          "customer_sk": 1,
+          "amount_paise": 10000
+        },
+        {
+          "cost": null,
+          "line_no": null,
+          "order_id": null,
+          "revenue": null,
+          "store": null,
+          "line_sk": 2,
+          "sale_date": "2025-01-20",
+          "customer_sk": 2,
+          "amount_paise": 15000
+        },
+        {
+          "cost": null,
+          "line_no": null,
+          "order_id": null,
+          "revenue": null,
+          "store": null,
+          "line_sk": 3,
+          "sale_date": "2025-02-05",
+          "customer_sk": 1,
+          "amount_paise": 20000
+        },
+        {
+          "cost": null,
+          "line_no": null,
+          "order_id": null,
+          "revenue": null,
+          "store": null,
+          "line_sk": 4,
+          "sale_date": "2025-02-20",
+          "customer_sk": 2,
+          "amount_paise": 5000
+        },
+        {
+          "cost": null,
+          "line_no": null,
+          "order_id": null,
+          "revenue": null,
+          "store": null,
+          "line_sk": 5,
+          "sale_date": "2025-03-05",
+          "customer_sk": 1,
+          "amount_paise": 30000
+        },
+        {
+          "cost": null,
+          "line_no": null,
+          "order_id": null,
+          "revenue": null,
+          "store": null,
+          "line_sk": 6,
+          "sale_date": "2025-03-10",
+          "customer_sk": 2,
+          "amount_paise": 2000
+        }
+      ]
+    },
+    "inventory": {
+      "rows": 4,
+      "columns": {
+        "day": {
+          "generator": "choice",
+          "values": [
+            "2025-01-01",
+            "2025-01-02",
+            ""
+          ]
+        },
+        "product": {
+          "generator": "choice",
+          "values": [
+            "B1",
+            ""
+          ]
+        },
+        "store": {
+          "generator": "choice",
+          "values": [
+            "Pune",
+            "Mumbai",
+            ""
+          ]
+        },
+        "units": {
+          "generator": "choice",
+          "values": [
+            10,
+            20,
+            8,
+            17,
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "day": "2025-01-01",
+          "product": "B1",
+          "store": "Pune",
+          "units": 10
+        },
+        {
+          "day": "2025-01-01",
+          "product": "B1",
+          "store": "Mumbai",
+          "units": 20
+        },
+        {
+          "day": "2025-01-02",
+          "product": "B1",
+          "store": "Pune",
+          "units": 8
+        },
+        {
+          "day": "2025-01-02",
+          "product": "B1",
+          "store": "Mumbai",
+          "units": 17
+        }
+      ]
+    },
+    "fulfilment": {
+      "rows": 3,
+      "columns": {
+        "accepted_day": {
+          "generator": "choice",
+          "values": [
+            "2025-01-01",
+            "2025-01-02",
+            ""
+          ]
+        },
+        "delivered_day": {
+          "generator": "choice",
+          "values": [
+            "2025-01-03",
+            ""
+          ]
+        },
+        "order_id": {
+          "generator": "choice",
+          "values": [
+            "O1",
+            "O2",
+            "O3",
+            ""
+          ]
+        },
+        "shipped_day": {
+          "generator": "choice",
+          "values": [
+            "2025-01-02",
+            "2025-01-03",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "accepted_day": "2025-01-01",
+          "delivered_day": "2025-01-03",
+          "order_id": "O1",
+          "shipped_day": "2025-01-02"
+        },
+        {
+          "accepted_day": "2025-01-01",
+          "delivered_day": null,
+          "order_id": "O2",
+          "shipped_day": "2025-01-03"
+        },
+        {
+          "accepted_day": "2025-01-02",
+          "delivered_day": null,
+          "order_id": "O3",
+          "shipped_day": null
+        }
+      ]
+    },
+    "visits": {
+      "rows": 4,
+      "columns": {
+        "store": {
+          "generator": "choice",
+          "values": [
+            "Pune",
+            "Mumbai",
+            ""
+          ]
+        },
+        "visit_id": {
+          "generator": "choice",
+          "values": [
+            "V1",
+            "V2",
+            "V3",
+            "V4",
+            ""
+          ]
+        },
+        "visitor": {
+          "generator": "choice",
+          "values": [
+            "Aarav",
+            "Diya",
+            "Meera",
+            "Kabir",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "store": "Pune",
+          "visit_id": "V1",
+          "visitor": "Aarav"
+        },
+        {
+          "store": "Pune",
+          "visit_id": "V2",
+          "visitor": "Diya"
+        },
+        {
+          "store": "Pune",
+          "visit_id": "V3",
+          "visitor": "Meera"
+        },
+        {
+          "store": "Mumbai",
+          "visit_id": "V4",
+          "visitor": "Kabir"
+        }
+      ]
+    },
+    "dim_date": {
+      "rows": 7,
+      "columns": {
+        "calendar_date": {
+          "generator": "choice",
+          "values": [
+            "2025-03-31",
+            "2025-04-01",
+            "2025-04-02",
+            "2025-04-03",
+            "2025-01-31",
+            "2025-02-01",
+            "2025-02-02",
+            ""
+          ]
+        },
+        "calendar_year": {
+          "generator": "choice",
+          "values": [
+            2025,
+            ""
+          ]
+        },
+        "date_key": {
+          "generator": "choice",
+          "values": [
+            20250331,
+            20250401,
+            20250402,
+            20250403,
+            20250131,
+            20250201,
+            20250202,
+            ""
+          ]
+        },
+        "fiscal_year_label": {
+          "generator": "choice",
+          "values": [
+            "FY2024-25",
+            "FY2025-26",
+            ""
+          ]
+        },
+        "is_business_day": {
+          "generator": "choice",
+          "values": [
+            1,
+            ""
+          ]
+        },
+        "month_start": {
+          "generator": "choice",
+          "values": [
+            "2025-03-01",
+            "2025-04-01",
+            "2025-01-01",
+            "2025-02-01",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "calendar_date": "2025-03-31",
+          "calendar_year": 2025,
+          "date_key": 20250331,
+          "fiscal_year_label": "FY2024-25",
+          "is_business_day": 1,
+          "month_start": "2025-03-01"
+        },
+        {
+          "calendar_date": "2025-04-01",
+          "calendar_year": 2025,
+          "date_key": 20250401,
+          "fiscal_year_label": "FY2025-26",
+          "is_business_day": 1,
+          "month_start": "2025-04-01"
+        },
+        {
+          "calendar_date": "2025-04-02",
+          "calendar_year": 2025,
+          "date_key": 20250402,
+          "fiscal_year_label": "FY2025-26",
+          "is_business_day": 1,
+          "month_start": "2025-04-01"
+        },
+        {
+          "calendar_date": "2025-04-03",
+          "calendar_year": 2025,
+          "date_key": 20250403,
+          "fiscal_year_label": "FY2025-26",
+          "is_business_day": 1,
+          "month_start": "2025-04-01"
+        },
+        {
+          "calendar_date": "2025-01-31",
+          "calendar_year": null,
+          "date_key": 20250131,
+          "fiscal_year_label": null,
+          "is_business_day": null,
+          "month_start": "2025-01-01"
+        },
+        {
+          "calendar_date": "2025-02-01",
+          "calendar_year": null,
+          "date_key": 20250201,
+          "fiscal_year_label": null,
+          "is_business_day": null,
+          "month_start": "2025-02-01"
+        },
+        {
+          "calendar_date": "2025-02-02",
+          "calendar_year": null,
+          "date_key": 20250202,
+          "fiscal_year_label": null,
+          "is_business_day": null,
+          "month_start": "2025-02-01"
+        }
+      ]
+    },
+    "coverage": {
+      "rows": 9,
+      "columns": {
+        "date_key": {
+          "generator": "choice",
+          "values": [
+            20250331,
+            20250401,
+            20250402,
+            20250403,
+            ""
+          ]
+        },
+        "status": {
+          "generator": "choice",
+          "values": [
+            "complete",
+            "unknown",
+            ""
+          ]
+        },
+        "order_date": {
+          "generator": "choice",
+          "values": [
+            "2025-05-01",
+            "2025-05-02",
+            "2025-05-03",
+            "2025-05-04",
+            "2025-05-05",
+            ""
+          ]
+        },
+        "covered": {
+          "generator": "choice",
+          "values": [
+            1,
+            0,
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "date_key": 20250331,
+          "status": "complete",
+          "order_date": null,
+          "covered": null
+        },
+        {
+          "date_key": 20250401,
+          "status": "complete",
+          "order_date": null,
+          "covered": null
+        },
+        {
+          "date_key": 20250402,
+          "status": "complete",
+          "order_date": null,
+          "covered": null
+        },
+        {
+          "date_key": 20250403,
+          "status": "unknown",
+          "order_date": null,
+          "covered": null
+        },
+        {
+          "date_key": null,
+          "status": null,
+          "order_date": "2025-05-01",
+          "covered": 1
+        },
+        {
+          "date_key": null,
+          "status": null,
+          "order_date": "2025-05-02",
+          "covered": 1
+        },
+        {
+          "date_key": null,
+          "status": null,
+          "order_date": "2025-05-03",
+          "covered": 1
+        },
+        {
+          "date_key": null,
+          "status": null,
+          "order_date": "2025-05-04",
+          "covered": 0
+        },
+        {
+          "date_key": null,
+          "status": null,
+          "order_date": "2025-05-05",
+          "covered": 1
+        }
+      ]
+    },
+    "source_orders": {
+      "rows": 4,
+      "columns": {
+        "amount_text": {
+          "generator": "choice",
+          "values": [
+            "10000",
+            "20000",
+            "bad",
+            "0",
+            ""
+          ]
+        },
+        "customer_code": {
+          "generator": "choice",
+          "values": [
+            "C1",
+            "C2",
+            "C3",
+            ""
+          ]
+        },
+        "id": {
+          "generator": "choice",
+          "values": [
+            "O1",
+            "O2",
+            "O3",
+            "O4",
+            ""
+          ]
+        },
+        "updated_at": {
+          "generator": "choice",
+          "values": [
+            "2025-04-01 09:00:00",
+            "2025-04-01 10:00:00",
+            "2025-04-01 11:00:00",
+            "2025-04-01 12:00:00",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "amount_text": "10000",
+          "customer_code": "C1",
+          "id": "O1",
+          "updated_at": "2025-04-01 09:00:00"
+        },
+        {
+          "amount_text": "20000",
+          "customer_code": "C2",
+          "id": "O2",
+          "updated_at": "2025-04-01 10:00:00"
+        },
+        {
+          "amount_text": "bad",
+          "customer_code": "C3",
+          "id": "O3",
+          "updated_at": "2025-04-01 11:00:00"
+        },
+        {
+          "amount_text": "0",
+          "customer_code": "C1",
+          "id": "O4",
+          "updated_at": "2025-04-01 12:00:00"
+        }
+      ]
+    },
+    "source_customers": {
+      "rows": 3,
+      "columns": {
+        "customer_code": {
+          "generator": "choice",
+          "values": [
+            "C1",
+            "C2",
+            "C3",
+            ""
+          ]
+        },
+        "customer_name": {
+          "generator": "choice",
+          "values": [
+            " Aarav ",
+            "Diya",
+            "Meera",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "customer_code": "C1",
+          "customer_name": " Aarav "
+        },
+        {
+          "customer_code": "C2",
+          "customer_name": "Diya"
+        },
+        {
+          "customer_code": "C3",
+          "customer_name": "Meera"
+        }
+      ]
+    },
+    "source_orders_v2": {
+      "rows": 1,
+      "columns": {
+        "amount_rupees": {
+          "generator": "choice",
+          "values": [
+            "150.00",
+            ""
+          ]
+        },
+        "customer_code": {
+          "generator": "choice",
+          "values": [
+            "C2",
+            ""
+          ]
+        },
+        "id": {
+          "generator": "choice",
+          "values": [
+            "O5",
+            ""
+          ]
+        },
+        "updated_at": {
+          "generator": "choice",
+          "values": [
+            "2025-04-02 09:30:00",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "amount_rupees": "150.00",
+          "customer_code": "C2",
+          "id": "O5",
+          "updated_at": "2025-04-02 09:30:00"
+        }
+      ]
+    },
+    "raw_orders": {
+      "rows": 3,
+      "columns": {
+        "amount_text": {
+          "generator": "choice",
+          "values": [
+            "10000",
+            "20000",
+            "bad",
+            ""
+          ]
+        },
+        "batch_id": {
+          "generator": "choice",
+          "values": [
+            "B1",
+            ""
+          ]
+        },
+        "customer_code": {
+          "generator": "choice",
+          "values": [
+            "C1",
+            "C2",
+            "C3",
+            ""
+          ]
+        },
+        "ingested_at": {
+          "generator": "choice",
+          "values": [
+            "2025-04-01 12:05:00",
+            ""
+          ]
+        },
+        "source_order_id": {
+          "generator": "choice",
+          "values": [
+            "O1",
+            "O2",
+            "O3",
+            ""
+          ]
+        },
+        "source_system": {
+          "generator": "choice",
+          "values": [
+            "retail",
+            ""
+          ]
+        },
+        "source_updated_at": {
+          "generator": "choice",
+          "values": [
+            "2025-04-01 09:00:00",
+            "2025-04-01 10:00:00",
+            "2025-04-01 11:00:00",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "amount_text": "10000",
+          "batch_id": "B1",
+          "customer_code": "C1",
+          "ingested_at": "2025-04-01 12:05:00",
+          "source_order_id": "O1",
+          "source_system": "retail",
+          "source_updated_at": "2025-04-01 09:00:00"
+        },
+        {
+          "amount_text": "20000",
+          "batch_id": "B1",
+          "customer_code": "C2",
+          "ingested_at": "2025-04-01 12:05:00",
+          "source_order_id": "O2",
+          "source_system": "retail",
+          "source_updated_at": "2025-04-01 10:00:00"
+        },
+        {
+          "amount_text": "bad",
+          "batch_id": "B1",
+          "customer_code": "C3",
+          "ingested_at": "2025-04-01 12:05:00",
+          "source_order_id": "O3",
+          "source_system": "retail",
+          "source_updated_at": "2025-04-01 11:00:00"
+        }
+      ]
+    },
+    "raw_customers": {
+      "rows": 3,
+      "columns": {
+        "batch_id": {
+          "generator": "choice",
+          "values": [
+            "B1",
+            ""
+          ]
+        },
+        "customer_code": {
+          "generator": "choice",
+          "values": [
+            "C1",
+            "C2",
+            "C3",
+            ""
+          ]
+        },
+        "customer_name": {
+          "generator": "choice",
+          "values": [
+            " Aarav ",
+            "Diya",
+            "Meera",
+            ""
+          ]
+        },
+        "ingested_at": {
+          "generator": "choice",
+          "values": [
+            "2025-04-01 12:05:00",
+            ""
+          ]
+        },
+        "source_system": {
+          "generator": "choice",
+          "values": [
+            "retail",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "batch_id": "B1",
+          "customer_code": "C1",
+          "customer_name": " Aarav ",
+          "ingested_at": "2025-04-01 12:05:00",
+          "source_system": "retail"
+        },
+        {
+          "batch_id": "B1",
+          "customer_code": "C2",
+          "customer_name": "Diya",
+          "ingested_at": "2025-04-01 12:05:00",
+          "source_system": "retail"
+        },
+        {
+          "batch_id": "B1",
+          "customer_code": "C3",
+          "customer_name": "Meera",
+          "ingested_at": "2025-04-01 12:05:00",
+          "source_system": "retail"
+        }
+      ]
+    },
+    "staged": {
+      "rows": 7,
+      "columns": {
+        "amount_text": {
+          "generator": "choice",
+          "values": [
+            "10000",
+            "12000",
+            "12500",
+            "0",
+            "12x",
+            "300",
+            " ",
+            ""
+          ]
+        },
+        "category_text": {
+          "generator": "choice",
+          "values": [
+            " home ",
+            "HOME",
+            "food",
+            "home",
+            "mystery",
+            ""
+          ]
+        },
+        "customer": {
+          "generator": "choice",
+          "values": [
+            " Aarav ",
+            "Aarav",
+            "Diya",
+            "Kabir",
+            "Meera",
+            "Riya",
+            ""
+          ]
+        },
+        "order_id": {
+          "generator": "choice",
+          "values": [
+            "O1",
+            "O2",
+            "O3",
+            "O4",
+            "O5",
+            ""
+          ]
+        },
+        "row_id": {
+          "generator": "choice",
+          "values": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            ""
+          ]
+        },
+        "sale_date": {
+          "generator": "choice",
+          "values": [
+            "2025-04-01",
+            "2025-04-02",
+            "2025-02-30",
+            ""
+          ]
+        },
+        "source_updated_at": {
+          "generator": "choice",
+          "values": [
+            "2025-04-01 09:00:00",
+            "2025-04-01 10:00:00",
+            "2025-04-02 09:00:00",
+            "2025-04-02 10:00:00",
+            "2025-04-02 11:00:00",
+            "2025-04-02 12:00:00",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "amount_text": "10000",
+          "category_text": " home ",
+          "customer": " Aarav ",
+          "order_id": "O1",
+          "row_id": 1,
+          "sale_date": "2025-04-01",
+          "source_updated_at": "2025-04-01 09:00:00"
+        },
+        {
+          "amount_text": "12000",
+          "category_text": "HOME",
+          "customer": "Aarav",
+          "order_id": "O1",
+          "row_id": 2,
+          "sale_date": "2025-04-01",
+          "source_updated_at": "2025-04-01 10:00:00"
+        },
+        {
+          "amount_text": "12500",
+          "category_text": "HOME",
+          "customer": "Aarav",
+          "order_id": "O1",
+          "row_id": 3,
+          "sale_date": "2025-04-01",
+          "source_updated_at": "2025-04-01 10:00:00"
+        },
+        {
+          "amount_text": "0",
+          "category_text": "food",
+          "customer": "Diya",
+          "order_id": "O2",
+          "row_id": 4,
+          "sale_date": "2025-04-02",
+          "source_updated_at": "2025-04-02 09:00:00"
+        },
+        {
+          "amount_text": "12x",
+          "category_text": "home",
+          "customer": "Kabir",
+          "order_id": "O3",
+          "row_id": 5,
+          "sale_date": "2025-04-02",
+          "source_updated_at": "2025-04-02 10:00:00"
+        },
+        {
+          "amount_text": "300",
+          "category_text": "mystery",
+          "customer": "Meera",
+          "order_id": "O4",
+          "row_id": 6,
+          "sale_date": "2025-02-30",
+          "source_updated_at": "2025-04-02 11:00:00"
+        },
+        {
+          "amount_text": " ",
+          "category_text": "home",
+          "customer": "Riya",
+          "order_id": "O5",
+          "row_id": 7,
+          "sale_date": "2025-04-02",
+          "source_updated_at": "2025-04-02 12:00:00"
+        }
+      ]
+    },
+    "approved_category": {
+      "rows": 2,
+      "columns": {
+        "raw_code": {
+          "generator": "choice",
+          "values": [
+            "HOME",
+            "FOOD",
+            ""
+          ]
+        },
+        "standard_label": {
+          "generator": "choice",
+          "values": [
+            "Home",
+            "Food",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "raw_code": "HOME",
+          "standard_label": "Home"
+        },
+        {
+          "raw_code": "FOOD",
+          "standard_label": "Food"
+        }
+      ]
+    },
+    "quarantine": {
+      "rows": 5,
+      "columns": {
+        "order_id": {
+          "generator": "choice",
+          "values": [
+            ""
+          ]
+        },
+        "reason": {
+          "generator": "choice",
+          "values": [
+            "NEGATIVE_AMOUNT",
+            "UNKNOWN_CUSTOMER",
+            "MISSING_AMOUNT",
+            "INVALID_AMOUNT",
+            "CANCELLED_ORDER",
+            ""
+          ]
+        },
+        "row_id": {
+          "generator": "choice",
+          "values": [
+            4,
+            5,
+            6,
+            7,
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "order_id": null,
+          "reason": "NEGATIVE_AMOUNT",
+          "row_id": 4
+        },
+        {
+          "order_id": null,
+          "reason": "UNKNOWN_CUSTOMER",
+          "row_id": 5
+        },
+        {
+          "order_id": null,
+          "reason": "MISSING_AMOUNT",
+          "row_id": 6
+        },
+        {
+          "order_id": null,
+          "reason": "INVALID_AMOUNT",
+          "row_id": 5
+        },
+        {
+          "order_id": null,
+          "reason": "CANCELLED_ORDER",
+          "row_id": 7
+        }
+      ]
+    },
+    "accepted": {
+      "rows": 2,
+      "columns": {
+        "customer_code": {
+          "generator": "choice",
+          "values": [
+            "C1",
+            "C9",
+            ""
+          ]
+        },
+        "order_id": {
+          "generator": "choice",
+          "values": [
+            "O1",
+            "O2",
+            ""
+          ]
+        },
+        "partition_date": {
+          "generator": "choice",
+          "values": [
+            "2025-04-01",
+            ""
+          ]
+        },
+        "revenue_paise": {
+          "generator": "choice",
+          "values": [
+            10000,
+            20000,
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "customer_code": "C1",
+          "order_id": "O1",
+          "partition_date": "2025-04-01",
+          "revenue_paise": 10000
+        },
+        {
+          "customer_code": "C9",
+          "order_id": "O2",
+          "partition_date": "2025-04-01",
+          "revenue_paise": 20000
+        }
+      ]
+    },
+    "control": {
+      "rows": 1,
+      "columns": {
+        "pipeline": {
+          "generator": "choice",
+          "values": [
+            "sales",
+            ""
+          ]
+        },
+        "watermark": {
+          "generator": "choice",
+          "values": [
+            "2025-04-01 10:00:00",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "pipeline": "sales",
+          "watermark": "2025-04-01 10:00:00"
+        }
+      ]
+    },
+    "changes": {
+      "rows": 7,
+      "columns": {
+        "event_at": {
+          "generator": "choice",
+          "values": [
+            "2025-03-31 12:00:00",
+            "2025-04-01 09:00:00",
+            "2025-03-30 09:00:00",
+            "2025-03-31 09:00:00",
+            "2025-04-01 11:30:00",
+            ""
+          ]
+        },
+        "ingested_at": {
+          "generator": "choice",
+          "values": [
+            "2025-04-01 10:01:00",
+            "2025-04-01 10:02:00",
+            "2025-04-01 10:20:00",
+            "2025-04-01 10:40:00",
+            "2025-04-01 10:46:00",
+            "2025-04-01 11:31:00",
+            "2025-04-01 10:50:00",
+            ""
+          ]
+        },
+        "is_deleted": {
+          "generator": "choice",
+          "values": [
+            0,
+            1,
+            ""
+          ]
+        },
+        "order_id": {
+          "generator": "choice",
+          "values": [
+            "O1",
+            "O2",
+            "O3",
+            "O4",
+            "O6",
+            "O5",
+            ""
+          ]
+        },
+        "revenue_paise": {
+          "generator": "choice",
+          "values": [
+            110,
+            120,
+            250,
+            300,
+            600,
+            550,
+            ""
+          ]
+        },
+        "seq": {
+          "generator": "choice",
+          "values": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            ""
+          ]
+        },
+        "source_updated_at": {
+          "generator": "choice",
+          "values": [
+            "2025-04-01 10:00:00",
+            "2025-04-01 10:30:00",
+            "2025-04-01 10:45:00",
+            "2025-04-01 11:30:00",
+            "2025-04-01 08:30:00",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "event_at": "2025-03-31 12:00:00",
+          "ingested_at": "2025-04-01 10:01:00",
+          "is_deleted": 0,
+          "order_id": "O1",
+          "revenue_paise": 110,
+          "seq": 1,
+          "source_updated_at": "2025-04-01 10:00:00"
+        },
+        {
+          "event_at": "2025-03-31 12:00:00",
+          "ingested_at": "2025-04-01 10:02:00",
+          "is_deleted": 0,
+          "order_id": "O1",
+          "revenue_paise": 120,
+          "seq": 2,
+          "source_updated_at": "2025-04-01 10:00:00"
+        },
+        {
+          "event_at": "2025-04-01 09:00:00",
+          "ingested_at": "2025-04-01 10:20:00",
+          "is_deleted": 0,
+          "order_id": "O2",
+          "revenue_paise": 250,
+          "seq": 3,
+          "source_updated_at": "2025-04-01 10:00:00"
+        },
+        {
+          "event_at": "2025-03-30 09:00:00",
+          "ingested_at": "2025-04-01 10:40:00",
+          "is_deleted": 0,
+          "order_id": "O3",
+          "revenue_paise": 300,
+          "seq": 4,
+          "source_updated_at": "2025-04-01 10:30:00"
+        },
+        {
+          "event_at": "2025-03-31 09:00:00",
+          "ingested_at": "2025-04-01 10:46:00",
+          "is_deleted": 1,
+          "order_id": "O4",
+          "revenue_paise": null,
+          "seq": 5,
+          "source_updated_at": "2025-04-01 10:45:00"
+        },
+        {
+          "event_at": "2025-04-01 11:30:00",
+          "ingested_at": "2025-04-01 11:31:00",
+          "is_deleted": 0,
+          "order_id": "O6",
+          "revenue_paise": 600,
+          "seq": 6,
+          "source_updated_at": "2025-04-01 11:30:00"
+        },
+        {
+          "event_at": "2025-03-30 09:00:00",
+          "ingested_at": "2025-04-01 10:50:00",
+          "is_deleted": 0,
+          "order_id": "O5",
+          "revenue_paise": 550,
+          "seq": 7,
+          "source_updated_at": "2025-04-01 08:30:00"
+        }
+      ]
+    },
+    "target": {
+      "rows": 4,
+      "columns": {
+        "order_id": {
+          "generator": "choice",
+          "values": [
+            "O1",
+            "O2",
+            "O4",
+            "O5",
+            ""
+          ]
+        },
+        "revenue_paise": {
+          "generator": "choice",
+          "values": [
+            100,
+            200,
+            400,
+            500,
+            ""
+          ]
+        },
+        "source_updated_at": {
+          "generator": "choice",
+          "values": [
+            "2025-04-01 09:30:00",
+            "2025-04-01 08:00:00",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "order_id": "O1",
+          "revenue_paise": 100,
+          "source_updated_at": "2025-04-01 09:30:00"
+        },
+        {
+          "order_id": "O2",
+          "revenue_paise": 200,
+          "source_updated_at": "2025-04-01 09:30:00"
+        },
+        {
+          "order_id": "O4",
+          "revenue_paise": 400,
+          "source_updated_at": "2025-04-01 09:30:00"
+        },
+        {
+          "order_id": "O5",
+          "revenue_paise": 500,
+          "source_updated_at": "2025-04-01 08:00:00"
+        }
+      ]
+    },
+    "current_customer": {
+      "rows": 1,
+      "columns": {
+        "city": {
+          "generator": "choice",
+          "values": [
+            "Surat",
+            ""
+          ]
+        },
+        "customer_bk": {
+          "generator": "choice",
+          "values": [
+            "C1",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "city": "Surat",
+          "customer_bk": "C1"
+        }
+      ]
+    },
+    "source_sale": {
+      "rows": 4,
+      "columns": {
+        "amount_paise": {
+          "generator": "choice",
+          "values": [
+            10000,
+            20000,
+            5000,
+            ""
+          ]
+        },
+        "customer_bk": {
+          "generator": "choice",
+          "values": [
+            "C1",
+            "C2",
+            ""
+          ]
+        },
+        "line_bk": {
+          "generator": "choice",
+          "values": [
+            "L1",
+            "L2",
+            "L3",
+            "L4",
+            ""
+          ]
+        },
+        "sale_date": {
+          "generator": "choice",
+          "values": [
+            "2025-01-31",
+            "2025-02-01",
+            "2025-02-02",
+            "2025-02-10",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "amount_paise": 10000,
+          "customer_bk": "C1",
+          "line_bk": "L1",
+          "sale_date": "2025-01-31"
+        },
+        {
+          "amount_paise": 20000,
+          "customer_bk": "C1",
+          "line_bk": "L2",
+          "sale_date": "2025-02-01"
+        },
+        {
+          "amount_paise": 5000,
+          "customer_bk": "C2",
+          "line_bk": "L3",
+          "sale_date": "2025-02-02"
+        },
+        {
+          "amount_paise": 5000,
+          "customer_bk": "C1",
+          "line_bk": "L4",
+          "sale_date": "2025-02-10"
+        }
+      ]
+    },
+    "fact_sale": {
+      "rows": 4,
+      "columns": {
+        "amount_paise": {
+          "generator": "choice",
+          "values": [
+            10000,
+            20000,
+            5000,
+            ""
+          ]
+        },
+        "customer_bk": {
+          "generator": "choice",
+          "values": [
+            "C1",
+            "C2",
+            ""
+          ]
+        },
+        "customer_sk": {
+          "generator": "choice",
+          "values": [
+            1,
+            2,
+            0,
+            ""
+          ]
+        },
+        "line_bk": {
+          "generator": "choice",
+          "values": [
+            "L1",
+            "L2",
+            "L3",
+            "L4",
+            ""
+          ]
+        },
+        "sale_date": {
+          "generator": "choice",
+          "values": [
+            "2025-01-31",
+            "2025-02-01",
+            "2025-02-02",
+            "2025-02-10",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "amount_paise": 10000,
+          "customer_bk": "C1",
+          "customer_sk": 1,
+          "line_bk": "L1",
+          "sale_date": "2025-01-31"
+        },
+        {
+          "amount_paise": 20000,
+          "customer_bk": "C1",
+          "customer_sk": 2,
+          "line_bk": "L2",
+          "sale_date": "2025-02-01"
+        },
+        {
+          "amount_paise": 5000,
+          "customer_bk": "C2",
+          "customer_sk": 0,
+          "line_bk": "L3",
+          "sale_date": "2025-02-02"
+        },
+        {
+          "amount_paise": 5000,
+          "customer_bk": "C1",
+          "customer_sk": 2,
+          "line_bk": "L4",
+          "sale_date": "2025-02-10"
+        }
+      ]
+    },
+    "stage": {
+      "rows": 6,
+      "columns": {
+        "amount_paise": {
+          "generator": "choice",
+          "values": [
+            10000,
+            11000,
+            20000,
+            -100,
+            8000,
+            ""
+          ]
+        },
+        "customer_bk": {
+          "generator": "choice",
+          "values": [
+            "C1",
+            "C9",
+            ""
+          ]
+        },
+        "line_bk": {
+          "generator": "choice",
+          "values": [
+            "L1",
+            "L2",
+            "L3",
+            "L4",
+            "L5",
+            ""
+          ]
+        },
+        "row_id": {
+          "generator": "choice",
+          "values": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            ""
+          ]
+        },
+        "source_updated_at": {
+          "generator": "choice",
+          "values": [
+            "2025-05-11 08:00:00",
+            "2025-05-11 09:00:00",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "amount_paise": 10000,
+          "customer_bk": "C1",
+          "line_bk": "L1",
+          "row_id": 1,
+          "source_updated_at": "2025-05-11 08:00:00"
+        },
+        {
+          "amount_paise": 11000,
+          "customer_bk": "C1",
+          "line_bk": "L1",
+          "row_id": 2,
+          "source_updated_at": "2025-05-11 09:00:00"
+        },
+        {
+          "amount_paise": 20000,
+          "customer_bk": "C1",
+          "line_bk": "L2",
+          "row_id": 3,
+          "source_updated_at": "2025-05-11 09:00:00"
+        },
+        {
+          "amount_paise": -100,
+          "customer_bk": "C1",
+          "line_bk": "L3",
+          "row_id": 4,
+          "source_updated_at": "2025-05-11 09:00:00"
+        },
+        {
+          "amount_paise": 8000,
+          "customer_bk": "C9",
+          "line_bk": "L4",
+          "row_id": 5,
+          "source_updated_at": "2025-05-11 09:00:00"
+        },
+        {
+          "amount_paise": null,
+          "customer_bk": "C1",
+          "line_bk": "L5",
+          "row_id": 6,
+          "source_updated_at": "2025-05-11 09:00:00"
+        }
+      ]
+    },
+    "load_sales": {
+      "rows": 2,
+      "columns": {
+        "amount_paise": {
+          "generator": "choice",
+          "values": [
+            11000,
+            19000,
+            ""
+          ]
+        },
+        "customer_sk": {
+          "generator": "choice",
+          "values": [
+            1,
+            ""
+          ]
+        },
+        "line_bk": {
+          "generator": "choice",
+          "values": [
+            "L1",
+            "L2",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "amount_paise": 11000,
+          "customer_sk": 1,
+          "line_bk": "L1"
+        },
+        {
+          "amount_paise": 19000,
+          "customer_sk": 1,
+          "line_bk": "L2"
+        }
+      ]
+    },
+    "run_audit": {
+      "rows": 3,
+      "columns": {
+        "batch_id": {
+          "generator": "choice",
+          "values": [
+            "",
+            "B1"
+          ]
+        },
+        "loaded_rows": {
+          "generator": "choice",
+          "values": [
+            ""
+          ]
+        },
+        "lower_bound": {
+          "generator": "choice",
+          "values": [
+            ""
+          ]
+        },
+        "reason": {
+          "generator": "choice",
+          "values": [
+            ""
+          ]
+        },
+        "rejected_rows": {
+          "generator": "choice",
+          "values": [
+            ""
+          ]
+        },
+        "staged_rows": {
+          "generator": "choice",
+          "values": [
+            ""
+          ]
+        },
+        "status": {
+          "generator": "choice",
+          "values": [
+            "",
+            "PASSED"
+          ]
+        },
+        "superseded_rows": {
+          "generator": "choice",
+          "values": [
+            ""
+          ]
+        },
+        "upper_bound": {
+          "generator": "choice",
+          "values": [
+            "",
+            "2025-02-03 05:00:00"
+          ]
+        },
+        "run_id": {
+          "generator": "choice",
+          "values": [
+            "RUN1",
+            "RUN2",
+            "BACKFILL1",
+            ""
+          ]
+        },
+        "staged": {
+          "generator": "choice",
+          "values": [
+            7,
+            ""
+          ]
+        },
+        "rejected": {
+          "generator": "choice",
+          "values": [
+            3,
+            ""
+          ]
+        },
+        "superseded": {
+          "generator": "choice",
+          "values": [
+            1,
+            ""
+          ]
+        },
+        "loaded": {
+          "generator": "choice",
+          "values": [
+            3,
+            ""
+          ]
+        },
+        "total_paise": {
+          "generator": "choice",
+          "values": [
+            37000,
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "batch_id": "B1",
+          "loaded_rows": null,
+          "lower_bound": null,
+          "reason": null,
+          "rejected_rows": null,
+          "staged_rows": null,
+          "status": "PASSED",
+          "superseded_rows": null,
+          "upper_bound": "2025-02-03 05:00:00",
+          "run_id": "RUN1",
+          "staged": 7,
+          "rejected": 3,
+          "superseded": 1,
+          "loaded": 3,
+          "total_paise": 37000
+        },
+        {
+          "batch_id": "B1",
+          "loaded_rows": null,
+          "lower_bound": null,
+          "reason": null,
+          "rejected_rows": null,
+          "staged_rows": null,
+          "status": "PASSED",
+          "superseded_rows": null,
+          "upper_bound": "2025-02-03 05:00:00",
+          "run_id": "RUN2",
+          "staged": 7,
+          "rejected": 3,
+          "superseded": 1,
+          "loaded": 3,
+          "total_paise": 37000
+        },
+        {
+          "batch_id": "B1",
+          "loaded_rows": null,
+          "lower_bound": null,
+          "reason": null,
+          "rejected_rows": null,
+          "staged_rows": null,
+          "status": "PASSED",
+          "superseded_rows": null,
+          "upper_bound": "2025-02-03 05:00:00",
+          "run_id": "BACKFILL1",
+          "staged": 7,
+          "rejected": 3,
+          "superseded": 1,
+          "loaded": 3,
+          "total_paise": 37000
+        }
+      ]
+    },
+    "fact_returns": {
+      "rows": 2,
+      "columns": {
+        "return_id": {
+          "generator": "choice",
+          "values": [
+            "R1",
+            "R2",
+            ""
+          ]
+        },
+        "line_sk": {
+          "generator": "choice",
+          "values": [
+            1,
+            ""
+          ]
+        },
+        "return_paise": {
+          "generator": "choice",
+          "values": [
+            1000,
+            500,
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "return_id": "R1",
+          "line_sk": 1,
+          "return_paise": 1000
+        },
+        {
+          "return_id": "R2",
+          "line_sk": 1,
+          "return_paise": 500
+        }
+      ]
+    },
+    "monthly_summary": {
+      "rows": 2,
+      "columns": {
+        "month_start": {
+          "generator": "choice",
+          "values": [
+            "2025-05-01",
+            ""
+          ]
+        },
+        "net_sales_paise": {
+          "generator": "choice",
+          "values": [
+            35500,
+            "",
+            33500
+          ]
+        },
+        "orders": {
+          "generator": "choice",
+          "values": [
+            2,
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "month_start": "2025-05-01",
+          "net_sales_paise": 35500,
+          "orders": 2
+        },
+        {
+          "month_start": "2025-05-01",
+          "net_sales_paise": 33500,
+          "orders": 2
+        }
+      ]
+    },
+    "customer": {
+      "rows": 2,
+      "columns": {
+        "customer_sk": {
+          "generator": "choice",
+          "values": [
+            1,
+            2,
+            ""
+          ]
+        },
+        "city": {
+          "generator": "choice",
+          "values": [
+            "Surat",
+            "Pune",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "customer_sk": 1,
+          "city": "Surat"
+        },
+        {
+          "customer_sk": 2,
+          "city": "Pune"
+        }
+      ]
+    },
+    "daily_city_summary": {
+      "rows": 6,
+      "columns": {
+        "sale_date": {
+          "generator": "choice",
+          "values": [
+            "2025-01-10",
+            "2025-01-20",
+            "2025-02-05",
+            "2025-02-20",
+            "2025-03-05",
+            "2025-03-10",
+            ""
+          ]
+        },
+        "city": {
+          "generator": "choice",
+          "values": [
+            "Surat",
+            "Pune",
+            ""
+          ]
+        },
+        "revenue_paise": {
+          "generator": "choice",
+          "values": [
+            10000,
+            15000,
+            20000,
+            5000,
+            30000,
+            2000,
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "sale_date": "2025-01-10",
+          "city": "Surat",
+          "revenue_paise": 10000
+        },
+        {
+          "sale_date": "2025-01-20",
+          "city": "Pune",
+          "revenue_paise": 15000
+        },
+        {
+          "sale_date": "2025-02-05",
+          "city": "Surat",
+          "revenue_paise": 20000
+        },
+        {
+          "sale_date": "2025-02-20",
+          "city": "Pune",
+          "revenue_paise": 5000
+        },
+        {
+          "sale_date": "2025-03-05",
+          "city": "Surat",
+          "revenue_paise": 30000
+        },
+        {
+          "sale_date": "2025-03-10",
+          "city": "Pune",
+          "revenue_paise": 2000
+        }
+      ]
+    },
+    "report_config": {
+      "rows": 2,
+      "columns": {
+        "report_name": {
+          "generator": "choice",
+          "values": [
+            "daily_city_sales",
+            "frequent_city_sales",
+            ""
+          ]
+        },
+        "runs_per_day": {
+          "generator": "choice",
+          "values": [
+            1,
+            48,
+            ""
+          ]
+        },
+        "required_grain": {
+          "generator": "choice",
+          "values": [
+            "date and city",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "report_name": "daily_city_sales",
+          "runs_per_day": 1,
+          "required_grain": "date and city"
+        },
+        {
+          "report_name": "frequent_city_sales",
+          "runs_per_day": 48,
+          "required_grain": "date and city"
+        }
+      ]
+    },
+    "task_dependency": {
+      "rows": 6,
+      "columns": {
+        "task": {
+          "generator": "choice",
+          "values": [
+            "extract",
+            "transform",
+            "dimensions",
+            "facts",
+            "checks",
+            "publish",
+            ""
+          ]
+        },
+        "parent_task": {
+          "generator": "choice",
+          "values": [
+            "extract",
+            "transform",
+            "dimensions",
+            "facts",
+            "checks",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "task": "extract",
+          "parent_task": null
+        },
+        {
+          "task": "transform",
+          "parent_task": "extract"
+        },
+        {
+          "task": "dimensions",
+          "parent_task": "transform"
+        },
+        {
+          "task": "facts",
+          "parent_task": "dimensions"
+        },
+        {
+          "task": "checks",
+          "parent_task": "facts"
+        },
+        {
+          "task": "publish",
+          "parent_task": "checks"
+        }
+      ]
+    },
+    "task_run": {
+      "rows": 13,
+      "columns": {
+        "batch_id": {
+          "generator": "choice",
+          "values": [
+            "B1",
+            "B2",
+            ""
+          ]
+        },
+        "task": {
+          "generator": "choice",
+          "values": [
+            "extract",
+            "transform",
+            "dimensions",
+            "facts",
+            "checks",
+            "publish",
+            ""
+          ]
+        },
+        "attempt": {
+          "generator": "choice",
+          "values": [
+            1,
+            2,
+            ""
+          ]
+        },
+        "status": {
+          "generator": "choice",
+          "values": [
+            "SUCCESS",
+            "FAILED",
+            "BLOCKED",
+            ""
+          ]
+        },
+        "finished_at": {
+          "generator": "choice",
+          "values": [
+            "2025-05-11 06:05:00",
+            "2025-05-11 06:15:00",
+            "2025-05-11 06:25:00",
+            "2025-05-11 06:40:00",
+            "2025-05-11 06:45:00",
+            "2025-05-12 06:05:00",
+            "2025-05-12 06:12:00",
+            "2025-05-12 06:20:00",
+            "2025-05-12 06:30:00",
+            "2025-05-12 06:40:00",
+            "2025-05-12 06:50:00",
+            "2025-05-12 06:55:00",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "batch_id": "B1",
+          "task": "extract",
+          "attempt": 1,
+          "status": "SUCCESS",
+          "finished_at": "2025-05-11 06:05:00"
+        },
+        {
+          "batch_id": "B1",
+          "task": "transform",
+          "attempt": 1,
+          "status": "SUCCESS",
+          "finished_at": "2025-05-11 06:15:00"
+        },
+        {
+          "batch_id": "B1",
+          "task": "dimensions",
+          "attempt": 1,
+          "status": "SUCCESS",
+          "finished_at": "2025-05-11 06:25:00"
+        },
+        {
+          "batch_id": "B1",
+          "task": "facts",
+          "attempt": 1,
+          "status": "SUCCESS",
+          "finished_at": "2025-05-11 06:40:00"
+        },
+        {
+          "batch_id": "B1",
+          "task": "checks",
+          "attempt": 1,
+          "status": "FAILED",
+          "finished_at": "2025-05-11 06:45:00"
+        },
+        {
+          "batch_id": "B1",
+          "task": "publish",
+          "attempt": 1,
+          "status": "BLOCKED",
+          "finished_at": null
+        },
+        {
+          "batch_id": "B2",
+          "task": "extract",
+          "attempt": 1,
+          "status": "SUCCESS",
+          "finished_at": "2025-05-12 06:05:00"
+        },
+        {
+          "batch_id": "B2",
+          "task": "transform",
+          "attempt": 1,
+          "status": "FAILED",
+          "finished_at": "2025-05-12 06:12:00"
+        },
+        {
+          "batch_id": "B2",
+          "task": "transform",
+          "attempt": 2,
+          "status": "SUCCESS",
+          "finished_at": "2025-05-12 06:20:00"
+        },
+        {
+          "batch_id": "B2",
+          "task": "dimensions",
+          "attempt": 1,
+          "status": "SUCCESS",
+          "finished_at": "2025-05-12 06:30:00"
+        },
+        {
+          "batch_id": "B2",
+          "task": "facts",
+          "attempt": 1,
+          "status": "SUCCESS",
+          "finished_at": "2025-05-12 06:40:00"
+        },
+        {
+          "batch_id": "B2",
+          "task": "checks",
+          "attempt": 1,
+          "status": "SUCCESS",
+          "finished_at": "2025-05-12 06:50:00"
+        },
+        {
+          "batch_id": "B2",
+          "task": "publish",
+          "attempt": 1,
+          "status": "SUCCESS",
+          "finished_at": "2025-05-12 06:55:00"
+        }
+      ]
+    },
+    "publication_expectation": {
+      "rows": 2,
+      "columns": {
+        "batch_id": {
+          "generator": "choice",
+          "values": [
+            "B1",
+            "B2",
+            ""
+          ]
+        },
+        "deadline_utc": {
+          "generator": "choice",
+          "values": [
+            "2025-05-11 07:00:00",
+            "2025-05-12 07:00:00",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "batch_id": "B1",
+          "deadline_utc": "2025-05-11 07:00:00"
+        },
+        {
+          "batch_id": "B2",
+          "deadline_utc": "2025-05-12 07:00:00"
+        }
+      ]
+    },
+    "backfill_request": {
+      "rows": 1,
+      "columns": {
+        "request_id": {
+          "generator": "choice",
+          "values": [
+            "BF1",
+            ""
+          ]
+        },
+        "start_date": {
+          "generator": "choice",
+          "values": [
+            "2025-04-01",
+            ""
+          ]
+        },
+        "end_exclusive": {
+          "generator": "choice",
+          "values": [
+            "2025-05-01",
+            ""
+          ]
+        },
+        "status": {
+          "generator": "choice",
+          "values": [
+            "APPROVED",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "request_id": "BF1",
+          "start_date": "2025-04-01",
+          "end_exclusive": "2025-05-01",
+          "status": "APPROVED"
+        }
+      ]
+    },
+    "lineage": {
+      "rows": 4,
+      "columns": {
+        "target_object": {
+          "generator": "choice",
+          "values": [
+            "daily_city_sales",
+            "fact_sales",
+            "clean_sales",
+            "raw_lines",
+            ""
+          ]
+        },
+        "source_object": {
+          "generator": "choice",
+          "values": [
+            "fact_sales",
+            "clean_sales",
+            "raw_lines",
+            "source_export",
+            ""
+          ]
+        },
+        "transformation": {
+          "generator": "choice",
+          "values": [
+            "group by sale date and historical city",
+            "resolve version keys and publish accepted lines",
+            "validate amounts and keep latest source versions",
+            "copy source fields with batch metadata",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "target_object": "daily_city_sales",
+          "source_object": "fact_sales",
+          "transformation": "group by sale date and historical city"
+        },
+        {
+          "target_object": "fact_sales",
+          "source_object": "clean_sales",
+          "transformation": "resolve version keys and publish accepted lines"
+        },
+        {
+          "target_object": "clean_sales",
+          "source_object": "raw_lines",
+          "transformation": "validate amounts and keep latest source versions"
+        },
+        {
+          "target_object": "raw_lines",
+          "source_object": "source_export",
+          "transformation": "copy source fields with batch metadata"
+        }
+      ]
+    },
+    "data_dictionary": {
+      "rows": 3,
+      "columns": {
+        "object_name": {
+          "generator": "choice",
+          "values": [
+            "fact_sales",
+            "raw_lines",
+            ""
+          ]
+        },
+        "column_name": {
+          "generator": "choice",
+          "values": [
+            "amount_paise",
+            "sale_date",
+            "source_updated_at",
+            ""
+          ]
+        },
+        "meaning": {
+          "generator": "choice",
+          "values": [
+            "integer net amount; INR paise",
+            "Asia/Kolkata business date",
+            "UTC source update instant",
+            ""
+          ]
+        },
+        "owner": {
+          "generator": "choice",
+          "values": [
+            "Finance analytics",
+            "Retail data team",
+            "Source operations",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "object_name": "fact_sales",
+          "column_name": "amount_paise",
+          "meaning": "integer net amount; INR paise",
+          "owner": "Finance analytics"
+        },
+        {
+          "object_name": "fact_sales",
+          "column_name": "sale_date",
+          "meaning": "Asia/Kolkata business date",
+          "owner": "Retail data team"
+        },
+        {
+          "object_name": "raw_lines",
+          "column_name": "source_updated_at",
+          "meaning": "UTC source update instant",
+          "owner": "Source operations"
+        }
+      ]
+    },
+    "source_contract": {
+      "rows": 2,
+      "columns": {
+        "field": {
+          "generator": "choice",
+          "values": [
+            "amount_paise",
+            "source_updated_at",
+            ""
+          ]
+        },
+        "declared_rule": {
+          "generator": "choice",
+          "values": [
+            "nonnegative integer paise",
+            "canonical UTC timestamp with fixed extraction upper bound",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "field": "amount_paise",
+          "declared_rule": "nonnegative integer paise"
+        },
+        {
+          "field": "source_updated_at",
+          "declared_rule": "canonical UTC timestamp with fixed extraction upper bound"
+        }
+      ]
+    },
+    "source_order": {
+      "rows": 4,
+      "columns": {
+        "order_id": {
+          "generator": "choice",
+          "values": [
+            "O1",
+            "O2",
+            "O3",
+            "O4",
+            ""
+          ]
+        },
+        "customer_bk": {
+          "generator": "choice",
+          "values": [
+            "C1",
+            "C9",
+            ""
+          ]
+        },
+        "ordered_at_utc": {
+          "generator": "choice",
+          "values": [
+            "2025-01-31T18:00:00+00:00",
+            "2025-01-31T18:30:00+00:00",
+            "2025-02-02T04:30:00+00:00",
+            "2025-02-02T05:00:00+00:00",
+            ""
+          ]
+        },
+        "status": {
+          "generator": "choice",
+          "values": [
+            "completed",
+            "cancelled",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "order_id": "O1",
+          "customer_bk": "C1",
+          "ordered_at_utc": "2025-01-31T18:00:00+00:00",
+          "status": "completed"
+        },
+        {
+          "order_id": "O2",
+          "customer_bk": "C1",
+          "ordered_at_utc": "2025-01-31T18:30:00+00:00",
+          "status": "completed"
+        },
+        {
+          "order_id": "O3",
+          "customer_bk": "C9",
+          "ordered_at_utc": "2025-02-02T04:30:00+00:00",
+          "status": "completed"
+        },
+        {
+          "order_id": "O4",
+          "customer_bk": "C1",
+          "ordered_at_utc": "2025-02-02T05:00:00+00:00",
+          "status": "cancelled"
+        }
+      ]
+    },
+    "source_line": {
+      "rows": 7,
+      "columns": {
+        "row_id": {
+          "generator": "choice",
+          "values": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            ""
+          ]
+        },
+        "line_bk": {
+          "generator": "choice",
+          "values": [
+            "L1",
+            "L2",
+            "L3",
+            "L4",
+            "L5",
+            "L6",
+            ""
+          ]
+        },
+        "order_id": {
+          "generator": "choice",
+          "values": [
+            "O1",
+            "O2",
+            "O3",
+            "O4",
+            ""
+          ]
+        },
+        "amount_text": {
+          "generator": "choice",
+          "values": [
+            "10000",
+            "12000",
+            "20000",
+            "5000",
+            "bad",
+            "1000",
+            ""
+          ]
+        },
+        "source_updated_at": {
+          "generator": "choice",
+          "values": [
+            "2025-01-31 18:05:00",
+            "2025-02-01 05:00:00",
+            "2025-02-02 05:00:00",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "row_id": 1,
+          "line_bk": "L1",
+          "order_id": "O1",
+          "amount_text": "10000",
+          "source_updated_at": "2025-01-31 18:05:00"
+        },
+        {
+          "row_id": 2,
+          "line_bk": "L1",
+          "order_id": "O1",
+          "amount_text": "12000",
+          "source_updated_at": "2025-02-01 05:00:00"
+        },
+        {
+          "row_id": 3,
+          "line_bk": "L2",
+          "order_id": "O2",
+          "amount_text": "20000",
+          "source_updated_at": "2025-02-01 05:00:00"
+        },
+        {
+          "row_id": 4,
+          "line_bk": "L3",
+          "order_id": "O3",
+          "amount_text": "5000",
+          "source_updated_at": "2025-02-02 05:00:00"
+        },
+        {
+          "row_id": 5,
+          "line_bk": "L4",
+          "order_id": "O2",
+          "amount_text": "bad",
+          "source_updated_at": "2025-02-02 05:00:00"
+        },
+        {
+          "row_id": 6,
+          "line_bk": "L5",
+          "order_id": "O1",
+          "amount_text": null,
+          "source_updated_at": "2025-02-02 05:00:00"
+        },
+        {
+          "row_id": 7,
+          "line_bk": "L6",
+          "order_id": "O4",
+          "amount_text": "1000",
+          "source_updated_at": "2025-02-02 05:00:00"
+        }
+      ]
+    },
+    "source_customer_change": {
+      "rows": 2,
+      "columns": {
+        "change_id": {
+          "generator": "choice",
+          "values": [
+            1,
+            2,
+            ""
+          ]
+        },
+        "customer_bk": {
+          "generator": "choice",
+          "values": [
+            "C1",
+            ""
+          ]
+        },
+        "name": {
+          "generator": "choice",
+          "values": [
+            "Aarav",
+            ""
+          ]
+        },
+        "city": {
+          "generator": "choice",
+          "values": [
+            "Surat",
+            "Pune",
+            ""
+          ]
+        },
+        "effective_local": {
+          "generator": "choice",
+          "values": [
+            "2025-01-01 00:00:00",
+            "2025-02-01 00:00:00",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "change_id": 1,
+          "customer_bk": "C1",
+          "name": "Aarav",
+          "city": "Surat",
+          "effective_local": "2025-01-01 00:00:00"
+        },
+        {
+          "change_id": 2,
+          "customer_bk": "C1",
+          "name": "Aarav",
+          "city": "Pune",
+          "effective_local": "2025-02-01 00:00:00"
+        }
+      ]
+    },
+    "raw_order": {
+      "rows": 4,
+      "columns": {
+        "order_id": {
+          "generator": "choice",
+          "values": [
+            "O1",
+            "O2",
+            "O3",
+            "O4",
+            ""
+          ]
+        },
+        "customer_bk": {
+          "generator": "choice",
+          "values": [
+            "C1",
+            "C9",
+            ""
+          ]
+        },
+        "ordered_at_utc": {
+          "generator": "choice",
+          "values": [
+            "2025-01-31T18:00:00+00:00",
+            "2025-01-31T18:30:00+00:00",
+            "2025-02-02T04:30:00+00:00",
+            "2025-02-02T05:00:00+00:00",
+            ""
+          ]
+        },
+        "status": {
+          "generator": "choice",
+          "values": [
+            "completed",
+            "cancelled",
+            ""
+          ]
+        },
+        "source_system": {
+          "generator": "choice",
+          "values": [
+            "retail",
+            ""
+          ]
+        },
+        "batch_id": {
+          "generator": "choice",
+          "values": [
+            "B1",
+            ""
+          ]
+        },
+        "ingested_at": {
+          "generator": "choice",
+          "values": [
+            "2025-02-03 06:00:00",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "order_id": "O1",
+          "customer_bk": "C1",
+          "ordered_at_utc": "2025-01-31T18:00:00+00:00",
+          "status": "completed",
+          "source_system": "retail",
+          "batch_id": "B1",
+          "ingested_at": "2025-02-03 06:00:00"
+        },
+        {
+          "order_id": "O2",
+          "customer_bk": "C1",
+          "ordered_at_utc": "2025-01-31T18:30:00+00:00",
+          "status": "completed",
+          "source_system": "retail",
+          "batch_id": "B1",
+          "ingested_at": "2025-02-03 06:00:00"
+        },
+        {
+          "order_id": "O3",
+          "customer_bk": "C9",
+          "ordered_at_utc": "2025-02-02T04:30:00+00:00",
+          "status": "completed",
+          "source_system": "retail",
+          "batch_id": "B1",
+          "ingested_at": "2025-02-03 06:00:00"
+        },
+        {
+          "order_id": "O4",
+          "customer_bk": "C1",
+          "ordered_at_utc": "2025-02-02T05:00:00+00:00",
+          "status": "cancelled",
+          "source_system": "retail",
+          "batch_id": "B1",
+          "ingested_at": "2025-02-03 06:00:00"
+        }
+      ]
+    },
+    "raw_line": {
+      "rows": 7,
+      "columns": {
+        "row_id": {
+          "generator": "choice",
+          "values": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            ""
+          ]
+        },
+        "line_bk": {
+          "generator": "choice",
+          "values": [
+            "L1",
+            "L2",
+            "L3",
+            "L4",
+            "L5",
+            "L6",
+            ""
+          ]
+        },
+        "order_id": {
+          "generator": "choice",
+          "values": [
+            "O1",
+            "O2",
+            "O3",
+            "O4",
+            ""
+          ]
+        },
+        "amount_text": {
+          "generator": "choice",
+          "values": [
+            "10000",
+            "12000",
+            "20000",
+            "5000",
+            "bad",
+            "1000",
+            ""
+          ]
+        },
+        "source_updated_at": {
+          "generator": "choice",
+          "values": [
+            "2025-01-31 18:05:00",
+            "2025-02-01 05:00:00",
+            "2025-02-02 05:00:00",
+            ""
+          ]
+        },
+        "source_system": {
+          "generator": "choice",
+          "values": [
+            "retail",
+            ""
+          ]
+        },
+        "batch_id": {
+          "generator": "choice",
+          "values": [
+            "B1",
+            ""
+          ]
+        },
+        "ingested_at": {
+          "generator": "choice",
+          "values": [
+            "2025-02-03 06:00:00",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "row_id": 1,
+          "line_bk": "L1",
+          "order_id": "O1",
+          "amount_text": "10000",
+          "source_updated_at": "2025-01-31 18:05:00",
+          "source_system": "retail",
+          "batch_id": "B1",
+          "ingested_at": "2025-02-03 06:00:00"
+        },
+        {
+          "row_id": 2,
+          "line_bk": "L1",
+          "order_id": "O1",
+          "amount_text": "12000",
+          "source_updated_at": "2025-02-01 05:00:00",
+          "source_system": "retail",
+          "batch_id": "B1",
+          "ingested_at": "2025-02-03 06:00:00"
+        },
+        {
+          "row_id": 3,
+          "line_bk": "L2",
+          "order_id": "O2",
+          "amount_text": "20000",
+          "source_updated_at": "2025-02-01 05:00:00",
+          "source_system": "retail",
+          "batch_id": "B1",
+          "ingested_at": "2025-02-03 06:00:00"
+        },
+        {
+          "row_id": 4,
+          "line_bk": "L3",
+          "order_id": "O3",
+          "amount_text": "5000",
+          "source_updated_at": "2025-02-02 05:00:00",
+          "source_system": "retail",
+          "batch_id": "B1",
+          "ingested_at": "2025-02-03 06:00:00"
+        },
+        {
+          "row_id": 5,
+          "line_bk": "L4",
+          "order_id": "O2",
+          "amount_text": "bad",
+          "source_updated_at": "2025-02-02 05:00:00",
+          "source_system": "retail",
+          "batch_id": "B1",
+          "ingested_at": "2025-02-03 06:00:00"
+        },
+        {
+          "row_id": 6,
+          "line_bk": "L5",
+          "order_id": "O1",
+          "amount_text": null,
+          "source_updated_at": "2025-02-02 05:00:00",
+          "source_system": "retail",
+          "batch_id": "B1",
+          "ingested_at": "2025-02-03 06:00:00"
+        },
+        {
+          "row_id": 7,
+          "line_bk": "L6",
+          "order_id": "O4",
+          "amount_text": "1000",
+          "source_updated_at": "2025-02-02 05:00:00",
+          "source_system": "retail",
+          "batch_id": "B1",
+          "ingested_at": "2025-02-03 06:00:00"
+        }
+      ]
+    },
+    "raw_customer_change": {
+      "rows": 2,
+      "columns": {
+        "change_id": {
+          "generator": "choice",
+          "values": [
+            1,
+            2,
+            ""
+          ]
+        },
+        "customer_bk": {
+          "generator": "choice",
+          "values": [
+            "C1",
+            ""
+          ]
+        },
+        "name": {
+          "generator": "choice",
+          "values": [
+            "Aarav",
+            ""
+          ]
+        },
+        "city": {
+          "generator": "choice",
+          "values": [
+            "Surat",
+            "Pune",
+            ""
+          ]
+        },
+        "effective_local": {
+          "generator": "choice",
+          "values": [
+            "2025-01-01 00:00:00",
+            "2025-02-01 00:00:00",
+            ""
+          ]
+        },
+        "batch_id": {
+          "generator": "choice",
+          "values": [
+            "B1",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "change_id": 1,
+          "customer_bk": "C1",
+          "name": "Aarav",
+          "city": "Surat",
+          "effective_local": "2025-01-01 00:00:00",
+          "batch_id": "B1"
+        },
+        {
+          "change_id": 2,
+          "customer_bk": "C1",
+          "name": "Aarav",
+          "city": "Pune",
+          "effective_local": "2025-02-01 00:00:00",
+          "batch_id": "B1"
+        }
+      ]
+    },
+    "classified": {
+      "rows": 7,
+      "columns": {
+        "row_id": {
+          "generator": "choice",
+          "values": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            ""
+          ]
+        },
+        "line_bk": {
+          "generator": "choice",
+          "values": [
+            "L1",
+            "L2",
+            "L3",
+            "L4",
+            "L5",
+            "L6",
+            ""
+          ]
+        },
+        "order_id": {
+          "generator": "choice",
+          "values": [
+            "O1",
+            "O2",
+            "O3",
+            "O4",
+            ""
+          ]
+        },
+        "customer_bk": {
+          "generator": "choice",
+          "values": [
+            "C1",
+            "C9",
+            ""
+          ]
+        },
+        "event_local": {
+          "generator": "choice",
+          "values": [
+            "2025-01-31 23:30:00",
+            "2025-02-01 00:00:00",
+            "2025-02-02 10:00:00",
+            "2025-02-02 10:30:00",
+            ""
+          ]
+        },
+        "amount_paise": {
+          "generator": "choice",
+          "values": [
+            10000,
+            12000,
+            20000,
+            5000,
+            1000,
+            ""
+          ]
+        },
+        "reason": {
+          "generator": "choice",
+          "values": [
+            "ACCEPTED",
+            "INVALID_AMOUNT",
+            "MISSING_AMOUNT",
+            "CANCELLED_ORDER",
+            ""
+          ]
+        },
+        "source_updated_at": {
+          "generator": "choice",
+          "values": [
+            "2025-01-31 18:05:00",
+            "2025-02-01 05:00:00",
+            "2025-02-02 05:00:00",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "row_id": 1,
+          "line_bk": "L1",
+          "order_id": "O1",
+          "customer_bk": "C1",
+          "event_local": "2025-01-31 23:30:00",
+          "amount_paise": 10000,
+          "reason": "ACCEPTED",
+          "source_updated_at": "2025-01-31 18:05:00"
+        },
+        {
+          "row_id": 2,
+          "line_bk": "L1",
+          "order_id": "O1",
+          "customer_bk": "C1",
+          "event_local": "2025-01-31 23:30:00",
+          "amount_paise": 12000,
+          "reason": "ACCEPTED",
+          "source_updated_at": "2025-02-01 05:00:00"
+        },
+        {
+          "row_id": 3,
+          "line_bk": "L2",
+          "order_id": "O2",
+          "customer_bk": "C1",
+          "event_local": "2025-02-01 00:00:00",
+          "amount_paise": 20000,
+          "reason": "ACCEPTED",
+          "source_updated_at": "2025-02-01 05:00:00"
+        },
+        {
+          "row_id": 4,
+          "line_bk": "L3",
+          "order_id": "O3",
+          "customer_bk": "C9",
+          "event_local": "2025-02-02 10:00:00",
+          "amount_paise": 5000,
+          "reason": "ACCEPTED",
+          "source_updated_at": "2025-02-02 05:00:00"
+        },
+        {
+          "row_id": 5,
+          "line_bk": "L4",
+          "order_id": "O2",
+          "customer_bk": "C1",
+          "event_local": "2025-02-01 00:00:00",
+          "amount_paise": null,
+          "reason": "INVALID_AMOUNT",
+          "source_updated_at": "2025-02-02 05:00:00"
+        },
+        {
+          "row_id": 6,
+          "line_bk": "L5",
+          "order_id": "O1",
+          "customer_bk": "C1",
+          "event_local": "2025-01-31 23:30:00",
+          "amount_paise": null,
+          "reason": "MISSING_AMOUNT",
+          "source_updated_at": "2025-02-02 05:00:00"
+        },
+        {
+          "row_id": 7,
+          "line_bk": "L6",
+          "order_id": "O4",
+          "customer_bk": "C1",
+          "event_local": "2025-02-02 10:30:00",
+          "amount_paise": 1000,
+          "reason": "CANCELLED_ORDER",
+          "source_updated_at": "2025-02-02 05:00:00"
+        }
+      ]
+    },
+    "accepted_ranked": {
+      "rows": 4,
+      "columns": {
+        "row_id": {
+          "generator": "choice",
+          "values": [
+            1,
+            2,
+            3,
+            4,
+            ""
+          ]
+        },
+        "line_bk": {
+          "generator": "choice",
+          "values": [
+            "L1",
+            "L2",
+            "L3",
+            ""
+          ]
+        },
+        "order_id": {
+          "generator": "choice",
+          "values": [
+            "O1",
+            "O2",
+            "O3",
+            ""
+          ]
+        },
+        "customer_bk": {
+          "generator": "choice",
+          "values": [
+            "C1",
+            "C9",
+            ""
+          ]
+        },
+        "event_local": {
+          "generator": "choice",
+          "values": [
+            "2025-01-31 23:30:00",
+            "2025-02-01 00:00:00",
+            "2025-02-02 10:00:00",
+            ""
+          ]
+        },
+        "amount_paise": {
+          "generator": "choice",
+          "values": [
+            10000,
+            12000,
+            20000,
+            5000,
+            ""
+          ]
+        },
+        "rn": {
+          "generator": "choice",
+          "values": [
+            2,
+            1,
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "row_id": 1,
+          "line_bk": "L1",
+          "order_id": "O1",
+          "customer_bk": "C1",
+          "event_local": "2025-01-31 23:30:00",
+          "amount_paise": 10000,
+          "rn": 2
+        },
+        {
+          "row_id": 2,
+          "line_bk": "L1",
+          "order_id": "O1",
+          "customer_bk": "C1",
+          "event_local": "2025-01-31 23:30:00",
+          "amount_paise": 12000,
+          "rn": 1
+        },
+        {
+          "row_id": 3,
+          "line_bk": "L2",
+          "order_id": "O2",
+          "customer_bk": "C1",
+          "event_local": "2025-02-01 00:00:00",
+          "amount_paise": 20000,
+          "rn": 1
+        },
+        {
+          "row_id": 4,
+          "line_bk": "L3",
+          "order_id": "O3",
+          "customer_bk": "C9",
+          "event_local": "2025-02-02 10:00:00",
+          "amount_paise": 5000,
+          "rn": 1
+        }
+      ]
+    },
+    "clean_line": {
+      "rows": 3,
+      "columns": {
+        "line_bk": {
+          "generator": "choice",
+          "values": [
+            "L1",
+            "L2",
+            "L3",
+            ""
+          ]
+        },
+        "order_id": {
+          "generator": "choice",
+          "values": [
+            "O1",
+            "O2",
+            "O3",
+            ""
+          ]
+        },
+        "customer_bk": {
+          "generator": "choice",
+          "values": [
+            "C1",
+            "C9",
+            ""
+          ]
+        },
+        "event_local": {
+          "generator": "choice",
+          "values": [
+            "2025-01-31 23:30:00",
+            "2025-02-01 00:00:00",
+            "2025-02-02 10:00:00",
+            ""
+          ]
+        },
+        "amount_paise": {
+          "generator": "choice",
+          "values": [
+            12000,
+            20000,
+            5000,
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "line_bk": "L1",
+          "order_id": "O1",
+          "customer_bk": "C1",
+          "event_local": "2025-01-31 23:30:00",
+          "amount_paise": 12000
+        },
+        {
+          "line_bk": "L2",
+          "order_id": "O2",
+          "customer_bk": "C1",
+          "event_local": "2025-02-01 00:00:00",
+          "amount_paise": 20000
+        },
+        {
+          "line_bk": "L3",
+          "order_id": "O3",
+          "customer_bk": "C9",
+          "event_local": "2025-02-02 10:00:00",
+          "amount_paise": 5000
+        }
+      ]
+    },
+    "load_candidate": {
+      "rows": 4,
+      "columns": {
+        "line_bk": {
+          "generator": "choice",
+          "values": [
+            "L1",
+            "L2",
+            "L3",
+            ""
+          ]
+        },
+        "order_id": {
+          "generator": "choice",
+          "values": [
+            "O1",
+            "O2",
+            "O3",
+            ""
+          ]
+        },
+        "customer_sk": {
+          "generator": "choice",
+          "values": [
+            2,
+            0,
+            "",
+            1
+          ]
+        },
+        "date_key": {
+          "generator": "choice",
+          "values": [
+            20250131,
+            20250201,
+            20250202,
+            ""
+          ]
+        },
+        "event_local": {
+          "generator": "choice",
+          "values": [
+            "2025-01-31 23:30:00",
+            "2025-02-01 00:00:00",
+            "2025-02-02 10:00:00",
+            ""
+          ]
+        },
+        "amount_paise": {
+          "generator": "choice",
+          "values": [
+            12000,
+            20000,
+            5000,
+            ""
+          ]
+        },
+        "batch_id": {
+          "generator": "choice",
+          "values": [
+            "B1",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "line_bk": "L1",
+          "order_id": "O1",
+          "customer_sk": 2,
+          "date_key": 20250131,
+          "event_local": "2025-01-31 23:30:00",
+          "amount_paise": 12000,
+          "batch_id": "B1"
+        },
+        {
+          "line_bk": "L2",
+          "order_id": "O2",
+          "customer_sk": 2,
+          "date_key": 20250201,
+          "event_local": "2025-02-01 00:00:00",
+          "amount_paise": 20000,
+          "batch_id": "B1"
+        },
+        {
+          "line_bk": "L3",
+          "order_id": "O3",
+          "customer_sk": 0,
+          "date_key": 20250202,
+          "event_local": "2025-02-02 10:00:00",
+          "amount_paise": 5000,
+          "batch_id": "B1"
+        },
+        {
+          "line_bk": "L1",
+          "order_id": "O1",
+          "customer_sk": 1,
+          "date_key": 20250131,
+          "event_local": "2025-01-31 23:30:00",
+          "amount_paise": 12000,
+          "batch_id": "B1"
+        }
+      ]
+    },
+    "reviewed_correction": {
+      "rows": 1,
+      "columns": {
+        "correction_id": {
+          "generator": "choice",
+          "values": [
+            "COR1",
+            ""
+          ]
+        },
+        "customer_bk": {
+          "generator": "choice",
+          "values": [
+            "C1",
+            ""
+          ]
+        },
+        "new_move_local": {
+          "generator": "choice",
+          "values": [
+            "2025-01-30 00:00:00",
+            ""
+          ]
+        },
+        "source_updated_at": {
+          "generator": "choice",
+          "values": [
+            "2025-03-10 08:00:00",
+            ""
+          ]
+        },
+        "policy": {
+          "generator": "choice",
+          "values": [
+            "BACKFILL affected historical facts; do not rely on daily overlap",
+            ""
+          ]
+        }
+      },
+      "records": [
+        {
+          "correction_id": "COR1",
+          "customer_bk": "C1",
+          "new_move_local": "2025-01-30 00:00:00",
+          "source_updated_at": "2025-03-10 08:00:00",
+          "policy": "BACKFILL affected historical facts; do not rely on daily overlap"
+        }
+      ]
+    }
+  },
+  "provenance": {
+    "source": "course-data-modelling-etl-data-warehousing-for-analysts_output.v2-create.json",
+    "sha256": "56f960111670f88d4a4b999ab3c3cd498e700e1745b03aa86686ac458d0380a6",
+    "scope": "Original lessons 01-16 SQL seeds, excluding contact-field tables. Union domains for reused teaching-table names; missing fields are NULL only in the catalogue, not edits to lesson seed records.",
+    "tables": [
+      {
+        "lesson": "dw-analyst-warehouse-purpose-and-layers-01",
+        "table": "orders",
+        "columns": [
+          "order_id",
+          "customer",
+          "city",
+          "sale_day",
+          "amount"
+        ]
+      },
+      {
+        "lesson": "dw-grain-entities-keys-and-relationships-02",
+        "table": "customers",
+        "columns": [
+          "customer_id",
+          "business_code",
+          "name"
+        ]
+      },
+      {
+        "lesson": "dw-grain-entities-keys-and-relationships-02",
+        "table": "orders",
+        "columns": [
+          "order_id",
+          "customer_id"
+        ]
+      },
+      {
+        "lesson": "dw-grain-entities-keys-and-relationships-02",
+        "table": "order_lines",
+        "columns": [
+          "order_id",
+          "line_no",
+          "product",
+          "quantity"
+        ]
+      },
+      {
+        "lesson": "dw-grain-entities-keys-and-relationships-02",
+        "table": "incoming_orders",
+        "columns": [
+          "order_id",
+          "customer_id"
+        ]
+      },
+      {
+        "lesson": "dw-normalisation-and-operational-models-03",
+        "table": "order_sheet",
+        "columns": [
+          "order_id",
+          "line_no",
+          "customer_id",
+          "customer_name",
+          "city",
+          "product_code",
+          "product_name",
+          "unit_price",
+          "quantity"
+        ]
+      },
+      {
+        "lesson": "dw-normalisation-and-operational-models-03",
+        "table": "packed_orders",
+        "columns": [
+          "order_id",
+          "customer_name",
+          "product_codes",
+          "quantities"
+        ]
+      },
+      {
+        "lesson": "dw-normalisation-and-operational-models-03",
+        "table": "customers",
+        "columns": [
+          "customer_id",
+          "name",
+          "city"
+        ]
+      },
+      {
+        "lesson": "dw-normalisation-and-operational-models-03",
+        "table": "orders",
+        "columns": [
+          "order_id",
+          "customer_id"
+        ]
+      },
+      {
+        "lesson": "dw-normalisation-and-operational-models-03",
+        "table": "products",
+        "columns": [
+          "product_code",
+          "name",
+          "unit_price"
+        ]
+      },
+      {
+        "lesson": "dw-normalisation-and-operational-models-03",
+        "table": "order_lines",
+        "columns": [
+          "order_id",
+          "line_no",
+          "product_code",
+          "quantity"
+        ]
+      },
+      {
+        "lesson": "dw-dimensional-models-and-star-schemas-04",
+        "table": "dim_customer",
+        "columns": [
+          "customer_key",
+          "customer_code",
+          "name",
+          "city"
+        ]
+      },
+      {
+        "lesson": "dw-dimensional-models-and-star-schemas-04",
+        "table": "dim_product",
+        "columns": [
+          "product_key",
+          "product_code",
+          "name",
+          "category"
+        ]
+      },
+      {
+        "lesson": "dw-dimensional-models-and-star-schemas-04",
+        "table": "fact_sales",
+        "columns": [
+          "order_id",
+          "line_no",
+          "customer_key",
+          "product_key",
+          "amount"
+        ]
+      },
+      {
+        "lesson": "dw-dimensional-models-and-star-schemas-04",
+        "table": "dim_category",
+        "columns": [
+          "category_key",
+          "label"
+        ]
+      },
+      {
+        "lesson": "dw-dimensional-models-and-star-schemas-04",
+        "table": "snow_product",
+        "columns": [
+          "product_key",
+          "product_name",
+          "category_key"
+        ]
+      },
+      {
+        "lesson": "dw-dimensional-models-and-star-schemas-04",
+        "table": "duplicate_product_keys",
+        "columns": [
+          "product_key",
+          "label"
+        ]
+      },
+      {
+        "lesson": "dw-fact-grains-and-safe-measures-05",
+        "table": "sales",
+        "columns": [
+          "order_id",
+          "line_no",
+          "store",
+          "revenue",
+          "cost"
+        ]
+      },
+      {
+        "lesson": "dw-fact-grains-and-safe-measures-05",
+        "table": "inventory",
+        "columns": [
+          "day",
+          "store",
+          "product",
+          "units"
+        ]
+      },
+      {
+        "lesson": "dw-fact-grains-and-safe-measures-05",
+        "table": "fulfilment",
+        "columns": [
+          "order_id",
+          "accepted_day",
+          "shipped_day",
+          "delivered_day"
+        ]
+      },
+      {
+        "lesson": "dw-fact-grains-and-safe-measures-05",
+        "table": "visits",
+        "columns": [
+          "visit_id",
+          "store",
+          "visitor"
+        ]
+      },
+      {
+        "lesson": "dw-date-dimensions-and-reporting-calendars-06",
+        "table": "dim_date",
+        "columns": [
+          "date_key",
+          "calendar_date",
+          "month_start",
+          "calendar_year",
+          "fiscal_year_label",
+          "is_business_day"
+        ]
+      },
+      {
+        "lesson": "dw-date-dimensions-and-reporting-calendars-06",
+        "table": "orders",
+        "columns": [
+          "order_id",
+          "customer",
+          "ordered_at_utc",
+          "order_date_key",
+          "ship_date_key",
+          "revenue_paise"
+        ]
+      },
+      {
+        "lesson": "dw-date-dimensions-and-reporting-calendars-06",
+        "table": "coverage",
+        "columns": [
+          "date_key",
+          "status"
+        ]
+      },
+      {
+        "lesson": "dw-extraction-raw-data-and-staging-07",
+        "table": "source_orders",
+        "columns": [
+          "id",
+          "customer_code",
+          "amount_text",
+          "updated_at"
+        ]
+      },
+      {
+        "lesson": "dw-extraction-raw-data-and-staging-07",
+        "table": "source_customers",
+        "columns": [
+          "customer_code",
+          "customer_name"
+        ]
+      },
+      {
+        "lesson": "dw-extraction-raw-data-and-staging-07",
+        "table": "source_orders_v2",
+        "columns": [
+          "id",
+          "customer_code",
+          "amount_rupees",
+          "updated_at"
+        ]
+      },
+      {
+        "lesson": "dw-extraction-raw-data-and-staging-07",
+        "table": "raw_orders",
+        "columns": [
+          "source_order_id",
+          "customer_code",
+          "amount_text",
+          "source_system",
+          "batch_id",
+          "ingested_at",
+          "source_updated_at"
+        ]
+      },
+      {
+        "lesson": "dw-extraction-raw-data-and-staging-07",
+        "table": "raw_customers",
+        "columns": [
+          "customer_code",
+          "customer_name",
+          "source_system",
+          "batch_id",
+          "ingested_at"
+        ]
+      },
+      {
+        "lesson": "dw-transform-clean-deduplicate-and-map-08",
+        "table": "staged",
+        "columns": [
+          "row_id",
+          "order_id",
+          "customer",
+          "category_text",
+          "amount_text",
+          "sale_date",
+          "source_updated_at"
+        ]
+      },
+      {
+        "lesson": "dw-transform-clean-deduplicate-and-map-08",
+        "table": "approved_category",
+        "columns": [
+          "raw_code",
+          "standard_label"
+        ]
+      },
+      {
+        "lesson": "dw-transform-clean-deduplicate-and-map-08",
+        "table": "quarantine",
+        "columns": [
+          "row_id",
+          "order_id",
+          "reason"
+        ]
+      },
+      {
+        "lesson": "dw-loading-transactions-and-idempotent-runs-09",
+        "table": "dim_customer",
+        "columns": [
+          "customer_key",
+          "customer_code",
+          "name"
+        ]
+      },
+      {
+        "lesson": "dw-loading-transactions-and-idempotent-runs-09",
+        "table": "accepted",
+        "columns": [
+          "order_id",
+          "customer_code",
+          "partition_date",
+          "revenue_paise"
+        ]
+      },
+      {
+        "lesson": "dw-loading-transactions-and-idempotent-runs-09",
+        "table": "fact_sales",
+        "columns": [
+          "order_id",
+          "customer_key",
+          "partition_date",
+          "revenue_paise"
+        ]
+      },
+      {
+        "lesson": "dw-incremental-loads-watermarks-and-late-data-10",
+        "table": "control",
+        "columns": [
+          "pipeline",
+          "watermark"
+        ]
+      },
+      {
+        "lesson": "dw-incremental-loads-watermarks-and-late-data-10",
+        "table": "changes",
+        "columns": [
+          "seq",
+          "order_id",
+          "revenue_paise",
+          "event_at",
+          "source_updated_at",
+          "ingested_at",
+          "is_deleted"
+        ]
+      },
+      {
+        "lesson": "dw-incremental-loads-watermarks-and-late-data-10",
+        "table": "target",
+        "columns": [
+          "order_id",
+          "revenue_paise",
+          "source_updated_at"
+        ]
+      },
+      {
+        "lesson": "dw-slowly-changing-dimensions-and-history-11",
+        "table": "current_customer",
+        "columns": [
+          "customer_bk",
+          "city"
+        ]
+      },
+      {
+        "lesson": "dw-slowly-changing-dimensions-and-history-11",
+        "table": "source_sale",
+        "columns": [
+          "line_bk",
+          "customer_bk",
+          "sale_date",
+          "amount_paise"
+        ]
+      },
+      {
+        "lesson": "dw-slowly-changing-dimensions-and-history-11",
+        "table": "dim_customer",
+        "columns": [
+          "customer_sk",
+          "customer_bk",
+          "city",
+          "valid_from",
+          "valid_to",
+          "is_current"
+        ]
+      },
+      {
+        "lesson": "dw-slowly-changing-dimensions-and-history-11",
+        "table": "fact_sale",
+        "columns": [
+          "line_bk",
+          "customer_bk",
+          "sale_date",
+          "customer_sk",
+          "amount_paise"
+        ]
+      },
+      {
+        "lesson": "dw-data-quality-reconciliation-and-run-audits-12",
+        "table": "dim_customer",
+        "columns": [
+          "customer_sk",
+          "customer_bk",
+          "customer_name",
+          "valid_from",
+          "valid_to",
+          "is_current"
+        ]
+      },
+      {
+        "lesson": "dw-data-quality-reconciliation-and-run-audits-12",
+        "table": "stage",
+        "columns": [
+          "row_id",
+          "line_bk",
+          "customer_bk",
+          "amount_paise",
+          "source_updated_at"
+        ]
+      },
+      {
+        "lesson": "dw-data-quality-reconciliation-and-run-audits-12",
+        "table": "quarantine",
+        "columns": [
+          "row_id",
+          "reason"
+        ]
+      },
+      {
+        "lesson": "dw-data-quality-reconciliation-and-run-audits-12",
+        "table": "load_sales",
+        "columns": [
+          "line_bk",
+          "customer_sk",
+          "amount_paise"
+        ]
+      },
+      {
+        "lesson": "dw-data-quality-reconciliation-and-run-audits-12",
+        "table": "fact_sales",
+        "columns": [
+          "line_bk",
+          "customer_sk",
+          "amount_paise"
+        ]
+      },
+      {
+        "lesson": "dw-data-quality-reconciliation-and-run-audits-12",
+        "table": "run_audit",
+        "columns": [
+          "batch_id",
+          "lower_bound",
+          "upper_bound",
+          "status",
+          "staged_rows",
+          "rejected_rows",
+          "superseded_rows",
+          "loaded_rows",
+          "reason"
+        ]
+      },
+      {
+        "lesson": "dw-data-marts-semantic-models-and-metrics-13",
+        "table": "dim_customer",
+        "columns": [
+          "customer_sk",
+          "city"
+        ]
+      },
+      {
+        "lesson": "dw-data-marts-semantic-models-and-metrics-13",
+        "table": "fact_sales",
+        "columns": [
+          "line_sk",
+          "order_id",
+          "order_date",
+          "customer_sk",
+          "status",
+          "sales_paise"
+        ]
+      },
+      {
+        "lesson": "dw-data-marts-semantic-models-and-metrics-13",
+        "table": "fact_returns",
+        "columns": [
+          "return_id",
+          "line_sk",
+          "return_paise"
+        ]
+      },
+      {
+        "lesson": "dw-data-marts-semantic-models-and-metrics-13",
+        "table": "coverage",
+        "columns": [
+          "order_date",
+          "covered"
+        ]
+      },
+      {
+        "lesson": "dw-data-marts-semantic-models-and-metrics-13",
+        "table": "monthly_summary",
+        "columns": [
+          "month_start",
+          "net_sales_paise",
+          "orders"
+        ]
+      },
+      {
+        "lesson": "dw-warehouse-performance-and-cost-awareness-14",
+        "table": "customer",
+        "columns": [
+          "customer_sk",
+          "city"
+        ]
+      },
+      {
+        "lesson": "dw-warehouse-performance-and-cost-awareness-14",
+        "table": "sales",
+        "columns": [
+          "line_sk",
+          "sale_date",
+          "customer_sk",
+          "amount_paise"
+        ]
+      },
+      {
+        "lesson": "dw-warehouse-performance-and-cost-awareness-14",
+        "table": "daily_city_summary",
+        "columns": [
+          "sale_date",
+          "city",
+          "revenue_paise"
+        ]
+      },
+      {
+        "lesson": "dw-warehouse-performance-and-cost-awareness-14",
+        "table": "report_config",
+        "columns": [
+          "report_name",
+          "runs_per_day",
+          "required_grain"
+        ]
+      },
+      {
+        "lesson": "dw-orchestration-lineage-and-data-access-15",
+        "table": "task_dependency",
+        "columns": [
+          "task",
+          "parent_task"
+        ]
+      },
+      {
+        "lesson": "dw-orchestration-lineage-and-data-access-15",
+        "table": "task_run",
+        "columns": [
+          "batch_id",
+          "task",
+          "attempt",
+          "status",
+          "finished_at"
+        ]
+      },
+      {
+        "lesson": "dw-orchestration-lineage-and-data-access-15",
+        "table": "publication_expectation",
+        "columns": [
+          "batch_id",
+          "deadline_utc"
+        ]
+      },
+      {
+        "lesson": "dw-orchestration-lineage-and-data-access-15",
+        "table": "backfill_request",
+        "columns": [
+          "request_id",
+          "start_date",
+          "end_exclusive",
+          "status"
+        ]
+      },
+      {
+        "lesson": "dw-orchestration-lineage-and-data-access-15",
+        "table": "lineage",
+        "columns": [
+          "target_object",
+          "source_object",
+          "transformation"
+        ]
+      },
+      {
+        "lesson": "dw-orchestration-lineage-and-data-access-15",
+        "table": "data_dictionary",
+        "columns": [
+          "object_name",
+          "column_name",
+          "meaning",
+          "owner"
+        ]
+      },
+      {
+        "lesson": "dw-orchestration-lineage-and-data-access-15",
+        "table": "source_contract",
+        "columns": [
+          "field",
+          "declared_rule"
+        ]
+      },
+      {
+        "lesson": "dw-orchestration-lineage-and-data-access-15",
+        "table": "fact_sales",
+        "columns": [
+          "line_bk",
+          "sale_date",
+          "customer_sk",
+          "amount_paise"
+        ]
+      },
+      {
+        "lesson": "dw-capstone-trusted-retail-sales-warehouse-16",
+        "table": "source_order",
+        "columns": [
+          "order_id",
+          "customer_bk",
+          "ordered_at_utc",
+          "status"
+        ]
+      },
+      {
+        "lesson": "dw-capstone-trusted-retail-sales-warehouse-16",
+        "table": "source_line",
+        "columns": [
+          "row_id",
+          "line_bk",
+          "order_id",
+          "amount_text",
+          "source_updated_at"
+        ]
+      },
+      {
+        "lesson": "dw-capstone-trusted-retail-sales-warehouse-16",
+        "table": "source_customer_change",
+        "columns": [
+          "change_id",
+          "customer_bk",
+          "name",
+          "city",
+          "effective_local"
+        ]
+      },
+      {
+        "lesson": "dw-capstone-trusted-retail-sales-warehouse-16",
+        "table": "raw_order",
+        "columns": [
+          "order_id",
+          "customer_bk",
+          "ordered_at_utc",
+          "status",
+          "source_system",
+          "batch_id",
+          "ingested_at"
+        ]
+      },
+      {
+        "lesson": "dw-capstone-trusted-retail-sales-warehouse-16",
+        "table": "raw_line",
+        "columns": [
+          "row_id",
+          "line_bk",
+          "order_id",
+          "amount_text",
+          "source_updated_at",
+          "source_system",
+          "batch_id",
+          "ingested_at"
+        ]
+      },
+      {
+        "lesson": "dw-capstone-trusted-retail-sales-warehouse-16",
+        "table": "raw_customer_change",
+        "columns": [
+          "change_id",
+          "customer_bk",
+          "name",
+          "city",
+          "effective_local",
+          "batch_id"
+        ]
+      },
+      {
+        "lesson": "dw-capstone-trusted-retail-sales-warehouse-16",
+        "table": "classified",
+        "columns": [
+          "row_id",
+          "line_bk",
+          "order_id",
+          "customer_bk",
+          "event_local",
+          "amount_paise",
+          "reason",
+          "source_updated_at"
+        ]
+      },
+      {
+        "lesson": "dw-capstone-trusted-retail-sales-warehouse-16",
+        "table": "quarantine",
+        "columns": [
+          "row_id",
+          "reason"
+        ]
+      },
+      {
+        "lesson": "dw-capstone-trusted-retail-sales-warehouse-16",
+        "table": "accepted_ranked",
+        "columns": [
+          "row_id",
+          "line_bk",
+          "order_id",
+          "customer_bk",
+          "event_local",
+          "amount_paise",
+          "rn"
+        ]
+      },
+      {
+        "lesson": "dw-capstone-trusted-retail-sales-warehouse-16",
+        "table": "clean_line",
+        "columns": [
+          "line_bk",
+          "order_id",
+          "customer_bk",
+          "event_local",
+          "amount_paise"
+        ]
+      },
+      {
+        "lesson": "dw-capstone-trusted-retail-sales-warehouse-16",
+        "table": "dim_date",
+        "columns": [
+          "date_key",
+          "calendar_date",
+          "month_start"
+        ]
+      },
+      {
+        "lesson": "dw-capstone-trusted-retail-sales-warehouse-16",
+        "table": "dim_customer",
+        "columns": [
+          "customer_sk",
+          "customer_bk",
+          "city",
+          "valid_from",
+          "valid_to",
+          "is_current"
+        ]
+      },
+      {
+        "lesson": "dw-capstone-trusted-retail-sales-warehouse-16",
+        "table": "fact_sales",
+        "columns": [
+          "line_bk",
+          "order_id",
+          "customer_sk",
+          "date_key",
+          "event_local",
+          "amount_paise",
+          "batch_id"
+        ]
+      },
+      {
+        "lesson": "dw-capstone-trusted-retail-sales-warehouse-16",
+        "table": "load_candidate",
+        "columns": [
+          "line_bk",
+          "order_id",
+          "customer_sk",
+          "date_key",
+          "event_local",
+          "amount_paise",
+          "batch_id"
+        ]
+      },
+      {
+        "lesson": "dw-capstone-trusted-retail-sales-warehouse-16",
+        "table": "run_audit",
+        "columns": [
+          "run_id",
+          "batch_id",
+          "upper_bound",
+          "status",
+          "staged",
+          "rejected",
+          "superseded",
+          "loaded",
+          "total_paise"
+        ]
+      },
+      {
+        "lesson": "dw-capstone-trusted-retail-sales-warehouse-16",
+        "table": "reviewed_correction",
+        "columns": [
+          "correction_id",
+          "customer_bk",
+          "new_move_local",
+          "source_updated_at",
+          "policy"
+        ]
+      }
+    ],
+    "excludedContactTables": [
+      "customer_private"
+    ],
+    "intermediateSnapshots": [
+      "Original lessons01-16: capture seed-table state after every original SQL statement; preserve pre-update and post-update values, excluding contact tables."
+    ]
+  }
+}

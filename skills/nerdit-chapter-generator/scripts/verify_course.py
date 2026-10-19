@@ -33,6 +33,7 @@ import json
 import re
 import sys
 from html.parser import HTMLParser
+from pathlib import Path
 
 # Blocks that PAINT a container - border, fill, radius or shadow. Nesting these is what
 # produced "four borders around one line of output".
@@ -75,6 +76,9 @@ _MARKERS = re.compile(r"^[\s①②③④⑤⑥⑦⑧⑨⑩]+")
 BLOCK_LINES = 15                                   # CORE.md §4: one shown code block
 LESSON_LINES = {"concept": 40, "hands-on": 100}    # CORE.md §4: shown code per lesson
 MAX_SQL_LINE = 60  # runners/sql.md: the input half wraps, so a longer line breaks mid-statement
+MAX_DATASET_BYTES = 40_960  # runners/python.md: a lesson's dataset recipe; the browser builds the CSVs
+# figures.md R11: `[ home ]` or `[ ]` in a figure shows spaces with brackets; a list like [1, 2] does not.
+SPACE_BRACKETS = re.compile(r"\[(?:[ \t]+[^\]\n]*|[^\]\n]*[ \t]+)\]")
 
 # Retired only under the flattened (v10) contract - see --contract.
 RETIRED_V10 = [
@@ -465,6 +469,10 @@ def verify_structure(rep: Report, out: dict, contract: str):
                     rep.check(not is_dotted_record(label),
                               f"{lid}: figure label packs a table row into dots ({label[:40]}); "
                               f"use a value table (figures.md R10)")
+            for i, fig in enumerate(figures, 1):
+                m = SPACE_BRACKETS.search(text_of(fig))
+                rep.check(m is None, f"{lid}: figure {i} shows spaces with square brackets "
+                                     f"({m.group(0) if m else ''}); use nerdit-val and nerdit-ws (figures.md R11)")
             mains = []
             concept = [s for s in sections if not any(
                 n.classes & {"nerdit-cheatsheet", "nerdit-practical"} for n in walk(s))]
@@ -482,6 +490,36 @@ def verify_structure(rep: Report, out: dict, contract: str):
             rep.warn(not (len(used) >= 3 and len(only) == 1),
                      f"{lid}: every concept section uses the same visual ({', '.join(sorted(only))}); "
                      f"pick each one from the Visual Map")
+            verify_dataset(rep, lid, tree)
+
+
+def verify_dataset(rep: Report, lid: str, tree: Tree) -> None:
+    """runners/python.md: at most one self-contained recipe, small enough to ship in the lesson."""
+    blocks = [n for n in tree.all if n.tag == "script" and "nerdit-dataset" in n.classes]
+    if not blocks:
+        return
+    rep.check(len(blocks) == 1, f"{lid}: {len(blocks)} dataset blocks; a lesson carries at most one")
+    raw = "".join(c for c in blocks[0].content if isinstance(c, str))
+    size = len(raw.encode("utf-8"))
+    rep.check(size <= MAX_DATASET_BYTES,
+              f"{lid}: dataset block is {size} bytes; at most {MAX_DATASET_BYTES} (runners/python.md)")
+    rep.check(blocks[0].attrs.get("type") == "application/json",
+              f'{lid}: dataset block needs type="application/json"')
+    try:
+        recipe = json.loads(raw)
+    except ValueError as exc:
+        rep.check(False, f"{lid}: dataset block is not valid JSON ({exc})")
+        return
+    # Lazy import: the generator core lives in references/, shared with the website.
+    refs = str(Path(__file__).resolve().parent.parent / "references")
+    if refs not in sys.path:
+        sys.path.append(refs)
+    from nerdit_world_gen import check_recipe
+    try:
+        check_recipe(recipe)
+        rep.check(True, f"{lid}: dataset block")
+    except (ValueError, KeyError, TypeError) as exc:
+        rep.check(False, f"{lid}: dataset block: {exc}")
 
 
 
@@ -498,7 +536,7 @@ def verify_density(rep: Report, out: dict, inp: list):
         for i, code in enumerate(blocks, 1):
             n = len(code.splitlines())
             rep.warn(n <= BLOCK_LINES, f"{lid}: code block {i} shows {n} lines (max {BLOCK_LINES}); "
-                                       f"move setup into the seed or a view")
+                                       f"move repeated setup into the seed, never the step being taught")
         kind = focus.get(lid, "hands-on")
         cap = LESSON_LINES.get(kind, LESSON_LINES["hands-on"])
         total = sum(len(c.splitlines()) for c in blocks)

@@ -55,3 +55,45 @@ def test_whole_course_cli_enforces_world_only_for_v11(tmp_path):
     v11 = invoke('verify_course.py', '--input', inp, '--output', output, '--world', wp, '--contract', 'v11')
     assert v10.returncode == 0, v10.stdout
     assert v11.returncode == 1 and 'world:' in v11.stdout
+
+
+def test_make_world_data_writes_csv_and_manifest(tmp_path):
+    w = world()
+    w['profile'] = 'analytics'
+    w['entities']['orders']['rows'] = 400
+    w['entities']['orders']['defects'] = {'missing': [{'column': 'units', 'rate': 0.05}]}
+    w['entities']['ratings'] = {'kind': 'interactions', 'users': 'stores', 'items': 'orders',
+                                'user_column': 'store_id', 'item_column': 'order_id', 'k': 2,
+                                'density': 0.01, 'scale': [1, 5]}
+    wp = tmp_path / 'course-x_world.json'
+    wp.write_text(json.dumps(w), encoding='utf-8')
+    result = invoke('make_world_data.py', '--world', wp, '--out-dir', tmp_path)
+    assert result.returncode == 0, result.stderr
+    manifest = json.loads((tmp_path / 'world_data.manifest.json').read_text(encoding='utf-8'))
+    assert len(manifest['defects']['orders']['missing']['units']) == 20
+    header = (tmp_path / 'orders.csv').read_text(encoding='utf-8').splitlines()[0]
+    assert header == ','.join(w['entities']['orders']['columns'])
+    assert (tmp_path / 'ratings.csv').read_text(encoding='utf-8').startswith('store_id,order_id,rating\n')
+    assert 'CREATE TABLE "ratings"' in (tmp_path / 'world_data.sql').read_text(encoding='utf-8')
+
+
+def test_make_world_data_builds_a_lesson_recipe_with_its_own_seed(tmp_path):
+    from nerdit_world_gen import build_files
+    w = world()
+    w['entities']['orders']['defects'] = {'missing': [{'column': 'units', 'rate': 0.4}]}
+    recipe = {'seed': 3, 'files': {'orders.csv': {'entity': 'orders', 'drop': ['customer']}}, 'world': w}
+    lesson = tmp_path / 'x-01.html'
+    lesson.write_text('<div><script type="application/json" class="nerdit-dataset">'
+                      + json.dumps(recipe) + '</script></div>', encoding='utf-8')
+    out = tmp_path / 'out'
+    result = invoke('make_world_data.py', '--recipe', lesson, '--out-dir', out)
+    assert result.returncode == 0, result.stderr
+    assert (out / 'orders.csv').read_bytes() == build_files(recipe)['orders.csv'].encode('utf-8')
+    assert (out / 'orders.csv').read_bytes() != build_files(dict(recipe, seed=7))['orders.csv'].encode('utf-8')
+    manifest = json.loads((out / 'world_data.manifest.json').read_text(encoding='utf-8'))
+    assert len(manifest['defects']['orders']['missing']['units']) == 2
+    as_json = tmp_path / 'recipe.json'
+    as_json.write_text(json.dumps(recipe), encoding='utf-8')
+    assert invoke('make_world_data.py', '--recipe', as_json, '--out-dir', tmp_path / 'j').returncode == 0
+    assert (tmp_path / 'j' / 'orders.csv').read_bytes() == (out / 'orders.csv').read_bytes()
+    assert invoke('make_world_data.py', '--recipe', tmp_path / 'none.html', '--out-dir', out).returncode == 2

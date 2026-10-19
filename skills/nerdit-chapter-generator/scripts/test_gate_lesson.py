@@ -85,3 +85,30 @@ def test_refresh_does_not_fail_on_a_banned_phrase_it_inherited(tmp_path):
     fails, warns = gate(inp, d, "c-01", before_dir=before, modes={"figures"})
     assert not any(f.startswith("voice:") for f in fails)
     assert any("robust" in w for w in warns)
+
+
+from pyodide_engine import engine_available  # noqa: E402
+
+PY_RUN = ('<div class="nerdit-run"><div class="nerdit-in"><span class="nerdit-tag">You type</span>'
+          '<pre data-lang="python"><code>print(2 + 2)</code></pre></div><div class="nerdit-out">'
+          '<span class="nerdit-tag">Python shows</span><pre><code>4</code></pre></div></div>')
+SQL_RUN = LESSON[LESSON.index('<div class="nerdit-run">'):LESSON.index('<div class="nerdit-predict">')]
+PY_LESSON = LESSON.replace(SQL_RUN, PY_RUN).replace("SELECT 1 AS n <span", "print(2 + 2) <span")
+
+
+@pytest.mark.skipif(not engine_available()[0], reason=engine_available()[1])
+def test_gate_runs_python_checks(tmp_path):
+    inp, d = setup(tmp_path, PY_LESSON)
+    assert not [f for f in gate(inp, d, "c-01")[0] if f.startswith("python:")]
+    (d / "c-01.html").write_text(PY_LESSON.replace("<code>4</code>", "<code>5</code>"), encoding="utf-8")
+    assert any(f.startswith("python:") and "'5'" in f for f in gate(inp, d, "c-01")[0])
+
+
+def test_gate_fails_when_engine_missing_for_python_lessons(tmp_path, monkeypatch):
+    monkeypatch.setenv("NERDIT_PYODIDE_DIR", str(tmp_path))
+    inp, d = setup(tmp_path, PY_LESSON)
+    assert "python: engine missing (tools/pyodide/README.md)" in gate(inp, d, "c-01")[0]
+    sql_dir = tmp_path / "sql"
+    sql_dir.mkdir()
+    inp, d = setup(sql_dir)  # an SQL lesson does not need the engine
+    assert not [f for f in gate(inp, d, "c-01")[0] if f.startswith("python:")]

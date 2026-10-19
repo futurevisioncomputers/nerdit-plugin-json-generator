@@ -80,6 +80,9 @@ no real logos, and mistakes confined to data work rather than allegations about 
   solution lives. Every answer sits in a `<details>` on the page
 - **(Excel)** Every documented formula output really evaluates to the stated value against
   `nerdit-excel-engine.js` — a worked example claiming `301300` must produce `301300`
+- **(Python)** Do **not** judge printed Python outputs, error lines or whether a chart is drawn:
+  `scripts/check_python_outputs.py` runs every example on the website's engine and is
+  authoritative. Judge only what it cannot: that the prose and captions agree with the code
 - **(data-viz)** Every documented chart description matches what the code actually renders
 - Each figure teaches what its caption claims, and the caption is true of the picture
 - Each example heading names what its code does
@@ -94,6 +97,9 @@ no real logos, and mistakes confined to data work rather than allegations about 
   error); never fraud, losses or complaints about a business
 - **Spotlight record**: the same record, marked `nerdit-spot`, wherever it appears
 - **Check it by hand**: the arithmetic line is true
+- **Refreshed lessons** (a `_before` copy exists): every sentence still matches what the shown
+  code and figures now show. A trim must not leave prose describing code it removed, and a
+  removed text map must not leave a sentence without its referent
 - **Concept manifest** (if `<workdir>` given): `<id>.concepts.json` exists per lesson,
   `teaches` has 5–20 entries, and its `uses` honestly reflect the lesson
 

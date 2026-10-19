@@ -1,5 +1,7 @@
 # Learning Visuals Implementation Plan
 
+**Status (ticked 2026-10-17):** all 14 tasks done. Evidence: pilots `pilot-04/` and `pilot-06/` with 1280/390 screenshots, the lesson 01 backfill SVG in `images/diagrams/`, review fixes `e1c280e`, and the follow-on rollout in `rollout/PROGRESS.md`. Task 13's admin follow-ups are tracked in the admin checklist. The unticked boxes inside code blocks are template text, not steps.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Make lesson figures teach: technical diagrams drawn from each lesson's own data with numbered reading steps, generated illustrations only for scenes, every figure introduced and explained in visible text, re-reviewed when its section changes — proven on two pilot lessons and one backfill before any rollout.
@@ -50,7 +52,7 @@
   - `fixture_text(content: str) -> str` — seed `<script type="text/plain">` bodies and demo-table text
   - `section_fingerprint(content: str, number: int, heading: str) -> str` — 16 hex chars, ignores inserted visuals
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 from fixture_course import course
@@ -108,12 +110,12 @@ def test_fixture_text_reads_seed_scripts_and_demo_tables():
     assert "Aarav" in out and "Pune" in out and "INSERT INTO t VALUES (1);" in out
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q test_lessonhtml_v2.py`
 Expected: FAIL — `ImportError: cannot import name 'fixture_text' from 'lessonhtml'`
 
-- [ ] **Step 3: Append to `lessonhtml.py`**
+- [x] **Step 3: Append to `lessonhtml.py`**
 
 ```python
 import hashlib
@@ -192,12 +194,12 @@ def section_fingerprint(content: str, number: int, heading: str) -> str:
     return hashlib.sha256(clean[sec.start:sec.end].encode("utf-8")).hexdigest()[:16]
 ```
 
-- [ ] **Step 4: Run tests to verify they pass, then the whole suite**
+- [x] **Step 4: Run tests to verify they pass, then the whole suite**
 
 Run: `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q test_lessonhtml_v2.py && PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q`
 Expected: `5 passed`, then `59 passed`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add skills/nerdit-lesson-illustrator/scripts/lessonhtml.py skills/nerdit-lesson-illustrator/scripts/test_lessonhtml_v2.py
@@ -218,7 +220,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - Consumes: `remove_visual_blocks`, `section_text`, `fixture_text`, `section_fingerprint`, `sections` (Task 1)
 - Produces: `full_section(course: dict, lesson_id: str, number: int) -> str` (raises `KeyError`); CLI flag `--full <lesson-id>:<section-number>` (exit 2 on unknown lesson/section)
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 import json
@@ -253,12 +255,12 @@ def test_cli_full_unknown_lesson_exits_2(tmp_path):
     assert r.returncode == 2 and "unknown lesson nope" in r.stdout
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q test_extract_outline_full.py`
 Expected: FAIL — `ImportError: cannot import name 'full_section' from 'extract_outline'`
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Change the import line of `extract_outline.py` to:
 
@@ -302,12 +304,12 @@ In `main()`, add `ap.add_argument("--full", help="<lesson-id>:<section-number>")
         return 0
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q test_extract_outline_full.py test_extract_outline.py`
 Expected: `5 passed`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add skills/nerdit-lesson-illustrator/scripts/extract_outline.py skills/nerdit-lesson-illustrator/scripts/test_extract_outline_full.py
@@ -336,7 +338,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
   - v2 slot fields: `version` (2), `kind`, `question`, `objective`, `sourceRefs`, `knownTerms`, `newTerms`, `labels`, `takeaway`, `misconception`, `intro`, `caption`, `alt`, `explanation` (list), `checkQuestion` (`question`, `answer`, `reasoning`), `subject`, `sourceFingerprint`, plus all v1 bookkeeping fields. Diagram ids `<lesson>-fig<N>`, request `<id>.svg` in `images/diagrams/`; illustration ids `<lesson>-img<N>`, request `<id>.png` in `images/incoming/`.
   - manifest `course.cast` (Addition 4)
 
-- [ ] **Step 1: Replace the style block in `references/style.md`**
+- [x] **Step 1: Replace the style block in `references/style.md`**
 
 Replace everything between the opening ```` ```style ```` fence and its closing fence with:
 
@@ -348,7 +350,7 @@ Text: {text_clause}
 People, if any: Indian people in Indian settings. No real brands, companies or celebrities.
 ```
 
-- [ ] **Step 2: Add `PLAN_V2` to `fixture_course.py`**
+- [x] **Step 2: Add `PLAN_V2` to `fixture_course.py`**
 
 ```python
 PLAN_V2 = {
@@ -386,7 +388,7 @@ PLAN_V2 = {
 }
 ```
 
-- [ ] **Step 3: Write the failing tests**
+- [x] **Step 3: Write the failing tests**
 
 ```python
 import copy
@@ -464,12 +466,12 @@ def test_render_lists_diagrams_to_draw_and_record_rebuilds_v2_prompt():
         'People, if any: Indian people in Indian settings. No real brands, companies or celebrities.')
 ```
 
-- [ ] **Step 4: Run tests to verify they fail**
+- [x] **Step 4: Run tests to verify they fail**
 
 Run: `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q test_manifest_v2.py`
 Expected: FAIL — `ImportError: cannot import name 'PLAN_V2' from 'fixture_course'` until Step 2 is saved, then `ImportError: cannot import name 'add_slots_v2' from 'manifest'`
 
-- [ ] **Step 5: Implement in `manifest.py`**
+- [x] **Step 5: Implement in `manifest.py`**
 
 Change the lessonhtml import to:
 
@@ -689,12 +691,12 @@ In `main()`'s `add` branch, choose the adder by plan type and create the diagram
 
 and after `(images_dir / "incoming").mkdir(exist_ok=True)` add `(images_dir / "diagrams").mkdir(exist_ok=True)`.
 
-- [ ] **Step 6: Run the manifest suites**
+- [x] **Step 6: Run the manifest suites**
 
 Run: `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q test_manifest.py test_manifest_checks.py test_manifest_v2.py`
 Expected: `18 passed`
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add skills/nerdit-lesson-illustrator/references/style.md skills/nerdit-lesson-illustrator/scripts/manifest.py skills/nerdit-lesson-illustrator/scripts/fixture_course.py skills/nerdit-lesson-illustrator/scripts/test_manifest_v2.py
@@ -718,7 +720,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
   - `check_svg(svg: str, labels: list[str], steps: int) -> list[str]`
   - `convert_all` also processes diagram slots from `images/diagrams/` (status `converted` when `check_svg` passes) and writes `preview/<id>-phone.jpg` (360 px) for raster images; constant `PHONE_WIDTH = 360`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 import copy
@@ -773,12 +775,12 @@ def test_convert_all_handles_diagrams_and_phone_previews(tmp_path):
     assert any("load-basics-01-fig1.svg: hex colour" in e for e in report["errors"])
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q test_svgcheck.py`
 Expected: FAIL — `ModuleNotFoundError: No module named 'svgcheck'`
 
-- [ ] **Step 3: Create `svgcheck.py`**
+- [x] **Step 3: Create `svgcheck.py`**
 
 ```python
 """Check an inline SVG diagram against the lesson figure contract (CORE.md §7/§7b, figures.md)."""
@@ -817,7 +819,7 @@ def check_svg(svg: str, labels: list[str], steps: int) -> list[str]:
     return errors
 ```
 
-- [ ] **Step 4: Extend `convert_images.py`**
+- [x] **Step 4: Extend `convert_images.py`**
 
 Add `from svgcheck import check_svg` to the imports and `PHONE_WIDTH = 360` to the constants. Change `_write_preview` to take a width:
 
@@ -869,12 +871,12 @@ and before `return report` add the diagram loop:
         report["converted"].append(slot["id"])
 ```
 
-- [ ] **Step 5: Run tests**
+- [x] **Step 5: Run tests**
 
 Run: `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q test_svgcheck.py test_convert_images.py`
 Expected: `13 passed`
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add skills/nerdit-lesson-illustrator/scripts/svgcheck.py skills/nerdit-lesson-illustrator/scripts/convert_images.py skills/nerdit-lesson-illustrator/scripts/test_svgcheck.py
@@ -898,7 +900,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
   - `insert_lessons(course: dict, m: dict, diagrams_dir: Path | None = None) -> list[str]` — v1 slots unchanged; v2 diagram slots read `diagrams_dir / slot["requestFile"]`
   - `strip_inserted` now delegates to `remove_visual_blocks`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 import copy
@@ -955,12 +957,12 @@ def test_v2_missing_diagram_file_fails_only_that_slot(tmp_path):
     assert m["images"][1]["status"] == "inserted"
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q test_insert_v2.py`
 Expected: FAIL — `TypeError: insert_lessons() takes 2 positional arguments but 3 were given`
 
-- [ ] **Step 3: Implement in `insert_images.py`**
+- [x] **Step 3: Implement in `insert_images.py`**
 
 Add to the imports: `from lessonhtml import AnchorNotFound, locate, remove_visual_blocks` (replacing the old lessonhtml import) and `from manifest import MARKERS`.
 
@@ -1045,12 +1047,12 @@ def insert_lessons(course: dict, m: dict, diagrams_dir: Path | None = None) -> l
 
 In `build_output`, call `insert_lessons(work, m, images_dir / "diagrams")`.
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q test_insert_v2.py test_insert_images.py`
 Expected: `8 passed`
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add skills/nerdit-lesson-illustrator/scripts/insert_images.py skills/nerdit-lesson-illustrator/scripts/test_insert_v2.py
@@ -1071,7 +1073,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 - Consumes: `visual_elements`, `section_fingerprint`, `section_text`, `fixture_text`, `find_section`, `remove_visual_blocks` (Task 1), `check_svg` (Task 4), `build_output` (v1 Task 9)
 - Produces: `check()` validates v2 inserted slots: all four siblings present, caption and intro non-empty, step count equals list items, markers agree, SVG contract, raster attributes and size, diagram labels still in the lesson, and `sourceFingerprint` unchanged (else a re-review error)
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 import copy
@@ -1159,12 +1161,12 @@ def test_v2_check_reports_missing_siblings(tmp_path):
     assert any("load-basics-01-fig1: missing intro paragraph" in e for e in errors)
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q test_check_v2.py`
 Expected: FAIL — `test_stale_section_blocks_output` and the two sibling tests fail (no v2 checks yet; `check` reports v2 slots as "marked inserted but not found")
 
-- [ ] **Step 3: Implement in `check_images.py`**
+- [x] **Step 3: Implement in `check_images.py`**
 
 Change the imports to:
 
@@ -1241,12 +1243,12 @@ In `check`, collect v2 slots per lesson and validate them; v1 block parsing keep
 
 and in the v1 `BLOCK` loop, skip ids whose slot is v2 (`if slot is not None and slot.get("version") == 2: continue` right after `slot = slots.get(image_id)`).
 
-- [ ] **Step 4: Run the whole illustrator suite**
+- [x] **Step 4: Run the whole illustrator suite**
 
 Run: `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q`
 Expected: `80 passed` (54 baseline + 5 + 2 + 6 + 5 + 3 + 5)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add skills/nerdit-lesson-illustrator/scripts/check_images.py skills/nerdit-lesson-illustrator/scripts/test_check_v2.py
@@ -1269,7 +1271,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
   - `check_lesson(content: str) -> dict` — `{"examples", "match", "mismatch": [str], "unchecked": [str]}`
   - CLI `python check_sql_outputs.py --course <output.json> [--lesson <id>]`, exit 1 when any mismatch
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```python
 from check_sql_outputs import check_lesson, parse_table
@@ -1309,12 +1311,12 @@ def test_error_outputs_match_by_message_and_others_are_unchecked():
     assert r["match"] == 1 and len(r["unchecked"]) == 1
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run: `cd skills/nerdit-chapter-generator/scripts && PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q test_check_sql_outputs.py`
 Expected: FAIL — `ModuleNotFoundError: No module named 'check_sql_outputs'`
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 ```python
 #!/usr/bin/env python3
@@ -1444,17 +1446,17 @@ if __name__ == "__main__":
     sys.exit(main())
 ```
 
-- [ ] **Step 4: Run tests and the chapter-generator suite**
+- [x] **Step 4: Run tests and the chapter-generator suite**
 
 Run: `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q test_check_sql_outputs.py && PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q`
 Expected: `4 passed`, then `124 passed`
 
-- [ ] **Step 5: Run it on the current Data Modelling course (baseline, read-only)**
+- [x] **Step 5: Run it on the current Data Modelling course (baseline, read-only)**
 
 Run: `python check_sql_outputs.py --course ../../../../nerdit/generated/data-modelling-etl-data-warehousing-for-analysts/course-data-modelling-etl-data-warehousing-for-analysts_output.json --lesson dw-dimensional-models-and-star-schemas-04`
 Expected: one summary line for the lesson. Record the counts in the ledger as the pilot's "before" numbers; mismatches here are findings for Task 10, not failures of this task.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add skills/nerdit-chapter-generator/scripts/check_sql_outputs.py skills/nerdit-chapter-generator/scripts/test_check_sql_outputs.py
@@ -1476,7 +1478,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 **Interfaces:**
 - Produces: the teaching sequence and figure rules the pilots (Tasks 10–11) are generated under
 
-- [ ] **Step 1: Replace the concept-section shape in `CORE.md` §2**
+- [x] **Step 1: Replace the concept-section shape in `CORE.md` §2**
 
 Replace the lines from `[definition: 2–3 short sentences, ONE key word in <strong>]` through `[Try It block]` with:
 
@@ -1502,7 +1504,7 @@ Teaching sequence rules (checked by the QA agent):
 - Do not add a second example only to reach a count.
 ```
 
-- [ ] **Step 1b: Change the overview box rule in `CORE.md` §2 and §3**
+- [x] **Step 1b: Change the overview box rule in `CORE.md` §2 and §3**
 
 Replace the skeleton line `[overview box]                                 ← 2 sentences max` with
 `[overview box]                                 ← a real question + what the learner will be able to do`,
@@ -1515,7 +1517,7 @@ will be able to do. Link to the previous lesson and name only the prerequisites 
 Show the course and lesson names as given; never invent a chapter level.
 ```
 
-- [ ] **Step 2: Add the heading rule to `CORE.md` §4c**
+- [x] **Step 2: Add the heading rule to `CORE.md` §4c**
 
 At the end of §4c add:
 
@@ -1527,7 +1529,7 @@ only converts a timestamp sends the learner looking for a join that is not there
 heading after the code, from the code.
 ```
 
-- [ ] **Step 3: Change `CORE.md` §5 opening sentence**
+- [x] **Step 3: Change `CORE.md` §5 opening sentence**
 
 Replace the first paragraph of §5 with:
 
@@ -1537,7 +1539,7 @@ in the section that introduces it. The seed script still recreates every table, 
 runner always has the full dataset.
 ```
 
-- [ ] **Step 4: Add template 10 to `figures.md`**
+- [x] **Step 4: Add template 10 to `figures.md`**
 
 Insert before `## Choosing between them`:
 
@@ -1574,7 +1576,7 @@ Use the lesson's own row and values. Number the parts the reading steps describe
 Draw one record, not a table. The reading steps under the figure follow ① ② ③ in order.
 ````
 
-- [ ] **Step 5: Update the lesson-writer agent**
+- [x] **Step 5: Update the lesson-writer agent**
 
 In `agents/nerdit-lesson-writer.md`, under "## The rules that matter most", add:
 
@@ -1588,7 +1590,7 @@ In `agents/nerdit-lesson-writer.md`, under "## The rules that matter most", add:
   the lesson's data; otherwise drop it and draw the relationship as an SVG figure.
 ```
 
-- [ ] **Step 6: Update the QA agent checklist**
+- [x] **Step 6: Update the QA agent checklist**
 
 In `agents/nerdit-qa-validator.md`, add to its checklist:
 
@@ -1600,7 +1602,7 @@ In `agents/nerdit-qa-validator.md`, add to its checklist:
 - [ ] Tables and terms appear in the section that first needs them.
 ```
 
-- [ ] **Step 7: Add the SQL check to the chapter generator's Step 4c**
+- [x] **Step 7: Add the SQL check to the chapter generator's Step 4c**
 
 In `skills/nerdit-chapter-generator/SKILL.md`, at the end of "## Step 4c", add:
 
@@ -1613,12 +1615,12 @@ A mismatch means a shown result does not follow from the seed data: regenerate t
 the reported lines (counts toward the 2-attempt budget).
 ```
 
-- [ ] **Step 8: Verify nothing else broke**
+- [x] **Step 8: Verify nothing else broke**
 
 Run: `cd skills/nerdit-chapter-generator/scripts && PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q`
 Expected: `124 passed`
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add skills/nerdit-chapter-generator/references/CORE.md skills/nerdit-chapter-generator/references/figures.md agents/nerdit-lesson-writer.md agents/nerdit-qa-validator.md skills/nerdit-chapter-generator/SKILL.md
@@ -1639,7 +1641,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 **Interfaces:**
 - Consumes: every CLI from Tasks 1–6
 
-- [ ] **Step 1: Replace "Run 1 — plan" steps 2–4 in `SKILL.md`**
+- [x] **Step 1: Replace "Run 1 — plan" steps 2–4 in `SKILL.md`**
 
 ```markdown
 2. `python scripts/extract_outline.py --course <course.json>` to find candidate sections.
@@ -1663,7 +1665,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 (Renumber the following step.)
 
-- [ ] **Step 2: Replace "Run 2 — apply" step 2 in `SKILL.md`**
+- [x] **Step 2: Replace "Run 2 — apply" step 2 in `SKILL.md`**
 
 ```markdown
 2. Check every converted visual against its brief using the criteria in `references/style.md`:
@@ -1671,7 +1673,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
    each diagram's SVG source. Write `<images>/results.json` as before.
 ```
 
-- [ ] **Step 3: Replace the prose sections of `references/style.md`**
+- [x] **Step 3: Replace the prose sections of `references/style.md`**
 
 Replace "## Planning rules" and "## Visual check criteria" with:
 
@@ -1707,16 +1709,16 @@ PASS only when all hold:
 6. Nothing contradicts the lesson or invites the brief's stated misconception.
 ```
 
-- [ ] **Step 4: Bump the plugin version**
+- [x] **Step 4: Bump the plugin version**
 
 Set `"version": "3.2.0"` in `.claude-plugin/plugin.json`.
 
-- [ ] **Step 5: Verify**
+- [x] **Step 5: Verify**
 
 Run: `cd skills/nerdit-lesson-illustrator/scripts && PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q`
 Expected: `80 passed`
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add skills/nerdit-lesson-illustrator/SKILL.md skills/nerdit-lesson-illustrator/references/style.md .claude-plugin/plugin.json
@@ -1731,7 +1733,7 @@ Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
 
 **Files (local, not committed):** `../nerdit/generated/data-modelling-etl-data-warehousing-for-analysts/` — a new work folder `pilot-04/` inside it.
 
-- [ ] **Step 1: Prepare a reform source**
+- [x] **Step 1: Prepare a reform source**
 
 ```bash
 D=../nerdit/generated/data-modelling-etl-data-warehousing-for-analysts
@@ -1746,11 +1748,11 @@ json.dump([i for i in items if i["id"] == "dw-dimensional-models-and-star-schema
 EOF
 ```
 
-- [ ] **Step 2: Regenerate the lesson in reform mode**
+- [x] **Step 2: Regenerate the lesson in reform mode**
 
 Run one `nerdit-lesson-writer` agent (one agent at a time) with: the lesson's id/title/description from `pilot-04/course-pilot-04_input.json`, `RUNNER: sql`, `SOURCE_PATH = pilot-04/_src/dw-dimensional-models-and-star-schemas-04.html`, PRIOR/UPCOMING from the full course input, paths `pilot-04/<id>.html|.quiz.json|.concepts.json`, and this brief: follow the updated CORE.md teaching sequence; section 2's question is "How does a sales row find its customer and product?"; start from fact row O1 line 1 (`customer_key=1`, `product_key=10`, `amount=200`); draw template 10 from those values; steps ① amount, ② customer key → Aarav, Pune, ③ product key → Book; reveal snowflake tables only in the star-vs-snowflake section; introduce duplicate-key multiplication in its own section; drop the old Boston/Chicago PNG.
 
-- [ ] **Step 3: Assemble and run every gate**
+- [x] **Step 3: Assemble and run every gate**
 
 ```bash
 G=skills/nerdit-chapter-generator/scripts
@@ -1761,15 +1763,15 @@ python $G/check_sequence.py --input "$D/course-data-modelling-etl-data-warehousi
 ```
 Expected: verifier `PASS`; SQL checker `0 mismatch`; sequencing clean (a single-lesson pilot checks only that lesson's own declared terms). Any mismatch → regenerate with the exact lines (2-attempt budget).
 
-- [ ] **Step 4: Trace every figure value to the fixture**
+- [x] **Step 4: Trace every figure value to the fixture**
 
 Read the lesson's key-match SVG and its seed script; confirm O1/1/200, key 1 → Aarav, Pune and key 10 → Book appear in the seed. Record the check in the ledger.
 
-- [ ] **Step 5: Render a preview at desktop and phone width**
+- [x] **Step 5: Render a preview at desktop and phone width**
 
 Write `pilot-04/preview.html` that links `skills/nerdit-chapter-generator/references/css8.css`, `css9-simple.css` and `css10-brand.css` and contains the lesson HTML. Open it with Playwright (`file://` URL), take full-page screenshots at 1280 px and 390 px widths, and read both. Fix layout problems before review.
 
-- [ ] **Step 6: Record the pilot result in the ledger** (no commit — generated content is local)
+- [x] **Step 6: Record the pilot result in the ledger** (no commit — generated content is local)
 
 ---
 
@@ -1777,10 +1779,10 @@ Write `pilot-04/preview.html` that links `skills/nerdit-chapter-generator/refere
 
 **Files (local, not committed):** `$D/pilot-06/`
 
-- [ ] **Step 1:** Repeat Task 10 Steps 1–3 for `dw-date-dimensions-and-reporting-calendars-06`, with this brief: section 2 shows `2025-03-31 20:00 UTC` and `2025-04-01 01:30 Asia/Kolkata` as the same instant on a timeline figure (sequence template), then derives the reporting date; the heading names the timezone conversion; state that the April–March fiscal calendar belongs to this example; handle order date versus ship date in its own section; keep the existing date picture only if every value matches the seed, otherwise replace it with the SVG timeline.
-- [ ] **Step 2:** Trace every timestamp and offset in the figure to the seed and the worked example (ledger).
-- [ ] **Step 3:** Desktop and phone screenshots as in Task 10 Step 5; fix layout problems.
-- [ ] **Step 4:** Record the result in the ledger.
+- [x] **Step 1:** Repeat Task 10 Steps 1–3 for `dw-date-dimensions-and-reporting-calendars-06`, with this brief: section 2 shows `2025-03-31 20:00 UTC` and `2025-04-01 01:30 Asia/Kolkata` as the same instant on a timeline figure (sequence template), then derives the reporting date; the heading names the timezone conversion; state that the April–March fiscal calendar belongs to this example; handle order date versus ship date in its own section; keep the existing date picture only if every value matches the seed, otherwise replace it with the SVG timeline.
+- [x] **Step 2:** Trace every timestamp and offset in the figure to the seed and the worked example (ledger).
+- [x] **Step 3:** Desktop and phone screenshots as in Task 10 Step 5; fix layout problems.
+- [x] **Step 4:** Record the result in the ledger.
 
 ---
 
@@ -1788,7 +1790,7 @@ Write `pilot-04/preview.html` that links `skills/nerdit-chapter-generator/refere
 
 **Files (local):** `$D/images/` (the existing Data Modelling illustrator folder)
 
-- [ ] **Step 1: Replace the three old v1 plans for lessons 01–02**
+- [x] **Step 1: Replace the three old v1 plans for lessons 01–02**
 
 ```bash
 S=skills/nerdit-lesson-illustrator/scripts
@@ -1804,12 +1806,12 @@ python $S/manifest.py add --course "$C" --plan "$D/images/plan.json" --images-di
 
 Expected: `Planned …` with the diagram listed under "Diagrams to draw".
 
-- [ ] **Step 2:** Write the SVG to `$D/images/diagrams/dw-analyst-warehouse-purpose-and-layers-01-fig1.svg` following figures.md, then run `convert_images.py`, read the SVG, write `results.json`, `manifest.py record`, and `insert_images.py`.
+- [x] **Step 2:** Write the SVG to `$D/images/diagrams/dw-analyst-warehouse-purpose-and-layers-01-fig1.svg` following figures.md, then run `convert_images.py`, read the SVG, write `results.json`, `manifest.py record`, and `insert_images.py`.
 Expected: `Wrote …with-images.json`, the 16 optimised images still re-pointed, and no new verifier failures.
 
-- [ ] **Step 3:** Inspect lesson 01's existing (re-encoded) warehouse-layers image against its section text and fixture; record keep or replace in the ledger. Re-encoding is not approval of its content.
-- [ ] **Step 4:** Preview lesson 01 from the with-images JSON at desktop and phone width (as Task 10 Step 5) and record the result.
-- [ ] **Step 5:** Record the limits of a backfill in the ledger: the added figure and check question do not fix lesson 01's existing Try It (it aggregates Pune orders while the section asks about ETL vs ELT order); that needs the lesson regenerated under Task 8's rules during rollout. Before any import of this course, each of the 16 re-encoded images needs the same keep/replace review as Step 3.
+- [x] **Step 3:** Inspect lesson 01's existing (re-encoded) warehouse-layers image against its section text and fixture; record keep or replace in the ledger. Re-encoding is not approval of its content.
+- [x] **Step 4:** Preview lesson 01 from the with-images JSON at desktop and phone width (as Task 10 Step 5) and record the result.
+- [x] **Step 5:** Record the limits of a backfill in the ledger: the added figure and check question do not fix lesson 01's existing Try It (it aggregates Pune orders while the section asks about ETL vs ELT order); that needs the lesson regenerated under Task 8's rules during rollout. Before any import of this course, each of the 16 re-encoded images needs the same keep/replace review as Step 3.
 
 ---
 
@@ -1824,7 +1826,7 @@ course JSON and only its referenced raster assets. Inline SVG needs no upload.
 **Files:**
 - Modify: `../nerdit-admin/docs/course-json-images-import-plan.md` (append; owned by the admin workstream)
 
-- [ ] **Step 1: Append this section**
+- [x] **Step 1: Append this section**
 
 ```markdown
 ## Integration with the lesson illustrator (added 2026-10-12)
@@ -1853,12 +1855,12 @@ course JSON and only its referenced raster assets. Inline SVG needs no upload.
       steps, filenames, anchors and examples survive unchanged in meaning.
 ```
 
-- [ ] **Step 2:** Show the user the appended section; this repository is the admin workstream's, so do not commit it from this plan.
+- [x] **Step 2:** Show the user the appended section; this repository is the admin workstream's, so do not commit it from this plan.
 
 ---
 
 ### Task 14: Review gate
 
-- [ ] **Step 1:** Present to the user: both pilots' desktop and phone screenshots, the traced figure values, the SQL checker results before and after, and the backfill lesson preview.
-- [ ] **Step 2:** Suggest one real first-time student reads a pilot and answers its check questions before rollout; that is stronger evidence than editorial review.
-- [ ] **Step 3:** Record the user's decision in the ledger. Rolling the pattern out to other lessons, importing anything into the admin, and publishing are separate requests after this review.
+- [x] **Step 1:** Present to the user: both pilots' desktop and phone screenshots, the traced figure values, the SQL checker results before and after, and the backfill lesson preview.
+- [x] **Step 2:** Suggest one real first-time student reads a pilot and answers its check questions before rollout; that is stronger evidence than editorial review.
+- [x] **Step 3:** Record the user's decision in the ledger. Rolling the pattern out to other lessons, importing anything into the admin, and publishing are separate requests after this review.
