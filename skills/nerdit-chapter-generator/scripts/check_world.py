@@ -21,7 +21,7 @@ import sqlite3
 import sys
 
 from make_world_data import generate, load_world
-from render_screens import BLOCK as SCREEN_BLOCK
+from render_screens import strip_drawings
 from screens import lesson_text
 from verify_course import parse, text_of
 
@@ -65,7 +65,7 @@ def _numbers(text: str) -> list[tuple[str, set]]:
 
 def svg_label_failures(content: str, domains: dict) -> list[str]:
     """SVG labels that state a number the lesson never states, or show a world record it never shows."""
-    content = SCREEN_BLOCK.sub(' ', content)  # drawn screens: check_screens.py
+    content = strip_drawings(content)  # drawn screens: check_screens.py
     # Spaces at tag boundaries, so table cells C9 and 8000 never read as C98000.
     bare = SVG.sub(' ', content)
     source = lesson_text(bare) + ' ' + ' '.join(html.unescape(seed) for seed in SEED.findall(bare))

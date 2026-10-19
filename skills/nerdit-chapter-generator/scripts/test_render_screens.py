@@ -74,7 +74,7 @@ def test_reading_step_wording():
 def test_figure_block_markup():
     out = figure_block(XL, "<svg></svg>", ["Click cell H3.", "H3 shows Chennai."])
     assert out == ('<div class="nerdit-figure" data-visual="screen" data-screen="xlookup-city" '
-                   'style="max-width:440px"><svg></svg><div class="nerdit-figure-caption">'
+                   'data-screen-v="1" style="max-width:440px"><svg></svg><div class="nerdit-figure-caption">'
                    "Find Isha&#x27;s city with XLOOKUP</div></div>"
                    '<ol class="nerdit-visual-read" data-screen="xlookup-city">'
                    "<li>① Click cell H3.</li><li>② H3 shows Chennai.</li></ol>")
@@ -326,3 +326,40 @@ def test_cli_skips_html_that_is_not_a_lesson(tmp_path):
     (tmp_path / "preview.html").write_text(preview, encoding="utf-8")
     assert main(["--dir", str(tmp_path)]) == 0
     assert (tmp_path / "preview.html").read_text(encoding="utf-8") == preview
+
+
+# ---- deferred review fixes ----
+
+def test_js_string_matches_javascript():
+    from render_screens import js_string
+    assert js_string(0.00005) == "0.00005"
+    assert js_string(1e-7) == "1e-7"
+    assert js_string(1.2345678901234568e20) == "123456789012345680000"
+    assert js_string(1e21) == "1e+21"
+    assert js_string(45000.0) == "45000" and js_string(12.5) == "12.5"
+
+
+def test_drawing_carries_the_renderer_version():
+    from render_screens import RENDER_VERSION
+    out, _ = render_lesson(two_screen_lesson())
+    assert out.count(f'data-screen-v="{RENDER_VERSION}"') == 2
+
+
+def test_rerender_finds_a_drawing_whatever_its_attribute_order():
+    once, _ = render_lesson(two_screen_lesson())
+    shuffled = once.replace('<div class="nerdit-figure" data-visual="screen" data-screen="ads-new"',
+                            '<div data-screen="ads-new" class="nerdit-figure" data-visual="screen"')
+    again, problems = render_lesson(shuffled)
+    assert problems == [] and again.count('data-screen="ads-new"') == 2  # one figure + one reading list
+
+
+def test_one_engine_call_per_lesson(monkeypatch):
+    import render_screens
+    calls = []
+    real = render_screens.evaluate_many
+    monkeypatch.setattr(render_screens, "evaluate_many", lambda h, r, f: calls.append(f) or real(h, r, f))
+    second = dict(XL, id="vlookup", steps=[{"do": "type", "target": "H3", "text": '=XLOOKUP("Isha",B2:B7,D2:D7)'},
+                                          {"do": "result", "target": "H3"}])
+    html = lesson(XL_TEXT, block(XL, grid="xl-staff"), block(second, grid="xl-staff"))
+    _, problems = render_lesson(html)
+    assert problems == [] and len(calls) == 1

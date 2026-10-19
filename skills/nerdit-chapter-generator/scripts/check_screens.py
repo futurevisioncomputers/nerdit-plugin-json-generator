@@ -20,7 +20,7 @@ import re
 import sys
 from pathlib import Path
 
-from render_screens import BLOCK, render_spec, screen_theme
+from render_screens import RENDER_VERSION, drawn_blocks, lesson_results, render_spec, screen_theme
 from screens import read_specs, screen_kind, validate_lesson
 from verify_course import parse, text_of, walk
 
@@ -31,8 +31,9 @@ LEAD = re.compile(r"^[\s①-⑳\d.)]+")
 GAP = re.compile(r">\s+<")
 
 
-def _drawn_blocks(html: str) -> dict[str, str]:
-    return {m.group(1): m.group(0) for m in BLOCK.finditer(html)}
+def _drawn_blocks(html: str) -> dict[str, tuple[str, int, str | None]]:
+    """id -> (markup, start, renderer version) of each drawn screen (the last one wins)."""
+    return {sid: (html[start:end], start, version) for sid, start, end, version in drawn_blocks(html)}
 
 
 def _in_details(node) -> bool:
@@ -61,7 +62,9 @@ def click_path_warnings(html: str) -> list[str]:
         nodes = list(walk(sec))
         has_screen = any(n.tag == "script" and "nerdit-screen" in n.classes for n in nodes)
         if not has_screen and any(n.tag == "ol" and _is_click_path(n) for n in nodes):
-            warns.append(f"section {k}: click-path with no screen (figures.md template 16)")
+            heading = next((text_of(n).strip() for n in nodes if n.tag == "h2"), "")
+            where = f'section "{heading}"' if heading else f"section {k}"
+            warns.append(f"{where}: click-path with no screen (figures.md template 16)")
     return warns
 
 
@@ -71,6 +74,7 @@ def check_lesson(html: str) -> tuple[list[str], list[str]]:
     specs = read_specs(html)
     drawn = _drawn_blocks(html)
     if not fails:
+        computed = lesson_results(html, specs)
         for spec in specs:
             sid, kind = spec["id"], screen_kind(spec)
             if spec.get("image", "auto") != "auto":
@@ -82,18 +86,22 @@ def check_lesson(html: str) -> tuple[list[str], list[str]]:
             if screen_theme(spec) is None:
                 warns.append(f"{sid}: no colour theme for '{spec['app']}'; drawn in NerdIT colours "
                              f"(add one to APP_THEMES and css10-brand.css)")
-            fresh, problems = render_spec(html, spec)
+            fresh, problems = render_spec(html, spec, computed)
             if problems:
                 fails += problems
             elif sid not in drawn:
                 fails.append(f"{sid}: no drawn screen; run render_screens.py")
-            elif GAP.sub("><", drawn[sid]) != GAP.sub("><", fresh):
+            elif drawn[sid][2] != RENDER_VERSION:
+                fails.append(f"{sid}: drawn by an older renderer; run render_screens.py")
+            elif html[spec["_offset"]:drawn[sid][1]].strip():
+                fails.append(f"{sid}: the drawing is not right after its spec; run render_screens.py")
+            elif GAP.sub("><", drawn[sid][0]) != GAP.sub("><", fresh):
                 fails.append(f"{sid}: drawn screen is out of date; run render_screens.py")
     ids = {s.get("id") for s in specs}
     fails += [f"{sid}: a drawn screen has no spec; run render_screens.py" for sid in drawn if sid not in ids]
     counts: dict[str, int] = {}
-    for m in BLOCK.finditer(html):
-        counts[m.group(1)] = counts.get(m.group(1), 0) + 1
+    for sid, *_ in drawn_blocks(html):
+        counts[sid] = counts.get(sid, 0) + 1
     fails += [f"{sid}: the screen is drawn twice; run render_screens.py" for sid, n in counts.items() if n > 1]
     warns += click_path_warnings(html)
     return fails, warns

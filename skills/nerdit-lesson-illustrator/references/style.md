@@ -22,7 +22,7 @@ recognises it; the house colours above do not apply to it.
 Style: a clean, realistic {app} screen in {app}'s own usual colours and theme, cropped to the working area only: the menu, tab or panel in use and the content the steps touch. No title bar, no window controls, no taskbar, no browser chrome.
 Format: 4:3 or 3:4, sized so every label is readable on a phone screen; text large and bold where it matters.
 Text: {text_clause}
-Markers: numbered circles ① ② ③ next to the parts named in the steps, in order.
+Markers: numbered circles ① to ⑤, one per step, next to the parts named in the steps, in order.
 No logos, no brand marks, no watermarks, no extra values, names or menu items beyond the listed text.
 ```
 

@@ -564,6 +564,9 @@ where the picture goes, right after the paragraph that explains the step:
 | `result` | `target`; `sheet` only, computed by the Excel engine |
 
 A `dialog` `{title, fields}` (1–4 fields, labels ≤24 and values ≤34 characters) may be added to any layout.
+Other limits, in characters: goal ≤60, typed text ≤40, each shown cell ≤24, keys ≤24, app name ≤24.
+Ids are slugs (`xlookup-city`). A chat `message` whose `who` is "you" (or "me", "user",
+"learner") sits on the right; any other `who` is the app's reply, on the left.
 In `sheet`, a click path is a ribbon: its first name is the tab and later names are buttons on the
 ribbon below it.
 

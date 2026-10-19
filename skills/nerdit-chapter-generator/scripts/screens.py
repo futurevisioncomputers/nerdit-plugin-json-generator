@@ -70,13 +70,14 @@ CELL = re.compile(r"^([A-Z]{1,3})([1-9][0-9]*)$")
 RANGE = re.compile(r"^([A-Z]{1,3})([1-9][0-9]*):([A-Z]{1,3})([1-9][0-9]*)$")
 LETTERS = re.compile(r"^[A-Z]{1,3}$")
 LINE = re.compile(r"^line ([1-9][0-9]*)$")
+SLUG = re.compile(r"^[a-z0-9][a-z0-9-]*$")  # ids land in HTML attributes and file names
 VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param",
         "source", "track", "wbr"}
 
 
 def _attr(attrs: str, name: str) -> str | None:
-    m = re.search(rf'(?<![\w-]){name}\s*=\s*"([^"]*)"', attrs)
-    return m.group(1) if m else None
+    m = re.search(rf"""(?<![\w-]){name}\s*=\s*(?:"([^"]*)"|'([^']*)')""", attrs)
+    return (m.group(1) if m.group(1) is not None else m.group(2)) if m else None
 
 
 def _norm(s: str) -> str:
@@ -480,6 +481,8 @@ def validate_spec(spec: dict, grid: tuple | None, text: str) -> list[str]:
 
     if sid == "?":
         bad("a screen spec needs an id")
+    elif not SLUG.match(sid):
+        bad("id must be a slug: lower-case letters, digits and hyphens")
     if not _text(spec.get("app")):
         bad("needs app, the app's plain name")
     elif len(spec["app"]) > MAX_APP:
@@ -509,7 +512,7 @@ def validate_spec(spec: dict, grid: tuple | None, text: str) -> list[str]:
     if screen_kind(spec) == "B":
         _check_teaching("B screens", spec, bad)
 
-    known = {k.casefold() for k in KNOWN_LABELS.get(str(spec.get("app", "")).casefold(), ())}
+    known = {k.casefold() for k in KNOWN_LABELS.get(app_theme(spec.get("app", "")) or "", ())}
     hay = _norm(text).casefold()
     for s in drawn_strings(spec):
         n = _norm(s).casefold()
@@ -530,6 +533,8 @@ def validate_scene(scene: dict) -> list[str]:
 
     if sid == "?":
         bad("a scene spec needs an id")
+    elif not SLUG.match(sid):
+        bad("id must be a slug: lower-case letters, digits and hyphens")
     for k in ("subject", "caption"):
         if not _text(scene.get(k)):
             bad(f"scenes need {k}")
