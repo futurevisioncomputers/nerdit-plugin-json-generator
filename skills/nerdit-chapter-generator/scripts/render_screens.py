@@ -62,6 +62,18 @@ def js_string(v) -> str:
     return str(v)
 
 
+def cell_text(v) -> str:
+    """A cell as the drawing shows it: outer spaces become ␣ so a cleaning lesson can see them
+    (figures.md R11; SVG would collapse them)."""
+    s = js_string(v)
+    core = s.strip(" ")
+    if not core:
+        return "␣" * len(s)
+    lead = len(s) - len(s.lstrip(" "))
+    trail = len(s) - len(s.rstrip(" "))
+    return "␣" * lead + core + "␣" * trail
+
+
 # ---- steps ----
 
 def reading_steps(spec: dict, results: dict[str, str]) -> list[str]:
@@ -213,7 +225,7 @@ def _sheet_columns(spec: dict, grid, results: dict[str, str]) -> list[tuple[str 
     for i, letter in enumerate(view["columns"]):
         if i and col_index(letter) - col_index(view["columns"][i - 1]) > 1:
             seq.append((None, 18))
-        shown = [letter] + [results.get(f"{letter}{r}") or js_string(cell_value(grid, f"{letter}{r}"))
+        shown = [letter] + [results.get(f"{letter}{r}") or cell_text(cell_value(grid, f"{letter}{r}"))
                             for r in range(r0, r1 + 1)]
         room = max([marks.get(f"{letter}{r}", 0) for r in range(r0, r1 + 1)] + [0]) * MARK_ROOM
         seq.append((letter, max(40, 12 + text_width(max(shown, key=len), 13)) + room))
@@ -230,7 +242,7 @@ def _sheet(c: Canvas, spec: dict, grid, results: dict[str, str], y: float) -> fl
     c.text(PAD + 8, y + 19, view["active"], size=12, fill=muted, mono=True)
     c.line(PAD + 48, y + 5, PAD + 48, y + 23)
     c.text(PAD + 56, y + 19, "fx", size=12, fill=muted, italic=True)
-    shown = typed[-1] if typed else js_string(cell_value(grid, view["active"]))
+    shown = typed[-1] if typed else cell_text(cell_value(grid, view["active"]))
     if shown:
         c.text(PAD + 76, y + 19, shown, size=12, mono=True)
     c.anchor(("fx",), W - PAD - 12, y + 14)
@@ -255,7 +267,7 @@ def _sheet(c: Canvas, spec: dict, grid, results: dict[str, str], y: float) -> fl
             if letter:
                 value = results.get(ref)
                 fill, bold = ("var(--green)", True) if value is not None else (None, r == 1)
-                value = value if value is not None else js_string(cell_value(grid, ref))
+                value = value if value is not None else cell_text(cell_value(grid, ref))
                 if value:
                     c.text(x + 6, y + 17, value, size=13, fill=fill, bold=bold, attrs=f'data-cell="{ref}"')
                 c.anchor(("cell", ref), x + w - 10, y + 12, -MARK_ROOM)

@@ -56,7 +56,7 @@ def app_theme(app: str) -> str | None:
     return next((key for key, patterns in APP_THEMES if any(p in name for p in patterns)), None)
 
 # Phone limits: a 400-wide drawing stays readable on a 390 px screen.
-MAX_COLUMNS, MAX_ROWS, MAX_CELL = 4, 7, 14
+MAX_COLUMNS, MAX_ROWS, MAX_CELL = 4, 7, 24
 MAX_LINES, MAX_OUTPUT, MAX_LINE = 8, 4, 40
 MAX_PATH, MAX_PANEL, MAX_LABEL, MAX_ITEM, MAX_MESSAGE = 4, 6, 24, 34, 90
 MAX_DIALOG_FIELDS, MAX_GOAL, MAX_ALT = 4, 60, 150

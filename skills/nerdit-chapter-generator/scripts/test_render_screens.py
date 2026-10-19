@@ -260,3 +260,11 @@ def test_every_theme_has_all_roles_in_css():
     for key, _ in APP_THEMES:
         for role in ROLES:
             assert re.search(rf"--app-{key}-{role}:\s*#[0-9A-Fa-f]{{6}};", css), f"--app-{key}-{role}"
+
+
+def test_cell_spaces_show_as_open_box():
+    grid = {"headers": GRID["headers"], "rows": [r[:] for r in GRID["rows"]]}
+    grid["rows"][0][1] = "  Aarav "
+    spec = dict(XL, view={"columns": ["B"], "rows": [1, 3], "active": "B2"}, steps=[{"do": "select", "target": "B2"}])
+    svg, _ = draw(spec, (grid["headers"], grid["rows"]))
+    assert re.search(r'<text[^>]*data-cell="B2"[^>]*>␣␣Aarav␣</text>', svg)

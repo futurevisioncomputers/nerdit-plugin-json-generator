@@ -119,8 +119,10 @@ def test_sheet_view_limits():
 
 def test_sheet_long_value_fails():
     grid = {"headers": GRID["headers"], "rows": [r[:] for r in GRID["rows"]]}
-    grid["rows"][0][3] = "Bengaluru Rural East"
-    assert any("14" in p for p in problems_for(XL, XL_TEXT, grid))
+    grid["rows"][0][3] = "Bengaluru Rural East Zone"  # 25 characters
+    assert any("24" in p for p in problems_for(XL, XL_TEXT, grid))
+    grid["rows"][0][3] = "AARAV.SHARMA@GMAIL.COM"  # 22: a cleaning lesson must show it
+    assert not any("longer than" in p for p in problems_for(XL, XL_TEXT, grid))
 
 
 def test_editor_limits():
