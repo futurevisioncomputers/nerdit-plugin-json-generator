@@ -7,7 +7,8 @@
 Compares <id>.html, <id>.quiz.json and <id>.concepts.json between the two folders.
   figures    - figures, their reading steps and visual blocks may change; a text map may be removed
   sql-layout - code may change in whitespace only
-  trim       - code, outputs, seeds, run-line headings and their leads may change
+  trim       - code, outputs, seeds, run-line headings and their leads may change; it may move
+               tables and rows into the seed, never a view, trigger or computed table
 Prose, the quiz and the concept manifest (except its `visuals` list) never change.
 Exit 0 = only allowed changes, 1 = something else changed, 2 = bad mode or missing file. Stdlib only.
 """
@@ -25,6 +26,12 @@ MODES = {"figures", "sql-layout", "trim"}
 CIRCLED = "①②③④⑤⑥⑦⑧⑨⑩"
 PUNCT = set("(),;=<>|+-*/")
 KEYS = ("prose", "figures", "maps", "code", "outputs", "seeds", "runheads")
+SEEDED = re.compile(r"\bCREATE\s+(?:TEMP(?:ORARY)?\s+)?(VIEW|TRIGGER)\s+(?:IF\s+NOT\s+EXISTS\s+)?(\w+)", re.I)
+# Seed statements that compute rows instead of listing them.
+COMPUTED = (
+    re.compile(r"\bCREATE\s+(?:TEMP(?:ORARY)?\s+)?TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(\w+)\s+AS\b", re.I),
+    re.compile(r"\bINSERT\s+(?:OR\s+\w+\s+)?INTO\s+(\w+)\s*(?:\([^)]*\)\s*)?(?:SELECT|WITH)\b", re.I),
+)
 
 
 def _ws(s: str) -> str:
@@ -123,6 +130,27 @@ def sql_key(sql: str) -> str:
     return "".join(out)
 
 
+def seeded_objects(seeds: list[str]) -> set[tuple[str, str]]:
+    """(kind, name) for each view, trigger and computed table the seeds create."""
+    out = set()
+    for seed in seeds:
+        out |= {(m.group(1).lower(), m.group(2).lower()) for m in SEEDED.finditer(seed)}
+        for pattern in COMPUTED:
+            out |= {("computed table", m.group(1).lower()) for m in pattern.finditer(seed)}
+    return out
+
+
+def _hidden_logic(before: dict, after: dict) -> list[str]:
+    """Trim may move repeated setup into the seed as plain tables and rows. A view, trigger or
+    computed table would make shown code work through logic the learner never reads, even
+    when the same query appears earlier (a CTE's name lasts one statement)."""
+    problems = []
+    for kind, name in sorted(seeded_objects(after["seeds"]) - seeded_objects(before["seeds"])):
+        problems.append(f"trim seeded {kind} {name}; a seed holds only tables and listed rows, "
+                        f"so show that logic in the code that needs it")
+    return problems
+
+
 def _first_diff(a: list[str], b: list[str]) -> int:
     return next((k for k, (x, y) in enumerate(zip(a, b)) if x != y), min(len(a), len(b)))
 
@@ -158,6 +186,8 @@ def compare(before: dict, after: dict, modes: set[str]) -> list[str]:
                                 f"'sql-layout' only moves whitespace")
         else:
             diff("code", "needs 'sql-layout' or 'trim'")
+    else:
+        problems += _hidden_logic(before, after)
     return problems
 
 

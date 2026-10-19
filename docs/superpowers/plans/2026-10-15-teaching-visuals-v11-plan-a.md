@@ -2,7 +2,7 @@
 
 ## Verification record — 2026-10-15
 
-Verified the existing implementation; unchecked historical implementation steps below do not reflect this verification run.
+Verified the existing implementation. Steps below were ticked on 2026-10-17 from this record; per-task commit steps were not run as written (see their notes).
 
 - Generator: **191 passed**. Fixed `build_preview.py` to skip code containing child elements, preserving fill-in-the-blank controls.
 - Illustrator: **90 passed**. Learner site: **938 passed across 100 files**.
@@ -15,7 +15,7 @@ Verified the existing implementation; unchecked historical implementation steps 
 - Task 16 v11 (read-only): **236 failures / 2597 checks, 36 warnings**: 97 SQL-width failures, 66 missing visual attributes, 35 repeated heading leads, 34 packed SVG labels, plus the 4 existing width failures. These belong to course remediation, outside Plan A. Full output: workspace `output/playwright/v11-course-verification.txt`.
 - Task 16 course preservation: the existing `%TEMP%/dm-before.txt` list and current files newer than `samples/results.json` are both empty; the prescribed comparison passes. No generated course files were edited in this run.
 - Local fixture console reports unavailable Firestore emulators for gamification; lesson rendering works. No publishing or deployment was exercised.
-- No commits or deploys. Cross-project record: `../../../../nerdit-admin/docs/course-json-images-import-plan.md` (workspace sibling).
+- No commits or deploys during verification. The work was committed later in one batch: plugin `5dadb55` and nerdit `70de1ef` (2026-10-15, both pushed to `redesign-v2`). Cross-project record: `../../../../nerdit-admin/docs/course-json-images-import-plan.md` (workspace sibling).
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -83,7 +83,7 @@ Shorthand: `G = skills/nerdit-chapter-generator`, `GS = G/scripts`, `IS = skills
 
 **Files:** none.
 
-- [ ] **Step 1: Record test baselines**
+- [x] **Step 1: Record test baselines**
 
 Run:
 ```bash
@@ -92,7 +92,7 @@ cd ../../nerdit-lesson-illustrator/scripts && PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 p
 ```
 Expected: `133 passed`, then `89 passed`.
 
-- [ ] **Step 2: Snapshot the course folder so Task 16 can prove it is untouched**
+- [x] **Step 2: Snapshot the course folder so Task 16 can prove it is untouched**
 
 Run (from workspace root):
 ```bash
@@ -117,7 +117,7 @@ Expected: a count (any). Keep the file for Task 16.
   - CLI `--contract v11`
 - Test helpers in `test_verify_v11.py` that later tasks append to: `wrap(body) -> dict`, `run(body, contract="v11") -> Report`, `run_line(sql) -> str`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `GS/test_verify_v11.py`:
 ```python
@@ -168,12 +168,12 @@ def test_v11_keeps_every_v10_check():
     assert any("viewBox is 640 wide" in f for f in run(body, "v10").failures)
 ```
 
-- [ ] **Step 2: Run them; confirm they fail**
+- [x] **Step 2: Run them; confirm they fail**
 
 Run: `cd GS && PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q test_verify_v11.py`
 Expected: FAIL with `ImportError: cannot import name 'text_of'`.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `verify_course.py`:
 
@@ -247,12 +247,12 @@ class Report:
     return 1 if rep.failures else 0
 ```
 
-- [ ] **Step 4: Run the new tests and the whole suite**
+- [x] **Step 4: Run the new tests and the whole suite**
 
 Run: `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q`
 Expected: `137 passed` (133 + 4).
 
-- [ ] **Step 5: Commit** (only if commits are approved)
+- [x] **Step 5: Commit** (only if commits are approved) _(No per-task commit; landed in plugin `5dadb55`, 2026-10-15.)_
 ```bash
 git add skills/nerdit-chapter-generator/scripts/verify_course.py skills/nerdit-chapter-generator/scripts/test_verify_v11.py
 git commit -m "feat(verify): text capture, advisory warnings and contract v11"
@@ -268,7 +268,7 @@ git commit -m "feat(verify): text capture, advisory warnings and contract v11"
 - Consumes: `text_of`, `FLAT`, `run`, `run_line`.
 - Produces: `MAX_SQL_LINE = 60`, `ancestor(node, cls) -> Node | None`, `sql_code_blocks(tree) -> list[tuple[str, str]]`.
 
-- [ ] **Step 1: Append failing tests**
+- [x] **Step 1: Append failing tests**
 ```python
 LONG = "SELECT order_id, customer_id, amount_paise, sale_date FROM orders;"  # 66 chars
 
@@ -300,11 +300,11 @@ def test_v10_ignores_sql_line_width():
     assert not any("over 60" in f for f in run(run_line(LONG), "v10").failures)
 ```
 
-- [ ] **Step 2: Run; expect 4 failures** (the entity and v10 tests already pass).
+- [x] **Step 2: Run; expect 4 failures** (the entity and v10 tests already pass).
 
 Run: `PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q test_verify_v11.py`
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 Add near the constants:
 ```python
@@ -342,8 +342,8 @@ In `verify_structure`, at the end of the per-lesson loop body (after the hex loo
                                     f"characters (runners/sql.md), first: {long[0].strip()[:40] if long else ''}")
 ```
 
-- [ ] **Step 4: Run all tests.** Expected: `142 passed`.
-- [ ] **Step 5: Commit** — `feat(verify): v11 fails SQL lines over 60 characters` (same two files).
+- [x] **Step 4: Run all tests.** Expected: `142 passed`.
+- [x] **Step 5: Commit** — `feat(verify): v11 fails SQL lines over 60 characters` (same two files). _(No per-task commit; landed in plugin `5dadb55`, 2026-10-15.)_
 
 ---
 
@@ -355,7 +355,7 @@ In `verify_structure`, at the end of the per-lesson loop body (after the hex loo
 - Consumes: `text_of`, `walk`.
 - Produces: `_norm_sentence(s) -> str`.
 
-- [ ] **Step 1: Append failing tests**
+- [x] **Step 1: Append failing tests**
 ```python
 def test_v11_fails_a_why_text_repeated_as_the_next_paragraph():
     body = ('<h3 class="nerdit-runhead">CASE <span class="why">— Reject bad records</span></h3>'
@@ -368,8 +368,8 @@ def test_v11_accepts_a_lead_that_says_what_the_code_does():
             '<p>CASE gives each row one reason code.</p>')
     assert not any("repeated as the next paragraph" in f for f in run(body).failures)
 ```
-- [ ] **Step 2: Run; expect 1 failure.**
-- [ ] **Step 3: Implement**
+- [x] **Step 2: Run; expect 1 failure.**
+- [x] **Step 3: Implement**
 
 After `ancestor`, add:
 ```python
@@ -388,8 +388,8 @@ Inside the `if contract == "v11":` block from Task 2, add:
                               f"{lid}: run-line heading's why text is repeated as the next paragraph "
                               f"(CORE.md §4c): {text_of(why).strip()[:50]}")
 ```
-- [ ] **Step 4: Run all tests.** Expected: `144 passed`.
-- [ ] **Step 5: Commit** — `feat(verify): v11 fails a run-line why repeated as its lead`.
+- [x] **Step 4: Run all tests.** Expected: `144 passed`.
+- [x] **Step 5: Commit** — `feat(verify): v11 fails a run-line why repeated as its lead`. _(No per-task commit; landed in plugin `5dadb55`, 2026-10-15.)_
 
 ---
 
@@ -405,7 +405,7 @@ Inside the `if contract == "v11":` block from Task 2, add:
   - figure failures and balance warnings under v11
 - Test helpers added: `fig(kind)`, `svg_fig(label)`, `section(inner)`.
 
-- [ ] **Step 1: Append failing tests**
+- [x] **Step 1: Append failing tests**
 ```python
 from verify_course import is_dotted_record
 
@@ -462,8 +462,8 @@ def test_v11_warns_when_every_section_uses_the_same_visual():
     mixed = section(fig("value-table")) + section(fig("decision-grid")) + section(fig("unit-tiles"))
     assert not any("same visual" in w for w in run(mixed).warnings)
 ```
-- [ ] **Step 2: Run; expect an ImportError** for `is_dotted_record`.
-- [ ] **Step 3: Implement**
+- [x] **Step 2: Run; expect an ImportError** for `is_dotted_record`.
+- [x] **Step 3: Implement**
 
 Constants:
 ```python
@@ -530,8 +530,8 @@ Inside the `if contract == "v11":` block, add:
 ```
 (`figures` and `sections` already exist in `verify_structure`. This block sits after both, at the end of the loop body.)
 
-- [ ] **Step 4: Run all tests.** Expected: `150 passed`.
-- [ ] **Step 5: Commit** — `feat(verify): v11 figure data-visual, dotted-label and Visual Map balance checks`.
+- [x] **Step 4: Run all tests.** Expected: `150 passed`.
+- [x] **Step 5: Commit** — `feat(verify): v11 figure data-visual, dotted-label and Visual Map balance checks`. _(No per-task commit; landed in plugin `5dadb55`, 2026-10-15.)_
 
 ---
 
@@ -546,7 +546,7 @@ Inside the `if contract == "v11":` block, add:
   - `shown_code_blocks(tree) -> list[str]`
   - `verify_density(rep, out, inp)` (called by `main` and by `gate_lesson.py`)
 
-- [ ] **Step 1: Failing tests**
+- [x] **Step 1: Failing tests**
 
 Append to `test_check_input.py`:
 ```python
@@ -579,8 +579,8 @@ def test_density_defaults_to_hands_on():
     verify_density(rep, lesson_with(["SELECT 1;\n" * 10] * 5), [{"id": "x"}])
     assert not any("max 100" in w for w in rep.warnings)
 ```
-- [ ] **Step 2: Run; expect failures** (`unknown focus` missing; ImportError `verify_density`).
-- [ ] **Step 3: Implement**
+- [x] **Step 2: Run; expect failures** (`unknown focus` missing; ImportError `verify_density`).
+- [x] **Step 3: Implement**
 
 In `check_input.py`, under `RUNNER_PRESET` add:
 ```python
@@ -624,8 +624,8 @@ In `main`, after `verify_structure(rep, out, args.contract)`:
     if args.contract == "v11":
         verify_density(rep, out, inp)
 ```
-- [ ] **Step 4: Run all tests.** Expected: `153 passed`.
-- [ ] **Step 5: Commit** — `feat(generator): focus field and v11 code-density warnings` (stage `check_input.py`, `test_check_input.py`, `verify_course.py`, `test_verify_v11.py`).
+- [x] **Step 4: Run all tests.** Expected: `153 passed`.
+- [x] **Step 5: Commit** — `feat(generator): focus field and v11 code-density warnings` (stage `check_input.py`, `test_check_input.py`, `verify_course.py`, `test_verify_v11.py`). _(No per-task commit; landed in plugin `5dadb55`, 2026-10-15.)_
 
 ---
 
@@ -641,7 +641,7 @@ In `main`, after `verify_structure(rep, out, args.contract)`:
   - `check_lesson(content, patterns) -> tuple[list[str], list[str]]` (failures, warnings)
   - CLI `--course [--lesson]`
 
-- [ ] **Step 1: Create `G/references/voice.md`**
+- [x] **Step 1: Create `G/references/voice.md`**
 ````markdown
 # VOICE — write like a teacher talking
 
@@ -688,7 +688,7 @@ embark on
 re:\bnot only\b.{1,60}?\bbut also\b
 ```
 ````
-- [ ] **Step 2: Write the failing tests** — `GS/test_check_prose.py`:
+- [x] **Step 2: Write the failing tests** — `GS/test_check_prose.py`:
 ```python
 from check_prose import banned_patterns, check_lesson
 
@@ -731,8 +731,8 @@ def test_contractions_emoji_and_indian_scripts_are_fine():
     fails, warns = check_lesson(lesson("<h2>🤔 Why?</h2><p>नमस्ते. You'll see ₹499 here.</p>"), PATS)
     assert fails == [] and warns == []
 ```
-- [ ] **Step 3: Run; expect `ModuleNotFoundError: check_prose`.**
-- [ ] **Step 4: Implement `GS/check_prose.py`**
+- [x] **Step 3: Run; expect `ModuleNotFoundError: check_prose`.**
+- [x] **Step 4: Implement `GS/check_prose.py`**
 ```python
 #!/usr/bin/env python3
 """Human-voice check for lesson prose (CORE.md §10, references/voice.md).
@@ -883,8 +883,8 @@ def main() -> int:
 if __name__ == "__main__":
     sys.exit(main())
 ```
-- [ ] **Step 5: Run all tests.** Expected: `158 passed`.
-- [ ] **Step 6: Commit** — `feat(generator): human-voice check and banned-phrase list` (stage the three new files).
+- [x] **Step 5: Run all tests.** Expected: `158 passed`.
+- [x] **Step 6: Commit** — `feat(generator): human-voice check and banned-phrase list` (stage the three new files). _(No per-task commit; landed in plugin `5dadb55`, 2026-10-15.)_
 
 ---
 
@@ -902,7 +902,7 @@ if __name__ == "__main__":
   - `check(before_dir: Path, after_dir: Path, lid: str, modes: set[str]) -> list[str]`, which raises `ValueError` on an unknown mode and `OSError` on a missing file
   - CLI `--before-dir --after-dir --id --modes`
 
-- [ ] **Step 1: Write the failing tests** — `GS/test_check_refresh.py`:
+- [x] **Step 1: Write the failing tests** — `GS/test_check_refresh.py`:
 ```python
 import pytest
 
@@ -1010,8 +1010,8 @@ def test_unknown_mode_is_an_error(tmp_path):
     with pytest.raises(ValueError):
         check(tmp_path, tmp_path, "x", {"tidy"})
 ```
-- [ ] **Step 2: Run; expect `ModuleNotFoundError: check_refresh`.**
-- [ ] **Step 3: Implement `GS/check_refresh.py`**
+- [x] **Step 2: Run; expect `ModuleNotFoundError: check_refresh`.**
+- [x] **Step 3: Implement `GS/check_refresh.py`**
 ```python
 #!/usr/bin/env python3
 """Guard a refresh: only what the chosen modes allow may change (writer refresh mode).
@@ -1204,8 +1204,8 @@ def main() -> int:
 if __name__ == "__main__":
     sys.exit(main())
 ```
-- [ ] **Step 4: Run all tests.** Expected: `168 passed`.
-- [ ] **Step 5: Commit** — `feat(generator): refresh guard for figure, layout and trim refreshes`.
+- [x] **Step 4: Run all tests.** Expected: `168 passed`.
+- [x] **Step 5: Commit** — `feat(generator): refresh guard for figure, layout and trim refreshes`. _(No per-task commit; landed in plugin `5dadb55`, 2026-10-15.)_
 
 ---
 
@@ -1223,7 +1223,7 @@ if __name__ == "__main__":
   - `check_svg(svg, labels, steps)` from the illustrator's `svgcheck`
 - Produces: `gate(input_path: Path, lesson_dir: Path, lid: str, contract="v11", before_dir=None, modes=()) -> tuple[list[str], list[str]]`. It raises `FileNotFoundError` when a lesson file is missing and `KeyError` when the id is not in the input. CLI exit codes: 0 pass, 1 fail, 2 missing.
 
-- [ ] **Step 1: Write the failing tests** — `GS/test_gate_lesson.py`:
+- [x] **Step 1: Write the failing tests** — `GS/test_gate_lesson.py`:
 ```python
 import json
 
@@ -1301,8 +1301,8 @@ def test_missing_lesson_file_raises(tmp_path):
     with pytest.raises(FileNotFoundError):
         gate(inp, d, "c-01")
 ```
-- [ ] **Step 2: Run; expect `ModuleNotFoundError: gate_lesson`.**
-- [ ] **Step 3: Implement `GS/gate_lesson.py`**
+- [x] **Step 2: Run; expect `ModuleNotFoundError: gate_lesson`.**
+- [x] **Step 3: Implement `GS/gate_lesson.py`**
 ```python
 #!/usr/bin/env python3
 """One-lesson gate: every check a lesson must pass before it joins its course.
@@ -1403,8 +1403,8 @@ def main() -> int:
 if __name__ == "__main__":
     sys.exit(main())
 ```
-- [ ] **Step 4: Run all tests.** Expected: `172 passed`. If `test_a_clean_lesson_passes` reports a `verify:` failure, read the message. The fixture must satisfy every v11 rule, so fix the **fixture**, not the gate, unless the failure is a gate bug.
-- [ ] **Step 5: Commit** — `feat(generator): one-lesson gate composing every check`.
+- [x] **Step 4: Run all tests.** Expected: `172 passed`. If `test_a_clean_lesson_passes` reports a `verify:` failure, read the message. The fixture must satisfy every v11 rule, so fix the **fixture**, not the gate, unless the failure is a gate bug.
+- [x] **Step 5: Commit** — `feat(generator): one-lesson gate composing every check`. _(No per-task commit; landed in plugin `5dadb55`, 2026-10-15.)_
 
 ---
 
@@ -1419,7 +1419,7 @@ if __name__ == "__main__":
   - `build(course: dict) -> str`
   - CLI `--course --out`
 
-- [ ] **Step 1: Write the failing tests** — `GS/test_build_preview.py`:
+- [x] **Step 1: Write the failing tests** — `GS/test_build_preview.py`:
 ```python
 import re
 from pathlib import Path
@@ -1449,8 +1449,8 @@ def test_scope_table_matches_the_website():
     site = dict(re.findall(r"'?([\w-]+)'?\s*:\s*'([\w-]*)'", body))
     assert site == SCOPE_TO_CLASS
 ```
-- [ ] **Step 2: Run; expect `ModuleNotFoundError`.**
-- [ ] **Step 3: Implement `GS/build_preview.py`**
+- [x] **Step 2: Run; expect `ModuleNotFoundError`.**
+- [x] **Step 3: Implement `GS/build_preview.py`**
 ```python
 #!/usr/bin/env python3
 """Preview a course the way learners will see it: one self-contained HTML page.
@@ -1552,8 +1552,8 @@ def main() -> int:
 if __name__ == "__main__":
     sys.exit(main())
 ```
-- [ ] **Step 4: Run all tests.** Expected: `174 passed`. If `test_scope_table_matches_the_website` fails, copy the site's table exactly; the site is the source of truth.
-- [ ] **Step 5: Commit** — `feat(generator): preview page that colours code like the site`.
+- [x] **Step 4: Run all tests.** Expected: `174 passed`. If `test_scope_table_matches_the_website` fails, copy the site's table exactly; the site is the source of truth.
+- [x] **Step 5: Commit** — `feat(generator): preview page that colours code like the site`. _(No per-task commit; landed in plugin `5dadb55`, 2026-10-15.)_
 
 ---
 
@@ -1566,7 +1566,7 @@ if __name__ == "__main__":
 **Interfaces:**
 - Produces the classes used by Tasks 11–12 and by writers: `nerdit-vtable`, `nerdit-vgroup`, `nerdit-varrow`, `nerdit-val`, `nerdit-ws`, `nerdit-null`, `nerdit-vnote`, `nerdit-cell-bad`, `nerdit-cell-good`, `nerdit-row-kept`, `nerdit-row-dropped`, `nerdit-vtitle`, `nerdit-vlegend`, `nerdit-grid`, `nerdit-chk ok|first|skip`, `nerdit-tiles`, `nerdit-tilegroup`, `nerdit-tile sup|acc|rej`, `nerdit-vsum`, `nerdit-spot`, `nerdit-data-note`.
 
-- [ ] **Step 1: Failing tests** — append to `GS/test_check_css_bundle.py` (add `import re` and `from pathlib import Path` at the top if missing):
+- [x] **Step 1: Failing tests** — append to `GS/test_check_css_bundle.py` (add `import re` and `from pathlib import Path` at the top if missing):
 ```python
 V11_CLASSES = ["nerdit-vtable", "nerdit-vgroup", "nerdit-varrow", "nerdit-val", "nerdit-ws", "nerdit-null",
                "nerdit-vnote", "nerdit-cell-bad", "nerdit-cell-good", "nerdit-row-kept", "nerdit-row-dropped",
@@ -1585,8 +1585,8 @@ def test_v11_css_block_uses_tokens_not_hex():
     block = css[css.index("v11 · TEACHING VISUALS"):]
     assert not re.search(r"#[0-9a-fA-F]{3,8}\b", block)
 ```
-- [ ] **Step 2: Run; expect 2 failures.**
-- [ ] **Step 3: Append to `G/references/css9-simple.css`**
+- [x] **Step 2: Run; expect 2 failures.**
+- [x] **Step 3: Append to `G/references/css9-simple.css`**
 ```css
 
 /* ====================================================================
@@ -1631,7 +1631,7 @@ def test_v11_css_block_uses_tokens_not_hex():
 .nerdit-wrapper svg .nerdit-spot { fill: var(--blue-bg); stroke: var(--blue); }
 .nerdit-wrapper .nerdit-data-note { font-size: .78rem; color: var(--tx-m); font-style: italic; margin: .3rem 0 1rem; }
 ```
-- [ ] **Step 4: Copy and check the bundle**
+- [x] **Step 4: Copy and check the bundle**
 
 From `G`:
 ```bash
@@ -1641,8 +1641,8 @@ python scripts/check_css_bundle.py references ../../../nerdit/future-vision/src/
 ```
 Expected: `exit 0`, with no `DRIFT` lines.
 
-- [ ] **Step 5: Run all tests.** Expected: `176 passed`.
-- [ ] **Step 6: Commit**
+- [x] **Step 5: Run all tests.** Expected: `176 passed`.
+- [x] **Step 6: Commit** _(No per-task commit; landed in plugin `5dadb55`, 2026-10-15.)_
   - Plugin repo: `references/css9-simple.css` and `scripts/test_check_css_bundle.py`.
   - `nerdit` repo: `future-vision/src/lesson-css/css9-simple.css`.
   - `nerdit-admin` repo: `src/lesson-css/css9-simple.css`.
@@ -1658,7 +1658,7 @@ Expected: `exit 0`, with no `DRIFT` lines.
 - Consumes: v11 checks (Tasks 1–4) and the styles (Task 10).
 - Produces: template headings `## 11 ·` … `## 15 ·`, each with ` ```html ` blocks. Task 12 extracts them by those headings.
 
-- [ ] **Step 1: Write the failing doc test** — `GS/test_figures_templates.py`:
+- [x] **Step 1: Write the failing doc test** — `GS/test_figures_templates.py`:
 ```python
 """figures.md is copied by writers verbatim, so its templates must pass the checks they teach."""
 import re
@@ -1696,9 +1696,9 @@ def test_v11_templates_pass_the_v11_figure_checks():
                    if any(k in f for k in ("data-visual", "packs a table row", "viewBox", "hex", "caption", "aria"))]
             assert not bad, (n, bad)
 ```
-- [ ] **Step 2: Run; expect failures** (templates 11–15 missing; existing templates lack `data-visual`).
+- [x] **Step 2: Run; expect failures** (templates 11–15 missing; existing templates lack `data-visual`).
 
-- [ ] **Step 3: Add `data-visual` to the existing figures**
+- [x] **Step 3: Add `data-visual` to the existing figures**
 
 Run from `G/references`:
 ```bash
@@ -1712,7 +1712,7 @@ PY
 ```
 Then read template 9 (Chart.js). If any `nerdit-figure` wrapper there now says `diagram`, change it to `data-visual="chart"`.
 
-- [ ] **Step 4: Insert rules 10–15 and the icon set**
+- [x] **Step 4: Insert rules 10–15 and the icon set**
 
 Insert after rule 9, before "Two colours carry meaning…":
 ```markdown
@@ -1742,7 +1742,7 @@ attention · `🔑` primary key · `🔗` foreign key. A table that uses one car
 ```
 Also change the intro sentence "Nine fixed shapes cover…" to "Fifteen fixed shapes cover…".
 
-- [ ] **Step 5: Insert templates 11–15**, before `## Choosing between them`:
+- [x] **Step 5: Insert templates 11–15**, before `## Choosing between them`:
 
 ````markdown
 ## 11 · Value table — values before and after a rule
@@ -1913,7 +1913,7 @@ characters or fewer.
 ---
 ````
 
-- [ ] **Step 6: Replace the body of `## Choosing between them`** (the table and its fallback paragraph) with:
+- [x] **Step 6: Replace the body of `## Choosing between them`** (the table and its fallback paragraph) with:
 ```markdown
 `CORE.md` §7 (the Visual Map) decides which visual a place in the lesson gets; this file only
 supplies the markup. Nothing in the map fits and the concept still seems to need a picture?
@@ -1921,8 +1921,8 @@ Write the caption first: the one sentence the figure must teach. If that sentenc
 come, there is no figure to draw. **Prose is the correct answer, and an empty figure slot is
 better than a decorative one.**
 ```
-- [ ] **Step 7: Run all tests.** Expected: `178 passed`.
-- [ ] **Step 8: Commit** — `docs(figures): v11 rules, icon set and templates 11-15`.
+- [x] **Step 7: Run all tests.** Expected: `178 passed`.
+- [x] **Step 8: Commit** — `docs(figures): v11 rules, icon set and templates 11-15`. _(No per-task commit; landed in plugin `5dadb55`, 2026-10-15.)_
 
 ---
 
@@ -1935,7 +1935,7 @@ better than a decorative one.**
 **Interfaces:**
 - Consumes: figures.md templates 11–15 (Task 11) and the v11 styles (Task 10).
 
-- [ ] **Step 1: Generate the fixture from the templates.** This keeps it identical to what writers copy.
+- [x] **Step 1: Generate the fixture from the templates.** This keeps it identical to what writers copy.
 
 Run from the workspace root:
 ```bash
@@ -1959,7 +1959,7 @@ Path("nerdit/future-vision/src/utils/__fixtures__/lesson-v11-visuals.html").writ
 print(len(html), "bytes")
 PY
 ```
-- [ ] **Step 2: Wire it into the fixture course.** In `courseService.fixture.ts`:
+- [x] **Step 2: Wire it into the fixture course.** In `courseService.fixture.ts`:
   - Below `import sqlLesson …` add:
 ```ts
 import visualsLesson from '@/utils/__fixtures__/lesson-v11-visuals.html?raw';
@@ -1972,12 +1972,12 @@ import visualsLesson from '@/utils/__fixtures__/lesson-v11-visuals.html?raw';
     { ...lessons[0], id: 'fixture-sql-2', title: 'Teaching visuals v11', content: visualsLesson },
   ],
 ```
-- [ ] **Step 3: Run the website tests**
+- [x] **Step 3: Run the website tests**
 
 Run: `cd nerdit/future-vision && npx vitest run`
 Expected: the same pass count as before this task, with 0 failures.
 
-- [ ] **Step 4: Visual check in the browser**
+- [x] **Step 4: Visual check in the browser** _(Dark theme unavailable; see verification record.)_
 
 Run in the background:
 ```bash
@@ -1998,7 +1998,7 @@ Expected:
 
 Stop the dev server afterwards.
 
-- [ ] **Step 5: Commit** (`nerdit` repo; stage only the two files) — `test(fixture): v11 teaching-visuals lesson`.
+- [x] **Step 5: Commit** (`nerdit` repo; stage only the two files) — `test(fixture): v11 teaching-visuals lesson`. _(No per-task commit; landed in nerdit `70de1ef`, 2026-10-15.)_
 
 ---
 
@@ -2006,7 +2006,7 @@ Stop the dev server afterwards.
 
 **Files:** Modify `G/references/CORE.md` and `G/references/runners/sql.md`; create `GS/test_reference_sql_width.py`.
 
-- [ ] **Step 1: Write the failing doc test** — `GS/test_reference_sql_width.py`:
+- [x] **Step 1: Write the failing doc test** — `GS/test_reference_sql_width.py`:
 ```python
 """Writers copy the references' SQL, so the references must obey the 60-character rule."""
 import html
@@ -2035,9 +2035,9 @@ def test_sql_md_teaches_the_layout_rule():
     text = (G / "references/runners/sql.md").read_text(encoding="utf-8")
     assert "## Layout" in text and "60 characters" in text
 ```
-- [ ] **Step 2: Run.** Expect the layout test to fail. The width test may also list long lines in CORE.md; note them.
+- [x] **Step 2: Run.** Expect the layout test to fail. The width test may also list long lines in CORE.md; note them.
 
-- [ ] **Step 3: Append to `runners/sql.md`**
+- [x] **Step 3: Append to `runners/sql.md`**
 ````markdown
 
 ## Layout
@@ -2071,7 +2071,7 @@ FROM staged
 ORDER BY row_id;</code></pre>
 ```
 ````
-- [ ] **Step 4: Edit `CORE.md`**
+- [x] **Step 4: Edit `CORE.md`**
 
 (a) In §4, in the bullet "**Input code is plain text with a `data-lang`; the website colours it.**", replace the sentences from "Write SQL one clause per line" to the end of that bullet with:
 ```markdown
@@ -2150,8 +2150,8 @@ Nothing matches after honestly trying: **no visual**. Prose is the answer.
 
 (f) Fix any CORE.md SQL lines the width test listed. Re-lay them out with whitespace only.
 
-- [ ] **Step 5: Run all tests.** Expected: `180 passed`.
-- [ ] **Step 6: Commit** — `docs(core): Visual Map, SQL layout, focus and voice rules`.
+- [x] **Step 5: Run all tests.** Expected: `180 passed`.
+- [x] **Step 6: Commit** — `docs(core): Visual Map, SQL layout, focus and voice rules`. _(No per-task commit; landed in plugin `5dadb55`, 2026-10-15.)_
 
 ---
 
@@ -2159,7 +2159,7 @@ Nothing matches after honestly trying: **no visual**. Prose is the answer.
 
 **Files:** Modify `agents/nerdit-lesson-writer.md`, `agents/nerdit-qa-validator.md`, `G/SKILL.md`, `.claude-plugin/plugin.json`; create `GS/test_docs_refs.py`.
 
-- [ ] **Step 1: Write the failing test** — `GS/test_docs_refs.py`:
+- [x] **Step 1: Write the failing test** — `GS/test_docs_refs.py`:
 ```python
 import json
 import re
@@ -2184,9 +2184,9 @@ def test_writer_knows_refresh_mode_and_voice():
 def test_plugin_version_is_3_3_0():
     assert json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))["version"] == "3.3.0"
 ```
-- [ ] **Step 2: Run; expect 3 failures.**
+- [x] **Step 2: Run; expect 3 failures.**
 
-- [ ] **Step 3: Edit `agents/nerdit-lesson-writer.md`**
+- [x] **Step 3: Edit `agents/nerdit-lesson-writer.md`**
 
 (a) In "## Step 0 — Read the rulebook first", add `${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/references/voice.md` to the files read, labelled "the banned-phrase list `check_prose.py` enforces".
 
@@ -2235,7 +2235,7 @@ unchanged.
   the text already uses, or is `null`. The illustrator plans image slots from it.
 ```
 
-- [ ] **Step 4: Edit `agents/nerdit-qa-validator.md`.** Append to "## Your checklist":
+- [x] **Step 4: Edit `agents/nerdit-qa-validator.md`.** Append to "## Your checklist":
 ```markdown
 - **One representation per idea** (figures.md R13): no section shows the same facts as a text map,
   a figure and reading steps
@@ -2246,7 +2246,7 @@ unchanged.
 - **Check it by hand**: the arithmetic line is true
 ```
 
-- [ ] **Step 5: Edit `G/SKILL.md`**
+- [x] **Step 5: Edit `G/SKILL.md`**
 
 (a) Step 1's lesson-field list: add `focus` (optional: `concept` | `hands-on`, default `hands-on`; CORE.md §4).
 
@@ -2288,9 +2288,9 @@ One page with every lesson, the site's styles and the site's code colours. Open 
 (e) In the reference-files table, add a row: `references/voice.md` — banned phrases and voice
 rules (`check_prose.py`).
 
-- [ ] **Step 6: Bump the version.** In `.claude-plugin/plugin.json`, change `"version": "3.2.0"` to `"version": "3.3.0"`.
-- [ ] **Step 7: Run all tests.** Expected: `183 passed`.
-- [ ] **Step 8: Commit** — `docs(generator): writer refresh mode, v11 rules, QA checks; v3.3.0`.
+- [x] **Step 6: Bump the version.** In `.claude-plugin/plugin.json`, change `"version": "3.2.0"` to `"version": "3.3.0"`.
+- [x] **Step 7: Run all tests.** Expected: `183 passed`.
+- [x] **Step 8: Commit** — `docs(generator): writer refresh mode, v11 rules, QA checks; v3.3.0`. _(No per-task commit; landed in plugin `5dadb55`, 2026-10-15.)_
 
 ---
 
@@ -2305,7 +2305,7 @@ rules (`check_prose.py`).
   - `outline(course, hints=None)` adds `"hint"` per section
   - CLI `--hints <workdir>`
 
-- [ ] **Step 1: Update the expected strings in the tests**
+- [x] **Step 1: Update the expected strings in the tests**
   - `test_insert_images.py`: in the expected block (line ~19) and both asserts (lines ~29, ~31), insert ` data-visual="illustration"` right after each `data-nerdit-img="…"` value, before `>`.
   - `test_insert_v2.py` (line ~29): change `data-nerdit-img="load-basics-01-fig1" style=` to `data-nerdit-img="load-basics-01-fig1" data-visual="diagram" style=`.
   - Append to `test_extract_outline.py`:
@@ -2322,9 +2322,9 @@ def test_hints_from_concept_manifests_reach_the_outline(tmp_path):
     assert lessons[0]["sections"][0]["hint"]["illustration"] == "drafts of an essay"
     assert "image: drafts of an essay" in render(lessons)
 ```
-- [ ] **Step 2: Run the illustrator suite; expect the updated and new tests to fail.**
+- [x] **Step 2: Run the illustrator suite; expect the updated and new tests to fail.**
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 `insert_images.py`:
 - In `block()`: `data-nerdit-img="{slot["id"]}">` becomes `data-nerdit-img="{slot["id"]}" data-visual="illustration">`.
@@ -2375,8 +2375,8 @@ Keep the bullets below the old table ("One objective per visual…").
 
 `SKILL.md` (illustrator), Run 1 step 2: append "Add `--hints <workdir>` when the chapter generator's workdir is available, to see each section's planned visual and image idea."
 
-- [ ] **Step 4: Run both suites.** Expected: illustrator `90 passed`, generator `183 passed`.
-- [ ] **Step 5: Commit** — `feat(illustrator): data-visual on inserted visuals and image hints from manifests`.
+- [x] **Step 4: Run both suites.** Expected: illustrator `90 passed`, generator `183 passed`.
+- [x] **Step 5: Commit** — `feat(illustrator): data-visual on inserted visuals and image hints from manifests`. _(No per-task commit; landed in plugin `5dadb55`, 2026-10-15.)_
 
 ---
 
@@ -2384,7 +2384,7 @@ Keep the bullets below the old table ("One objective per visual…").
 
 **Files:** none.
 
-- [ ] **Step 1: Both suites**
+- [x] **Step 1: Both suites**
 
 Run:
 ```bash
@@ -2393,9 +2393,9 @@ cd ../../nerdit-lesson-illustrator/scripts && PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 p
 ```
 Expected: `183 passed`, then `90 passed`.
 
-- [ ] **Step 2: CSS copies are identical.** Run the `check_css_bundle.py` command from Task 10 Step 4. Expected: `exit 0`.
+- [x] **Step 2: CSS copies are identical.** Run the `check_css_bundle.py` command from Task 10 Step 4. Expected: `exit 0`.
 
-- [ ] **Step 3: v10 is unchanged.** Run `verify_course.py --contract v10` on the existing course file and compare with the known result:
+- [x] **Step 3: v10 is unchanged.** Run `verify_course.py --contract v10` on the existing course file and compare with the known result:
 ```bash
 python skills/nerdit-chapter-generator/scripts/verify_course.py --contract v10 \
   --input ../nerdit/generated/data-modelling-etl-data-warehousing-for-analysts/course-data-modelling-etl-data-warehousing-for-analysts_input.json \
@@ -2403,8 +2403,8 @@ python skills/nerdit-chapter-generator/scripts/verify_course.py --contract v10 \
 ```
 Expected: the same 4 failures as before this plan (one 640-wide figure in each of lessons 13–16), and nothing new.
 
-- [ ] **Step 4: See what v11 would say (read-only).** Run the same command with `--contract v11` and `| tail -20`. This only reports; it fixes nothing. Expected: new failures and warnings in the course. That is Part 3's work list.
+- [x] **Step 4: See what v11 would say (read-only).** Run the same command with `--contract v11` and `| tail -20`. This only reports; it fixes nothing. Expected: new failures and warnings in the course. That is Part 3's work list.
 
-- [ ] **Step 5: Course files untouched.** Rerun the `find … -newer …` command from Task 0. Expected: the same list as `$TMP/dm-before.txt`.
+- [x] **Step 5: Course files untouched.** Rerun the `find … -newer …` command from Task 0. Expected: the same list as `$TMP/dm-before.txt`.
 
-- [ ] **Step 6: Report** the test counts, the v11 findings summary from Step 4, and anything skipped.
+- [x] **Step 6: Report** the test counts, the v11 findings summary from Step 4, and anything skipped.

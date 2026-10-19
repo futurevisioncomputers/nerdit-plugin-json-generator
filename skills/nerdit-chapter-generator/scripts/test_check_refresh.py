@@ -113,3 +113,47 @@ def test_sql_key_treats_comments_as_comments():
     # Joining the line after a comment onto it comments that code out: not layout.
     assert sql_key("FROM t -- paid only\nWHERE x = 1") != sql_key("FROM t -- paid only WHERE x = 1")
     assert sql_key("SELECT /* note */ a FROM t") == sql_key("SELECT /* note */\n  a\nFROM t")
+
+
+SEED = '<script type="text/plain" id="seed">CREATE TABLE staged(customer TEXT);</script>'
+
+
+def _with_seed(html, extra):
+    return html.replace(SEED, SEED.replace("</script>", extra + "</script>"))
+
+
+def test_trim_may_move_tables_and_rows_into_the_seed():
+    after = _with_seed(BASE, "\nCREATE TABLE extra(x INT);\nINSERT INTO extra VALUES (1), (2);")
+    assert compare(p(BASE), p(after), {"trim"}) == []
+
+
+def test_trim_may_not_seed_a_view_even_over_shown_code():
+    # Lesson 10 attempt 2: a view repeating an earlier shown CTE still let later blocks use
+    # the name with no WITH, which works only because of a view the learner never met.
+    after = _with_seed(BASE, "\nCREATE VIEW tidy AS\n  SELECT TRIM(customer), amount\n  FROM staged;")
+    assert any("view tidy" in x for x in compare(p(BASE), p(after), {"trim"}))
+
+
+def test_trim_may_not_seed_computed_tables():
+    for extra, name in (("\nCREATE TABLE t AS SELECT TRIM(customer) FROM staged;", "t"),
+                        ("\nCREATE TABLE u(c TEXT);\nINSERT INTO u SELECT TRIM(customer) FROM staged;", "u"),
+                        ("\nCREATE TABLE w(c TEXT);\nINSERT INTO w (c)\nWITH x AS (SELECT 1) SELECT * FROM x;", "w")):
+        after = _with_seed(BASE, extra)
+        assert any(f"computed table {name}" in x for x in compare(p(BASE), p(after), {"trim"})), extra
+
+
+def test_trim_may_not_hide_unshown_logic_in_a_view():
+    # Lesson 10 (2026-10-17): a seeded `survivors` view held the tombstone filter the
+    # section was teaching, so no shown code did what the heading promised.
+    after = _with_seed(BASE, "\nCREATE VIEW tidy AS SELECT TRIM(customer) FROM staged WHERE amount > 0;")
+    assert any("view tidy" in x for x in compare(p(BASE), p(after), {"trim"}))
+
+
+def test_trim_may_not_add_a_trigger():
+    after = _with_seed(BASE, "\nCREATE TRIGGER t AFTER INSERT ON staged BEGIN DELETE FROM staged; END;")
+    assert any("trigger t" in x for x in compare(p(BASE), p(after), {"trim"}))
+
+
+def test_a_view_the_original_already_seeded_is_not_rechecked():
+    before = _with_seed(BASE, "\nCREATE TEMP VIEW old AS SELECT 1;")
+    assert compare(p(before), p(before), {"trim"}) == []

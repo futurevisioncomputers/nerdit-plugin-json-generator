@@ -38,3 +38,13 @@ def test_same_opening_in_every_section_warns():
 def test_contractions_emoji_and_indian_scripts_are_fine():
     fails, warns = check_lesson(lesson("<h2>🤔 Why?</h2><p>नमस्ते. You'll see ₹499 here.</p>"), PATS)
     assert fails == [] and warns == []
+
+
+def test_a_line_break_ends_a_legend_line():
+    # Lesson 08 (2026-10-17): legend lines split by <br> were read as one 20-word sentence.
+    html = ('<section><h2>1 — Clean</h2><p>Legend:<br>① TRIM removes spaces at the start and end.'
+            '<br>② UPPER changes every letter of the code to capitals<br>③ NULLIF turns blanks into NULL</p>'
+            '</section>')
+    _, warns = check_lesson(html, [])
+    assert not any("over 15 words" in w for w in warns)
+    assert not any("more than 3 sentences" in w for w in warns)

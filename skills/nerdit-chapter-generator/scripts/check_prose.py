@@ -43,16 +43,23 @@ def banned_patterns(path: Path = VOICE) -> list[tuple[str, re.Pattern]]:
     return out
 
 
+BR = " "  # stands in for <br>: a void element, so it has no text of its own
+
+
 def prose(node: Node) -> str:
-    """Visible prose under `node`, in page order, skipping code, tables and SVG."""
+    """Visible prose under `node`, in page order, skipping code, tables and SVG.
+    Each <br> becomes BR, so a legend's lines are not read as one run-on sentence."""
     parts, stack = [], list(reversed(node.content))
     while stack:
         item = stack.pop()
         if isinstance(item, str):
             parts.append(item)
+        elif item.tag == "br":
+            parts.append(BR)
         elif item.tag not in SKIP:
             stack.extend(reversed(item.content))
-    return re.sub(r"\s+", " ", "".join(parts)).strip()
+    text = re.sub(rf"[^\S{BR}]+", " ", "".join(parts))
+    return re.sub(rf" ?{BR} ?", BR, text).strip()
 
 
 def _inside(node: Node, tags: set[str]) -> bool:
@@ -85,7 +92,7 @@ def check_lesson(content: str, patterns) -> tuple[list[str], list[str]]:
     tree = parse(content)
     fails, warns = [], []
 
-    text = prose(tree.root)
+    text = prose(tree.root).replace(BR, " ")
     for phrase, pat in patterns:
         m = pat.search(text)
         if m:
@@ -94,9 +101,10 @@ def check_lesson(content: str, patterns) -> tuple[list[str], list[str]]:
     long_s, long_p, dashy = [], 0, 0
     for para in [n for n in tree.all if n.tag in ("p", "li") and not _inside(n, SKIP)]:
         body = prose(para)
-        sents = sentences(body)
-        long_s += [s for s in sents if len(s.split()) > MAX_WORDS]
-        long_p += len(sents) > MAX_SENTENCES
+        # A line break ends a legend line for length, but lines are not extra sentences.
+        long_s += [s for line in body.split(BR) for s in sentences(line) if len(s.split()) > MAX_WORDS]
+        body = body.replace(BR, " ")
+        long_p += len(sentences(body)) > MAX_SENTENCES
         dashy += body.count("—") > MAX_DASHES
     if long_s:
         warns.append(f'{len(long_s)} sentence(s) over {MAX_WORDS} words, e.g. "{long_s[0][:60]}"')

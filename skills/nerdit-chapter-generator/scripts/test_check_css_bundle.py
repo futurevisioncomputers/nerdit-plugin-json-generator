@@ -50,3 +50,12 @@ def test_v11_emphasis_survives_the_box_shadow_reset_and_cell_colour():
     assert "box-shadow" not in block
     assert ".nerdit-vtable td.nerdit-cell-bad" in block and ".nerdit-vtable td.nerdit-cell-good" in block
     assert "outline:" in block.split(".nerdit-chk.first", 1)[1].split("}", 1)[0]
+
+
+def test_demo_table_scrolls_instead_of_clipping_on_a_phone():
+    # A five-column demo table is ~460px wide; on a 390px phone `overflow: hidden` cut off
+    # its last columns with no way to reach them (lessons 08 and 10, 2026-10-17).
+    css = CSS9.read_text(encoding="utf-8")
+    rule = css.split(".nerdit-demo-table {", 1)[1].split("}", 1)[0]
+    assert "overflow: hidden" not in rule
+    assert "overflow-x: auto" in rule
