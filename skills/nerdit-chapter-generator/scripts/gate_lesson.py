@@ -5,7 +5,8 @@
                           [--contract v11] [--before-dir <dir> --modes figures,sql-layout]
 
 Builds a one-lesson course from <dir>/<id>.html, .quiz.json and .concepts.json, then runs:
-verify_course (schema, structure, density) -> check_sql_outputs -> check_python_outputs (only
+verify_course (schema, structure, density) -> check_world (with --world; without one, its SVG
+number check) -> check_sql_outputs -> check_python_outputs (only
 when the lesson has Python; a missing engine fails it) -> SVG checks -> check_screens -> check_prose
 -> check_refresh (only with --before-dir). Replaces the course-specific rollout/gate.py.
 Exit 0 = pass, 1 = a check failed, 2 = a file or the lesson id is missing. Stdlib only.
@@ -28,7 +29,7 @@ from pyodide_engine import EngineError, engine_available  # noqa: E402
 from check_refresh import check as check_refresh  # noqa: E402
 from check_screens import check_lesson as check_screens  # noqa: E402
 from check_sql_outputs import check_lesson as check_sql  # noqa: E402
-from check_world import check_lesson as check_world  # noqa: E402
+from check_world import check_lesson as check_world, svg_label_failures  # noqa: E402
 from make_world_data import generate, load_world  # noqa: E402
 from svgcheck import check_svg  # noqa: E402
 from verify_course import Report, verify_density, verify_schema, verify_structure  # noqa: E402
@@ -64,6 +65,9 @@ def gate(input_path: Path, lesson_dir: Path, lid: str, contract: str = "v11",
         wf, ww = check_world(html, world, generate(world))
         fails += [f"world: {f}" for f in wf]
         warns += [f"world: {w}" for w in ww]
+    else:
+        # No world: a diagram must still not draw a number the lesson never states.
+        fails += [f"labels: {f}" for f in svg_label_failures(html, {})]
     sql = check_sql(html)
     fails += [f"sql: {m}" for m in sql["mismatch"]]
     warns += [f"sql: {u}" for u in sql["unchecked"]]
