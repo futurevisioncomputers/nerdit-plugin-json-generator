@@ -21,6 +21,7 @@ from __future__ import annotations
 import argparse
 import html as htmllib
 import re
+import subprocess
 import sys
 import textwrap
 from pathlib import Path
@@ -109,8 +110,12 @@ def results_for(spec: dict, grid) -> tuple[dict[str, str], list[str]]:
         return {}, [f"{spec['id']}: no demo grid to compute results from"]
     typed = {s["target"]: s["text"] for s in spec["steps"] if s.get("do") == "type"}
     formulas = [typed[t] for t in targets]
+    try:
+        computed = evaluate_many(grid[0], grid[1], formulas)
+    except (RuntimeError, OSError, subprocess.TimeoutExpired) as e:
+        return {}, [f"{spec['id']}: Excel engine unavailable: {e}"]
     results, problems = {}, []
-    for target, formula, res in zip(targets, formulas, evaluate_many(grid[0], grid[1], formulas)):
+    for target, formula, res in zip(targets, formulas, computed):
         if "error" in res:
             problems.append(f"{spec['id']}: {target}: {formula} gives {res['error']}")
         else:
@@ -204,7 +209,8 @@ def _flow(names: list[str], x0: float, marked: set) -> list[list[tuple[str, floa
     x = x0
     for name in names:
         room = text_width(name, 13, bold=True) + 18 + (MARK_ROOM + 4 if name in marked else 8)
-        if x + room > W - PAD and rows[-1]:
+        # Wrap before a name that would cross the frame, even the first one after the app name.
+        if x + room > W - PAD and (rows[-1] or x > PAD + 12):
             rows.append([])
             x = PAD + 12
         rows[-1].append((name, x))
@@ -565,7 +571,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--id", help="render only this lesson")
     args = ap.parse_args(argv)
     folder = Path(args.dir)
-    files = [folder / f"{args.id}.html"] if args.id else sorted(folder.glob("*.html"))
+    # A lesson is <id>.html beside its <id>.quiz.json; previews and other pages are skipped.
+    files = [folder / f"{args.id}.html"] if args.id else sorted(
+        f for f in folder.glob("*.html") if f.with_suffix(".quiz.json").exists())
     missing = [str(f) for f in files if not f.exists()]
     if missing:
         print(f"no such lesson: {', '.join(missing)}", file=sys.stderr)

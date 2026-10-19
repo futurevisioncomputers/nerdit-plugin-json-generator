@@ -60,7 +60,7 @@ MAX_COLUMNS, MAX_ROWS, MAX_CELL = 4, 7, 24
 MAX_LINES, MAX_OUTPUT, MAX_LINE = 8, 4, 40
 MAX_PATH, MAX_PANEL, MAX_LABEL, MAX_ITEM, MAX_MESSAGE = 4, 6, 24, 34, 90
 MAX_VALUE = 34  # a field's value box spans the panel, so it may run longer than its label
-MAX_DIALOG_FIELDS, MAX_GOAL, MAX_ALT = 4, 60, 150
+MAX_DIALOG_FIELDS, MAX_GOAL, MAX_ALT, MAX_APP = 4, 60, 150, 24
 MAX_STEPS = 5  # the figure contract's markers run ① to ⑤ (svgcheck.MARKER_CHARS)
 
 CHECK_KEYS = ("question", "answer", "reasoning")
@@ -157,7 +157,7 @@ def cell_value(grid, ref: str):
 
 
 class _Visible(HTMLParser):
-    """Visible text: no <script>/<style>, and no drawn screen (data-screen) vouching for itself."""
+    """Visible text: no <script>/<style>, and no drawn screen or inserted image vouching for itself."""
 
     def __init__(self):
         super().__init__(convert_charrefs=True)
@@ -170,7 +170,10 @@ class _Visible(HTMLParser):
         if tag in VOID:
             return
         self.stack.append(tag)
-        if self.skip_at is None and (tag in ("script", "style") or any(k == "data-screen" for k, _ in attrs)):
+        # A drawing (data-screen) or an inserted image block (data-nerdit-img) is written from its
+        # spec, so it never counts as lesson text for that spec.
+        if self.skip_at is None and (tag in ("script", "style")
+                                     or any(k in ("data-screen", "data-nerdit-img") for k, _ in attrs)):
             self.skip_at = len(self.stack)
 
     def handle_endtag(self, tag):
@@ -320,10 +323,15 @@ def _check_editor(spec: dict, bad) -> None:
                 bad(f"output line {k} is longer than {MAX_LINE} characters")
 
 
-def _short(value, limit: int, what: str, bad) -> None:
-    if not (_text(value) or isinstance(value, (int, float))):
+def _short(value, limit: int, what: str, bad, allow_number: bool = False) -> None:
+    """A drawn string within its phone limit. Only field values may be numbers (₹500 or 500)."""
+    if allow_number and isinstance(value, (int, float)) and not isinstance(value, bool):
+        value = str(value)
+    if not isinstance(value, str):
+        bad(f"{what} must be text")
+    elif not value.strip():
         bad(f"{what} is empty")
-    elif len(_show(value)) > limit:
+    elif len(value) > limit:
         bad(f"'{value}' is longer than {limit} characters")
 
 
@@ -346,7 +354,7 @@ def _check_app(spec: dict, bad) -> None:
             bad(f"panel item kind must be one of {', '.join(PANEL_KINDS)}")
         elif kind == "field":
             _short(item.get("label"), MAX_LABEL, "a field label", bad)
-            _short(item.get("value"), MAX_VALUE, "a field value", bad)
+            _short(item.get("value"), MAX_VALUE, "a field value", bad, allow_number=True)
         elif kind == "button":
             _short(item.get("label"), MAX_LABEL, "a button label", bad)
         elif kind == "item":
@@ -372,7 +380,7 @@ def _check_dialog(spec: dict, bad) -> None:
     _short(dialog["title"], MAX_LABEL, "the dialog title", bad)
     for f in fields:
         _short(f.get("label"), MAX_LABEL, "a dialog label", bad)
-        _short(f.get("value"), MAX_VALUE, "a dialog value", bad)
+        _short(f.get("value"), MAX_VALUE, "a dialog value", bad, allow_number=True)
 
 
 def _check_target(spec: dict, i: int, target, cols, span, bad, kind: str = "select") -> None:
@@ -383,6 +391,8 @@ def _check_target(spec: dict, i: int, target, cols, span, bad, kind: str = "sele
         corners = [(m.group(1), m.group(2))] if m else [(r.group(1), r.group(2)), (r.group(3), r.group(4))] if r else []
         if not corners:
             bad(f"step {i}: target must be a cell such as H3" + (" or a range such as E2:E7" if kind == "select" else ""))
+        elif r and (col_index(r.group(1)) > col_index(r.group(3)) or int(r.group(2)) > int(r.group(4))):
+            bad(f"step {i}: range {target} must run from its top-left cell to its bottom-right cell")
         elif cols and span and not all(c in cols and span[0] <= int(n) <= span[1] for c, n in corners):
             bad(f"step {i}: target {target} is outside the view")
     elif layout == "editor":
@@ -428,10 +438,13 @@ def _check_steps(spec: dict, cols, span, bad) -> None:
                 bad(f"step {i}: type needs text")
             elif len(text) > MAX_LINE:
                 bad(f"step {i}: typed text is longer than {MAX_LINE} characters")
-            typed.add(s.get("target"))
+            if isinstance(s.get("target"), str):
+                typed.add(s["target"])
         elif kind == "set":
             label = s.get("label")
-            if label not in fields:
+            if not isinstance(label, str):
+                bad(f"step {i}: set needs a label as text")
+            elif label not in fields:
                 bad(f"step {i}: '{label}' is not a field on this screen")
             elif _show(fields[label]) != _show(s.get("value")):
                 bad(f"step {i}: {label} shows {fields[label]} on the screen, not {s.get('value')}")
@@ -440,7 +453,7 @@ def _check_steps(spec: dict, cols, span, bad) -> None:
         elif kind == "result":
             if spec["layout"] != "sheet":
                 bad(f"step {i}: result needs layout sheet, the only layout with a result engine")
-            elif s.get("target") not in typed:
+            elif not isinstance(s.get("target"), str) or s["target"] not in typed:
                 bad(f"step {i}: result {s.get('target')} needs an earlier type step into that cell")
 
 
@@ -469,6 +482,8 @@ def validate_spec(spec: dict, grid: tuple | None, text: str) -> list[str]:
         bad("a screen spec needs an id")
     if not _text(spec.get("app")):
         bad("needs app, the app's plain name")
+    elif len(spec["app"]) > MAX_APP:
+        bad(f"app name is longer than {MAX_APP} characters")
     goal = spec.get("goal")
     if not _text(goal):
         bad("needs a goal (the caption)")
@@ -498,7 +513,8 @@ def validate_spec(spec: dict, grid: tuple | None, text: str) -> list[str]:
     hay = _norm(text).casefold()
     for s in drawn_strings(spec):
         n = _norm(s).casefold()
-        if n not in known and n not in hay:
+        # Whole words only: "₹50" is not in "₹500", and "Day" is not in "Monday".
+        if n not in known and not re.search(rf"(?<!\w){re.escape(n)}(?!\w)", hay):
             bad(f"'{s}' is not in the lesson")
     return problems
 

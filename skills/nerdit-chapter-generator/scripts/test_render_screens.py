@@ -218,6 +218,8 @@ def test_b_spec_gets_no_figure():
 def test_cli_writes_only_clean_lessons(tmp_path):
     good = tmp_path / "l1.html"
     good.write_text(two_screen_lesson(), encoding="utf-8")
+    for lid in ("l1", "l2"):
+        (tmp_path / f"{lid}.quiz.json").write_text("{}", encoding="utf-8")
     assert main(["--dir", str(tmp_path), "--id", "l1"]) == 0
     assert good.read_text(encoding="utf-8").count('data-visual="screen"') == 2
     bad = tmp_path / "l2.html"
@@ -298,3 +300,29 @@ def test_range_select_outlines_the_range():
     svg, _ = draw(spec)
     assert reading_steps(spec, {}) == ["Select cells B2:B5."]
     assert svg.count('stroke-width="2"') >= 1 and "①" in "".join(texts(svg))
+
+
+# ---- final review fixes ----
+
+def test_long_chip_wraps_inside_the_frame():
+    spec = dict(ADS, app="Google Analytics Console", path=["Data display and events"],
+                steps=[{"do": "click", "path": ["Data display and events"]}])
+    svg, _ = draw(spec)
+    for x, w in re.findall(r'<rect x="([\d.]+)" y="[\d.]+" width="([\d.]+)"', svg):
+        assert float(x) + float(w) <= 400, (x, w)
+
+
+def test_missing_engine_is_a_problem_not_a_crash(monkeypatch):
+    import shutil
+    monkeypatch.setattr(shutil, "which", lambda name: None)
+    _, problems = results_for(XL, G)
+    assert any("Excel engine unavailable" in p for p in problems)
+
+
+def test_cli_skips_html_that_is_not_a_lesson(tmp_path):
+    (tmp_path / "l1.html").write_text(two_screen_lesson(), encoding="utf-8")
+    (tmp_path / "l1.quiz.json").write_text("{}", encoding="utf-8")
+    preview = two_screen_lesson() + two_screen_lesson()  # a multi-lesson preview repeats ids
+    (tmp_path / "preview.html").write_text(preview, encoding="utf-8")
+    assert main(["--dir", str(tmp_path)]) == 0
+    assert (tmp_path / "preview.html").read_text(encoding="utf-8") == preview

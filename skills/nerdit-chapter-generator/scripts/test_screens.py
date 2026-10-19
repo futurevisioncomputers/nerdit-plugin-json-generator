@@ -278,3 +278,33 @@ def test_values_may_be_longer_than_labels():
     assert not any("longer than" in p for p in problems_for(spec, text))
     too_long = dict(spec, dialog={"title": "Data Validation", "fields": [{"label": "Source", "value": source + "abc"}]})
     assert any("34" in p for p in problems_for(too_long, text + "abc"))
+
+
+# ---- final review fixes ----
+
+def test_sync_rule_matches_whole_words_only():
+    for drawn, text in (("₹50", "Set the budget to ₹500."), ("5", "Sales in 2025."), ("Day", "Every Monday.")):
+        spec = dict(ADS, path=[], panel=[{"kind": "button", "label": drawn}], steps=[{"do": "click", "path": [drawn]}])
+        assert f"ads-new: '{drawn}' is not in the lesson" in problems_for(spec, text), drawn
+
+
+def test_illustrator_blocks_do_not_vouch_for_a_b_screen():
+    inserted = ('<p class="nerdit-visual-intro" data-nerdit-img="l1-img1">Here is the screen.</p>'
+                '<ol class="nerdit-visual-read" data-nerdit-img="l1-img1"><li>Click Data, then Remove Duplicates.</li></ol>')
+    html = lesson("Click OK to confirm.", block(DEDUPE, grid="xl-staff"), inserted)
+    assert "dedupe: 'Remove Duplicates' is not in the lesson" in validate_lesson(html)
+
+
+def test_reversed_range_fails():
+    spec = dict(XL, steps=[{"do": "select", "target": "B7:B2"}])
+    assert any("top-left" in p for p in problems_for(spec, XL_TEXT))
+
+
+def test_app_name_has_a_limit():
+    assert any("app" in p and "24" in p for p in problems_for(dict(ADS, app="A" * 25), ADS_TEXT))
+
+
+def test_numbers_where_text_belongs_are_problems_not_crashes():
+    for bad in (dict(ADS, path=[2024]), dict(PIP, steps=[{"do": "key", "keys": 5}]),
+                dict(ADS, panel=[{"kind": "button", "label": 7}], steps=[{"do": "click", "path": ["Create"]}])):
+        assert any("text" in p for p in problems_for(bad, ADS_TEXT + " " + PIP_TEXT + " 2024 5 7"))

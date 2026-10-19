@@ -1,3 +1,4 @@
+import re
 from check_screens import check_lesson
 from render_screens import figure_block, render_lesson
 from test_screens import ADS, ADS_TEXT, DEDUPE, DEDUPE_TEXT, XL, XL_TEXT, block, lesson
@@ -86,3 +87,25 @@ def test_reading_list_and_answers_are_not_click_paths():
 
 def test_lesson_without_specs_is_untouched():
     assert check_lesson(lesson("No screens here.", grid=None)) == ([], [])
+
+
+# ---- final review fixes ----
+
+def test_a_screen_drawn_twice_fails():
+    html = two()
+    block_html = re.search(r'<div class="nerdit-figure" data-visual="screen" data-screen="ads-new".*?</ol>', html, re.S).group(0)
+    fails, _ = check_lesson(html + block_html)
+    assert any(f.startswith("ads-new:") and "twice" in f for f in fails)
+
+
+def test_cli_checks_every_lesson_in_a_course(tmp_path):
+    import json as _json
+    from check_screens import main as check_main
+    stale = two().replace('"Isha", "Marketing", "Chennai"', '"Isha", "Marketing", "Kochi"')
+    course = {"lessons": [{"id": "ok", "content": two()}, {"id": "bad", "content": stale}]}
+    path = tmp_path / "course.json"
+    path.write_text(_json.dumps(course), encoding="utf-8")
+    assert check_main(["--course", str(path)]) == 1
+    course["lessons"] = course["lessons"][:1]
+    path.write_text(_json.dumps(course), encoding="utf-8")
+    assert check_main(["--course", str(path)]) == 0

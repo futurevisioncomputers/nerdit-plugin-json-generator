@@ -81,19 +81,21 @@ multi-lesson chapters.
    `CONCEPTS:` path lines — no file content ever enters your context. The curriculum context
    is static per lesson (computed from the input array alone), so it does not break the
    parallel batch.
-3. Run `scripts/assemble_course.py` (Step 4) to build the full `course-<chapter>_output.json`
+3. Run `scripts/render_screens.py` (Step 3b) to draw every complex app screen the writers
+   described, then run `scripts/assemble_course.py` (Step 4) to build the full `course-<chapter>_output.json`
    from the input, the `<id>.html` files, and the `<id>.quiz.json` files. The script owns all
    course defaults, ids, timestamps, durations, and `assets`.
 4. Run `scripts/check_sequence.py --strict` (Step 4b) — deterministic, zero tokens. Exit 2
    means a lesson reaches for a construct a later lesson owns: regenerate that lesson with
-   the violation lines, re-assemble, re-check, and do not proceed until it exits 0.
+   the violation lines, re-draw its screens (Step 3b), re-assemble, re-check, and do not
+   proceed until it exits 0.
 5. Run `scripts/verify_course.py --contract v11` (Step 4c) — deterministic, zero tokens, and
    the gate that keeps the model from regenerating good lessons. Fix everything it reports
    before spawning QA; it is authoritative on every check it makes.
 6. Spawn `nerdit-qa-validator` once against the assembled output file (Step 5) for the
    judgment-only checks the scripts cannot make. On a `FAIL` that is genuinely the agent's to
-   own, re-run that lesson's `nerdit-lesson-writer` with the exact lines, re-assemble,
-   re-verify. **At most 2 regeneration attempts per lesson** (Step 4c) — then stop and report.
+   own, re-run that lesson's `nerdit-lesson-writer` with the exact lines, re-draw its screens
+   (Step 3b), re-assemble, re-verify. **At most 2 regeneration attempts per lesson** (Step 4c) — then stop and report.
    Then deliver (Step 6).
 
 If the chapter has exactly one lesson, the parallelism in step 2 is moot but the same
@@ -317,7 +319,7 @@ a lesson that explains embeddings three lessons early has no telltale code to sc
 
 The `meta.json` sidecar is gone: `nerdit-lesson-writer` writes each lesson's questions
 straight to `<workdir>/<id>.quiz.json`, and `id`/`title` reach the assembler from the input
-file it already reads. Nothing to do here — go to Step 4.
+file it already reads. Nothing to do here — go to Step 3b.
 
 `description` remains generation context only — it is passed to the agent but never appears in
 the assembled output.
@@ -387,7 +389,7 @@ construct before the lesson that teaches it. For each reported lesson:
 
 1. Re-run that lesson's `nerdit-lesson-writer` (Step 2) with a `VIOLATIONS` block holding
    that lesson's exact report lines. It regenerates all three files.
-2. Re-run the assembler (Step 4).
+2. Re-draw its screens (Step 3b), then re-run the assembler (Step 4).
 3. Re-run this check.
 
 Repeat until it exits 0. Do not continue to Step 5 with known violations, and never deliver
@@ -413,6 +415,13 @@ Run the course verifier on the assembled file **before** spawning the QA agent:
     python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/verify_course.py"       --input    <path to the input JSON>       --output   <workdir>/course-<chaptername>_output.json       --contract v11
 
 Exit 0 = every mechanical check passed. Exit 1 = at least one failed, one line each.
+
+Then check every lesson's screens and scenes on the same file. A lesson the writer regenerated
+after Step 3b fails here until its screens are drawn again:
+
+    python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/check_screens.py" --course <workdir>/course-<chaptername>_output.json
+
+Exit 1 lists each failure with its lesson id. Re-run Step 3b, then Step 4, and check again.
 
 **This step exists to stop needless regeneration.** Roughly three quarters of the Step 5
 checklist is decidable by reading the JSON or walking the DOM — field literals, id formats,
@@ -516,7 +525,8 @@ decided those and is authoritative. A `FAIL` from this agent on one of them is a
 positive: note it in one line, do not regenerate.
 
 On a genuine failure, re-run that lesson's `nerdit-lesson-writer` with the exact reported
-lines, re-assemble (Step 4), and re-run 4b and 4c before validating again. Respect the
+lines, re-draw its screens (Step 3b), re-assemble (Step 4), and re-run 4b and 4c before
+validating again. Respect the
 2-attempt budget in Step 4c. Then deliver (Step 6).
 
 ---

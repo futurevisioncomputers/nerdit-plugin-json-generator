@@ -90,3 +90,9 @@ def test_skill_names_visual_scripts():
         assert f"scripts/{name}" in skill
     qa = (ROOT / "agents" / "nerdit-qa-validator.md").read_text(encoding="utf-8")
     assert "nerdit-screen" in qa and "image forced" in qa
+
+
+def test_skill_draws_and_checks_screens_after_every_regeneration():
+    skill = " ".join((HERE.parent / "SKILL.md").read_text(encoding="utf-8").split())
+    assert re.search(r"check_screens.py\"? --course", skill)
+    assert skill.count("Step 3b") >= 4  # the overview, Step 3, and the regeneration loops

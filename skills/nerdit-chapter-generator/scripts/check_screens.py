@@ -2,18 +2,23 @@
 """Gate check for screen and scene specs: the lesson and its pictures say the same thing.
 
     check_lesson(html) -> (fails, warns)
+    python check_screens.py --course <course.json>     # every lesson; exit 1 on any failure
 
 Fails: a spec that breaks screens.validate_lesson (schema, phone limits, the sync rule, ids); a
 formula the Excel engine cannot compute; an A screen with no drawing, or one that differs from
 a fresh render (the lesson changed after render_screens.py ran); a B screen that still has a
-drawing; a drawing whose spec is gone.
+drawing; a drawing whose spec is gone; a screen drawn twice.
 Warns: an image forced to A or B (QA reads the reason); an A screen of an app with no colour
 theme; a concept section that teaches a click-path with no screen spec.
 Stdlib only.
 """
 from __future__ import annotations
 
+import argparse
+import json
 import re
+import sys
+from pathlib import Path
 
 from render_screens import BLOCK, render_spec, screen_theme
 from screens import read_specs, screen_kind, validate_lesson
@@ -86,5 +91,30 @@ def check_lesson(html: str) -> tuple[list[str], list[str]]:
                 fails.append(f"{sid}: drawn screen is out of date; run render_screens.py")
     ids = {s.get("id") for s in specs}
     fails += [f"{sid}: a drawn screen has no spec; run render_screens.py" for sid in drawn if sid not in ids]
+    counts: dict[str, int] = {}
+    for m in BLOCK.finditer(html):
+        counts[m.group(1)] = counts.get(m.group(1), 0) + 1
+    fails += [f"{sid}: the screen is drawn twice; run render_screens.py" for sid, n in counts.items() if n > 1]
     warns += click_path_warnings(html)
     return fails, warns
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Check every lesson of an assembled course (SKILL.md Step 4c)."""
+    ap = argparse.ArgumentParser(description="Check every lesson's screen and scene specs")
+    ap.add_argument("--course", required=True, help="course output JSON")
+    args = ap.parse_args(argv)
+    course = json.loads(Path(args.course).read_text(encoding="utf-8"))
+    failed = 0
+    for lesson in course.get("lessons", []):
+        fails, warns = check_lesson(lesson.get("content") or "")
+        failed += len(fails)
+        for line in [f"FAIL {f}" for f in fails] + [f"WARN {w}" for w in warns]:
+            print(f"{lesson.get('id', '?')}: {line}")
+    print(f"{'FAIL' if failed else 'OK'}: {failed} screen failure(s) in {len(course.get('lessons', []))} lesson(s)")
+    return 1 if failed else 0
+
+
+if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")
+    sys.exit(main())
