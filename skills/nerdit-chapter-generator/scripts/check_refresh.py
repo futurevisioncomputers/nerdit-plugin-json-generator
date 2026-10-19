@@ -5,7 +5,8 @@
                             --modes figures[,sql-layout][,trim]
 
 Compares <id>.html, <id>.quiz.json and <id>.concepts.json between the two folders.
-  figures    - figures, their reading steps and visual blocks may change; a text map may be removed
+  figures    - figures, their reading steps, visual blocks, screen and scene specs and bare images
+               may change; a text map may be removed
   sql-layout - code may change in whitespace only
   trim       - code, outputs, seeds, run-line headings and their leads may change; it may move
                tables and rows into the seed, never a view, trigger or computed table
@@ -54,6 +55,17 @@ def _reading_steps(node: Node) -> bool:
     return first is not None and text_of(first).strip()[:1] in CIRCLED
 
 
+def _visual_slot(node: Node) -> bool:
+    """Screen and scene specs, and a bare image (alone or alone in a <p>): figure scope, so a
+    'figures' refresh may swap a hand-made walkthrough image for a spec."""
+    if node.tag == "script" and node.classes & {"nerdit-screen", "nerdit-scene"}:
+        return True
+    if node.tag == "img":
+        return True
+    return (node.tag == "p" and bool(node.children) and all(c.tag == "img" for c in node.children)
+            and not text_of(node).strip())
+
+
 def parts(html: str) -> dict[str, list[str]]:
     """A lesson split into comparable parts, each a list in page order."""
     out = {k: [] for k in KEYS}
@@ -66,7 +78,7 @@ def parts(html: str) -> dict[str, list[str]]:
                     out["prose"].append(_ws(item))
                 continue
             cls = item.classes
-            if "nerdit-figure" in cls or "data-nerdit-img" in item.attrs:
+            if "nerdit-figure" in cls or "data-nerdit-img" in item.attrs or _visual_slot(item):
                 out["figures"].append(dump(item))
             elif prev is not None and "nerdit-figure" in prev.classes and _reading_steps(item):
                 out["figures"].append(dump(item))

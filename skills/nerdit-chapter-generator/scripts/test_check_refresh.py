@@ -157,3 +157,26 @@ def test_trim_may_not_add_a_trigger():
 def test_a_view_the_original_already_seeded_is_not_rechecked():
     before = _with_seed(BASE, "\nCREATE TEMP VIEW old AS SELECT 1;")
     assert compare(p(before), p(before), {"trim"}) == []
+
+
+SPEC = ('<script type="application/json" class="nerdit-screen" data-grid="xl">'
+        '{"id": "trim-it", "app": "Excel", "layout": "sheet"}</script>')
+DRAWN = ('<div class="nerdit-figure" data-visual="screen" data-screen="trim-it" style="max-width:440px">'
+         '<svg viewBox="0 0 400 100" role="img" aria-label="A"><text>Excel</text></svg>'
+         '<div class="nerdit-figure-caption">Trim names</div></div>'
+         '<ol class="nerdit-visual-read" data-screen="trim-it"><li>① Click cell B2.</li></ol>')
+
+
+def test_figures_mode_may_swap_an_img_for_a_screen_spec():
+    with_img = BASE.replace("<p>Spaces hide inside text.</p>",
+                            '<p>Spaces hide inside text.</p><p><img src="lesson1-trim.png" alt="lesson1-trim"></p>')
+    swapped = BASE.replace("<p>Spaces hide inside text.</p>", "<p>Spaces hide inside text.</p>" + SPEC + DRAWN)
+    assert compare(p(with_img), p(swapped), {"figures"}) == []
+    assert any(x.startswith("figures") for x in compare(p(with_img), p(swapped), {"sql-layout"}))
+
+
+def test_figures_mode_may_add_a_scene_spec():
+    scene = '<script type="application/json" class="nerdit-scene">{"id": "shop", "subject": "A shop"}</script>'
+    after = BASE.replace("<p>Spaces hide inside text.</p>", "<p>Spaces hide inside text.</p>" + scene)
+    assert compare(p(BASE), p(after), {"figures"}) == []
+    assert compare(p(BASE), p(after), {"trim"})

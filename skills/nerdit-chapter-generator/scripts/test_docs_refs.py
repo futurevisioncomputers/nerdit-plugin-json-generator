@@ -30,8 +30,8 @@ def test_writer_trim_rule_matches_the_refresh_guard():
     assert "seed or a view" not in (HERE / "verify_course.py").read_text(encoding="utf-8")
 
 
-def test_plugin_version_is_3_4_0():
-    assert json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))["version"] == "3.4.0"
+def test_plugin_version_is_3_5_0():
+    assert json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))["version"] == "3.5.0"
 
 
 def test_skill_md_matches_the_v11_figure_rules():
@@ -63,3 +63,30 @@ def test_dataset_lessons_mark_their_tables_for_the_world_check():
     assert "make_world_data.py --recipe" in python
     skill = (HERE.parent / "SKILL.md").read_text(encoding="utf-8")
     assert "Python prints" in skill
+
+
+def test_writer_knows_screen_and_scene_specs():
+    writer = (ROOT / "agents" / "nerdit-lesson-writer.md").read_text(encoding="utf-8")
+    assert "nerdit-screen" in writer and "nerdit-scene" in writer and "render_screens.py" in writer
+
+
+def test_figures_has_templates_16_and_17():
+    figures = (HERE.parent / "references" / "figures.md").read_text(encoding="utf-8")
+    assert "## 16 · Screen walkthrough" in figures and "## 17 · Scene" in figures
+    assert "never hand-draw a screen" in figures.lower()
+    assert "figures.md template 16" in (HERE.parent / "references" / "runners" / "excel.md").read_text(encoding="utf-8")
+
+
+def test_visual_map_has_screen_and_scene_rows():
+    core = " ".join((HERE.parent / "references" / "CORE.md").read_text(encoding="utf-8").split())
+    assert "| a click-path in an app | `screen`" in core
+    assert "| one simple idea through a familiar scene | scene spec" in core
+    assert "complex to explain → A (drawn)" in core
+
+
+def test_skill_names_visual_scripts():
+    skill = (HERE.parent / "SKILL.md").read_text(encoding="utf-8")
+    for name in ("render_screens.py", "check_screens.py", "visual_briefs.py"):
+        assert f"scripts/{name}" in skill
+    qa = (ROOT / "agents" / "nerdit-qa-validator.md").read_text(encoding="utf-8")
+    assert "nerdit-screen" in qa and "image forced" in qa

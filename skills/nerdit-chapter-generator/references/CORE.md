@@ -575,21 +575,30 @@ reads its image slots from here.
 | Overview / hook | a real-world scene | `illustration` | illustrator; the user generates it |
 | Under the overview | the course's stages | `course-map` (figures.md §15) | writer |
 | Concept: meaning | an analogy | `illustration` (optional) | illustrator |
+| Concept: meaning | one simple idea through a familiar scene | scene spec → `illustration` (figures.md §17) | writer spec; illustrator |
 | Concept: meaning | a structure or relationship | `diagram` (figures.md §1–8, §10) | writer |
 | Concept: case | records with fields, values changing | `value-table` (§11) or `decision-grid` (§12) | writer |
 | Concept: case | events in time, a window | `time-window` (§14) | writer |
 | Concept: case | parts that add up to a total | `unit-tiles` (§13) | writer |
 | Concept: case | real measured numbers to compare | `chart` (§9, Chart.js) | writer |
 | Worked example | code → result | run line with a result table | writer |
+| Worked example | a click-path in an app | `screen` (figures.md §16) | writer spec; A drawn by `render_screens.py`, B by the illustrator |
 | Practice | — | Try It (predict, run or decide) | writer |
 | Closing | summary | cheat-sheet table | writer |
+
+**The owner's rule for every course:** complex to explain → A (drawn), simple → B (image). A
+screen is A when it has more than 3 steps, 2 or more fields or a computed result; a concept
+with parts, an order or exact values gets a figure template; one simple idea gets a scene.
+Screens and scenes are written as specs in the lesson, so the picture is made from the
+lesson's own words in the same run.
 
 Nothing matches after honestly trying: **no visual**. Prose is the answer.
 
 **Balance:**
 
 - One main visual per concept section.
-- No two visuals restating the same facts (figures.md R13).
+- No two visuals restating the same facts (figures.md R13). A screen never repeats the run
+  line beside it.
 - 0–3 illustrations per lesson, only where the text has a scene or analogy.
 - Charts only for real measured numbers.
 - Not the same `data-visual` in every section.

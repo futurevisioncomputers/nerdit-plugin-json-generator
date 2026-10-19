@@ -8,7 +8,8 @@ shape. Copy a template, swap the labels, ship it.
 in stroke weight, corner radius, font size and padding from one lesson to the next, so a
 course reads as eight different hands. It also drifts off the token palette the moment a
 hex feels convenient. Fifteen fixed shapes cover the concept structures a lesson actually
-has; picking one is a decision, drawing one is not.
+has; picking one is a decision, drawing one is not. Templates 16 (app screens) and 17 (scenes)
+are specs, not SVG: the plugin draws or briefs them from the lesson's own words.
 
 ---
 
@@ -519,6 +520,92 @@ characters or fewer.
   <div class="nerdit-figure-caption">You are here: cleaning staged rows, before they load into the warehouse.</div>
 </div>
 ```
+
+---
+
+## 16 · Screen walkthrough — a click-path in an app
+
+For: any lesson that teaches the learner to do something in an app, such as Excel, Power BI,
+VS Code, a terminal, WordPress, an ads manager or an AI chat tool. Every preset can use it.
+
+**You write a spec, never the picture. Never hand-draw a screen SVG.** Write one JSON block
+where the picture goes, right after the paragraph that explains the step:
+
+```html
+<script type="application/json" class="nerdit-screen" data-grid="xl-staff">
+{"id": "xlookup-city", "app": "Excel", "layout": "sheet",
+ "goal": "Find Isha's city with XLOOKUP",
+ "view": {"columns": ["B", "D", "H"], "rows": [1, 7], "active": "H3"},
+ "steps": [{"do": "select", "target": "H3"},
+           {"do": "type", "target": "H3", "text": "=XLOOKUP(\"Isha\",B2:B7,D2:D7)"},
+           {"do": "result", "target": "H3"}],
+ "image": "auto"}
+</script>
+```
+
+**Layouts:**
+
+| Layout | Use for | Keys |
+|---|---|---|
+| `sheet` | spreadsheets | `data-grid` names the lesson's demo grid; `view` `{columns ≤4, rows [first, last] ≤7, active}` |
+| `editor` | code editors, notebooks, terminals | `tool` (`editor`, `notebook`, `terminal`), `lines` (≤8 of ≤40 characters), `output` (≤4) |
+| `app` | any other app window | `path` (≤4 menu or page names), `panel` (≤6 items: `field` {label, value}, `button` {label}, `message` {who, text ≤90}, `item` {text}) |
+
+**Steps (≤5, one marker each):**
+
+| Step | Keys |
+|---|---|
+| `select` | `target` |
+| `click` | `path` [names] |
+| `type` | `target`, `text` |
+| `set` | `label`, `value` (a dialog or panel field) |
+| `key` | `keys` |
+| `result` | `target`; `sheet` only, computed by the Excel engine |
+
+A `dialog` `{title, fields}` may be added to any layout.
+
+**The owner's rule decides the picture** (`screens.screen_kind`):
+
+- **Complex → A, drawn.** `render_screens.py` draws a phone-sized SVG in the app's own colours.
+  A screen is complex when it has more than 3 steps, 2 or more fields to set, or a computed
+  result.
+- **Simple → B, an image.** Up to 3 clicks or keys on one screen. `visual_briefs.py` hands it to
+  the illustrator, so a B spec also carries `alt`, `takeaway`, `misconception` and
+  `check` {question, answer, reasoning}.
+- **Forcing the other kind.** Set `"image": "A"` or `"B"` with a `"why"`; QA reads the reason.
+
+**The sync rule (`check_screens.py` fails the lesson otherwise):**
+
+- Every word the screen shows must appear in the lesson's visible text: menu names, labels,
+  values, code lines and messages. Grid cells come from the demo grid, results from the engine,
+  and Excel's ribbon tab names are known.
+- The drawing is regenerated, never edited. Change the spec or the lesson, then run
+  `render_screens.py` again.
+- Do not repeat the run line beside the screen in a second form (R13). The screen shows where
+  you click; the run line shows what you get.
+
+---
+
+## 17 · Scene — one simple idea through a familiar situation
+
+For: a concept whose meaning becomes obvious from an everyday scene the section's text already
+uses (a shop bill, a school roll number, a customs desk). A scene is always an AI image (B), in
+the house style, with no text inside it.
+
+```html
+<script type="application/json" class="nerdit-scene">
+{"id": "shop-bill", "subject": "A shopkeeper copying one bill into two notebooks, one per customer",
+ "alt": "A shopkeeper writes the same bill into two notebooks.",
+ "caption": "One bill, two copies: change one and they disagree.",
+ "takeaway": "A fact stored twice can drift.", "misconception": "Copies stay equal by themselves.",
+ "check": {"question": "What goes wrong when one notebook is corrected?",
+           "answer": "The two copies disagree.", "reasoning": "Only one copy got the change."}}
+</script>
+```
+
+The subject names the analogy the text already uses; never invent a new one for the picture.
+Use a scene only when it is the clearest way in. A process, a structure or exact values get a
+figure template (1–15) instead.
 
 ---
 

@@ -128,6 +128,16 @@ The rulebook is authoritative; these are the spine (violating any = rejected by 
 - **Sequencing:** the learner has seen only `PRIOR_TOPICS` plus this lesson — nothing
   else. No code anywhere (examples, syntax boxes, Try It, practice tasks, quiz options)
   may use a construct owned by an `UPCOMING_TOPICS` lesson. See the Sequencing section.
+- **Screens and scenes are specs, not pictures** (figures.md §16–17, every course and preset).
+  Wherever the lesson teaches a click-path in an app (Excel, Power BI, VS Code, a terminal,
+  WordPress, an ads manager, a chat tool), write one `<script type="application/json"
+  class="nerdit-screen">` spec right after the paragraph that explains it. Where one simple
+  idea is clearest as a familiar scene the text already uses, write a `nerdit-scene` spec.
+  Never draw a screen SVG or paste a screenshot: the orchestrator runs `render_screens.py`,
+  which draws complex screens (A) in the app's own colours, and simple ones (B) and scenes
+  become illustrator briefs. Every word a screen shows must appear in your prose;
+  `check_screens.py` fails the lesson otherwise. A B screen and a scene carry `alt`,
+  `takeaway`, `misconception` and `check`.
 - **Pick each visual from the Visual Map** (CORE.md §7). Every `nerdit-figure` carries
   `data-visual`. Records with fields go in a value table (figures.md §11), never in an SVG label
   joined with `·`. Show each idea once (figures.md R13).
@@ -240,7 +250,11 @@ If the orchestrator passes `SOURCE_PATH` **and** `REFRESH` (a list from `figures
   both (figures.md R13). If prose leaned on the map's wording, put that wording on the figure
   as labels, such as `&gt; 10:00 left out`, so the prose still has its referent. Reading steps
   describe only what the new figure draws, in the learner's terms, never SVG units. Add
-  `data-visual` to every figure.
+  `data-visual` to every figure. Replace a hand-made walkthrough image (`<img>` of an app
+  screen) with a `nerdit-screen` spec built from the lesson's own words and data, and add
+  `nerdit-screen` or `nerdit-scene` specs where a click-path or scene needs a picture
+  (figures.md §16–17). Every word a screen shows must already be in the prose: you may not add
+  prose to make a spec pass, so choose what the screen shows from what the lesson says.
 - `sql-layout` — re-lay out SQL in run lines and Try Its to runners/sql.md §Layout. Whitespace
   only: no token may change.
 - `trim` — shorten shown code to the CORE.md §4 limits by moving repeated setup into the seed.
