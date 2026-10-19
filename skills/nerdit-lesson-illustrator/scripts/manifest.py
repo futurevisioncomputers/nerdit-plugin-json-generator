@@ -148,7 +148,9 @@ def add_slots(m: dict, course: dict, plan: list[dict], replan: str | None = None
 
 
 def build_prompt(m: dict, s: dict) -> str:
-    lines = ["Educational illustration for a student meeting this topic for the first time.",
+    opener = (f"Realistic {s.get('app') or 'app'} screen" if s.get("kind") == "screen"
+              else "Educational illustration")
+    lines = [f"{opener} for a student meeting this topic for the first time.",
              f"Course: {m['course']['title']}", f"Lesson: {s['lessonTitle']}",
              f"Section: {s['section']['heading']}", f"Learning objective: {s['objective']}",
              f"Question it answers: {s['question']}"]

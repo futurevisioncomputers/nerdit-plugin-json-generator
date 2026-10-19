@@ -101,3 +101,9 @@ def test_screen_prompt_uses_screen_style_and_exact_labels():
 def test_screen_style_block_needs_the_app():
     block = style_block(["Data"], 0, kind="screen", app="Power BI")
     assert "Power BI" in block and "{app}" not in block and '"Data"' in block
+
+
+def test_screen_prompt_opens_as_a_screen_not_an_illustration():
+    (s,) = planned_screen()["images"]
+    assert s["prompt"].startswith("Realistic Excel screen for a student meeting this topic for the first time.")
+    assert "Educational illustration" not in s["prompt"]
