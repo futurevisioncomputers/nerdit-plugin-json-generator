@@ -60,7 +60,11 @@ def _screen_item(lid: str, content: str, spec: dict) -> dict:
         raise ValueError(f"{lid}: " + "; ".join(problems))
     labels = drawn_strings(spec)
     if spec["layout"] == "sheet":
-        labels += [v for v in _shown_cells(spec, grid) + list(results.values()) if v not in labels]
+        # The image may show the grid's coordinates too, or "Click cell B4" points nowhere.
+        view = spec["view"]
+        coords = list(view["columns"]) + [str(r) for r in range(view["rows"][0], view["rows"][1] + 1)]
+        labels += [v for v in _shown_cells(spec, grid) + list(results.values()) + coords + [view["active"]]
+                   if v not in labels]
     return {
         "lessonId": lid, **_place(content, spec["_offset"], lid, spec["id"]), "kind": "screen",
         "question": spec["goal"], "objective": spec["goal"], "caption": spec["goal"],

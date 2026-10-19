@@ -89,3 +89,9 @@ def test_cli_writes_a_v2_plan(tmp_path):
     assert main(["--course", str(src), "--out", str(out)]) == 0
     plan = json.loads(out.read_text(encoding="utf-8"))
     assert plan["version"] == 2 and len(plan["items"]) == 2
+
+
+def test_screen_labels_include_grid_coordinates():
+    # A B image must be allowed to show where "Click cell B4" is.
+    (screen, _) = brief_items(sample())
+    assert {"A", "B", "1", "2", "3", "4", "A1"} <= set(screen["labels"])

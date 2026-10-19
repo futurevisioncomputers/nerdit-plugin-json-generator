@@ -59,6 +59,7 @@ def app_theme(app: str) -> str | None:
 MAX_COLUMNS, MAX_ROWS, MAX_CELL = 4, 7, 24
 MAX_LINES, MAX_OUTPUT, MAX_LINE = 8, 4, 40
 MAX_PATH, MAX_PANEL, MAX_LABEL, MAX_ITEM, MAX_MESSAGE = 4, 6, 24, 34, 90
+MAX_VALUE = 34  # a field's value box spans the panel, so it may run longer than its label
 MAX_DIALOG_FIELDS, MAX_GOAL, MAX_ALT = 4, 60, 150
 MAX_STEPS = 5  # the figure contract's markers run ① to ⑤ (svgcheck.MARKER_CHARS)
 
@@ -66,6 +67,7 @@ CHECK_KEYS = ("question", "answer", "reasoning")
 
 SCRIPT = re.compile(r"<script\b([^>]*)>(.*?)</script>", re.S | re.I)
 CELL = re.compile(r"^([A-Z]{1,3})([1-9][0-9]*)$")
+RANGE = re.compile(r"^([A-Z]{1,3})([1-9][0-9]*):([A-Z]{1,3})([1-9][0-9]*)$")
 LETTERS = re.compile(r"^[A-Z]{1,3}$")
 LINE = re.compile(r"^line ([1-9][0-9]*)$")
 VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param",
@@ -344,7 +346,7 @@ def _check_app(spec: dict, bad) -> None:
             bad(f"panel item kind must be one of {', '.join(PANEL_KINDS)}")
         elif kind == "field":
             _short(item.get("label"), MAX_LABEL, "a field label", bad)
-            _short(item.get("value"), MAX_LABEL, "a field value", bad)
+            _short(item.get("value"), MAX_VALUE, "a field value", bad)
         elif kind == "button":
             _short(item.get("label"), MAX_LABEL, "a button label", bad)
         elif kind == "item":
@@ -370,16 +372,18 @@ def _check_dialog(spec: dict, bad) -> None:
     _short(dialog["title"], MAX_LABEL, "the dialog title", bad)
     for f in fields:
         _short(f.get("label"), MAX_LABEL, "a dialog label", bad)
-        _short(f.get("value"), MAX_LABEL, "a dialog value", bad)
+        _short(f.get("value"), MAX_VALUE, "a dialog value", bad)
 
 
-def _check_target(spec: dict, i: int, target, cols, span, bad) -> None:
+def _check_target(spec: dict, i: int, target, cols, span, bad, kind: str = "select") -> None:
     layout = spec["layout"]
     if layout == "sheet":
         m = CELL.match(target) if isinstance(target, str) else None
-        if not m:
-            bad(f"step {i}: target must be a cell such as H3")
-        elif cols and span and not (m.group(1) in cols and span[0] <= int(m.group(2)) <= span[1]):
+        r = RANGE.match(target) if isinstance(target, str) and kind == "select" else None
+        corners = [(m.group(1), m.group(2))] if m else [(r.group(1), r.group(2)), (r.group(3), r.group(4))] if r else []
+        if not corners:
+            bad(f"step {i}: target must be a cell such as H3" + (" or a range such as E2:E7" if kind == "select" else ""))
+        elif cols and span and not all(c in cols and span[0] <= int(n) <= span[1] for c, n in corners):
             bad(f"step {i}: target {target} is outside the view")
     elif layout == "editor":
         m = LINE.match(target) if isinstance(target, str) else None
@@ -410,7 +414,7 @@ def _check_steps(spec: dict, cols, span, bad) -> None:
             bad(f"step {i}: unknown kind {shown!r}; use one of {', '.join(STEP_KINDS)}")
             continue
         if kind in ("select", "type"):
-            _check_target(spec, i, s.get("target"), cols, span, bad)
+            _check_target(spec, i, s.get("target"), cols, span, bad, kind)
         if kind == "click":
             path = s.get("path")
             if not (isinstance(path, list) and path):

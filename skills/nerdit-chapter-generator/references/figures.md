@@ -549,20 +549,22 @@ where the picture goes, right after the paragraph that explains the step:
 |---|---|---|
 | `sheet` | spreadsheets | `data-grid` names the lesson's demo grid; `view` `{columns ≤4, rows [first, last] ≤7, active}` |
 | `editor` | code editors, notebooks, terminals | `tool` (`editor`, `notebook`, `terminal`), `lines` (≤8 of ≤40 characters), `output` (≤4) |
-| `app` | any other app window | `path` (≤4 menu or page names), `panel` (≤6 items: `field` {label, value}, `button` {label}, `message` {who, text ≤90}, `item` {text}) |
+| `app` | any other app window | `path` (≤4 menu or page names), `panel` (≤6 items: `field` {label ≤24, value ≤34}, `button` {label}, `message` {who, text ≤90}, `item` {text ≤34}) |
 
 **Steps (≤5, one marker each):**
 
 | Step | Keys |
 |---|---|
-| `select` | `target` |
+| `select` | `target`: a cell, or in `sheet` a range such as `E2:E7` |
 | `click` | `path` [names] |
 | `type` | `target`, `text` |
 | `set` | `label`, `value` (a dialog or panel field) |
 | `key` | `keys` |
 | `result` | `target`; `sheet` only, computed by the Excel engine |
 
-A `dialog` `{title, fields}` may be added to any layout.
+A `dialog` `{title, fields}` (1–4 fields, labels ≤24 and values ≤34 characters) may be added to any layout.
+In `sheet`, a click path is a ribbon: its first name is the tab and later names are buttons on the
+ribbon below it.
 
 **The owner's rule decides the picture** (`screens.screen_kind`):
 

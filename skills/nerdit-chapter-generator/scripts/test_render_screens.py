@@ -282,3 +282,19 @@ def test_bold_labels_fit_their_boxes():
     svg, _ = draw(dict(ADS, panel=ADS["panel"] + [{"kind": "button", "label": "Review and publish"}]))
     for w, label in re.findall(r'<rect x="[\d.]+" y="[\d.]+" width="([\d.]+)"[^>]*/><text[^>]*font-weight="700"[^>]*>([^<]+)</text>', svg):
         assert float(w) >= text_width(htmllib.unescape(label), 14, bold=True), label
+
+
+def test_ribbon_click_draws_a_tab_then_a_button():
+    svg, _ = draw(DEDUPE)
+    tab = re.search(r'<rect[^>]*rx="12"[^>]*/><text[^>]*>Data</text>', svg)
+    button = re.search(r'<rect x="[\d.]+" y="([\d.]+)"[^>]*rx="4"[^>]*/><text[^>]*>Remove Duplicates</text>', svg)
+    assert tab and button
+    tab_y = float(re.search(r'y="([\d.]+)"', tab.group(0)).group(1))
+    assert float(button.group(1)) > tab_y  # the button sits on the ribbon below its tab
+
+
+def test_range_select_outlines_the_range():
+    spec = dict(XL, steps=[{"do": "select", "target": "B2:B5"}])
+    svg, _ = draw(spec)
+    assert reading_steps(spec, {}) == ["Select cells B2:B5."]
+    assert svg.count('stroke-width="2"') >= 1 and "①" in "".join(texts(svg))

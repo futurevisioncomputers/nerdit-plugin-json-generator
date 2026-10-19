@@ -26,8 +26,8 @@ import textwrap
 from pathlib import Path
 
 from excel_eval import evaluate_many
-from screens import (app_theme, cell_value, col_index, read_grid, read_specs, screen_kind,
-                     validate_lesson)
+from screens import (EXCEL_TABS, RANGE, app_theme, cell_value, col_index, read_grid, read_specs,
+                     screen_kind, validate_lesson)
 
 W, PAD = 400, 10
 INNER = W - 2 * PAD
@@ -81,7 +81,12 @@ def reading_steps(spec: dict, results: dict[str, str]) -> list[str]:
     for s in spec["steps"]:
         kind = s["do"]
         if kind == "select":
-            out.append(f"Click cell {s['target']}." if spec["layout"] == "sheet" else f"Select {s['target']}.")
+            if spec["layout"] != "sheet":
+                out.append(f"Select {s['target']}.")
+            elif RANGE.match(s["target"]):
+                out.append(f"Select cells {s['target']}.")
+            else:
+                out.append(f"Click cell {s['target']}.")
         elif kind == "click":
             out.append("Click " + ", then ".join(s["path"]) + ".")
         elif kind == "type":
@@ -184,33 +189,58 @@ def _chips(spec: dict) -> list[str]:
     return chips
 
 
-def _bar(c: Canvas, spec: dict, y: float) -> float:
-    clicked = {p for path in _clicks(spec) for p in path}
-    marked = {path[-1] for path in _clicks(spec)}  # a click's marker sits on its last name
+def _ribbon(spec: dict) -> tuple[list[str], list[str]]:
+    """(tabs, buttons) for the bar. In a sheet a click path is a ribbon: its first name is the
+    tab and later names are buttons on the ribbon below it. Other apps show the path as one row."""
     chips = _chips(spec)
+    if spec["layout"] != "sheet":
+        return chips, []
+    tabs = {path[0] for path in _clicks(spec) if len(path) >= 2 or path[0] in EXCEL_TABS}
+    return [ch for ch in chips if ch in tabs], [ch for ch in chips if ch not in tabs]
+
+
+def _flow(names: list[str], x0: float, marked: set) -> list[list[tuple[str, float]]]:
     rows: list[list[tuple[str, float]]] = [[]]
-    x = PAD + 12 + text_width(spec["app"], 14, bold=True) + 14
-    for chip in chips:
-        w = text_width(chip, 13, bold=True) + 18
-        room = w + (MARK_ROOM + 4 if chip in marked else 8)
+    x = x0
+    for name in names:
+        room = text_width(name, 13, bold=True) + 18 + (MARK_ROOM + 4 if name in marked else 8)
         if x + room > W - PAD and rows[-1]:
             rows.append([])
             x = PAD + 12
-        rows[-1].append((chip, x))
+        rows[-1].append((name, x))
         x += room
+    return rows
+
+
+def _bar(c: Canvas, spec: dict, y: float) -> float:
+    clicked = {p for path in _clicks(spec) for p in path}
+    marked = {path[-1] for path in _clicks(spec)}  # a click's marker sits on its last name
+    tabs, buttons = _ribbon(spec)
+    rows = _flow(tabs, PAD + 12 + text_width(spec["app"], 14, bold=True) + 14, marked)
     h = 12 + 30 * len(rows)
     c.rect(PAD, y + 6, INNER, h - 6, fill=c.paint("bar", "bg-soft"), stroke="none", rx=6)
     c.text(PAD + 12, y + 27, spec["app"], size=14, fill=c.paint("bar-ink", "nb"), bold=True)
-    for r, row in enumerate(rows):
-        cy = y + 9 + 30 * r
-        for chip, cx in row:
-            w = text_width(chip, 13, bold=True) + 18
-            on = chip in clicked
-            c.rect(cx, cy, w, 24, stroke=c.paint("accent", "orange") if on else "var(--bd)",
-                   rx=12, width=2 if on else 1)
-            c.text(cx + w / 2, cy + 17, chip, size=13, anchor="middle", bold=on)
-            c.anchor(("chip", chip), cx + w + 11, cy + 12)
-    return y + h
+
+    def draw(rows, top, rx):
+        for r, row in enumerate(rows):
+            cy = top + 30 * r
+            for name, cx in row:
+                w = text_width(name, 13, bold=True) + 18
+                on = name in clicked
+                c.rect(cx, cy, w, 24, stroke=c.paint("accent", "orange") if on else "var(--bd)",
+                       rx=rx, width=2 if on else 1)
+                c.text(cx + w / 2, cy + 17, name, size=13, anchor="middle", bold=on)
+                c.anchor(("chip", name), cx + w + 11, cy + 12)
+
+    draw(rows, y + 9, 12)
+    y += h
+    if buttons:
+        ribbon = _flow(buttons, PAD + 12, marked)
+        rh = 8 + 30 * len(ribbon)
+        c.rect(PAD, y + 2, INNER, rh, fill=c.paint("soft", "bg-soft"), stroke="var(--bd-soft)", rx=4)
+        draw(ribbon, y + 6, 4)
+        y += rh + 2
+    return y
 
 
 def _sheet_columns(spec: dict, grid, results: dict[str, str]) -> list[tuple[str | None, float]]:
@@ -220,7 +250,9 @@ def _sheet_columns(spec: dict, grid, results: dict[str, str]) -> list[tuple[str 
     marks: dict[str, int] = {}
     for s in spec["steps"]:
         if s["do"] in ("select", "result"):
-            marks[s["target"]] = marks.get(s["target"], 0) + 1
+            rng = RANGE.match(s["target"])
+            ref = f"{rng.group(3)}{rng.group(2)}" if rng else s["target"]
+            marks[ref] = marks.get(ref, 0) + 1
     seq: list[tuple[str | None, float]] = []
     for i, letter in enumerate(view["columns"]):
         if i and col_index(letter) - col_index(view["columns"][i - 1]) > 1:
@@ -254,11 +286,15 @@ def _sheet(c: Canvas, spec: dict, grid, results: dict[str, str], y: float) -> fl
     x0 = PAD + 28
     c.rect(PAD, y, 28, 22, fill=soft, stroke="var(--bd-soft)", rx=0)
     x = x0
+    at: dict[str, tuple[float, float]] = {}
     for letter, w in seq:
+        if letter:
+            at[letter] = (x, w)
         c.rect(x, y, w, 22, fill=soft, stroke="var(--bd-soft)", rx=0)
         c.text(x + w / 2, y + 16, letter or "…", size=12, fill=muted, anchor="middle", attrs='data-head="1"')
         x += w
     y += 22
+    top = y
     for r in range(r0, r1 + 1):
         c.rect(PAD, y, 28, 24, fill=soft, stroke="var(--bd-soft)", rx=0)
         c.text(PAD + 14, y + 17, str(r), size=12, fill=muted, anchor="middle")
@@ -283,6 +319,13 @@ def _sheet(c: Canvas, spec: dict, grid, results: dict[str, str], y: float) -> fl
             c.rect(x, y - 24 * (r1 - int(m.group(2)) + 1), w, 24, fill="none",
                    stroke=c.paint("accent", "orange"), rx=0, width=2)
         x += w
+    for s in spec["steps"]:
+        rng = RANGE.match(s["target"]) if s["do"] == "select" else None
+        if rng:  # a selected range: one outline round it, its marker on the top-right cell
+            (x1, _), (x2, w2) = at[rng.group(1)], at[rng.group(3)]
+            y1, y2 = top + 24 * (int(rng.group(2)) - r0), top + 24 * (int(rng.group(4)) - r0 + 1)
+            c.rect(x1, y1, x2 + w2 - x1, y2 - y1, fill="none", stroke=c.paint("accent", "orange"), rx=0, width=2)
+            c.anchor(("range", s["target"]), x2 + w2 - 10, y1 + 12, -MARK_ROOM)
     return y + 4
 
 
@@ -409,7 +452,9 @@ def _marker_keys(spec: dict, step: dict) -> list[tuple]:
     if kind in ("select", "type"):
         t = step["target"]
         if layout == "sheet":
-            return [("cell", t)] if kind == "select" else [("fx",)]
+            if kind == "select":
+                return [("range", t)] if RANGE.match(t) else [("cell", t)]
+            return [("fx",)]
         if layout == "editor":
             return [("line", int(t.split()[1]))]
         return named(t)

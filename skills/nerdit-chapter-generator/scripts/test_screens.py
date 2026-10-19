@@ -262,3 +262,19 @@ def test_app_theme_matches_names():
     assert app_theme("Google Ads") == "google-ads"
     assert app_theme("Google Sheets") == "sheets"
     assert app_theme("New App") is None
+
+
+def test_select_may_name_a_range_in_the_view():
+    spec = dict(XL, steps=[{"do": "select", "target": "B2:B5"}, XL["steps"][1], XL["steps"][2]])
+    assert not any("target" in p for p in problems_for(spec, XL_TEXT))
+    outside = dict(spec, steps=[{"do": "select", "target": "B2:B9"}] + spec["steps"][1:])
+    assert any("outside the view" in p for p in problems_for(outside, XL_TEXT))
+
+
+def test_values_may_be_longer_than_labels():
+    source = "Surat,Mumbai,Delhi,Bengaluru,Pune"  # 33 characters
+    spec = dict(DEDUPE, dialog={"title": "Data Validation", "fields": [{"label": "Source", "value": source}]})
+    text = DEDUPE_TEXT + " Data Validation Source " + source
+    assert not any("longer than" in p for p in problems_for(spec, text))
+    too_long = dict(spec, dialog={"title": "Data Validation", "fields": [{"label": "Source", "value": source + "abc"}]})
+    assert any("34" in p for p in problems_for(too_long, text + "abc"))
