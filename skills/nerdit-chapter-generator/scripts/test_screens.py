@@ -195,6 +195,13 @@ def test_set_label_must_be_a_field():
     assert any("'Publish' is not a field" in p for p in problems_for(spec, ADS_TEXT))
 
 
+def test_at_most_five_steps():
+    # svgcheck counts markers ①–⑤ only; a longer path is two screens.
+    six = dict(DEDUPE, steps=[{"do": "click", "path": ["OK"]}] * 6)
+    assert any("5 steps" in p for p in problems_for(six, DEDUPE_TEXT))
+    assert not any("steps" in p for p in problems_for(dict(six, steps=six["steps"][:5]), DEDUPE_TEXT))
+
+
 def test_editor_target_is_a_line():
     spec = dict(PIP, steps=[{"do": "type", "target": "line 3", "text": "pip install pandas"}])
     assert any("line 3" in p for p in problems_for(spec, PIP_TEXT))

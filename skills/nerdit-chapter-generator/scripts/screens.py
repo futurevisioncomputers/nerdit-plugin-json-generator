@@ -32,6 +32,7 @@ MAX_COLUMNS, MAX_ROWS, MAX_CELL = 4, 7, 14
 MAX_LINES, MAX_OUTPUT, MAX_LINE = 8, 4, 40
 MAX_PATH, MAX_PANEL, MAX_LABEL, MAX_ITEM, MAX_MESSAGE = 4, 6, 24, 34, 90
 MAX_DIALOG_FIELDS, MAX_GOAL, MAX_ALT = 4, 60, 150
+MAX_STEPS = 5  # the figure contract's markers run ① to ⑤ (svgcheck.MARKER_CHARS)
 
 CHECK_KEYS = ("question", "answer", "reasoning")
 
@@ -368,6 +369,8 @@ def _check_steps(spec: dict, cols, span, bad) -> None:
     if not (isinstance(steps, list) and steps):
         bad("needs at least one step")
         return
+    if len(steps) > MAX_STEPS:
+        bad(f"has {len(steps)} steps; at most {MAX_STEPS} steps fit one screen, so split it in two")
     fields = {f.get("label"): f.get("value") for f in _dialog_fields(spec)}
     if spec["layout"] == "app":
         fields.update({x.get("label"): x.get("value") for x in _panel(spec) if x.get("kind") == "field"})
