@@ -47,8 +47,8 @@ def esc(s) -> str:
     return htmllib.escape(str(s), quote=True)
 
 
-def text_width(s: str, size: int = 14, mono: bool = False) -> float:
-    return len(s) * size * (0.6 if mono else 0.54)
+def text_width(s: str, size: int = 14, mono: bool = False, bold: bool = False) -> float:
+    return len(s) * size * (0.6 if mono or bold else 0.54)
 
 
 def js_string(v) -> str:
@@ -189,9 +189,9 @@ def _bar(c: Canvas, spec: dict, y: float) -> float:
     marked = {path[-1] for path in _clicks(spec)}  # a click's marker sits on its last name
     chips = _chips(spec)
     rows: list[list[tuple[str, float]]] = [[]]
-    x = PAD + 12 + text_width(spec["app"], 14) + 14
+    x = PAD + 12 + text_width(spec["app"], 14, bold=True) + 14
     for chip in chips:
-        w = text_width(chip, 13) + 18
+        w = text_width(chip, 13, bold=True) + 18
         room = w + (MARK_ROOM + 4 if chip in marked else 8)
         if x + room > W - PAD and rows[-1]:
             rows.append([])
@@ -204,7 +204,7 @@ def _bar(c: Canvas, spec: dict, y: float) -> float:
     for r, row in enumerate(rows):
         cy = y + 9 + 30 * r
         for chip, cx in row:
-            w = text_width(chip, 13) + 18
+            w = text_width(chip, 13, bold=True) + 18
             on = chip in clicked
             c.rect(cx, cy, w, 24, stroke=c.paint("accent", "orange") if on else "var(--bd)",
                    rx=12, width=2 if on else 1)
@@ -225,10 +225,12 @@ def _sheet_columns(spec: dict, grid, results: dict[str, str]) -> list[tuple[str 
     for i, letter in enumerate(view["columns"]):
         if i and col_index(letter) - col_index(view["columns"][i - 1]) > 1:
             seq.append((None, 18))
-        shown = [letter] + [results.get(f"{letter}{r}") or cell_text(cell_value(grid, f"{letter}{r}"))
-                            for r in range(r0, r1 + 1)]
+        # Row 1 and results are drawn bold, which is wider.
+        shown = [(results[f"{letter}{r}"], True) if f"{letter}{r}" in results
+                 else (cell_text(cell_value(grid, f"{letter}{r}")), r == 1) for r in range(r0, r1 + 1)]
+        widest = max([text_width(t, 13, bold=b) for t, b in shown] + [text_width(letter, 12)])
         room = max([marks.get(f"{letter}{r}", 0) for r in range(r0, r1 + 1)] + [0]) * MARK_ROOM
-        seq.append((letter, max(40, 12 + text_width(max(shown, key=len), 13)) + room))
+        seq.append((letter, max(40, 12 + widest) + room))
     return seq
 
 
@@ -331,7 +333,7 @@ def _panel(c: Canvas, spec: dict, y: float) -> float:
         if kind == "field":
             y = _field(c, PAD + 6, y, item["label"], item["value"], "field")
         elif kind == "button":
-            w = text_width(item["label"], 14) + 30
+            w = text_width(item["label"], 14, bold=True) + 30
             accent = c.paint("accent", "nb")
             c.rect(PAD + 6, y + 4, w, 30, fill=accent, stroke=accent, rx=6)
             c.text(PAD + 6 + w / 2, y + 24, item["label"], size=14, fill=c.paint("accent-ink", "white"),
@@ -372,7 +374,7 @@ def _dialog(c: Canvas, spec: dict, y: float) -> float:
         fy = _field(c, x + 12, fy, f["label"], f["value"], "dfield")
     bx = x + w - 12
     for b in reversed(buttons):
-        bw = text_width(b, 13) + 26
+        bw = text_width(b, 13, bold=True) + 26
         bx -= bw
         c.rect(bx, fy + 4, bw, 26, stroke=accent, rx=5)
         c.text(bx + bw / 2, fy + 22, b, size=13, anchor="middle", bold=True)

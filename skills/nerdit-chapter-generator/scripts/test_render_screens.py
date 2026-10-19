@@ -268,3 +268,17 @@ def test_cell_spaces_show_as_open_box():
     spec = dict(XL, view={"columns": ["B"], "rows": [1, 3], "active": "B2"}, steps=[{"do": "select", "target": "B2"}])
     svg, _ = draw(spec, (grid["headers"], grid["rows"]))
     assert re.search(r'<text[^>]*data-cell="B2"[^>]*>␣␣Aarav␣</text>', svg)
+
+
+def test_bold_header_fits_its_column():
+    from render_screens import _sheet_columns, text_width
+    spec = dict(XL, view={"columns": ["A", "C"], "rows": [1, 3], "active": "C2"}, steps=[{"do": "select", "target": "A2"}])
+    widths = dict(_sheet_columns(spec, G, {}))
+    assert widths["C"] >= text_width("Department", 13, bold=True) + 12
+
+
+def test_bold_labels_fit_their_boxes():
+    from render_screens import text_width
+    svg, _ = draw(dict(ADS, panel=ADS["panel"] + [{"kind": "button", "label": "Review and publish"}]))
+    for w, label in re.findall(r'<rect x="[\d.]+" y="[\d.]+" width="([\d.]+)"[^>]*/><text[^>]*font-weight="700"[^>]*>([^<]+)</text>', svg):
+        assert float(w) >= text_width(htmllib.unescape(label), 14, bold=True), label
