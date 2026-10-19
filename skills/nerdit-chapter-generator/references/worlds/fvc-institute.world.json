@@ -1,0 +1,146 @@
+{
+  "seed": 20261017,
+  "profile": "analytics",
+  "business": {
+    "name": "Future Vision Computers",
+    "type": "computer and tech skilling institute",
+    "city": "Surat",
+    "branches": ["Citylight", "Vesu", "Pal"],
+    "currency": "INR",
+    "moneyUnit": "paise",
+    "since": "2006",
+    "funnel": "enquiry, free counselling, demo class, enrolment",
+    "batches": "classroom, group and online",
+    "realName": {"approvedBy": "owner (course author)", "date": "2026-10-17", "note": "approved in the planning chat"},
+    "dataNote": "Every enquiry, learner, score and message is synthetic. No real learner records."
+  },
+  "cast": [
+    {"name": "Neha", "role": "admissions counsellor", "trait": "logs every enquiry the same day", "look": "invented adult with a teal kurta and a notebook"},
+    {"name": "Arjun", "role": "data analyst", "trait": "asks which column a number came from", "look": "invented adult with round glasses and a grey hoodie"},
+    {"name": "Fatima", "role": "trainer", "trait": "checks scores against attendance", "look": "invented adult with a yellow scarf and a lanyard"}
+  ],
+  "stages": ["collect", "clean", "explore", "model", "explain"],
+  "messiness": ["age", "enrolled"],
+  "arc": {
+    "statistics-and-probability": "Fatima asks whether this month's batch scores are unusually low or just normal variation.",
+    "feature-engineering": "Arjun turns enquiry dates and follow-up delays into features Neha can act on.",
+    "classification": "Arjun predicts which enquiries enrol, and finds a few labels were logged wrongly.",
+    "explainable-ai": "Arjun compares what the model learned with the institute's declared drivers of enrolment.",
+    "nlp": "Neha sorts enquiry messages by what the learner is asking for."
+  },
+  "entities": {
+    "enquiries": {
+      "rows": 6000,
+      "columns": {
+        "enquiry_id": {"generator": "id", "prefix": "E"},
+        "branch": {"generator": "weighted_choice", "values": ["Citylight", "Vesu", "Pal"], "weights": [45, 35, 20]},
+        "course": {"generator": "weighted_choice",
+                   "values": ["Python Foundations", "Python Professional", "Excel & Power BI", "Business Analytics",
+                              "Advanced Data Analytics", "Data Science & Agentic AI", "Graphic Design",
+                              "Digital Marketing", "Computer Basics", "Office & GenAI"],
+                   "weights": [16, 10, 14, 8, 6, 7, 10, 9, 12, 8]},
+        "channel": {"generator": "weighted_choice", "values": ["walk-in", "website form", "WhatsApp", "referral", "Instagram"],
+                    "weights": [25, 20, 30, 15, 10]},
+        "learner_type": {"generator": "weighted_choice",
+                         "values": ["school student", "college student", "working professional", "career changer"],
+                         "weights": [15, 45, 28, 12]},
+        "age": {"generator": "normal", "mean": 22, "sd": 5, "min": 14, "max": 55, "round": 0},
+        "enquired_on": {"generator": "date_range", "start": "2025-01-01", "end": "2025-12-31",
+                        "monthWeights": {"5": 1.5, "6": 1.6, "7": 1.3, "12": 0.7}},
+        "counselling_minutes": {"generator": "lognormal", "median": 25, "sigma": 0.5, "max": 120, "round": 0},
+        "follow_ups": {"generator": "poisson", "lam": 2},
+        "follow_up_delay_days": {"generator": "int_range", "min": 0, "max": 14},
+        "delay_effect": {"generator": "binned_effect", "column": "follow_up_delay_days", "edges": [3, 8],
+                         "deltas": [0.5, 0, -0.9]},
+        "demo_attended": {"generator": "bernoulli", "p": 0.45},
+        "enrolled": {"generator": "logistic",
+                     "terms": {"follow_ups": 0.35, "demo_attended": 1.2, "counselling_minutes": 0.02, "delay_effect": 1},
+                     "effects": {"channel": {"referral": 0.8, "walk-in": 0.5, "Instagram": -0.4},
+                                 "learner_type": {"working professional": 0.3, "school student": -0.3}},
+                     "target_rate": 0.30}
+      },
+      "defects": {
+        "missing": [{"column": "age", "rate": 0.04}],
+        "label_noise": {"column": "enrolled", "rate": 0.02},
+        "duplicates": 0.01
+      }
+    },
+    "learners": {
+      "rows": 3000,
+      "segments": {
+        "career starter": {"weight": 0.5, "overrides": {"age": {"mean": 20}, "weekly_study_hours": {"mean": 8}}},
+        "upskiller": {"weight": 0.35, "overrides": {"age": {"mean": 31}, "weekly_study_hours": {"mean": 5},
+                                                    "portfolio_projects": {"lam": 1}}},
+        "career switcher": {"weight": 0.15, "overrides": {"age": {"mean": 27}, "weekly_study_hours": {"mean": 12},
+                                                          "portfolio_projects": {"lam": 4}}}
+      },
+      "columns": {
+        "learner_id": {"generator": "id", "prefix": "L"},
+        "branch": {"generator": "weighted_choice", "values": ["Citylight", "Vesu", "Pal"], "weights": [45, 35, 20]},
+        "age": {"generator": "normal", "mean": 24, "sd": 3, "min": 14, "max": 60, "round": 0},
+        "weekly_study_hours": {"generator": "normal", "mean": 7, "sd": 1.5, "min": 0, "round": 1},
+        "sessions_attended": {"generator": "poisson", "lam": 30},
+        "assignments_done": {"generator": "poisson", "lam": 12},
+        "portfolio_projects": {"generator": "poisson", "lam": 2}
+      }
+    },
+    "daily_enquiries": {
+      "kind": "series",
+      "start": "2024-01-01",
+      "end": "2025-12-31",
+      "freq": "day",
+      "base": 18,
+      "trend_per_period": 0.01,
+      "weekly": [1.1, 1, 1, 1, 1.05, 1.3, 0.6],
+      "monthly": {"5": 1.4, "6": 1.5, "7": 1.2, "12": 0.7},
+      "holidays": [
+        {"date": "2024-06-03", "lift": 0.6, "days": 10},
+        {"date": "2025-06-02", "lift": 0.6, "days": 10}
+      ],
+      "noise_sd": 3,
+      "break": {"date": "2025-03-01", "shift": 4},
+      "value_column": "enquiries"
+    },
+    "batch_scores": {
+      "rows": 4000,
+      "columns": {
+        "score_id": {"generator": "id", "prefix": "S"},
+        "course": {"generator": "choice", "values": ["Python Foundations", "Excel & Power BI", "Business Analytics",
+                                                     "Graphic Design", "Computer Basics"]},
+        "batch_mode": {"generator": "weighted_choice", "values": ["classroom", "online", "group"], "weights": [55, 25, 20]},
+        "test_score": {"generator": "normal", "mean": 68, "sd": 12, "min": 0, "max": 100, "round": 0},
+        "attendance_pct": {"generator": "normal", "mean": 82, "sd": 9, "min": 30, "max": 100, "round": 0},
+        "final_score": {"generator": "linear", "intercept": 10, "terms": {"test_score": 0.6, "attendance_pct": 0.25},
+                        "effects": {"batch_mode": {"classroom": 2, "online": -2}}, "noise_sd": 5,
+                        "min": 0, "max": 100, "round": 0}
+      }
+    },
+    "enquiry_messages": {
+      "rows": 2000,
+      "columns": {
+        "message_id": {"generator": "id", "prefix": "M"},
+        "intent": {"generator": "weighted_choice", "values": ["fees", "timings", "course content", "placement", "demo class"],
+                   "weights": [30, 20, 20, 15, 15]},
+        "message": {
+          "generator": "text",
+          "templates": ["I want to know more about {course}."],
+          "slots": {
+            "course": ["Python Foundations", "Excel & Power BI", "Business Analytics", "Data Science & Agentic AI",
+                       "Graphic Design", "Digital Marketing", "Computer Basics"],
+            "branch": ["Citylight", "Vesu", "Pal"],
+            "time": ["morning", "evening", "weekend"],
+            "topic": ["projects", "Power BI", "machine learning", "Excel formulas", "Python basics"]
+          },
+          "tone_from": {"intent": {
+            "fees": ["What are the fees for {course}?", "Is there an instalment option for {course}?",
+                     "Do students get a discount on {course}?"],
+            "timings": ["Is there a {time} batch for {course} at {branch}?", "Can I join the {time} batch at {branch}?"],
+            "course content": ["Does {course} cover {topic}?", "How much {topic} is in {course}?"],
+            "placement": ["Do you help with jobs after {course}?", "Will {course} help me get an internship?"],
+            "demo class": ["Can I attend a free demo of {course} at {branch}?", "When is the next demo class for {course}?"]
+          }}
+        }
+      }
+    }
+  }
+}

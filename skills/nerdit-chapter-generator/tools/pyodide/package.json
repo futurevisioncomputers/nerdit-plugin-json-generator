@@ -1,0 +1,9 @@
+{
+  "name": "nerdit-pyodide-engine",
+  "private": true,
+  "description": "Pinned Pyodide engine for check_python_outputs.py. Same version as nerdit-python-runner.js.",
+  "type": "module",
+  "dependencies": {
+    "pyodide": "0.26.2"
+  }
+}

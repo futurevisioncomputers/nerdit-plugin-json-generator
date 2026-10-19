@@ -1,0 +1,98 @@
+{
+  "seed": 20261020,
+  "profile": "analytics",
+  "business": {
+    "name": "Harbour Lights Cruises",
+    "fictional": true,
+    "type": "boat party and cruise bookings for four vessels",
+    "city": "Melbourne",
+    "currency": "AUD",
+    "moneyUnit": "cents",
+    "vessels": ["Aurora", "Bay Star", "Night Heron", "Southern Belle"],
+    "events": "Corporate, wedding, birthday, dinner, Christmas, New Year's Eve, university and themed cruises.",
+    "seasons": "Peaks for the Christmas season and New Year's Eve; quieter winter months (June-August).",
+    "tax": "Prices include 10% GST.",
+    "dataNote": "An invented operator. All bookings, quotes and amounts are synthetic."
+  },
+  "cast": [
+    {"name": "Mia", "role": "bookings manager", "trait": "confirms every deposit before a date is held", "look": "invented adult with a navy blazer and a headset"},
+    {"name": "Tom", "role": "data analyst", "trait": "plots the calendar before trusting a total", "look": "invented adult with a green jacket and a coffee cup"}
+  ],
+  "stages": ["collect", "clean", "explore", "model", "report"],
+  "messiness": [],
+  "arc": {
+    "eda-matplotlib-seaborn": "Tom charts bookings across the year and finds the December rush.",
+    "regression": "Mia asks how much each extra guest adds to a quote.",
+    "classification": "Mia wants to know which bookings are likely to cancel before the deposit is due.",
+    "time-series": "Tom forecasts daily bookings for the Christmas season."
+  },
+  "entities": {
+    "bookings": {
+      "rows": 5000,
+      "columns": {
+        "booking_id": {"generator": "id", "prefix": "B"},
+        "vessel": {"generator": "choice", "values": ["Aurora", "Bay Star", "Night Heron", "Southern Belle"]},
+        "event_type": {"generator": "weighted_choice",
+                       "values": ["corporate", "wedding", "birthday", "dinner cruise", "Christmas party",
+                                  "New Year's Eve", "university", "themed party"],
+                       "weights": [22, 10, 18, 15, 10, 5, 10, 10]},
+        "event_date": {"generator": "date_range", "start": "2024-01-01", "end": "2025-12-31",
+                       "monthWeights": {"1": 1.4, "6": 0.6, "7": 0.6, "11": 1.6, "12": 2.6}},
+        "guests": {"generator": "normal", "mean": 60, "sd": 25, "min": 10, "max": 180, "round": 0}
+      }
+    },
+    "quotes": {
+      "rows": 3000,
+      "columns": {
+        "quote_id": {"generator": "id", "prefix": "Q"},
+        "vessel": {"generator": "choice", "values": ["Aurora", "Bay Star", "Night Heron", "Southern Belle"]},
+        "event_type": {"generator": "weighted_choice",
+                       "values": ["corporate", "wedding", "birthday", "dinner cruise", "Christmas party",
+                                  "New Year's Eve", "university", "themed party"],
+                       "weights": [22, 10, 18, 15, 10, 5, 10, 10]},
+        "guests": {"generator": "normal", "mean": 60, "sd": 25, "min": 10, "max": 180, "round": 0},
+        "hours": {"generator": "weighted_choice", "values": [3, 4, 5], "weights": [50, 35, 15]},
+        "price_cents": {"generator": "linear", "intercept": 150000, "terms": {"guests": 8500, "hours": 40000},
+                        "effects": {"event_type": {"New Year's Eve": 400000, "Christmas party": 150000,
+                                                   "wedding": 250000, "corporate": 80000}},
+                        "noise_sd": 40000, "min": 80000, "round": 0}
+      }
+    },
+    "cancellations": {
+      "rows": 5000,
+      "columns": {
+        "booking_id": {"generator": "id", "prefix": "B"},
+        "event_type": {"generator": "weighted_choice",
+                       "values": ["corporate", "wedding", "birthday", "dinner cruise", "Christmas party",
+                                  "New Year's Eve", "university", "themed party"],
+                       "weights": [22, 10, 18, 15, 10, 5, 10, 10]},
+        "lead_days": {"generator": "lognormal", "median": 30, "sigma": 0.7, "max": 365, "round": 0},
+        "guests": {"generator": "normal", "mean": 60, "sd": 25, "min": 10, "max": 180, "round": 0},
+        "deposit_paid": {"generator": "bernoulli", "p": 0.7},
+        "cancelled": {"generator": "logistic", "terms": {"lead_days": 0.012, "deposit_paid": -1.1, "guests": -0.006},
+                      "effects": {"event_type": {"university": 0.8, "birthday": 0.4, "wedding": -0.6, "corporate": -0.3}},
+                      "target_rate": 0.12}
+      }
+    },
+    "daily_bookings": {
+      "kind": "series",
+      "start": "2023-01-01",
+      "end": "2025-12-31",
+      "freq": "day",
+      "base": 6,
+      "trend_per_period": 0.002,
+      "weekly": [0.6, 0.6, 0.7, 0.8, 1.3, 1.8, 1.2],
+      "monthly": {"1": 1.3, "6": 0.6, "7": 0.55, "8": 0.7, "11": 1.5, "12": 2.4},
+      "holidays": [
+        {"date": "2023-12-01", "lift": 0.5, "days": 24},
+        {"date": "2024-12-01", "lift": 0.5, "days": 24},
+        {"date": "2025-12-01", "lift": 0.5, "days": 24},
+        {"date": "2023-12-31", "lift": 3, "days": 1},
+        {"date": "2024-12-31", "lift": 3, "days": 1},
+        {"date": "2025-12-31", "lift": 3, "days": 1}
+      ],
+      "noise_sd": 1.5,
+      "value_column": "bookings"
+    }
+  }
+}

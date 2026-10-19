@@ -40,6 +40,13 @@ Before writing anything:
   lesson genuinely needs a different one, read that fragment before using it.
 - `RUNNER: none` means no live runner — practice comes from `nerdit-predict` and
   `nerdit-fillblank` only.
+- **Python and plot lessons:** read `runners/python.md` §Lesson data and §Rules even when the
+  runner is `plot`. Data comes from one `nerdit-dataset` block (at most 40 KB, self-contained,
+  copied from the course world). Every Try It starter stands alone; run lines build in page
+  order and `print` what they show; every random call takes a seed. Code for a library the
+  browser cannot load goes in `<div class="nerdit-run" data-run="offline">`, with output from a
+  real machine and no Try It. `check_python_outputs.py` runs every example, so never invent
+  an output: if you cannot work it out exactly, keep the example smaller.
 - Read `${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/references/figures.md` — the figure
   templates. **Every concept section gets one main visual** (CORE.md §7). Pick it from
   CORE.md's Visual Map, then copy that template's markup and swap the labels. Do not improvise an
@@ -229,13 +236,21 @@ If the orchestrator passes `SOURCE_PATH` **and** `REFRESH` (a list from `figures
 `trim`), you are not rewriting the lesson. Copy `SOURCE_PATH` and change only what `REFRESH` names:
 
 - `figures` — redraw figures that break figures.md R10–R13 or have a better template, with their
-  captions and reading steps. Remove a text map (`nerdit-map`) a figure now covers. Add
+  captions and reading steps. Remove a text map (`nerdit-map`) a figure now covers; never keep
+  both (figures.md R13). If prose leaned on the map's wording, put that wording on the figure
+  as labels, such as `&gt; 10:00 left out`, so the prose still has its referent. Reading steps
+  describe only what the new figure draws, in the learner's terms, never SVG units. Add
   `data-visual` to every figure.
 - `sql-layout` — re-lay out SQL in run lines and Try Its to runners/sql.md §Layout. Whitespace
   only: no token may change.
-- `trim` — shorten shown code to the CORE.md §4 limits by moving repeated setup into the seed or a
-  view. Every shown output must still be exactly what SQLite returns. A run-line heading and its
-  one-sentence lead may change to match.
+- `trim` — shorten shown code to the CORE.md §4 limits by moving repeated setup into the seed.
+  The seed holds only tables and listed rows (`CREATE TABLE` with columns, `INSERT … VALUES`).
+  Never seed a view, a trigger or a computed table (`CREATE TABLE … AS`, `INSERT … SELECT`): a
+  CTE's name lasts one statement, so code that reuses a seeded name works through logic the
+  learner never reads. Never hide the step the section teaches; if the code still runs long,
+  keep it and accept the density warning. Every shown output must still be exactly what SQLite returns. A
+  run-line heading and its one-sentence lead may change to match. The lead names only what the
+  shown code does, and does not say "view" or "helper" before the course has taught views.
 
 Everything else stays exactly as it is: headings, prose, Try It prompts, the cheat sheet, the
 quiz file and the concept manifest (except its `visuals` list). `check_refresh.py` compares your

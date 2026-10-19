@@ -37,6 +37,13 @@ Two things it handles for you, both of which would otherwise confuse a beginner:
 - **Tracebacks reduced** to the learner's line plus the error, hiding Pyodide and
   matplotlib internal frames.
 
+**Data and checks are the Python runner's.** A chart lesson reads its data from the same
+`nerdit-dataset` block (runners/python.md §Lesson data), and the Python example rules there
+apply here too: starters stand alone, run lines build in page order, every random call is
+seeded. `check_python_outputs.py` treats a run line whose output half has no `<pre>` as a
+chart: the code must run and draw at least one figure. seaborn does not load in the browser;
+use Matplotlib, or an offline run line (`data-run="offline"`).
+
 **Writing the documented output.** A chart has no text output to paste, so describe what
 appears, in one or two short sentences — "Four bars. Mouse is tallest at 120, Laptop is
 shortest at 45." When the code also prints, show the printed text exactly and describe the

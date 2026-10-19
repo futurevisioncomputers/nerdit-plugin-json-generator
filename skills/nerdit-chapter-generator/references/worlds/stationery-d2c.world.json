@@ -1,0 +1,131 @@
+{
+  "seed": 20261019,
+  "profile": "analytics",
+  "business": {
+    "name": "Paper Lantern Studio",
+    "fictional": true,
+    "type": "handmade, sustainable stationery and home-decor brand sold online",
+    "city": "Jaipur",
+    "currency": "INR",
+    "moneyUnit": "paise",
+    "products": "Annual and daily planners, desk and wall calendars, sticker sheets, sticky notes, colouring books, art frames, candle sets, gift cards.",
+    "offers": "A launch coupon each November, sale tags of 13%, 20% and 29%, and corporate bulk orders.",
+    "seasons": "A yearly planner and calendar launch spike in November; gifting in December and January.",
+    "dataNote": "An invented brand. All customers, orders, ratings and reviews are synthetic."
+  },
+  "cast": [
+    {"name": "Ira", "role": "founder", "trait": "reads every review herself", "look": "invented adult with paint-stained sleeves and a bun"},
+    {"name": "Sameer", "role": "growth analyst", "trait": "checks a chart against its numbers", "look": "invented adult with a striped shirt and a canvas tote"}
+  ],
+  "stages": ["collect", "clean", "explore", "model", "report"],
+  "messiness": [],
+  "arc": {
+    "eda-matplotlib-seaborn": "Sameer charts daily sales and spots the November launch spike.",
+    "unsupervised-learning": "Sameer groups customers into planner fans, gifters and occasional buyers.",
+    "recommendation-systems": "Sameer suggests products from what similar customers rated highly.",
+    "nlp": "Ira sorts reviews into praise and problems without reading all of them."
+  },
+  "entities": {
+    "products": {
+      "rows": 30,
+      "columns": {
+        "product_id": {"generator": "id", "prefix": "PL"},
+        "product_type": {"generator": "weighted_choice",
+                         "values": ["annual planner", "daily planner", "desk calendar", "wall calendar", "sticker sheet",
+                                    "sticky notes", "colouring book", "art frame", "candle set", "gift card"],
+                         "weights": [4, 3, 3, 3, 4, 3, 3, 2, 2, 3]},
+        "list_price_paise": {"generator": "linear", "intercept": 150000,
+                             "effects": {"product_type": {"annual planner": 70000, "daily planner": 0,
+                                                          "desk calendar": -50000, "wall calendar": -30000,
+                                                          "sticker sheet": -90000, "sticky notes": -100000,
+                                                          "colouring book": -20000, "art frame": 400000,
+                                                          "candle set": 345000, "gift card": 50000}},
+                             "noise_sd": 5000, "min": 29900, "round": 0}
+      }
+    },
+    "customers": {
+      "rows": 5000,
+      "segments": {
+        "planner fan": {"weight": 0.3, "overrides": {"orders_per_year": {"lam": 4}, "avg_basket_paise": {"median": 300000}}},
+        "gifter": {"weight": 0.25, "overrides": {"orders_per_year": {"lam": 2}, "avg_basket_paise": {"median": 450000}}},
+        "occasional": {"weight": 0.45, "overrides": {"orders_per_year": {"lam": 1}, "avg_basket_paise": {"median": 120000}}}
+      },
+      "columns": {
+        "customer_id": {"generator": "id", "prefix": "C"},
+        "city": {"generator": "weighted_choice",
+                 "values": ["Bengaluru", "Mumbai", "Delhi", "Pune", "Hyderabad", "Chennai", "Jaipur", "Kolkata"],
+                 "weights": [18, 18, 16, 12, 10, 10, 8, 8]},
+        "orders_per_year": {"generator": "poisson", "lam": 2},
+        "avg_basket_paise": {"generator": "lognormal", "median": 200000, "sigma": 0.4, "round": 0},
+        "newsletter": {"generator": "bernoulli", "p": 0.35},
+        "first_order_on": {"generator": "date_range", "start": "2023-01-01", "end": "2025-12-31"}
+      }
+    },
+    "orders": {
+      "rows": 8000,
+      "columns": {
+        "order_id": {"generator": "id", "prefix": "O"},
+        "customer_id": {"generator": "fk", "entity": "customers", "column": "customer_id"},
+        "product_id": {"generator": "fk", "entity": "products", "column": "product_id"},
+        "ordered_on": {"generator": "date_range", "start": "2025-01-01", "end": "2025-12-31",
+                       "monthWeights": {"1": 1.5, "11": 2, "12": 2.5}},
+        "quantity": {"generator": "weighted_choice", "values": [1, 2, 3, 4], "weights": [70, 20, 7, 3]},
+        "coupon": {"generator": "weighted_choice", "values": ["none", "LAUNCH", "FESTIVE", "BULK"], "weights": [70, 15, 10, 5]},
+        "discount_pct": {"generator": "weighted_choice", "values": [0, 13, 20, 29], "weights": [60, 15, 15, 10]}
+      }
+    },
+    "ratings": {
+      "kind": "interactions",
+      "users": "customers",
+      "items": "products",
+      "user_column": "customer_id",
+      "item_column": "product_id",
+      "k": 2,
+      "density": 0.05,
+      "scale": [1, 5],
+      "noise_sd": 0.5
+    },
+    "reviews": {
+      "rows": 3000,
+      "columns": {
+        "review_id": {"generator": "id", "prefix": "RV"},
+        "rating": {"generator": "weighted_choice", "values": [1, 2, 3, 4, 5], "weights": [5, 7, 15, 33, 40]},
+        "review": {
+          "generator": "text",
+          "templates": ["The {item} is okay. {neutral}."],
+          "slots": {
+            "item": ["planner", "calendar", "sticker sheet", "colouring book", "candle set"],
+            "praise": ["The paper is thick and smooth", "Lovely colours", "Feels handmade in the best way",
+                       "Perfect gift, packed with care"],
+            "problem": ["arrived with a bent corner", "took two weeks to reach me", "had smudged pages",
+                        "was smaller than the photos"],
+            "neutral": ["Nothing special", "Does the job", "Pretty, but pricey"]
+          },
+          "tone_from": {"rating": {
+            "5": ["Love this {item}! {praise}.", "{praise}. Buying another {item} for a friend."],
+            "4": ["Nice {item}. {praise}.", "Good {item}, though it {problem}."],
+            "3": ["The {item} is fine. {neutral}.", "{neutral}. The {item} {problem}."],
+            "2": ["Disappointed: the {item} {problem}.", "Not great. The {item} {problem}."],
+            "1": ["The {item} {problem}. Never again.", "Returned the {item} because it {problem}."]
+          }}
+        }
+      }
+    },
+    "daily_sales": {
+      "kind": "series",
+      "start": "2025-01-01",
+      "end": "2025-12-31",
+      "freq": "day",
+      "base": 60,
+      "trend_per_period": 0.03,
+      "weekly": [0.9, 0.95, 1, 1, 1.05, 1.3, 1.2],
+      "monthly": {"1": 1.2, "11": 1.3, "12": 1.6},
+      "holidays": [
+        {"date": "2025-10-18", "lift": 0.6, "days": 5},
+        {"date": "2025-11-15", "lift": 2.5, "days": 7}
+      ],
+      "noise_sd": 6,
+      "value_column": "orders"
+    }
+  }
+}

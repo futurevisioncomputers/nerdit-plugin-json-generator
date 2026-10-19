@@ -424,6 +424,23 @@ A mismatch means a shown result does not follow from the seed data: regenerate t
 the reported lines (counts toward the 2-attempt budget). Lines marked unchecked (query plans,
 non-table output) are read by hand, not regenerated.
 
+For Python and Matplotlib lessons, run the Python output checker next to it. It runs every
+example on the website's own engine (Pyodide 0.26.2; set up once with `npm ci` in
+`tools/pyodide/`, see its README):
+
+    python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/check_python_outputs.py" --course <workdir>/course-<chaptername>_output.json
+
+Exit 1 = a shown output, error line or chart does not match, or a Try It starter raises:
+regenerate that lesson with the reported lines (counts toward the 2-attempt budget). The writer
+cannot run code, so paste each mismatch's full `Python prints` block into the regeneration
+prompt: the output to show is exactly that text. Exit 2 = the engine is missing, or its first
+package download failed (no internet): fix the engine, never skip the check and never count it
+against the lesson. `offline` lines (libraries the browser
+cannot load) are read by hand. **Before planning a Python course**, ask the engine what loads
+instead of trusting memory:
+
+    python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/check_python_outputs.py" --probe numpy,pandas,sklearn,scipy,matplotlib,statsmodels,seaborn
+
 Then the voice check, which fails on any phrase in `references/voice.md`:
 
     python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/check_prose.py" --course <workdir>/course-<chaptername>_output.json

@@ -18,11 +18,48 @@ def test_writer_knows_refresh_mode_and_voice():
     assert "## Refresh mode" in writer and "references/voice.md" in writer and "data-visual" in writer
 
 
-def test_plugin_version_is_3_3_0():
-    assert json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))["version"] == "3.3.0"
+def test_writer_trim_rule_matches_the_refresh_guard():
+    # check_refresh.py fails a trim that seeds a view, trigger or computed table;
+    # the writer and CORE.md must say the same, or the writer keeps tripping the guard.
+    writer = (ROOT / "agents" / "nerdit-lesson-writer.md").read_text(encoding="utf-8")
+    core = (HERE.parent / "references" / "CORE.md").read_text(encoding="utf-8")
+    trim = " ".join(writer.split("- `trim`", 1)[1].split("\n\n", 1)[0].split())
+    assert "Never seed a view, a trigger or a computed table" in trim
+    assert "view, trigger or computed table" in " ".join(core.split())
+    assert "shows in full" not in trim and "seed or a view" not in core
+    assert "seed or a view" not in (HERE / "verify_course.py").read_text(encoding="utf-8")
+
+
+def test_plugin_version_is_3_4_0():
+    assert json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))["version"] == "3.4.0"
 
 
 def test_skill_md_matches_the_v11_figure_rules():
     skill = (HERE.parent / "SKILL.md").read_text(encoding="utf-8")
     assert "nine figure templates" not in skill.lower()
     assert "Every lesson ships at least one figure" not in skill
+
+
+def test_docs_name_python_checker_and_dataset_rules():
+    skill = (HERE.parent / "SKILL.md").read_text(encoding="utf-8")
+    python = (HERE.parent / "references" / "runners" / "python.md").read_text(encoding="utf-8")
+    plot = (HERE.parent / "references" / "runners" / "plot.md").read_text(encoding="utf-8")
+    core = (HERE.parent / "references" / "CORE.md").read_text(encoding="utf-8")
+    writer = (ROOT / "agents" / "nerdit-lesson-writer.md").read_text(encoding="utf-8")
+    qa = (ROOT / "agents" / "nerdit-qa-validator.md").read_text(encoding="utf-8")
+    assert "scripts/check_python_outputs.py" in skill and "--probe" in skill
+    assert "nerdit-dataset" in python and "40 KB" in python and 'data-run="offline"' in python
+    assert "no seed block" not in python
+    assert "nerdit-dataset" in plot and "runners/python.md" in core
+    assert 'data-run="offline"' in writer and "runners/python.md" in writer
+    assert "check_python_outputs.py" in qa
+
+
+def test_dataset_lessons_mark_their_tables_for_the_world_check():
+    """check_world.py fails a figure table with neither data-world-entity nor data-world-derived;
+    a dataset lesson's file table and CSV rows come from the recipe, not the course world."""
+    python = " ".join((HERE.parent / "references" / "runners" / "python.md").read_text(encoding="utf-8").split())
+    assert 'data-world-derived="dataset block' in python
+    assert "make_world_data.py --recipe" in python
+    skill = (HERE.parent / "SKILL.md").read_text(encoding="utf-8")
+    assert "Python prints" in skill

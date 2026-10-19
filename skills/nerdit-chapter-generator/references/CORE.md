@@ -285,6 +285,10 @@ Rules:
   input half wraps instead of scrolling. Never hand-write colour spans. Lay SQL out by
   `runners/sql.md` §Layout: no line over 60 characters, one column per line, `CASE`
   blocks indented. The input half wraps, so a longer line breaks mid-statement.
+- **Python run lines follow `runners/python.md`.** Data comes from the lesson's
+  `nerdit-dataset` block, run lines build on each other in page order, each prints what it
+  shows, every random call is seeded, and libraries the browser cannot load go in a
+  `data-run="offline"` run line. `check_python_outputs.py` runs every one.
 - **Tags name the two sides in the learner's words.** `You type` on the input.
   On the output, name the thing that answered: `Python shows`, `Excel shows`,
   `SQL shows`, `The page shows`. Never `Input` / `Output`.
@@ -292,7 +296,9 @@ Rules:
   one run line per concept, and the Try It may be a prediction or a decision ("Which grain is
   this table?") instead of running code. `hands-on` (the default): 2–3 run lines per concept;
   the second is a small variation of the first, changing one thing. Never jump complexity.
-  Either way a shown block is at most 15 lines; move repeated setup into the seed or a view.
+  Either way a shown block is at most 15 lines; move repeated setup into the seed, never the step
+  a section teaches. In a `trim` refresh, setup means tables and listed rows only: no view,
+  trigger or computed table (`check_refresh.py` enforces this).
   Shown code per lesson: at most 40 lines for `concept`, 100 for `hands-on`
   (`verify_course.py` v11 warns).
 - **Colour is never the only signal.** The tags stay, because a learner who cannot
