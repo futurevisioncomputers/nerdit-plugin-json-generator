@@ -35,7 +35,7 @@ def test_one_item_per_b_screen_and_scene():
 def test_screen_item_fields():
     (screen, _) = brief_items(sample())
     assert screen["lessonId"] == "l1" and screen["heading"] == "1 — Part 1"
-    assert screen["subject"] == "Excel window: Remove repeated rows"
+    assert screen["subject"] == "Excel window: Remove repeated rows" and screen["app"] == "Excel"
     assert screen["intro"] == "Here is the screen for this step."
     assert screen["explanation"] == ["Click Data, then Remove Duplicates.", "Click OK."]
     assert screen["sourceRefs"] == ["#xl-staff"] and screen["checkQuestion"] == DEDUPE["check"]
@@ -79,7 +79,6 @@ def test_scene_item_passes_illustrator_validation():
     assert items_errors("illustration") == []
 
 
-@pytest.mark.xfail(strict=True, reason="the illustrator learns kind 'screen' in Task 6")
 def test_screen_item_passes_illustrator_validation():
     assert items_errors("screen") == []
 

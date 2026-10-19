@@ -41,7 +41,7 @@ def blocks_v2(slot: dict, svg: str | None) -> str:
     # A phone-width diagram (viewBox <= 400) would blow up to 680 px on desktop; cap it.
     width = f' style="max-width:{DIAGRAM_MAX_WIDTH}px"' if slot["kind"] == "diagram" else ""
     # CORE.md §7: every figure names its visual; a plan item may say which (e.g. time-window).
-    visual = slot.get("visual") or ("diagram" if slot["kind"] == "diagram" else "illustration")
+    visual = slot.get("visual") or {"diagram": "diagram", "screen": "screen"}.get(slot["kind"], "illustration")
     out = [f'\n<p class="nerdit-visual-intro" data-nerdit-img="{vid}">{esc(slot["intro"])}</p>',
            f'\n<div class="nerdit-figure" data-nerdit-img="{vid}" data-visual="{visual}"{width}>\n  {figure}\n'
            f'  <div class="nerdit-figure-caption">{esc(slot["caption"])}</div>\n</div>']

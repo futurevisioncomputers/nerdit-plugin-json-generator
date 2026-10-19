@@ -73,3 +73,31 @@ def test_render_lists_diagrams_to_draw_and_record_rebuilds_v2_prompt():
     assert "Course: Test Course" in m["images"][1]["prompt"]
     assert style_block(["A"], 2).endswith(
         'People, if any: Indian people in Indian settings. No real brands, companies or celebrities.')
+
+
+def planned_screen():
+    from fixture_course import screen_plan
+    m = new_manifest(course(), "course.json")
+    assert add_slots_v2(m, course(), screen_plan()) == []
+    return m
+
+
+def test_screen_kind_is_accepted():
+    (s,) = planned_screen()["images"]
+    assert s["kind"] == "screen" and s["app"] == "Excel"
+    assert (s["id"], s["requestFile"], s["outputFile"]) == (
+        "old-style-02-img1", "old-style-02-img1.png", "old-style-02-img1.webp")
+
+
+def test_screen_prompt_uses_screen_style_and_exact_labels():
+    (s,) = planned_screen()["images"]
+    assert "realistic Excel screen in Excel's own usual colours" in s["prompt"]
+    for label in ("Data", "Remove Duplicates", "OK"):
+        assert f'"{label}"' in s["prompt"]
+    assert "No logos, screenshots, user-interface elements" not in s["prompt"]
+    assert "① ②" in s["prompt"]
+
+
+def test_screen_style_block_needs_the_app():
+    block = style_block(["Data"], 0, kind="screen", app="Power BI")
+    assert "Power BI" in block and "{app}" not in block and '"Data"' in block

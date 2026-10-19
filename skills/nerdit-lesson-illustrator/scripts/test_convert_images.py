@@ -111,3 +111,15 @@ def test_over_hard_limit_is_an_error(tmp_path, monkeypatch):
     report = convert_all(m, d)
     assert any("over the 250 KB limit" in e for e in report["errors"])
     assert m["images"][0]["status"] == "planned"
+
+
+def test_screen_converts_like_an_illustration(tmp_path):
+    from fixture_course import screen_plan
+    from manifest import add_slots_v2
+    d = setup(tmp_path)
+    m = new_manifest(course(), "course.json")
+    assert add_slots_v2(m, course(), screen_plan()) == []
+    illustration(d / "incoming" / "old-style-02-img1.png")
+    report = convert_all(m, d)
+    assert report["converted"] == ["old-style-02-img1"]
+    assert (d / "upload" / "old-style-02-img1.webp").is_file()

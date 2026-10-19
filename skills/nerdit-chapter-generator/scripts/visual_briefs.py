@@ -69,6 +69,7 @@ def _screen_item(lid: str, content: str, spec: dict) -> dict:
         "checkQuestion": dict(spec["check"]), "labels": labels,
         "sourceRefs": ["#" + (spec["_grid"] if spec["layout"] == "sheet" else spec["id"])],
         "knownTerms": [], "newTerms": [], "subject": f"{spec['app']} window: {spec['goal']}",
+        "app": spec["app"],
     }
 
 
