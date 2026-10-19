@@ -26,7 +26,8 @@ import textwrap
 from pathlib import Path
 
 from excel_eval import evaluate_many
-from screens import (cell_value, col_index, read_grid, read_specs, screen_kind, validate_lesson)
+from screens import (app_theme, cell_value, col_index, read_grid, read_specs, screen_kind,
+                     validate_lesson)
 
 W, PAD = 400, 10
 INNER = W - 2 * PAD
@@ -102,21 +103,33 @@ def results_for(spec: dict, grid) -> tuple[dict[str, str], list[str]]:
 
 # ---- drawing ----
 
+def paint(theme: str | None, role: str, fallback: str) -> str:
+    """An app colour role as a token, falling back to the NerdIT token when the page's CSS
+    has no theme for the app (or the app has none)."""
+    return f"var(--app-{theme}-{role}, var(--{fallback}))" if theme else f"var(--{fallback})"
+
+
 class Canvas:
-    def __init__(self):
+    def __init__(self, theme: str | None = None):
+        self.theme = theme
         self.parts: list[str] = []
         self.anchors: dict[tuple, tuple[float, float, int]] = {}
 
-    def rect(self, x, y, w, h, fill="var(--white)", stroke="var(--bd)", rx=4, width=1):
+    def paint(self, role: str, fallback: str) -> str:
+        return paint(self.theme, role, fallback)
+
+    def rect(self, x, y, w, h, fill=None, stroke="var(--bd)", rx=4, width=1):
+        fill = fill or self.paint("surface", "white")
         self.parts.append(f'<rect x="{x:g}" y="{y:g}" width="{w:g}" height="{h:g}" rx="{rx}" '
                           f'fill="{fill}" stroke="{stroke}" stroke-width="{width}"/>')
 
     def line(self, x1, y1, x2, y2, stroke="var(--bd)"):
         self.parts.append(f'<line x1="{x1:g}" y1="{y1:g}" x2="{x2:g}" y2="{y2:g}" stroke="{stroke}"/>')
 
-    def text(self, x, y, s, size=14, fill="var(--tx)", bold=False, mono=False, anchor=None,
+    def text(self, x, y, s, size=14, fill=None, bold=False, mono=False, anchor=None,
              italic=False, attrs=""):
-        extra = ' font-family="var(--font-code)" xml:space="preserve"' if mono else ""
+        fill = fill or self.paint("ink", "tx")
+        extra =' font-family="var(--font-code)" xml:space="preserve"' if mono else ""
         extra += ' font-weight="700"' if bold else ""
         extra += ' font-style="italic"' if italic else ""
         extra += f' text-anchor="{anchor}"' if anchor else ""
@@ -174,14 +187,14 @@ def _bar(c: Canvas, spec: dict, y: float) -> float:
         rows[-1].append((chip, x))
         x += room
     h = 12 + 30 * len(rows)
-    c.rect(PAD, y + 6, INNER, h - 6, fill="var(--bg-soft)", stroke="none", rx=6)
-    c.text(PAD + 12, y + 27, spec["app"], size=14, fill="var(--nb)", bold=True)
+    c.rect(PAD, y + 6, INNER, h - 6, fill=c.paint("bar", "bg-soft"), stroke="none", rx=6)
+    c.text(PAD + 12, y + 27, spec["app"], size=14, fill=c.paint("bar-ink", "nb"), bold=True)
     for r, row in enumerate(rows):
         cy = y + 9 + 30 * r
         for chip, cx in row:
             w = text_width(chip, 13) + 18
             on = chip in clicked
-            c.rect(cx, cy, w, 24, fill="var(--white)", stroke="var(--orange)" if on else "var(--bd)",
+            c.rect(cx, cy, w, 24, stroke=c.paint("accent", "orange") if on else "var(--bd)",
                    rx=12, width=2 if on else 1)
             c.text(cx + w / 2, cy + 17, chip, size=13, anchor="middle", bold=on)
             c.anchor(("chip", chip), cx + w + 11, cy + 12)
@@ -212,9 +225,11 @@ def _sheet(c: Canvas, spec: dict, grid, results: dict[str, str], y: float) -> fl
     typed = [s["text"] for s in spec["steps"] if s["do"] == "type"]
     y += 8
     c.rect(PAD, y, INNER, 28)
-    c.text(PAD + 8, y + 19, view["active"], size=12, fill="var(--tx-m)", mono=True)
+    muted = c.paint("ink", "tx-m")
+    soft = c.paint("soft", "bg-soft")
+    c.text(PAD + 8, y + 19, view["active"], size=12, fill=muted, mono=True)
     c.line(PAD + 48, y + 5, PAD + 48, y + 23)
-    c.text(PAD + 56, y + 19, "fx", size=12, fill="var(--tx-m)", italic=True)
+    c.text(PAD + 56, y + 19, "fx", size=12, fill=muted, italic=True)
     shown = typed[-1] if typed else js_string(cell_value(grid, view["active"]))
     if shown:
         c.text(PAD + 76, y + 19, shown, size=12, mono=True)
@@ -223,23 +238,23 @@ def _sheet(c: Canvas, spec: dict, grid, results: dict[str, str], y: float) -> fl
     seq = _sheet_columns(spec, grid, results)
     r0, r1 = view["rows"]
     x0 = PAD + 28
-    c.rect(PAD, y, 28, 22, fill="var(--bg-soft)", stroke="var(--bd-soft)", rx=0)
+    c.rect(PAD, y, 28, 22, fill=soft, stroke="var(--bd-soft)", rx=0)
     x = x0
     for letter, w in seq:
-        c.rect(x, y, w, 22, fill="var(--bg-soft)", stroke="var(--bd-soft)", rx=0)
-        c.text(x + w / 2, y + 16, letter or "…", size=12, fill="var(--tx-m)", anchor="middle", attrs='data-head="1"')
+        c.rect(x, y, w, 22, fill=soft, stroke="var(--bd-soft)", rx=0)
+        c.text(x + w / 2, y + 16, letter or "…", size=12, fill=muted, anchor="middle", attrs='data-head="1"')
         x += w
     y += 22
     for r in range(r0, r1 + 1):
-        c.rect(PAD, y, 28, 24, fill="var(--bg-soft)", stroke="var(--bd-soft)", rx=0)
-        c.text(PAD + 14, y + 17, str(r), size=12, fill="var(--tx-m)", anchor="middle")
+        c.rect(PAD, y, 28, 24, fill=soft, stroke="var(--bd-soft)", rx=0)
+        c.text(PAD + 14, y + 17, str(r), size=12, fill=muted, anchor="middle")
         x = x0
         for letter, w in seq:
             ref = f"{letter}{r}"
-            c.rect(x, y, w, 24, fill="var(--white)" if letter else "var(--bg-soft)", stroke="var(--bd-soft)", rx=0)
+            c.rect(x, y, w, 24, fill=None if letter else soft, stroke="var(--bd-soft)", rx=0)
             if letter:
                 value = results.get(ref)
-                fill, bold = ("var(--green)", True) if value is not None else ("var(--tx)", r == 1)
+                fill, bold = ("var(--green)", True) if value is not None else (None, r == 1)
                 value = value if value is not None else js_string(cell_value(grid, ref))
                 if value:
                     c.text(x + 6, y + 17, value, size=13, fill=fill, bold=bold, attrs=f'data-cell="{ref}"')
@@ -251,7 +266,8 @@ def _sheet(c: Canvas, spec: dict, grid, results: dict[str, str], y: float) -> fl
     x = x0
     for letter, w in seq:
         if letter == m.group(1) and r0 <= int(m.group(2)) <= r1:
-            c.rect(x, y - 24 * (r1 - int(m.group(2)) + 1), w, 24, fill="none", stroke="var(--orange)", rx=0, width=2)
+            c.rect(x, y - 24 * (r1 - int(m.group(2)) + 1), w, 24, fill="none",
+                   stroke=c.paint("accent", "orange"), rx=0, width=2)
         x += w
     return y + 4
 
@@ -262,16 +278,16 @@ def _editor(c: Canvas, spec: dict, y: float) -> float:
     lh = 20
     h = 14 + lh * len(lines) + (10 + lh * len(output) if output else 0)
     y += 8
-    ink = "var(--white)" if term else "var(--tx)"
-    c.rect(PAD, y, INNER, h, fill="var(--nb)" if term else "var(--white)",
-           stroke="var(--nb)" if term else "var(--bd)", rx=6)
+    ink = c.paint("ink", "white" if term else "tx")
+    surface = c.paint("surface", "nb" if term else "white")
+    c.rect(PAD, y, INNER, h, fill=surface, stroke=surface if term else "var(--bd)", rx=6)
     left = PAD + (26 if term else 30)
     ty = y + 20
     for n, line in enumerate(lines, 1):
         if term:
-            c.text(PAD + 10, ty, "$", size=13, fill="var(--orange)", mono=True)
+            c.text(PAD + 10, ty, "$", size=13, fill=c.paint("accent", "orange"), mono=True)
         else:
-            c.text(PAD + 20, ty, str(n), size=12, fill="var(--tx-m)", mono=True, anchor="end")
+            c.text(PAD + 20, ty, str(n), size=12, fill=c.paint("ink", "tx-m"), mono=True, anchor="end")
         if line:
             c.text(left, ty, line, size=13, fill=ink, mono=True)
         c.anchor(("line", n), left + text_width(line, 13, mono=True) + 14, ty - 5)
@@ -280,13 +296,14 @@ def _editor(c: Canvas, spec: dict, y: float) -> float:
         c.line(PAD + 8, ty - 9, W - PAD - 8, ty - 9, stroke="var(--bd-soft)")
         ty += 6
         for line in output:
-            c.text(PAD + (10 if term else 30), ty, line, size=13, fill=ink if term else "var(--green)", mono=True)
+            c.text(PAD + (10 if term else 30), ty, line, size=13, fill=ink if term else c.paint("ink", "green"),
+                   mono=True)
             ty += lh
     return y + h + 4
 
 
 def _field(c: Canvas, x: float, y: float, label: str, value, key: str) -> float:
-    c.text(x, y + 13, label, size=12, fill="var(--tx-m)")
+    c.text(x, y + 13, label, size=12, fill=c.paint("ink", "tx-m"))
     value = js_string(value)
     w = max(140, text_width(value, 14) + 20)
     c.rect(x, y + 19, w, 28)
@@ -303,8 +320,10 @@ def _panel(c: Canvas, spec: dict, y: float) -> float:
             y = _field(c, PAD + 6, y, item["label"], item["value"], "field")
         elif kind == "button":
             w = text_width(item["label"], 14) + 30
-            c.rect(PAD + 6, y + 4, w, 30, fill="var(--nb)", stroke="var(--nb)", rx=6)
-            c.text(PAD + 6 + w / 2, y + 24, item["label"], size=14, fill="var(--white)", bold=True, anchor="middle")
+            accent = c.paint("accent", "nb")
+            c.rect(PAD + 6, y + 4, w, 30, fill=accent, stroke=accent, rx=6)
+            c.text(PAD + 6 + w / 2, y + 24, item["label"], size=14, fill=c.paint("accent-ink", "white"),
+                   bold=True, anchor="middle")
             c.anchor(("button", item["label"]), PAD + 6 + w + 14, y + 19)
             y += 40
         elif kind == "item":
@@ -318,7 +337,8 @@ def _panel(c: Canvas, spec: dict, y: float) -> float:
             h = 14 + 18 * len(lines)
             you = item["who"].casefold() in YOU
             x = W - PAD - 6 - w if you else PAD + 6
-            c.rect(x, y + 4, w, h, fill="var(--bg-soft)", stroke="var(--orange)" if you else "var(--bd)", rx=12)
+            c.rect(x, y + 4, w, h, fill=c.paint("soft", "bg-soft"),
+                   stroke=c.paint("accent", "orange") if you else "var(--bd)", rx=12)
             for k, line in enumerate(lines):
                 c.text(x + 12, y + 22 + 18 * k, line, size=14)
             y += h + 10
@@ -331,9 +351,10 @@ def _dialog(c: Canvas, spec: dict, y: float) -> float:
     x, w = PAD + 16, INNER - 32
     h = 36 + 54 * len(d["fields"]) + (40 if buttons else 0)
     y += 10
-    c.rect(x, y, w, h, stroke="var(--nb)", rx=8, width=1.5)
-    c.rect(x + 1, y + 1, w - 2, 28, fill="var(--bg-soft)", stroke="none", rx=7)
-    c.text(x + 12, y + 20, d["title"], size=14, fill="var(--nb)", bold=True)
+    accent = c.paint("accent", "nb")
+    c.rect(x, y, w, h, stroke=accent, rx=8, width=1.5)
+    c.rect(x + 1, y + 1, w - 2, 28, fill=c.paint("soft", "bg-soft"), stroke="none", rx=7)
+    c.text(x + 12, y + 20, d["title"], size=14, fill=c.paint("ink", "nb"), bold=True)
     fy = y + 32
     for f in d["fields"]:
         fy = _field(c, x + 12, fy, f["label"], f["value"], "dfield")
@@ -341,7 +362,7 @@ def _dialog(c: Canvas, spec: dict, y: float) -> float:
     for b in reversed(buttons):
         bw = text_width(b, 13) + 26
         bx -= bw
-        c.rect(bx, fy + 4, bw, 26, stroke="var(--nb)", rx=5)
+        c.rect(bx, fy + 4, bw, 26, stroke=accent, rx=5)
         c.text(bx + bw / 2, fy + 22, b, size=13, anchor="middle", bold=True)
         c.anchor(("dbutton", b), bx - 12, fy + 17, -MARK_ROOM)
         bx -= MARK_ROOM + 10
@@ -361,7 +382,7 @@ def _keys(c: Canvas, spec: dict, y: float) -> float:
         kw = text_width(k, 13, mono=True) + 20
         if x + kw + MARK_ROOM > W - PAD:
             x, y = PAD + 6, y + 34
-        c.rect(x, y, kw, 28, fill="var(--bg-soft)", stroke="var(--bd)", rx=5)
+        c.rect(x, y, kw, 28, fill=c.paint("soft", "bg-soft"), stroke="var(--bd)", rx=5)
         c.text(x + 10, y + 19, k, size=13, mono=True)
         c.anchor(("key", k), x + kw + 12, y + 14)
         x += kw + MARK_ROOM + 12
@@ -401,8 +422,16 @@ def _markers(c: Canvas, spec: dict) -> None:
         c.text(x, y + 6, MARKERS[i], size=18, fill="var(--orange)", bold=True, anchor="middle")
 
 
+def screen_theme(spec: dict) -> str | None:
+    """The app's colour theme; a terminal with no theme of its own still looks like a terminal."""
+    theme = app_theme(spec["app"])
+    if theme is None and spec["layout"] == "editor" and spec.get("tool") == "terminal":
+        return "terminal"
+    return theme
+
+
 def render_svg(spec: dict, grid, results: dict[str, str]) -> str:
-    c = Canvas()
+    c = Canvas(screen_theme(spec))
     y = _bar(c, spec, PAD - 6)
     if spec["layout"] == "sheet":
         y = _sheet(c, spec, grid, results, y)
@@ -417,7 +446,7 @@ def render_svg(spec: dict, grid, results: dict[str, str]) -> str:
     height = round(y + PAD)
     label = esc(" ".join([spec["goal"]] + reading_steps(spec, results)))
     frame = (f'<rect x="0.5" y="0.5" width="{W - 1}" height="{height - 1}" rx="8" '
-             f'fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>')
+             f'fill="{c.paint("surface", "white")}" stroke="var(--bd)" stroke-width="1"/>')
     return (f'<svg viewBox="0 0 {W} {height}" role="img" aria-label="{label}">'
             + frame + "".join(c.parts) + "</svg>")
 

@@ -250,3 +250,13 @@ def test_cell_value():
     assert cell_value(grid, "B7") == "Isha"
     assert cell_value(grid, "A1") == "ID"
     assert cell_value(grid, "H3") is None
+
+
+def test_app_theme_matches_names():
+    from screens import app_theme
+    assert app_theme("Excel") == app_theme("Microsoft Excel") == "excel"
+    assert app_theme("VS Code") == app_theme("Visual Studio Code") == "vscode"
+    assert app_theme("Meta Ads Manager") == "meta-ads"
+    assert app_theme("Google Ads") == "google-ads"
+    assert app_theme("Google Sheets") == "sheets"
+    assert app_theme("New App") is None

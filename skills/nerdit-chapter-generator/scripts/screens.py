@@ -27,6 +27,34 @@ PANEL_KINDS = ("field", "button", "message", "item")
 EXCEL_TABS = ("Home", "Insert", "Draw", "Page Layout", "Formulas", "Data", "Review", "View", "Help")
 KNOWN_LABELS = {"excel": EXCEL_TABS}
 
+# A screen looks like its app (owner, 2026-10-19). Each key names a colour theme whose seven
+# roles are CSS tokens (--app-<key>-<role>) in css10-brand.css; patterns match app.casefold().
+# First match wins, so the longer names come before the shorter ones they contain.
+APP_THEMES = (
+    ("google-ads", ("google ads",)),
+    ("ga4", ("google analytics", "ga4")),
+    ("sheets", ("google sheets", "sheets")),
+    ("colab", ("colab",)),
+    ("excel", ("excel",)),
+    ("powerbi", ("power bi", "powerbi")),
+    ("tableau", ("tableau",)),
+    ("vscode", ("vs code", "visual studio code", "vscode")),
+    ("jupyter", ("jupyter",)),
+    ("terminal", ("terminal", "command prompt", "powershell", "bash", "shell")),
+    ("chatgpt", ("chatgpt",)),
+    ("meta-ads", ("meta ads", "ads manager", "meta business")),
+    ("wordpress", ("wordpress",)),
+    ("shopify", ("shopify",)),
+    ("aws", ("aws", "amazon web services")),
+    ("docker", ("docker",)),
+    ("canva", ("canva",)),
+)
+
+
+def app_theme(app: str) -> str | None:
+    name = str(app or "").casefold()
+    return next((key for key, patterns in APP_THEMES if any(p in name for p in patterns)), None)
+
 # Phone limits: a 400-wide drawing stays readable on a 390 px screen.
 MAX_COLUMNS, MAX_ROWS, MAX_CELL = 4, 7, 14
 MAX_LINES, MAX_OUTPUT, MAX_LINE = 8, 4, 40

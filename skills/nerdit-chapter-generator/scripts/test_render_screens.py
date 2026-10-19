@@ -225,3 +225,38 @@ def test_cli_writes_only_clean_lessons(tmp_path):
     bad.write_text(broken, encoding="utf-8")
     assert main(["--dir", str(tmp_path)]) == 1
     assert bad.read_text(encoding="utf-8") == broken
+
+
+# ---- app colours ----
+
+ROLES = ("bar", "bar-ink", "accent", "accent-ink", "surface", "soft", "ink")
+
+
+def test_excel_screen_uses_excel_colours():
+    svg, _ = draw(XL)
+    assert 'fill="var(--app-excel-bar, var(--bg-soft))"' in svg
+
+
+def test_unknown_app_uses_nerdit_colours():
+    svg, _ = draw(dict(ADS, app="New App"))
+    assert "--app-" not in svg
+
+
+def test_terminal_tool_falls_back_to_terminal_theme():
+    svg, _ = draw(dict(PIP, app="My Box"))
+    assert "--app-terminal-surface" in svg
+
+
+@pytest.mark.parametrize("spec", SPECS, ids=lambda s: s["id"])
+def test_markers_stay_nerdit_orange(spec):
+    svg, _ = draw(spec)
+    for fill in re.findall(r'fill="([^"]*)"[^>]*>[①②③④⑤]</text>', svg):
+        assert fill == "var(--orange)"
+
+
+def test_every_theme_has_all_roles_in_css():
+    from screens import APP_THEMES
+    css = (Path(__file__).resolve().parent.parent / "references" / "css10-brand.css").read_text(encoding="utf-8")
+    for key, _ in APP_THEMES:
+        for role in ROLES:
+            assert re.search(rf"--app-{key}-{role}:\s*#[0-9A-Fa-f]{{6}};", css), f"--app-{key}-{role}"

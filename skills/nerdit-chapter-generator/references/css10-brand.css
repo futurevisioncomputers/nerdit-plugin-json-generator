@@ -78,3 +78,45 @@
 .nerdit-wrapper .nerdit-callout.teal, .nerdit-reader .nerdit-callout.teal {
   background: linear-gradient(120deg, #0B1F3A, #0D6E63);
 }
+
+/* App screen themes (render_screens.py). A drawn screen looks like the app it shows:
+   each theme names seven colour roles, used as var(--app-<key>-<role>, var(--<nerdit token>))
+   so lesson HTML still carries no hex and a page without these tokens falls back to NerdIT
+   colours. Step markers stay var(--orange) on every app. Keys match screens.APP_THEMES;
+   test_render_screens.py fails a theme with a missing role. */
+.nerdit-wrapper {
+  --app-excel-bar: #217346;  --app-excel-bar-ink: #FFFFFF;  --app-excel-accent: #217346;  --app-excel-accent-ink: #FFFFFF;
+  --app-excel-surface: #FFFFFF;  --app-excel-soft: #F3F2F1;  --app-excel-ink: #201F1E;
+  --app-sheets-bar: #F9FBFD;  --app-sheets-bar-ink: #188038;  --app-sheets-accent: #188038;  --app-sheets-accent-ink: #FFFFFF;
+  --app-sheets-surface: #FFFFFF;  --app-sheets-soft: #F8F9FA;  --app-sheets-ink: #202124;
+  --app-powerbi-bar: #252423;  --app-powerbi-bar-ink: #FFFFFF;  --app-powerbi-accent: #F2C811;  --app-powerbi-accent-ink: #252423;
+  --app-powerbi-surface: #FFFFFF;  --app-powerbi-soft: #F3F2F1;  --app-powerbi-ink: #252423;
+  --app-tableau-bar: #1F457E;  --app-tableau-bar-ink: #FFFFFF;  --app-tableau-accent: #E97627;  --app-tableau-accent-ink: #FFFFFF;
+  --app-tableau-surface: #FFFFFF;  --app-tableau-soft: #F5F5F5;  --app-tableau-ink: #333333;
+  --app-vscode-bar: #3C3C3C;  --app-vscode-bar-ink: #CCCCCC;  --app-vscode-accent: #007ACC;  --app-vscode-accent-ink: #FFFFFF;
+  --app-vscode-surface: #1E1E1E;  --app-vscode-soft: #252526;  --app-vscode-ink: #D4D4D4;
+  --app-jupyter-bar: #F5F5F5;  --app-jupyter-bar-ink: #333333;  --app-jupyter-accent: #F37626;  --app-jupyter-accent-ink: #FFFFFF;
+  --app-jupyter-surface: #FFFFFF;  --app-jupyter-soft: #F7F7F7;  --app-jupyter-ink: #000000;
+  --app-colab-bar: #F8F9FA;  --app-colab-bar-ink: #444746;  --app-colab-accent: #F9AB00;  --app-colab-accent-ink: #202124;
+  --app-colab-surface: #FFFFFF;  --app-colab-soft: #F1F3F4;  --app-colab-ink: #202124;
+  --app-terminal-bar: #2D2D2D;  --app-terminal-bar-ink: #E0E0E0;  --app-terminal-accent: #4EC9B0;  --app-terminal-accent-ink: #0C0C0C;
+  --app-terminal-surface: #0C0C0C;  --app-terminal-soft: #1F1F1F;  --app-terminal-ink: #E6E6E6;
+  --app-chatgpt-bar: #FFFFFF;  --app-chatgpt-bar-ink: #0D0D0D;  --app-chatgpt-accent: #0D0D0D;  --app-chatgpt-accent-ink: #FFFFFF;
+  --app-chatgpt-surface: #FFFFFF;  --app-chatgpt-soft: #F4F4F4;  --app-chatgpt-ink: #0D0D0D;
+  --app-meta-ads-bar: #FFFFFF;  --app-meta-ads-bar-ink: #1C2B33;  --app-meta-ads-accent: #0866FF;  --app-meta-ads-accent-ink: #FFFFFF;
+  --app-meta-ads-surface: #FFFFFF;  --app-meta-ads-soft: #F1F4F7;  --app-meta-ads-ink: #1C2B33;
+  --app-google-ads-bar: #FFFFFF;  --app-google-ads-bar-ink: #3C4043;  --app-google-ads-accent: #1A73E8;  --app-google-ads-accent-ink: #FFFFFF;
+  --app-google-ads-surface: #FFFFFF;  --app-google-ads-soft: #F1F3F4;  --app-google-ads-ink: #202124;
+  --app-ga4-bar: #FFFFFF;  --app-ga4-bar-ink: #5F6368;  --app-ga4-accent: #E37400;  --app-ga4-accent-ink: #FFFFFF;
+  --app-ga4-surface: #FFFFFF;  --app-ga4-soft: #F1F3F4;  --app-ga4-ink: #202124;
+  --app-wordpress-bar: #1D2327;  --app-wordpress-bar-ink: #F0F0F1;  --app-wordpress-accent: #2271B1;  --app-wordpress-accent-ink: #FFFFFF;
+  --app-wordpress-surface: #FFFFFF;  --app-wordpress-soft: #F0F0F1;  --app-wordpress-ink: #1D2327;
+  --app-shopify-bar: #1A1A1A;  --app-shopify-bar-ink: #FFFFFF;  --app-shopify-accent: #008060;  --app-shopify-accent-ink: #FFFFFF;
+  --app-shopify-surface: #FFFFFF;  --app-shopify-soft: #F1F1F1;  --app-shopify-ink: #303030;
+  --app-aws-bar: #232F3E;  --app-aws-bar-ink: #FFFFFF;  --app-aws-accent: #FF9900;  --app-aws-accent-ink: #16191F;
+  --app-aws-surface: #FFFFFF;  --app-aws-soft: #F2F3F3;  --app-aws-ink: #16191F;
+  --app-docker-bar: #1D63ED;  --app-docker-bar-ink: #FFFFFF;  --app-docker-accent: #1D63ED;  --app-docker-accent-ink: #FFFFFF;
+  --app-docker-surface: #FFFFFF;  --app-docker-soft: #F4F4F6;  --app-docker-ink: #17191E;
+  --app-canva-bar: #FFFFFF;  --app-canva-bar-ink: #0E1318;  --app-canva-accent: #8B3DFF;  --app-canva-accent-ink: #FFFFFF;
+  --app-canva-surface: #FFFFFF;  --app-canva-soft: #F2F3F5;  --app-canva-ink: #0E1318;
+}
