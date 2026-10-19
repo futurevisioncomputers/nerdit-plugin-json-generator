@@ -6,6 +6,9 @@ Defects: -- defect: orders row 1 amount_text "12x"
 The value is JSON; row is the one-based seed/table row, not a business ID.
 Derived result figures must say data-world-derived="query or arithmetic reason";
 their computed values are checked by SQL output checks and QA, not domain membership.
+SVG figures (relationships, timelines) are not record tables, but their drawn numbers must be
+stated in the lesson or its seed, and a drawn name that is a world record must be one the lesson
+shows. Other labels are left to QA; drawn app screens are left to check_screens.py.
 """
 from __future__ import annotations
 
@@ -18,9 +21,21 @@ import sqlite3
 import sys
 
 from make_world_data import generate, load_world
+from render_screens import BLOCK as SCREEN_BLOCK
+from screens import lesson_text
 from verify_course import parse, text_of
 
 DEFECT = re.compile(r'^\s*--\s*defect:\s+(\w+)\s+row\s+(\d+)\s+(\w+)\s+(.+?)\s*$', re.M)
+SVG = re.compile(r'<svg\b.*?</svg>', re.S | re.I)
+SVG_TEXT = re.compile(r'<text\b[^>]*>(.*?)</text>', re.S)
+CODE_SCRIPT = re.compile(r'<script\b(?![^>]*type="text/plain")[^>]*>.*?</script>', re.S | re.I)
+# A number as people write it: 4,000 or 5,00,000 (grouping is dropped), 12.75, and an optional unit.
+NUMBER = re.compile(r'(?<![A-Za-z\d.,])(\d[\d,]*(?:\.\d+)?)\s*(million|thousand|lakh|crore|Cr|M|K|k|L)?(?![A-Za-z])')
+SCALE = {'M': 1e6, 'million': 1e6, 'K': 1e3, 'k': 1e3, 'thousand': 1e3, 'L': 1e5, 'lakh': 1e5,
+         'Cr': 1e7, 'crore': 1e7}
+SEED = re.compile(r'<script\b[^>]*type="text/plain"[^>]*>(.*?)</script>', re.S | re.I)
+# A label part: the text between separators such as · , : → /, without step markers.
+PART = re.compile(r'\s*[·,:;—–→/|]\s*')
 
 
 def walk(node):
@@ -34,6 +49,44 @@ def walk(node):
 
 def _value(value):
     return 'NULL' if value is None else str(value)
+
+
+def _numbers(text: str) -> list[tuple[str, set]]:
+    """(the number as written, its possible values: plain and with its unit applied)."""
+    out = []
+    for digits, unit in NUMBER.findall(text):
+        try:
+            plain = float(digits.replace(',', ''))
+        except ValueError:
+            continue
+        out.append((digits, {round(plain, 6), round(plain * SCALE.get(unit, 1), 6)}))
+    return out
+
+
+def svg_label_failures(content: str, domains: dict) -> list[str]:
+    """SVG labels that state a number the lesson never states, or show a world record it never shows."""
+    content = SCREEN_BLOCK.sub(' ', content)  # drawn screens: check_screens.py
+    # Spaces at tag boundaries, so table cells C9 and 8000 never read as C98000.
+    bare = SVG.sub(' ', content)
+    source = lesson_text(bare) + ' ' + ' '.join(html.unescape(seed) for seed in SEED.findall(bare))
+    stated = set().union(*(values for _, values in _numbers(source))) if source else set()
+    words = source.casefold()
+    records = {v.casefold() for values in domains.values() for v in values if re.search('[A-Za-z]', v)}
+    fails = []
+    for i, svg in enumerate(SVG.findall(content), 1):
+        labels = [html.unescape(re.sub(r'<[^>]+>', ' ', t)) for t in SVG_TEXT.findall(svg)]
+        drawn = ' '.join(labels)
+        seen = []
+        for digits, values in _numbers(drawn):
+            if not values & stated and digits not in seen:
+                seen.append(digits)
+                fails.append(f'figure svg {i}: draws {digits}, which the lesson and its seed never state')
+        # A record is a whole label part ("Diya"), not a word inside a longer label ("Sales facts").
+        parts = [part.strip(' ①②③④⑤()[]') for label in labels for part in PART.split(label)]
+        for name in dict.fromkeys(p for p in parts if p):
+            if name.casefold() in records and not re.search(rf'(?<!\w){re.escape(name.casefold())}(?!\w)', words):
+                fails.append(f'figure svg {i}: draws {name}, a world record the lesson never shows')
+    return fails
 
 
 def check_lesson(content: str, world: dict, data: dict) -> tuple[list[str], list[str]]:
@@ -146,6 +199,7 @@ def check_lesson(content: str, world: dict, data: dict) -> tuple[list[str], list
                 for column, cell in zip(columns, cells):
                     value = cell.attrs.get('data-world-value', text_of(cell).strip())
                     check_cell(entity, column, index, value, 'figure')
+    fails += svg_label_failures(content, domains)
     return fails, warns
 
 
