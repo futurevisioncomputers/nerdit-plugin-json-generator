@@ -2,16 +2,17 @@
   "seed": 20261019,
   "profile": "analytics",
   "business": {
-    "name": "Paper Lantern Studio",
-    "fictional": true,
+    "name": "Roohani Rang",
+    "owner": {"name": "Rashi Agarwal", "title": "CEO, Founder and Designer"},
+    "realName": {"approvedBy": "Rashi Agarwal (owner)", "date": "2026-10-20", "note": "owner has no objection; confirmed by the course author"},
     "type": "handmade, sustainable stationery and home-decor brand sold online",
-    "city": "Jaipur",
+    "city": "Mumbai",
     "currency": "INR",
     "moneyUnit": "paise",
     "products": "Annual and daily planners, desk and wall calendars, sticker sheets, sticky notes, colouring books, art frames, candle sets, gift cards.",
     "offers": "A launch coupon each November, sale tags of 13%, 20% and 29%, and corporate bulk orders.",
     "seasons": "A yearly planner and calendar launch spike in November; gifting in December and January.",
-    "dataNote": "An invented brand. All customers, orders, ratings and reviews are synthetic."
+    "dataNote": "Business name used with permission. All customers, orders, ratings and reviews are synthetic."
   },
   "cast": [
     {"name": "Ira", "role": "founder", "trait": "reads every review herself", "look": "invented adult with paint-stained sleeves and a bun"},

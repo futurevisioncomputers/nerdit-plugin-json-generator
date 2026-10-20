@@ -642,6 +642,14 @@ def validate_world(world: dict) -> None:
                 for k in ('approvedBy', 'date', 'note')):
             raise ValueError('real business name requires approvedBy, date and note permission evidence')
         date.fromisoformat(permission['date'])
+    # A named real owner needs the same recorded permission as the real business name.
+    if 'owner' in business:
+        owner = business['owner']
+        if business.get('fictional') is True:
+            raise ValueError('owner may only be named for a real business with recorded permission')
+        if not isinstance(owner, dict) or any(not isinstance(owner.get(k), str) or not owner[k].strip()
+                for k in ('name', 'title')):
+            raise ValueError('owner requires name and title strings')
     if type(world.get('seed')) is not int:
         raise ValueError('world seed must be an integer')
     cast = world.get('cast')

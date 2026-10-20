@@ -2,7 +2,8 @@
   "seed": 20261017,
   "profile": "analytics",
   "business": {
-    "name": "Future Vision Computers",
+    "name": "Future Vision Computer Institute",
+    "owner": {"name": "Siddharth Parakh", "title": "Founder and CEO"},
     "type": "computer and tech skilling institute",
     "city": "Surat",
     "branches": ["Citylight", "Vesu", "Pal"],
@@ -11,7 +12,7 @@
     "since": "2006",
     "funnel": "enquiry, free counselling, demo class, enrolment",
     "batches": "classroom, group and online",
-    "realName": {"approvedBy": "owner (course author)", "date": "2026-10-17", "note": "approved in the planning chat"},
+    "realName": {"approvedBy": "Siddharth Parakh (owner, course author)", "date": "2026-10-17", "note": "approved in the planning chat"},
     "dataNote": "Every enquiry, learner, score and message is synthetic. No real learner records."
   },
   "cast": [

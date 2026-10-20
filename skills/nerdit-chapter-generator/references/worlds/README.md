@@ -60,8 +60,9 @@ under the overview. Each lesson chooses its current stage from the world's `stag
 Fictional business disclosure: “All records, people and amounts are synthetic, made
 for teaching.” A real business additionally requires “Business name used with
 permission.” and a `business.realName` object containing `approvedBy`, ISO `date`
-and `note` recording permission evidence. Invent all cast members and records;
-do not use real staff, customer contacts or logos. QA reviews story beats so mistakes
+and `note` recording permission evidence. A real business may also name its owner in
+`business.owner` {`name`, `title`}; the validator refuses an owner on a fictional business.
+Invent all cast members and records; do not use real staff, customer contacts or logos. QA reviews story beats so mistakes
 belong to data entry, queries or pipelines rather than allegations about the business.
 
 ## Data Science worlds (analytics profile)
@@ -107,12 +108,28 @@ recipe: a seed, the files to build and the entities they need, copied in full fr
 
 | World | Business | Entities |
 | --- | --- | --- |
-| `fvc-institute` | Future Vision Computers (real name, owner's permission recorded) | enquiries, learners, daily_enquiries, batch_scores, enquiry_messages |
-| `saree-wholesale` | Kesar Loom Sarees (invented) | retailers, skus, weekly_orders, retailer_sku, order_lines |
-| `stationery-d2c` | Paper Lantern Studio (invented) | products, customers, orders, ratings, reviews, daily_sales |
-| `boat-cruises` | Harbour Lights Cruises (invented) | bookings, quotes, cancellations, daily_bookings |
-| `wire-mesh` | Ironleaf Wire Works (invented) | products, prices, qc_measurements, roll_defects |
+| `fvc-institute` | Future Vision Computer Institute, Surat | enquiries, learners, daily_enquiries, batch_scores, enquiry_messages |
+| `saree-wholesale` | Akruti Sarees, Surat | retailers, skus, weekly_orders, retailer_sku, order_lines |
+| `stationery-d2c` | Roohani Rang, Mumbai | products, customers, orders, ratings, reviews, daily_sales |
+| `boat-cruises` | Australian Boat Parties, Melbourne | bookings, quotes, cancellations, daily_bookings |
+| `wire-mesh` | Jain Wire Netting, Visakhapatnam | products, prices, qc_measurements, roll_defects |
 
-The invented businesses follow the patterns in `docs/superpowers/notes/2026-10-15-world-sources.md`
-and keep invented names until each owner's permission is recorded. `ds-course-map.json` maps
-each Data Science course to its world and entities.
+Each world above uses a real business name and its owner's name, with the owner's permission
+recorded in `business.realName` (confirmed by the course author on 2026-10-20). Only the
+business name and `business.owner` are real; cast, records and amounts stay invented. The owner
+may appear as themselves, for example asking the question the analyst answers, but never in a
+mistake, defect or blame story beat. `practice-retail` stays fictional.
+`ds-course-map.json` maps each Data Science course to its world and entities.
+
+### Real businesses: reference only
+
+Websites are kept here, never in a world file: worlds and lessons carry no URLs or contact details.
+
+| Business | Owner | City | Website |
+| --- | --- | --- | --- |
+| Future Vision Computer Institute | Siddharth Parakh, Founder and CEO | Surat | https://futurevisioncomputers.com/ |
+| Akruti Sarees | Rohit Jain, CEO and Founder | Surat | https://akrutiwholesale.com/ |
+| Roohani Rang | Rashi Agarwal, CEO, Founder and Designer | Mumbai | https://roohanirang.com/ |
+| Australian Boat Parties | Akshay, Owner | Melbourne | https://australianboatparties.com/ |
+| Jain Wire Netting | Rahul Dosi, Founder | Visakhapatnam | https://jainwirenetting.in/ |
+| Singhvi Interiors | Khushboo Singhvi, Founder and Principal Designer | Mumbai | https://singhviinteriors.com/ (no world yet) |

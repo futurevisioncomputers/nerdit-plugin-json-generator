@@ -2,17 +2,18 @@
   "seed": 20261020,
   "profile": "analytics",
   "business": {
-    "name": "Harbour Lights Cruises",
-    "fictional": true,
+    "name": "Australian Boat Parties",
+    "owner": {"name": "Akshay", "title": "Owner"},
+    "realName": {"approvedBy": "Akshay (owner)", "date": "2026-10-20", "note": "owner has no objection; confirmed by the course author"},
     "type": "boat party and cruise bookings for four vessels",
     "city": "Melbourne",
     "currency": "AUD",
     "moneyUnit": "cents",
-    "vessels": ["Aurora", "Bay Star", "Night Heron", "Southern Belle"],
+    "vessels": ["Lady Cutler", "Calypso Lady", "Victoria Star", "Royal Launcher"],
     "events": "Corporate, wedding, birthday, dinner, Christmas, New Year's Eve, university and themed cruises.",
     "seasons": "Peaks for the Christmas season and New Year's Eve; quieter winter months (June-August).",
     "tax": "Prices include 10% GST.",
-    "dataNote": "An invented operator. All bookings, quotes and amounts are synthetic."
+    "dataNote": "Business name used with permission. All bookings, quotes and amounts are synthetic."
   },
   "cast": [
     {"name": "Mia", "role": "bookings manager", "trait": "confirms every deposit before a date is held", "look": "invented adult with a navy blazer and a headset"},
@@ -31,7 +32,7 @@
       "rows": 5000,
       "columns": {
         "booking_id": {"generator": "id", "prefix": "B"},
-        "vessel": {"generator": "choice", "values": ["Aurora", "Bay Star", "Night Heron", "Southern Belle"]},
+        "vessel": {"generator": "choice", "values": ["Lady Cutler", "Calypso Lady", "Victoria Star", "Royal Launcher"]},
         "event_type": {"generator": "weighted_choice",
                        "values": ["corporate", "wedding", "birthday", "dinner cruise", "Christmas party",
                                   "New Year's Eve", "university", "themed party"],
@@ -45,7 +46,7 @@
       "rows": 3000,
       "columns": {
         "quote_id": {"generator": "id", "prefix": "Q"},
-        "vessel": {"generator": "choice", "values": ["Aurora", "Bay Star", "Night Heron", "Southern Belle"]},
+        "vessel": {"generator": "choice", "values": ["Lady Cutler", "Calypso Lady", "Victoria Star", "Royal Launcher"]},
         "event_type": {"generator": "weighted_choice",
                        "values": ["corporate", "wedding", "birthday", "dinner cruise", "Christmas party",
                                   "New Year's Eve", "university", "themed party"],
