@@ -22,7 +22,9 @@ POSITIONS = ("after-explanation", "before-practice")
 MAX_PER_LESSON = 3
 STYLE_FILE = Path(__file__).resolve().parent.parent / "references" / "style.md"
 PLAN_KEYS = ("lessonId", "section", "heading", "position", "reason", "subject", "alt", "caption")
-KINDS = ("diagram", "illustration", "screen")
+KINDS = ("diagram", "illustration", "screen", "process")
+# AI-drawn kinds whose prompt comes from build_prompt; "process" pictures a process or data flow.
+PROMPTED = ("illustration", "screen", "process")
 MARKERS = "①②③④⑤"
 V2_KEYS = ("lessonId", "section", "heading", "position", "kind", "question", "objective", "takeaway",
            "misconception", "intro", "caption", "alt", "explanation", "checkQuestion")
@@ -148,8 +150,8 @@ def add_slots(m: dict, course: dict, plan: list[dict], replan: str | None = None
 
 
 def build_prompt(m: dict, s: dict) -> str:
-    opener = (f"Realistic {s.get('app') or 'app'} screen" if s.get("kind") == "screen"
-              else "Educational illustration")
+    opener = {"screen": f"Realistic {s.get('app') or 'app'} screen",
+              "process": "Educational process illustration"}.get(s.get("kind"), "Educational illustration")
     lines = [f"{opener} for a student meeting this topic for the first time.",
              f"Course: {m['course']['title']}", f"Lesson: {s['lessonTitle']}",
              f"Section: {s['section']['heading']}", f"Learning objective: {s['objective']}",
@@ -177,6 +179,14 @@ def _validate_v2(s: dict) -> list[str]:
         errors.append(f"{where}: alt is over 150 characters")
     if not 1 <= len(s.get("explanation") or []) <= len(MARKERS):
         errors.append(f"{where}: explanation needs 1-{len(MARKERS)} steps")
+    if s.get("kind") == "process":
+        # The picture explains the flow; exact words and values stay in the lesson text.
+        if not 2 <= len(s.get("explanation") or []) <= 3:
+            errors.append(f"{where}: a process needs 2-3 explanation steps")
+        if s.get("labels"):
+            errors.append(f"{where}: process images carry markers only, not labels")
+        if re.search(r"\d", s.get("subject") or ""):
+            errors.append(f"{where}: process subject contains a number; describe the flow, not values")
     cq = s.get("checkQuestion") or {}
     if not all(str(cq.get(k) or "").strip() for k in ("question", "answer", "reasoning")):
         errors.append(f"{where}: checkQuestion needs question, answer and reasoning")
@@ -199,7 +209,7 @@ def add_slots_v2(m: dict, course: dict, plan: dict, replan: str | None = None) -
             missing.append("anchor")
         if p.get("kind") == "diagram":
             missing += [k for k in ("labels", "sourceRefs") if not p.get(k)]
-        if p.get("kind") in ("illustration", "screen") and not p.get("subject"):
+        if p.get("kind") in PROMPTED and not p.get("subject"):
             missing.append("subject")
         if p.get("kind") == "screen":
             missing += [k for k in ("app", "labels") if not p.get(k)]
@@ -230,7 +240,14 @@ def add_slots_v2(m: dict, course: dict, plan: dict, replan: str | None = None) -
                 errors.append(f"{where}: labels not found in the section or its fixture: {absent}")
                 continue
         diagram = p["kind"] == "diagram"
-        n = 1 + sum(1 for s in m["images"] if s["lessonId"] == lid and s.get("kind", "illustration") == p["kind"])
+        same_section = [s for s in m["images"] if s["lessonId"] == lid and s["section"]["number"] == p["section"]]
+        kinds_here = {s.get("kind") for s in same_section} | {p["kind"]}
+        if {"diagram", "process"} <= kinds_here:
+            errors.append(f"{where}: a process illustration replaces the diagram in "
+                          f"{lid} section {p['section']}; plan one or the other")
+            continue
+        # ids share one counter per prefix: illustration, screen and process all use "img".
+        n = 1 + sum(1 for s in m["images"] if s["lessonId"] == lid and (s.get("kind") == "diagram") == diagram)
         image_id = f"{lid}-{'fig' if diagram else 'img'}{n}"
         slot = {
             "version": 2, "id": image_id, "lessonId": lid, "lessonTitle": lessons[lid].get("title", ""),
@@ -312,7 +329,7 @@ def record_checks(m: dict, results: list[dict]) -> list[str]:
             if r.get("revisedSubject"):
                 if s.get("version") == 2:
                     s["subject"] = r["revisedSubject"].strip()
-                    s["prompt"] = build_prompt(m, s) if s["kind"] == "illustration" else ""
+                    s["prompt"] = build_prompt(m, s) if s["kind"] in PROMPTED else ""
                 else:
                     s["prompt"] = r["revisedSubject"].strip() + "\n\n" + style_block(s["labels"])
         else:

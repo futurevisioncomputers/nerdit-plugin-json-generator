@@ -35,6 +35,12 @@ lesson's data (figures.md templates 1–15), with `data-visual` set; a plan item
 `visual`. When the course workdir has concept manifests, `extract_outline.py --hints <workdir>`
 shows each section's planned `visual` and suggested `illustration`; plan from those.
 
+- **Process illustrations** (kind `process`): an AI-drawn picture of a process or data flow
+  (rows being split, folds rotating, a pipeline filling gaps then predicting) when a drawn
+  scene explains the flow better than boxes and arrows. It carries only the markers ① ② ③
+  that match its 2–3 reading steps: no words, letters or numbers, and its subject names no
+  values. It replaces the diagram for that section (`manifest.py` refuses both), so the exact
+  values must already be in the section's text, run output or an existing table.
 - One objective per visual; split a crowded figure into two.
 - Diagrams use the lesson's own names, keys, dates and amounts — never invented ones.
 - No quota: add a visual only where it helps; an existing accurate figure may already do the job.
@@ -49,9 +55,11 @@ PASS only when all hold:
 2. Every label, value and name matches the section or its fixture.
 3. Markers ① ② ③ sit on the parts the reading steps describe, in the same order.
 4. Labels are readable on the phone-size preview.
-5. Illustrations: no extra text, numbers, logos or brands; Indian context where people appear;
+5. Process illustrations: the flow reads in marker order ① ② ③, each marker sits on its step,
+   and nothing else is written — no words, numbers or chart values.
+6. Illustrations: no extra text, numbers, logos or brands; Indian context where people appear;
    the course's recurring cast when one is set.
-6. Nothing contradicts the lesson or invites the brief's stated misconception.
+7. Nothing contradicts the lesson or invites the brief's stated misconception.
 
 ## Screen check criteria
 

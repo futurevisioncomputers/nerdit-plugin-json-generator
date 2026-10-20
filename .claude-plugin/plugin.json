@@ -1,6 +1,6 @@
 {
   "name": "nerdit_content_creator",
-  "version": "3.5.0",
+  "version": "3.6.0",
   "description": "Multi-agent NERDIT LMS course generator. Orchestrates nerdit-lesson-writer and nerdit-qa-validator subagents to turn course-[chaptername]_input.json files into a full course-[chaptername]_output.json course object (course metadata + assessment bank + per-lesson HTML, duration, and quiz questions). Includes nerdit-lesson-illustrator, which plans concept illustrations, emits prompts for user-generated images, and inserts them as small WebP files for the admin JSON + images import.",
   "author": {
     "name": "Future Vision Computers",

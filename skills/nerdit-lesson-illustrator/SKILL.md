@@ -34,8 +34,9 @@ planning and before checking.
    `python scripts/extract_outline.py --course <course.json> --full <lesson-id>:<section>`.
    Inspect any existing figure in that section before deciding it already covers the idea.
 4. Choose the visual by its teaching job (`references/style.md`): a **diagram** for any
-   relationship, sequence, change, timeline or table; an **illustration** only for a real scene
-   or analogy. Write `<images>/plan.json` as
+   relationship, sequence, change, timeline or table; a **process** illustration (AI-drawn,
+   markers ① ② ③ only, replaces that section's diagram) when a drawn scene of a process or data
+   flow teaches it better; an **illustration** only for a real scene or analogy. Write `<images>/plan.json` as
    `{"version": 2, "cast": "<optional recurring characters>", "items": [ ... ]}` with one item per
    visual: `lessonId, section, heading, position, anchor, kind, question, objective, sourceRefs,
    knownTerms, newTerms, labels, takeaway, misconception, intro, caption, alt, explanation,
