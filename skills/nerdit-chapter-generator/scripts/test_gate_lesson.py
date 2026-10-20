@@ -125,3 +125,15 @@ def test_gate_reports_stale_screen(tmp_path):
     inp, d = setup(tmp_path, stale)
     fails, _ = gate(inp, d, "c-01")
     assert "screen: ads-new: drawn screen is out of date; run render_screens.py" in fails
+
+
+def test_gate_fails_an_svg_number_the_lesson_never_states_even_without_a_world(tmp_path):
+    figure = ('<div class="nerdit-figure" data-visual="diagram" style="max-width:440px">'
+              '<svg viewBox="0 0 300 60" role="img" aria-label="Row counts"><text x="10" y="30">3 rows</text>'
+              '<text x="10" y="50">₹4,000</text></svg><div class="nerdit-figure-caption">Counts.</div></div>')
+    with_figure = LESSON.replace("<p>You count rows with one query.</p>",
+                                 "<p>You count rows with one query.</p>" + figure)
+    inp, d = setup(tmp_path, with_figure)
+    fails, _ = gate(inp, d, "c-01")
+    assert "labels: figure svg 1: draws 4,000, which the lesson and its seed never state" in fails
+    assert not any("draws 3," in f for f in fails)

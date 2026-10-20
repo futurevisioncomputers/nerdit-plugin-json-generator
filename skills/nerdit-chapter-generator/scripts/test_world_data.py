@@ -69,6 +69,19 @@ def test_real_business_requires_recorded_permission():
         validate_world(w)
 
 
+def test_owner_is_allowed_only_on_a_real_business_with_permission():
+    w = world()
+    w['business']['owner'] = {'name': 'Asha Rao', 'title': 'Founder'}
+    with pytest.raises(ValueError, match='owner'):
+        validate_world(w)  # still fictional
+    w['business']['fictional'] = False
+    w['business']['realName'] = {'approvedBy': 'Asha Rao (owner)', 'date': '2026-10-20', 'note': 'no objection'}
+    validate_world(w)
+    w['business']['owner'] = {'name': 'Asha Rao'}
+    with pytest.raises(ValueError, match='owner'):
+        validate_world(w)
+
+
 def test_reference_resolution_cannot_escape_library(tmp_path):
     ref = tmp_path / 'course_world.json'
     ref.write_text(json.dumps({'use': '../secret'}))

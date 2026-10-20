@@ -71,7 +71,7 @@ CLICKS = "<ol><li>Click the Data tab.</li><li>Click Remove Duplicates.</li></ol>
 
 def test_click_path_without_screen_warns():
     _, warns = check_lesson(lesson("Remove repeated rows." + CLICKS, grid=None))
-    assert "section 1: click-path with no screen (figures.md template 16)" in warns
+    assert 'section "1 — Look up": click-path with no screen (figures.md template 16)' in warns
 
 
 def test_click_path_with_a_screen_is_quiet():
@@ -109,3 +109,25 @@ def test_cli_checks_every_lesson_in_a_course(tmp_path):
     course["lessons"] = course["lessons"][:1]
     path.write_text(_json.dumps(course), encoding="utf-8")
     assert check_main(["--course", str(path)]) == 0
+
+
+# ---- deferred review fixes ----
+
+def test_a_drawing_away_from_its_spec_fails():
+    html = two()  # XLOOKUP spec, its drawing, then the ads spec and its drawing
+    block_html = re.search(r'<div class="nerdit-figure" data-visual="screen" data-screen="xlookup-city".*?</ol>', html, re.S).group(0)
+    moved = html.replace(block_html, "").replace("</section>", block_html + "</section>")
+    fails, _ = check_lesson(moved)
+    assert any(f.startswith("xlookup-city:") and "right after its spec" in f for f in fails)
+
+
+def test_an_older_renderer_drawing_says_so():
+    from render_screens import RENDER_VERSION
+    old = two().replace(f'data-screen-v="{RENDER_VERSION}"', 'data-screen-v="0"', 1)
+    fails, _ = check_lesson(old)
+    assert any("older renderer" in f for f in fails)
+
+
+def test_click_path_warning_names_the_section_heading():
+    _, warns = check_lesson(lesson("Remove repeated rows." + CLICKS, grid=None))
+    assert warns == ['section "1 — Look up": click-path with no screen (figures.md template 16)']

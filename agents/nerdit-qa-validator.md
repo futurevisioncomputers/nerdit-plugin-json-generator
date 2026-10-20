@@ -52,8 +52,9 @@ Spend your entire effort on what neither script can decide.
 When WORLD_PATH is supplied, review its cast, stages, messiness and arc. Check that
 source rows agree with WORLD_DATA_PATH, the active course-map stage matches this
 lesson, and the synthetic-data disclosure precedes the first table. Review derived
-figure values and SVG labels against SQL results; the world domain checker does not
-prove their arithmetic. Reject defect declarations used to excuse invented normal
+figure values and SVG labels against SQL results. `check_world.py` already fails an SVG
+number the lesson never states and an SVG name that is a world record the lesson never
+shows, but it does not prove arithmetic or judge other labels. Reject defect declarations used to excuse invented normal
 records. For a real business, confirm recorded permission, invented cast and records,
 no real logos, and mistakes confined to data work rather than allegations about it.
 

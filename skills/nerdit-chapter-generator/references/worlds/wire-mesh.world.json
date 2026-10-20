@@ -2,16 +2,17 @@
   "seed": 20261021,
   "profile": "analytics",
   "business": {
-    "name": "Ironleaf Wire Works",
-    "fictional": true,
+    "name": "Jain Wire Netting",
+    "owner": {"name": "Rahul Dosi", "title": "Founder"},
+    "realName": {"approvedBy": "Rahul Dosi (owner)", "date": "2026-10-20", "note": "owner has no objection; confirmed by the course author"},
     "type": "wire mesh and fencing products",
-    "city": "Ahmedabad",
+    "city": "Visakhapatnam",
     "currency": "INR",
     "moneyUnit": "paise",
     "products": "Chain link fencing, barbed and concertina wire, welded, woven, crimped and stainless steel mesh, hexagonal netting, mosquito mesh.",
     "units": "Sold by the roll; widths in feet, mesh openings in millimetres, wire thickness by SWG gauge (a lower gauge is a thicker wire).",
-    "specsNote": "Every gauge, mesh size, roll size and price is invented for teaching.",
-    "dataNote": "An invented manufacturer. All products, prices and measurements are synthetic."
+    "specsNote": "Every gauge, mesh size, roll size and price is synthetic, made for teaching.",
+    "dataNote": "Business name used with permission. All products, prices and measurements are synthetic."
   },
   "cast": [
     {"name": "Dhruv", "role": "quality engineer", "trait": "writes down every out-of-range reading", "look": "invented adult with a hard hat and safety glasses"},

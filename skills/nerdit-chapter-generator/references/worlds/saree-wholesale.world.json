@@ -2,8 +2,10 @@
   "seed": 20261018,
   "profile": "analytics",
   "business": {
-    "name": "Kesar Loom Sarees",
-    "fictional": true,
+    "name": "Akruti Sarees",
+    "owner": {"name": "Rohit Jain", "title": "CEO and Founder"},
+    "realName": {"approvedBy": "Rohit Jain (owner)", "date": "2026-10-20", "note": "owner has no objection; confirmed by the course author"},
+    "since": "over 26 years in business",
     "type": "saree manufacturer and wholesaler with an online store",
     "city": "Surat",
     "currency": "INR",
@@ -13,7 +15,7 @@
     "terms": "Factory-direct net rates, no minimum quantity, fully prepaid, no returns except damage, GST invoice on every parcel.",
     "shipping": "Extra, by parcel size: courier for 1 saree, surface courier for 10-30, transport for 40-100.",
     "seasons": "Orders rise for Diwali (October-November) and the wedding season (November-February).",
-    "dataNote": "An invented wholesaler. All retailers, orders and amounts are synthetic."
+    "dataNote": "Business name used with permission. All retailers, orders and amounts are synthetic."
   },
   "cast": [
     {"name": "Kavya", "role": "sales analyst", "trait": "reconciles every order list with the invoices", "look": "invented adult with a maroon dupatta and a laptop bag"},

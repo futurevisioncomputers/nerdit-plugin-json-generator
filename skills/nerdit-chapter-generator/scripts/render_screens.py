@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import html as htmllib
+from decimal import Decimal
 import re
 import subprocess
 import sys
@@ -30,6 +31,7 @@ from excel_eval import evaluate_many
 from screens import (EXCEL_TABS, RANGE, app_theme, cell_value, col_index, read_grid, read_specs,
                      screen_kind, validate_lesson)
 
+RENDER_VERSION = "1"  # bump when a drawing changes for the same spec, so the gate can say why
 W, PAD = 400, 10
 INNER = W - 2 * PAD
 MARKERS = "①②③④⑤"
@@ -42,6 +44,36 @@ BLOCK = re.compile(
     r'<div class="nerdit-figure" data-visual="screen" data-screen="([^"]*)"[^>]*>.*?</svg>\s*'
     r'<div class="nerdit-figure-caption">.*?</div>\s*</div>\s*'
     r'(?:<ol class="nerdit-visual-read" data-screen="\1">.*?</ol>)?', re.S)
+
+
+FIG_OPEN = re.compile(r'<div\b(?=[^>]*\bdata-screen=["\']([^"\']*)["\'])[^>]*>', re.I)
+DIV_TAG = re.compile(r'<(/?)div\b[^>]*>', re.I)
+VERSION = re.compile(r'\bdata-screen-v=["\']([^"\']*)["\']')
+
+
+def drawn_blocks(html: str) -> list[tuple[str, int, int, str | None]]:
+    """Every drawn screen as (id, start, end, renderer version): the figure plus its reading list."""
+    out = []
+    for m in FIG_OPEN.finditer(html):
+        if "nerdit-figure" not in m.group(0):
+            continue
+        depth, end = 0, len(html)
+        for tag in DIV_TAG.finditer(html, m.start()):
+            depth += -1 if tag.group(1) else 1
+            if depth == 0:
+                end = tag.end()
+                break
+        read = re.compile(r'\s*<ol\b[^>]*\bdata-screen=["\']' + re.escape(m.group(1)) + r'["\'][^>]*>.*?</ol>',
+                          re.S | re.I).match(html, end)
+        version = VERSION.search(m.group(0))
+        out.append((m.group(1), m.start(), read.end() if read else end, version.group(1) if version else None))
+    return out
+
+
+def strip_drawings(html: str) -> str:
+    for _, start, end, _ in reversed(drawn_blocks(html)):
+        html = html[:start] + html[end:]
+    return html
 
 
 def esc(s) -> str:
@@ -58,8 +90,14 @@ def js_string(v) -> str:
         return ""
     if isinstance(v, bool):
         return "true" if v else "false"
-    if isinstance(v, float) and v.is_integer():
-        return str(int(v))
+    if isinstance(v, float):
+        if v == 0:
+            return "0"
+        if abs(v) >= 1e21 or abs(v) < 1e-6:  # JavaScript switches to exponent form here
+            mantissa, _, exp = repr(v).partition("e")
+            return f"{mantissa}e{'+' if int(exp) >= 0 else '-'}{abs(int(exp))}"
+        text = format(Decimal(repr(v)), "f")
+        return text.rstrip("0").rstrip(".") if "." in text else text
     return str(v)
 
 
@@ -121,6 +159,36 @@ def results_for(spec: dict, grid) -> tuple[dict[str, str], list[str]]:
         else:
             results[target] = res["text"]
     return results, problems
+
+
+def lesson_results(html: str, specs: list[dict]) -> dict[str, tuple[dict[str, str], list[str]]]:
+    """results_for for every sheet spec of a lesson, with one engine call per demo grid."""
+    out: dict[str, tuple[dict[str, str], list[str]]] = {}
+    groups: dict = {}
+    for spec in specs:
+        if spec.get("layout") == "sheet" and any(s.get("do") == "result" for s in spec.get("steps", [])):
+            groups.setdefault(spec.get("_grid"), []).append(spec)
+    for grid_id, group in groups.items():
+        grid = read_grid(html, grid_id) if grid_id else None
+        if grid is None:
+            out.update({s["id"]: ({}, [f"{s['id']}: no demo grid to compute results from"]) for s in group})
+            continue
+        jobs = []
+        for spec in group:
+            typed = {s["target"]: s["text"] for s in spec["steps"] if s.get("do") == "type"}
+            jobs += [(spec["id"], s["target"], typed[s["target"]]) for s in spec["steps"] if s.get("do") == "result"]
+        try:
+            computed = evaluate_many(grid[0], grid[1], [f for _, _, f in jobs])
+        except (RuntimeError, OSError, subprocess.TimeoutExpired) as e:
+            out.update({s["id"]: ({}, [f"{s['id']}: Excel engine unavailable: {e}"]) for s in group})
+            continue
+        for (sid, target, formula), res in zip(jobs, computed):
+            results, problems = out.setdefault(sid, ({}, []))
+            if "error" in res:
+                problems.append(f"{sid}: {target}: {formula} gives {res['error']}")
+            else:
+                results[target] = res["text"]
+    return out
 
 
 # ---- drawing ----
@@ -529,17 +597,24 @@ def layout_problems(spec: dict, grid, results: dict[str, str]) -> list[str]:
 def figure_block(spec: dict, svg: str, steps: list[str]) -> str:
     items = "".join(f"<li>{MARKERS[i]} {esc(s)}</li>" for i, s in enumerate(steps))
     sid = esc(spec["id"])
-    return (f'<div class="nerdit-figure" data-visual="screen" data-screen="{sid}" style="max-width:440px">'
+    return (f'<div class="nerdit-figure" data-visual="screen" data-screen="{sid}" '
+            f'data-screen-v="{RENDER_VERSION}" style="max-width:440px">'
             f'{svg}<div class="nerdit-figure-caption">{esc(spec["goal"])}</div></div>'
             f'<ol class="nerdit-visual-read" data-screen="{sid}">{items}</ol>')
 
 
-def render_spec(html: str, spec: dict) -> tuple[str | None, list[str]]:
-    """The drawn block for one valid spec (None for a B spec), plus problems."""
+def render_spec(html: str, spec: dict, computed: dict | None = None) -> tuple[str | None, list[str]]:
+    """The drawn block for one valid spec (None for a B spec), plus problems. `computed` is
+    lesson_results() for the lesson, so a lesson calls the engine once."""
     if screen_kind(spec) != "A":
         return None, []
     grid = read_grid(html, spec["_grid"]) if spec.get("_grid") else None
-    results, problems = results_for(spec, grid)
+    if computed is not None and spec["id"] in computed:
+        results, problems = dict(computed[spec["id"]][0]), list(computed[spec["id"]][1])
+    elif computed is not None:
+        results, problems = {}, []
+    else:
+        results, problems = results_for(spec, grid)
     problems += layout_problems(spec, grid, results)
     if problems:
         return None, problems
@@ -551,10 +626,12 @@ def render_lesson(html: str) -> tuple[str, list[str]]:
     problems = validate_lesson(html)
     if problems:
         return html, problems
-    clean = BLOCK.sub("", html)
+    clean = strip_drawings(html)
     inserts = []
-    for spec in read_specs(clean):
-        block, spec_problems = render_spec(clean, spec)
+    specs = read_specs(clean)
+    computed = lesson_results(clean, specs)
+    for spec in specs:
+        block, spec_problems = render_spec(clean, spec, computed)
         problems += spec_problems
         if block:
             inserts.append((spec["_offset"], block))

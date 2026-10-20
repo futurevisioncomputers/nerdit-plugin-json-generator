@@ -98,3 +98,55 @@ def test_a_dataset_lesson_file_table_marked_derived_passes_the_world_check():
     assert not [f for f in fails if "figure" in f]
     fails, _ = check_lesson(note + table.format(attr=""), w, generate(w))
     assert any("data-world-derived" in f for f in fails)
+
+
+# ---- SVG labels (figures that are not record tables) ----
+
+def svg_figure(*labels, visual='diagram'):
+    texts = ''.join(f'<text x="10" y="{20 * i + 20}">{label}</text>' for i, label in enumerate(labels))
+    return (f'<div class="nerdit-figure" data-visual="{visual}"><svg viewBox="0 0 300 100" role="img" '
+            f'aria-label="A figure">{texts}</svg><div class="nerdit-figure-caption">The figure.</div></div>')
+
+
+def svg_errors(body):
+    w = world()
+    errors, _ = check_lesson(lesson(body=body), w, generate(w))
+    return [e for e in errors if e.startswith('figure svg')]
+
+
+def test_svg_numbers_must_come_from_the_lesson():
+    # Found in a live lesson: a figure drew example rows (₹4,000) the lesson never states.
+    errors = svg_errors('<p>Store S1 sold 450 units on 2026-01-03.</p>' + svg_figure('450 units', '3 Jan', '₹4,000'))
+    assert errors == ['figure svg 1: draws 4,000, which the lesson and its seed never state']
+
+
+def test_svg_numbers_allow_grouping_and_units():
+    body = '<p>About 12750000 tokens, and ₹500000 in July.</p>' + svg_figure('≈12.75M tokens', '₹5,00,000')
+    assert svg_errors(body) == []
+
+
+def test_svg_world_name_the_lesson_never_shows_fails():
+    # Aarav and Diya are both world customers; the lesson only ever shows Aarav.
+    errors = svg_errors('<p>Aarav buys first.</p>' + svg_figure('Aarav', 'Diya', 'Report'))
+    assert errors == ['figure svg 1: draws Diya, a world record the lesson never shows']
+
+
+def test_drawn_screens_are_left_to_check_screens():
+    screen = ('<div class="nerdit-figure" data-visual="screen" data-screen="x" style="max-width:440px">'
+              '<svg viewBox="0 0 400 90" role="img" aria-label="A"><text>99999</text></svg>'
+              '<div class="nerdit-figure-caption">c</div></div>'
+              '<ol class="nerdit-visual-read" data-screen="x"><li>① Click cell B2.</li></ol>')
+    assert svg_errors('<p>No numbers here.</p>' + screen) == []
+
+
+def test_svg_numbers_found_in_table_cells_pass():
+    # Cells sit side by side in the HTML; C9 then 8000 must not read as "C98000".
+    body = '<table><tr><td>5</td><td>L4</td><td>C9</td><td>8000</td></tr></table>' + svg_figure('5 · L4 · C9 · 8000')
+    assert svg_errors(body) == []
+
+
+def test_a_world_value_inside_a_longer_label_is_not_a_record():
+    # "Pune stores" names a stage, not the city record; a label that is just "Pune" is.
+    assert svg_errors('<p>Stores report daily.</p>' + svg_figure('Pune stores')) == []
+    assert svg_errors('<p>Stores report daily.</p>' + svg_figure('Pune')) == [
+        'figure svg 1: draws Pune, a world record the lesson never shows']

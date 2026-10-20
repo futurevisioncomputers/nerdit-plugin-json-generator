@@ -9,7 +9,7 @@ from make_world_data import load_world
 from nerdit_world_gen import PRIVATE, generate, looks_like_phone, validate_world
 
 WORLDS = Path(__file__).resolve().parent.parent / "references" / "worlds"
-NAMES = ("fvc-institute", "saree-wholesale", "stationery-d2c", "boat-cruises", "wire-mesh")
+NAMES = ("fvc-institute", "saree-wholesale", "stationery-d2c", "boat-cruises", "wire-mesh", "interior-design")
 REAL = ("akruti", "roohani", "jain wire", "australian boat", "australianboatparties")
 
 
@@ -39,16 +39,30 @@ def test_every_world_validates_and_builds_within_caps(name):
     assert set(data) == set(w["entities"]) and all(data[e] for e in data)
 
 
-def test_only_fvc_uses_a_real_name_and_it_is_recorded():
-    fvc = load("fvc-institute")["business"]
-    assert fvc["name"] == "Future Vision Computers" and fvc.get("fictional") is not True
-    assert fvc["realName"] == {"approvedBy": "owner (course author)", "date": "2026-10-17",
-                               "note": "approved in the planning chat"}
-    for name in NAMES[1:]:
-        business = load(name)["business"]
-        assert business["fictional"] is True and "realName" not in business
-        text = json.dumps(load(name)).lower()
-        assert not [r for r in REAL if r in text], name
+REAL_BUSINESSES = {  # owner permission confirmed by the course author, 2026-10-20
+    "fvc-institute": ("Future Vision Computer Institute", "Surat", "Siddharth Parakh"),
+    "saree-wholesale": ("Akruti Sarees", "Surat", "Rohit Jain"),
+    "stationery-d2c": ("Roohani Rang", "Mumbai", "Rashi Agarwal"),
+    "boat-cruises": ("Australian Boat Parties", "Melbourne", "Akshay"),
+    "wire-mesh": ("Jain Wire Netting", "Visakhapatnam", "Rahul Dosi"),
+    "interior-design": ("Singhvi Interiors", "Mumbai", "Khushboo Singhvi"),
+}
+
+
+@pytest.mark.parametrize("name", NAMES)
+def test_real_worlds_record_name_owner_and_permission(name):
+    business = load(name)["business"]
+    title, city, owner = REAL_BUSINESSES[name]
+    assert (business["name"], business["city"], business["owner"]["name"]) == (title, city, owner)
+    assert business.get("fictional") is not True
+    assert all(business["realName"][k].strip() for k in ("approvedBy", "date", "note"))
+    # the owner is the business's real person; every cast member stays invented
+    assert owner not in [p["name"] for p in load(name)["cast"]]
+
+
+def test_practice_world_stays_fictional():
+    business = load_world(WORLDS / "practice-retail.world.json")["business"]
+    assert business["fictional"] is True and "realName" not in business and "owner" not in business
 
 
 def test_target_rates_match_the_spec():

@@ -308,3 +308,22 @@ def test_numbers_where_text_belongs_are_problems_not_crashes():
     for bad in (dict(ADS, path=[2024]), dict(PIP, steps=[{"do": "key", "keys": 5}]),
                 dict(ADS, panel=[{"kind": "button", "label": 7}], steps=[{"do": "click", "path": ["Create"]}])):
         assert any("text" in p for p in problems_for(bad, ADS_TEXT + " " + PIP_TEXT + " 2024 5 7"))
+
+
+# ---- deferred review fixes ----
+
+def test_ids_must_be_slugs():
+    assert any("slug" in p for p in problems_for(dict(ADS, id="q&a"), ADS_TEXT))
+    assert any("slug" in p for p in validate_scene(dict(SCENE, id="Shop Bill")))
+
+
+def test_single_quoted_attributes_are_read():
+    html = lesson(XL_TEXT, block(XL, grid="xl-staff").replace('"application/json" class="nerdit-screen" data-grid="xl-staff"',
+                                                              "'application/json' class='nerdit-screen' data-grid='xl-staff'"))
+    (spec,) = read_specs(html)
+    assert spec["_grid"] == "xl-staff"
+
+
+def test_known_labels_follow_the_app_theme():
+    spec = dict(DEDUPE, app="Microsoft Excel")
+    assert problems_for(spec, DEDUPE_TEXT) == []

@@ -30,8 +30,8 @@ def test_writer_trim_rule_matches_the_refresh_guard():
     assert "seed or a view" not in (HERE / "verify_course.py").read_text(encoding="utf-8")
 
 
-def test_plugin_version_is_3_5_0():
-    assert json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))["version"] == "3.5.0"
+def test_plugin_version_is_3_6_0():
+    assert json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))["version"] == "3.6.0"
 
 
 def test_skill_md_matches_the_v11_figure_rules():
@@ -111,3 +111,12 @@ def test_r13_lets_a_screen_picture_its_worked_example():
         for old in ("never repeats the run line", "no screen repeats the run line",
                     "Do not repeat the run line beside the screen"):
             assert old not in text, (path.name, old)
+
+
+def test_screen_docs_state_every_limit():
+    figures = " ".join((HERE.parent / "references" / "figures.md").read_text(encoding="utf-8").split())
+    section = figures.split("## 16 · Screen walkthrough", 1)[1].split("## 17 ·", 1)[0]
+    for limit in ("goal ≤60", "typed text ≤40", "cell ≤24", "keys ≤24", '"you"'):
+        assert limit in section, limit
+    style = (ROOT / "skills" / "nerdit-lesson-illustrator" / "references" / "style.md").read_text(encoding="utf-8")
+    assert "① to ⑤" in style.split("```screen-style", 1)[1].split("```", 1)[0]

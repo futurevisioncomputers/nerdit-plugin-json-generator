@@ -1,0 +1,60 @@
+{
+  "seed": 20261022,
+  "profile": "analytics",
+  "business": {
+    "name": "Singhvi Interiors",
+    "owner": {"name": "Khushboo Singhvi", "title": "Founder and Principal Designer"},
+    "realName": {"approvedBy": "Khushboo Singhvi (owner)", "date": "2026-10-20", "note": "owner has no objection; confirmed by the course author"},
+    "type": "luxury interior design studio for homes, offices and hospitality spaces",
+    "city": "Mumbai",
+    "currency": "INR",
+    "moneyUnit": "paise",
+    "services": "Design consultancy, turnkey interiors, styling and 3D visualisation.",
+    "projects": "Residential homes, offices and hospitality spaces, in Mumbai, across India and abroad.",
+    "funnel": "enquiry, site visit, concept presentation, signed project",
+    "dataNote": "Business name used with permission. All clients, projects and amounts are synthetic."
+  },
+  "cast": [
+    {"name": "Tara", "role": "project manager", "trait": "checks every estimate against the site measurements", "look": "invented adult with a sage kurta and a measuring tape"},
+    {"name": "Vivaan", "role": "data analyst", "trait": "asks which project a number came from", "look": "invented adult with a navy shirt and a laptop"}
+  ],
+  "stages": ["collect", "clean", "explore", "model", "explain"],
+  "messiness": [],
+  "arc": {
+    "statistics-and-probability": "Tara asks whether this quarter's project durations are unusually long or normal variation.",
+    "regression": "Vivaan estimates a project's budget from its area, rooms and finish before the concept presentation.",
+    "classification": "Vivaan predicts which enquiries sign after a site visit, so Tara can plan visits.",
+    "explainable-ai": "Vivaan explains which project details drive the budget estimate, in words Tara can check."
+  },
+  "entities": {
+    "enquiries": {
+      "rows": 1200,
+      "columns": {
+        "enquiry_id": {"generator": "id", "prefix": "EQ"},
+        "space_type": {"generator": "weighted_choice", "values": ["residential", "office", "hospitality"], "weights": [65, 25, 10]},
+        "location": {"generator": "weighted_choice", "values": ["Mumbai", "rest of India", "international"], "weights": [70, 25, 5]},
+        "service": {"generator": "weighted_choice", "values": ["design consultancy", "turnkey interiors", "styling", "3D visualisation"], "weights": [30, 45, 15, 10]},
+        "area_sqft": {"generator": "lognormal", "median": 1400, "sigma": 0.5, "max": 12000, "round": 0},
+        "site_visit_done": {"generator": "bernoulli", "p": 0.6},
+        "signed": {"generator": "logistic", "target_rate": 0.25,
+                   "terms": {"site_visit_done": 1.4},
+                   "effects": {"service": {"turnkey interiors": 0.5}, "location": {"international": -0.6}}}
+      }
+    },
+    "projects": {
+      "rows": 400,
+      "columns": {
+        "project_id": {"generator": "id", "prefix": "SP"},
+        "space_type": {"generator": "weighted_choice", "values": ["residential", "office", "hospitality"], "weights": [65, 25, 10]},
+        "area_sqft": {"generator": "lognormal", "median": 1500, "sigma": 0.5, "max": 12000, "round": 0},
+        "rooms": {"generator": "int_range", "min": 1, "max": 8},
+        "finish": {"generator": "weighted_choice", "values": ["premium", "luxury"], "weights": [60, 40]},
+        "duration_weeks": {"generator": "linear", "intercept": 6, "terms": {"area_sqft": 0.004, "rooms": 0.8},
+                           "effects": {"finish": {"luxury": 3}}, "noise_sd": 2, "min": 3, "round": 0},
+        "budget_paise": {"generator": "linear", "intercept": 50000000, "terms": {"area_sqft": 350000},
+                         "effects": {"finish": {"luxury": 120000000}, "space_type": {"hospitality": 80000000}},
+                         "noise_sd": 30000000, "min": 20000000, "round": 0}
+      }
+    }
+  }
+}
