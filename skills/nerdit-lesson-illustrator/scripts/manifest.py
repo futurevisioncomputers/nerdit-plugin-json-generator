@@ -21,6 +21,8 @@ STATUSES = ("planned", "converted", "passed", "failed", "inserted")
 POSITIONS = ("after-explanation", "before-practice", "before-code")
 # "contrast" draws the misconception (left, ✗) beside the correct way (right, ✓).
 LAYOUTS = ("single", "contrast")
+# Motion helps only a sequence or a change; keep it to the hardest one or two per course.
+MAX_ANIMATED = 2
 MAX_PER_LESSON = 3
 STYLE_FILE = Path(__file__).resolve().parent.parent / "references" / "style.md"
 PLAN_KEYS = ("lessonId", "section", "heading", "position", "reason", "subject", "alt", "caption")
@@ -251,6 +253,12 @@ def add_slots_v2(m: dict, course: dict, plan: dict, replan: str | None = None) -
         if p["position"] not in POSITIONS or p["kind"] not in KINDS:
             errors.append(f"{where}: unknown position or kind")
             continue
+        if p.get("animated") and p["kind"] != "diagram":
+            errors.append(f"{where}: only a diagram can be animated")
+            continue
+        if p.get("animated") and sum(1 for s in m["images"] if s.get("animated")) >= MAX_ANIMATED:
+            errors.append(f"{where}: a course gets at most {MAX_ANIMATED} animated diagrams")
+            continue
         layout = p.get("layout") or "single"
         if layout not in LAYOUTS or (layout == "contrast" and p["kind"] not in ("illustration", "process")):
             errors.append(f"{where}: layout {layout} needs kind illustration or process")
@@ -288,7 +296,7 @@ def add_slots_v2(m: dict, course: dict, plan: dict, replan: str | None = None) -
             "takeaway": p["takeaway"], "misconception": p["misconception"], "intro": p["intro"],
             "caption": p["caption"], "alt": p["alt"], "explanation": list(p["explanation"]),
             "checkQuestion": dict(p["checkQuestion"]), "subject": p.get("subject", ""),
-            "app": p.get("app", ""), "layout": layout,
+            "app": p.get("app", ""), "layout": layout, "animated": bool(p.get("animated")),
             "sourceFingerprint": section_fingerprint(content, p["section"], p["heading"]),
             "requestFile": f"{image_id}.{'svg' if diagram else 'png'}",
             "outputFile": f"{image_id}.{'svg' if diagram else 'webp'}",

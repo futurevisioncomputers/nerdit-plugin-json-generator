@@ -124,7 +124,7 @@ def convert_all(m: dict, images_dir: Path) -> dict:
         if sha == slot.get("sourceSha256") and slot["status"] != "planned":
             report["unchanged"].append(slot["id"])
             continue
-        problems = check_svg(svg, slot["labels"], len(slot["explanation"]))
+        problems = check_svg(svg, slot["labels"], len(slot["explanation"]), animated=bool(slot.get("animated")))
         if problems:
             report["errors"] += [f"{f.name}: {p}" for p in problems]
             continue

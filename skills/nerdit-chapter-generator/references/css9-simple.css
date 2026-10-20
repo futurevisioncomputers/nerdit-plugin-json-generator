@@ -335,6 +335,26 @@
   border-top: 0;
 }
 
+/* Animated figures (figures.md template 18). Without "na-play" a figure shows its finished
+   picture; the site adds "na-play" (held by "na-paused") and releases it when the figure
+   scrolls into view. Each part sets its start time with style="--d:2.5s". */
+.nerdit-anim .na-open { transform-box: fill-box; transform-origin: center top; transform: scaleY(-1); }
+.nerdit-anim.na-play .na-show  { animation: na-show .6s ease-out var(--d, 0s) both; }
+.nerdit-anim.na-play .na-slide { animation: na-slide .6s ease-out var(--d, 0s) both; }
+.nerdit-anim.na-play .na-draw  { animation: na-draw .7s ease-out var(--d, 0s) both; }
+.nerdit-anim.na-play .na-open  { animation: na-open .5s ease-in var(--d, 0s) both; }
+.nerdit-anim.na-play .na-pulse { transform-box: fill-box; transform-origin: center;
+                                 animation: na-pulse 1.2s ease-in-out var(--d, 0s) 2; }
+.nerdit-anim.na-paused * { animation-play-state: paused !important; }
+@keyframes na-show  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes na-slide { from { opacity: 0; transform: translateY(-14px); } to { opacity: 1; transform: none; } }
+@keyframes na-draw  { from { stroke-dasharray: 80; stroke-dashoffset: 80; } to { stroke-dasharray: 80; stroke-dashoffset: 0; } }
+@keyframes na-open  { from { transform: scaleY(1); } to { transform: scaleY(-1); } }
+@keyframes na-pulse { 50% { transform: scale(1.08); } }
+@media (prefers-reduced-motion: reduce) {
+  .nerdit-anim.na-play * { animation: none !important; }
+}
+
 /* Each step starts with its marker (①); make it match the marker in the picture. */
 .nerdit-visual-read li::first-letter {
   margin-right: .3em;
