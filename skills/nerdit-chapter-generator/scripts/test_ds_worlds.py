@@ -9,7 +9,7 @@ from make_world_data import load_world
 from nerdit_world_gen import PRIVATE, generate, looks_like_phone, validate_world
 
 WORLDS = Path(__file__).resolve().parent.parent / "references" / "worlds"
-NAMES = ("fvc-institute", "saree-wholesale", "stationery-d2c", "boat-cruises", "wire-mesh")
+NAMES = ("fvc-institute", "saree-wholesale", "stationery-d2c", "boat-cruises", "wire-mesh", "interior-design")
 REAL = ("akruti", "roohani", "jain wire", "australian boat", "australianboatparties")
 
 
@@ -45,6 +45,7 @@ REAL_BUSINESSES = {  # owner permission confirmed by the course author, 2026-10-
     "stationery-d2c": ("Roohani Rang", "Mumbai", "Rashi Agarwal"),
     "boat-cruises": ("Australian Boat Parties", "Melbourne", "Akshay"),
     "wire-mesh": ("Jain Wire Netting", "Visakhapatnam", "Rahul Dosi"),
+    "interior-design": ("Singhvi Interiors", "Mumbai", "Khushboo Singhvi"),
 }
 
 

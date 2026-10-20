@@ -113,6 +113,7 @@ recipe: a seed, the files to build and the entities they need, copied in full fr
 | `stationery-d2c` | Roohani Rang, Mumbai | products, customers, orders, ratings, reviews, daily_sales |
 | `boat-cruises` | Australian Boat Parties, Melbourne | bookings, quotes, cancellations, daily_bookings |
 | `wire-mesh` | Jain Wire Netting, Visakhapatnam | products, prices, qc_measurements, roll_defects |
+| `interior-design` | Singhvi Interiors, Mumbai | enquiries, projects |
 
 Each world above uses a real business name and its owner's name, with the owner's permission
 recorded in `business.realName` (confirmed by the course author on 2026-10-20). Only the
@@ -132,4 +133,4 @@ Websites are kept here, never in a world file: worlds and lessons carry no URLs 
 | Roohani Rang | Rashi Agarwal, CEO, Founder and Designer | Mumbai | https://roohanirang.com/ |
 | Australian Boat Parties | Akshay, Owner | Melbourne | https://australianboatparties.com/ |
 | Jain Wire Netting | Rahul Dosi, Founder | Visakhapatnam | https://jainwirenetting.in/ |
-| Singhvi Interiors | Khushboo Singhvi, Founder and Principal Designer | Mumbai | https://singhviinteriors.com/ (no world yet) |
+| Singhvi Interiors | Khushboo Singhvi, Founder and Principal Designer | Mumbai | https://singhviinteriors.com/ |
