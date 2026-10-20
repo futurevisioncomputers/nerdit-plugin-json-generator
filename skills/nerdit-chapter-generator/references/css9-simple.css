@@ -296,6 +296,53 @@
   margin-top: .4rem;
 }
 
+/* The sentence that introduces a visual, and the numbered reading steps under it. */
+.nerdit-visual-intro {
+  font-weight: 600;
+  color: var(--tx);
+}
+
+.nerdit-visual-read {
+  list-style: none;
+  margin: .6rem 0 1.4rem !important;
+  padding: .7rem 1rem !important;
+  background: var(--bg-soft);
+  border: 1px solid var(--bd);
+  border-left: 4px solid var(--nb);
+  border-radius: var(--r);
+}
+
+.nerdit-visual-read::before {
+  content: "How to read it";
+  display: block;
+  margin-bottom: .3rem;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--nb);
+}
+
+.nerdit-visual-read li {
+  margin: 0;
+  padding: .4rem 0;
+  font-size: 14.5px;
+  line-height: 1.5;
+  border-top: 1px dashed var(--bd);
+}
+
+.nerdit-visual-read li:first-child {
+  border-top: 0;
+}
+
+/* Each step starts with its marker (①); make it match the marker in the picture. */
+.nerdit-visual-read li::first-letter {
+  margin-right: .3em;
+  font-size: 1.2em;
+  font-weight: 700;
+  color: var(--nb);
+}
+
 /* --------------------------------------------------------------------
    7 · PREDICT THE OUTPUT  (Try It — retrieval practice)
    -------------------------------------------------------------------- */
