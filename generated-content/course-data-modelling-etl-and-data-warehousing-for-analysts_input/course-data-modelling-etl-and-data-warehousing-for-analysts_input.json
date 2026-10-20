@@ -1,0 +1,116 @@
+[
+  {
+    "id": "why-analysts-need-data-modelling-01",
+    "title": "Why Analysts Need Data Modelling",
+    "description": "Explain the difference between operational (OLTP) databases that run a business and analytical (OLAP) systems built for reporting, why querying raw application tables gets slow and confusing, and how data modelling, ETL and a data warehouse fit together across the course.",
+    "runner": "none"
+  },
+  {
+    "id": "entities-attributes-and-relationships-02",
+    "title": "Entities, Attributes and Relationships",
+    "description": "Introduce entities, attributes, primary keys and foreign keys, and one-to-one, one-to-many and many-to-many relationships, reading a simple entity-relationship diagram and turning it into linked CREATE TABLE statements.",
+    "runner": "sql"
+  },
+  {
+    "id": "normalization-1nf-2nf-3nf-03",
+    "title": "Normalization: 1NF, 2NF and 3NF",
+    "description": "Walk through first, second and third normal form on a messy orders spreadsheet-style table, splitting it into clean related tables to remove repeating groups, partial dependencies and update anomalies.",
+    "runner": "sql"
+  },
+  {
+    "id": "denormalization-for-reporting-04",
+    "title": "Denormalization for Reporting",
+    "description": "Show why fully normalized tables need many joins for every report, and when analysts deliberately denormalize by pre-joining and duplicating descriptive columns to make queries simpler and faster, weighing the trade-offs.",
+    "runner": "sql"
+  },
+  {
+    "id": "facts-and-dimensions-05",
+    "title": "Facts and Dimensions",
+    "description": "Introduce dimensional modelling: fact tables that hold measurable events such as sales amounts and quantities, dimension tables that describe who, what, where and when, and additive, semi-additive and non-additive measures.",
+    "runner": "sql"
+  },
+  {
+    "id": "star-schema-vs-snowflake-schema-06",
+    "title": "Star Schema vs Snowflake Schema",
+    "description": "Build a star schema with one sales fact table surrounded by product, customer, store and date dimensions, compare it with a snowflake schema that normalizes dimensions further, and query both to see the join differences.",
+    "runner": "sql"
+  },
+  {
+    "id": "choosing-the-grain-of-a-fact-table-07",
+    "title": "Choosing the Grain of a Fact Table",
+    "description": "Teach how to declare the grain — what one row of a fact table represents — choosing between transaction, periodic snapshot and accumulating snapshot facts, and how the wrong grain causes double counting.",
+    "runner": "sql"
+  },
+  {
+    "id": "surrogate-keys-and-natural-keys-08",
+    "title": "Surrogate Keys and Natural Keys",
+    "description": "Explain natural business keys such as customer codes versus warehouse-generated surrogate integer keys, why dimensions use surrogate keys, and how fact rows look up the right surrogate key during loading.",
+    "runner": "sql"
+  },
+  {
+    "id": "slowly-changing-dimensions-09",
+    "title": "Slowly Changing Dimensions (SCD Types 1, 2 and 3)",
+    "description": "Handle dimension attributes that change over time, such as a customer moving city: overwrite with Type 1, keep full history with Type 2 using effective dates and a current flag, and store the previous value with Type 3.",
+    "runner": "sql"
+  },
+  {
+    "id": "date-dimension-and-conformed-dimensions-10",
+    "title": "The Date Dimension and Conformed Dimensions",
+    "description": "Build a date dimension with year, quarter, month, week and holiday flags for easy time analysis, and explain conformed dimensions shared across several fact tables so different business processes can be compared consistently.",
+    "runner": "sql"
+  },
+  {
+    "id": "etl-vs-elt-and-pipeline-stages-11",
+    "title": "ETL vs ELT and Pipeline Stages",
+    "description": "Describe the extract, transform and load stages of a data pipeline, contrast traditional ETL with modern ELT inside the warehouse, and cover batch versus incremental loads, scheduling and the role of staging areas.",
+    "runner": "none"
+  },
+  {
+    "id": "extracting-data-from-sources-12",
+    "title": "Extracting Data from Sources",
+    "description": "Use Python and pandas to extract data from CSV files, JSON API responses and database tables, and implement incremental extraction with a last-updated watermark so only new or changed records are pulled each run.",
+    "runner": "python"
+  },
+  {
+    "id": "cleaning-and-transforming-data-with-pandas-13",
+    "title": "Cleaning and Transforming Data with pandas",
+    "description": "Transform extracted data with pandas: fix data types, standardize text and dates, handle missing values, remove duplicates, derive new columns and reshape records so they match the target dimension and fact table structure.",
+    "runner": "python"
+  },
+  {
+    "id": "staging-tables-and-sql-transformations-14",
+    "title": "Staging Tables and SQL Transformations",
+    "description": "Load raw data into staging tables and transform it with SQL, using common table expressions, CASE expressions and joins to cleanse records, then upsert into dimensions with INSERT ... ON CONFLICT.",
+    "runner": "sql"
+  },
+  {
+    "id": "loading-fact-tables-and-incremental-loads-15",
+    "title": "Loading Fact Tables and Incremental Loads",
+    "description": "Load fact tables by looking up surrogate keys from each dimension, handle late-arriving and unknown dimension members with default rows, and append only new records in incremental loads without creating duplicates.",
+    "runner": "sql"
+  },
+  {
+    "id": "data-quality-checks-and-reconciliation-16",
+    "title": "Data Quality Checks and Reconciliation",
+    "description": "Write SQL checks that catch problems after every load — row count reconciliation against the source, null and uniqueness checks, orphaned foreign keys, value range rules and total amount comparisons — before reports are trusted.",
+    "runner": "sql"
+  },
+  {
+    "id": "data-warehouse-architecture-17",
+    "title": "Data Warehouse Architecture",
+    "description": "Explain the layers of a modern data warehouse — raw, staging, core and data marts — and compare data warehouses, data lakes and lakehouses, plus cloud platforms such as Snowflake, BigQuery and Redshift from an analyst's view.",
+    "runner": "none"
+  },
+  {
+    "id": "building-data-marts-and-aggregate-tables-18",
+    "title": "Building Data Marts and Aggregate Tables",
+    "description": "Create subject-focused data marts and reporting views on top of the star schema, build pre-aggregated summary tables for monthly sales dashboards, and decide when a view or a materialized table is the better choice.",
+    "runner": "sql"
+  },
+  {
+    "id": "capstone-retail-sales-data-warehouse-19",
+    "title": "Capstone: Building a Retail Sales Data Warehouse",
+    "description": "Combine everything into an end-to-end project: model a retail sales star schema, stage and transform raw order data, load dimensions with SCD Type 2 and the fact table, run quality checks and answer business questions from the mart.",
+    "runner": "sql"
+  }
+]
