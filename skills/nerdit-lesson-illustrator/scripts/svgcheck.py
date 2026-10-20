@@ -23,11 +23,27 @@ def foreign_tokens(svg: str, source: str) -> list[str]:
     return sorted({t for t in FACT_TOKEN.findall(drawn) if t not in source})
 
 
-def check_svg(svg: str, labels: list[str], steps: int) -> list[str]:
+ANIM_ROOT = re.compile(r'\bclass="[^"]*\bnerdit-anim\b')
+ANIM_PART = re.compile(r'\bclass="[^"]*\bna-(?:show|slide|draw|open|pulse)\b')
+OWN_MOTION = re.compile(r"<(?:style|script|animate\w*|set)\b", re.I)
+
+
+def check_svg(svg: str, labels: list[str], steps: int, animated: bool = False) -> list[str]:
     m = re.match(r"\s*<svg\b([^>]*)>", svg, re.S)
     if not m:
         return ["not an <svg> element"]
     attrs, errors = m.group(1), []
+    # Animation comes only from the lesson CSS classes, so reduced motion and scroll-to-play
+    # are handled in one place (figures.md template 18).
+    if animated:
+        if not ANIM_ROOT.search(attrs):
+            errors.append('animated svg needs class="nerdit-anim" on <svg>')
+        if not ANIM_PART.search(svg):
+            errors.append("animated svg has no moving part (class na-show/na-slide/na-draw/na-open/na-pulse)")
+    elif ANIM_ROOT.search(attrs) or ANIM_PART.search(svg):
+        errors.append("svg animates but the slot is not planned as animated")
+    if OWN_MOTION.search(svg):
+        errors.append("svg carries its own <style>, <script> or SMIL; animate with the lesson CSS classes")
     vb = re.search(r'viewBox="\s*[-\d.]+[\s,]+[-\d.]+[\s,]+([\d.]+)', attrs)
     if not vb:
         errors.append("svg has no viewBox")

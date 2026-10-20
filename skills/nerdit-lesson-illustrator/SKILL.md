@@ -41,7 +41,9 @@ planning and before checking.
    visual: `lessonId, section, heading, position, anchor, kind, question, objective, sourceRefs,
    knownTerms, newTerms, labels, takeaway, misconception, intro, caption, alt, explanation,
    checkQuestion {question, answer, reasoning}` and, for illustrations, `subject`.
-   Optional per item: `layout` (`single` or `contrast`) for illustration and process items.
+   Optional per item: `layout` (`single` or `contrast`) for illustration and process items;
+   `animated: true` on a diagram whose idea is a sequence (at most two per course; draw it with
+   figures.md template 18).
    Plan-level, from the course world: `props` (the course's own objects) and `characters`
    [{name, look}] for character sheets. `position` may also be `before-code`.
    Labels are copied exactly from the section or fixture. `explanation` is the visible reading

@@ -54,6 +54,10 @@ shows each section's planned `visual` and suggested `illustration`; plan from th
 - **Place by job.** A scene that sets up the problem goes before the concept
   (`after-explanation` on the section's first paragraph); a process picture goes
   `before-code`, just ahead of the first code block that does it.
+- **Animate only a sequence or a change** (`"animated": true` on a diagram, figures.md
+  template 18): a split, folds taking turns, a pipeline, records matched or removed. At most two
+  per course, on the hardest step-by-step ideas. Definitions, values, comparisons and scenes
+  stay still. The finished frame must teach without the motion.
 - One objective per visual; split a crowded figure into two.
 - Diagrams use the lesson's own names, keys, dates and amounts — never invented ones.
 - No quota: add a visual only where it helps; an existing accurate figure may already do the job.

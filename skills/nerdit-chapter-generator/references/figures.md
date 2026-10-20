@@ -616,6 +616,49 @@ figure template (1–15) instead.
 
 ---
 
+## 18 · Animated diagram — a sequence the learner watches happen
+
+For: a process whose meaning *is* its order or change — a split, folds taking turns, a pipeline,
+records being matched or removed. At most **two per course** (`manifest.py` refuses a third);
+everything else stays static. Only kind `diagram` can be animated (`"animated": true`).
+
+Motion comes only from the lesson CSS classes, never from `<style>`, `<script>` or SMIL inside
+the SVG (`svgcheck.py` refuses them). The site plays a figure when it scrolls into view, replays
+it on tap, and shows the finished picture to learners who reduce motion — so the **final frame
+must teach on its own**.
+
+| Class | Does | Use for |
+|---|---|---|
+| `na-show` | fades in | labels, results |
+| `na-slide` | drops in from above | cards, records, pills |
+| `na-draw` | draws a line or arrow | flows between steps |
+| `na-open` | flips a flap open (finished state: open) | sealed records revealed |
+| `na-pulse` | pulses twice | the step doing the work |
+
+Set each part's start with `style="--d:2.5s"`. Pace: one step every 1–1.5 s, whole figure under
+8 s, the ① ② ③ marker of a step appearing with that step.
+
+```html
+<div class="nerdit-figure" data-visual="diagram" style="max-width:440px">
+  <svg class="nerdit-anim" viewBox="0 0 360 200" role="img" aria-label="Rows split into a training pile and sealed check records; the model learns from the pile, then the records open.">
+    <g class="na-slide" style="--d:.2s">
+      <text class="nerdit-flow-text" x="8" y="20" fill="var(--nb)">①</text>
+      <rect x="14" y="30" width="86" height="54" rx="6" fill="var(--bg-soft)" stroke="var(--nb)"/>
+      <text class="nerdit-flow-text" x="57" y="104" text-anchor="middle" fill="var(--tx)">training</text>
+    </g>
+    <path class="na-draw" style="--d:1.2s" d="M57 112 V140" stroke="var(--nb)" stroke-width="1.6" fill="none"/>
+    <g class="na-show" style="--d:1.6s">
+      <text class="nerdit-flow-text" x="8" y="160" fill="var(--nb)">②</text>
+      <g class="na-pulse" style="--d:2s"><rect x="14" y="142" width="86" height="40" rx="10" fill="var(--nb)"/>
+        <text class="nerdit-flow-text" x="57" y="167" text-anchor="middle" fill="var(--white)">model</text></g>
+    </g>
+  </svg>
+  <div class="nerdit-figure-caption">The model learns from the training pile only.</div>
+</div>
+```
+
+---
+
 ## Choosing between them
 
 `CORE.md` §7 (the Visual Map) decides which visual a place in the lesson gets; this file only

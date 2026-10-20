@@ -296,6 +296,73 @@
   margin-top: .4rem;
 }
 
+/* The sentence that introduces a visual, and the numbered reading steps under it. */
+.nerdit-visual-intro {
+  font-weight: 600;
+  color: var(--tx);
+}
+
+.nerdit-visual-read {
+  list-style: none;
+  margin: .6rem 0 1.4rem !important;
+  padding: .7rem 1rem !important;
+  background: var(--bg-soft);
+  border: 1px solid var(--bd);
+  border-left: 4px solid var(--nb);
+  border-radius: var(--r);
+}
+
+.nerdit-visual-read::before {
+  content: "How to read it";
+  display: block;
+  margin-bottom: .3rem;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--nb);
+}
+
+.nerdit-visual-read li {
+  margin: 0;
+  padding: .4rem 0;
+  font-size: 14.5px;
+  line-height: 1.5;
+  border-top: 1px dashed var(--bd);
+}
+
+.nerdit-visual-read li:first-child {
+  border-top: 0;
+}
+
+/* Animated figures (figures.md template 18). Without "na-play" a figure shows its finished
+   picture; the site adds "na-play" (held by "na-paused") and releases it when the figure
+   scrolls into view. Each part sets its start time with style="--d:2.5s". */
+.nerdit-anim .na-open { transform-box: fill-box; transform-origin: center top; transform: scaleY(-1); }
+.nerdit-anim.na-play .na-show  { animation: na-show .6s ease-out var(--d, 0s) both; }
+.nerdit-anim.na-play .na-slide { animation: na-slide .6s ease-out var(--d, 0s) both; }
+.nerdit-anim.na-play .na-draw  { animation: na-draw .7s ease-out var(--d, 0s) both; }
+.nerdit-anim.na-play .na-open  { animation: na-open .5s ease-in var(--d, 0s) both; }
+.nerdit-anim.na-play .na-pulse { transform-box: fill-box; transform-origin: center;
+                                 animation: na-pulse 1.2s ease-in-out var(--d, 0s) 2; }
+.nerdit-anim.na-paused * { animation-play-state: paused !important; }
+@keyframes na-show  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes na-slide { from { opacity: 0; transform: translateY(-14px); } to { opacity: 1; transform: none; } }
+@keyframes na-draw  { from { stroke-dasharray: 80; stroke-dashoffset: 80; } to { stroke-dasharray: 80; stroke-dashoffset: 0; } }
+@keyframes na-open  { from { transform: scaleY(1); } to { transform: scaleY(-1); } }
+@keyframes na-pulse { 50% { transform: scale(1.08); } }
+@media (prefers-reduced-motion: reduce) {
+  .nerdit-anim.na-play * { animation: none !important; }
+}
+
+/* Each step starts with its marker (①); make it match the marker in the picture. */
+.nerdit-visual-read li::first-letter {
+  margin-right: .3em;
+  font-size: 1.2em;
+  font-weight: 700;
+  color: var(--nb);
+}
+
 /* --------------------------------------------------------------------
    7 · PREDICT THE OUTPUT  (Try It — retrieval practice)
    -------------------------------------------------------------------- */
