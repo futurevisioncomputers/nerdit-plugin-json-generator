@@ -105,6 +105,8 @@ def img_sources(content: str) -> list[str]:
 
 
 VISUAL_ATTR = re.compile(r'<(p|div|ol)\b[^>]*\bdata-nerdit-img="([^"]+)"[^>]*>', re.I)
+# manifest.py names every slot "<lessonId>-img<n>" or "<lessonId>-fig<n>".
+OWN_ID = re.compile(r"-(?:img|fig)\d+$")
 _TOKENS = {
     "div": re.compile(r"<div\b|</div\s*>", re.I),
     "p": re.compile(r"<p\b|</p\s*>", re.I),
@@ -128,13 +130,20 @@ def _element_end(content: str, start: int, tag: str) -> int:
 
 
 def remove_visual_blocks(content: str) -> str:
+    """Strip the illustrator's own inserted blocks. The lesson writer also tags its figures,
+    steps and Try It boxes with data-nerdit-img (e.g. "ml01-examples"); those stay."""
+    pos = 0
     while True:
-        m = VISUAL_ATTR.search(content)
+        m = VISUAL_ATTR.search(content, pos)
         if not m:
             return content
         end = _element_end(content, m.start(), m.group(1).lower())
+        if not OWN_ID.search(m.group(2)):
+            pos = end
+            continue
         start = m.start() - 1 if m.start() > 0 and content[m.start() - 1] == "\n" else m.start()
         content = content[:start] + content[end:]
+        pos = start
 
 
 def visual_elements(content: str, image_id: str) -> list[tuple[str, str]]:

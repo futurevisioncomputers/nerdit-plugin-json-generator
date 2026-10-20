@@ -23,6 +23,15 @@ def test_remove_visual_blocks_strips_v1_and_v2_and_keeps_the_rest():
     assert remove_visual_blocks(base.replace(ANCHOR, ANCHOR + V1 + V2)) == base
 
 
+def test_remove_visual_blocks_keeps_writer_tagged_figures():
+    # The lesson writer tags its own figures, steps and Try It boxes with data-nerdit-img
+    # ids such as "ml01-examples"; only the illustrator's "-img<n>"/"-fig<n>" ids are ours.
+    writer = ('\n<div class="nerdit-figure" data-nerdit-img="ml01-examples"><svg></svg></div>'
+              '\n<div class="nerdit-predict" data-nerdit-img="ml-fundamentals-09-v1"><p>Q?</p></div>')
+    base = lesson0().replace(ANCHOR, ANCHOR + writer)
+    assert remove_visual_blocks(base.replace(ANCHOR, ANCHOR + V1 + V2)) == base
+
+
 def test_visual_elements_lists_the_siblings_of_one_visual():
     content = lesson0().replace(ANCHOR, ANCHOR + V2)
     assert [tag for tag, _ in visual_elements(content, "a-fig1")] == ["p", "div", "ol", "div"]
