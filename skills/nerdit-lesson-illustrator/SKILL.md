@@ -41,6 +41,9 @@ planning and before checking.
    visual: `lessonId, section, heading, position, anchor, kind, question, objective, sourceRefs,
    knownTerms, newTerms, labels, takeaway, misconception, intro, caption, alt, explanation,
    checkQuestion {question, answer, reasoning}` and, for illustrations, `subject`.
+   Optional per item: `layout` (`single` or `contrast`) for illustration and process items.
+   Plan-level, from the course world: `props` (the course's own objects) and `characters`
+   [{name, look}] for character sheets. `position` may also be `before-code`.
    Labels are copied exactly from the section or fixture. `explanation` is the visible reading
    order: with two or more steps, the figure carries matching markers ① ② ③.
    `section` and `heading` come from the `§` line; `anchor` is copied exactly from a `¶` line of
