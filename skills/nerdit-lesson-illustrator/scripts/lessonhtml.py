@@ -92,7 +92,17 @@ def locate(content: str, number: int, heading: str, position: str, anchor: str |
         if paras:
             return paras[-1][0]
         raise AnchorNotFound(f"section {number} '{heading}' has no practice block or paragraph")
+    if position == "before-code":
+        # A process picture reads best just before the learner meets the code that does it.
+        m = CODE_START.search(content, sec.start, sec.end)
+        if m:
+            return m.start()
+        raise AnchorNotFound(f"section {number} '{heading}' has no code block")
     raise ValueError(f"unknown position {position!r}")
+
+
+CODE_START = re.compile(r'<h3\b[^>]*\bclass="[^"]*\bnerdit-runhead\b[^"]*"'
+                        r'|<div\b[^>]*\bclass="[^"]*\bnerdit-run\b[^"]*"', re.I)
 
 
 def img_sources(content: str) -> list[str]:

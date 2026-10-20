@@ -41,6 +41,19 @@ shows each section's planned `visual` and suggested `illustration`; plan from th
   that match its 2–3 reading steps: no words, letters or numbers, and its subject names no
   values. It replaces the diagram for that section (`manifest.py` refuses both), so the exact
   values must already be in the section's text, run output or an existing table.
+- **Teach, don't decorate.** Every prompt states the takeaway the picture must make obvious and
+  the misconception it must not suggest. When the misconception is the lesson (a leaky refit,
+  a wrong unit), use `"layout": "contrast"`: the mistake on the left marked ✗, the correct way
+  on the right marked ✓.
+- **Use the course's own objects.** Set plan-level `props` from the world file (its products,
+  vessels, categories, record types), so every scene shows the things the learner's data
+  describes, not generic office props.
+- **Same people every time.** Set plan-level `characters` [{name, look}] from the world's cast.
+  `PROMPTS.md` then lists one character sheet per person to generate first, and every prompt
+  that names them says which sheet to attach in Codex.
+- **Place by job.** A scene that sets up the problem goes before the concept
+  (`after-explanation` on the section's first paragraph); a process picture goes
+  `before-code`, just ahead of the first code block that does it.
 - One objective per visual; split a crowded figure into two.
 - Diagrams use the lesson's own names, keys, dates and amounts — never invented ones.
 - No quota: add a visual only where it helps; an existing accurate figure may already do the job.
@@ -60,6 +73,9 @@ PASS only when all hold:
 6. Illustrations: no extra text, numbers, logos or brands; Indian context where people appear;
    the course's recurring cast when one is set.
 7. Nothing contradicts the lesson or invites the brief's stated misconception.
+8. A learner who skips the text gets the takeaway from the picture and its caption alone.
+9. The objects and people are the course's own: the world's products and records, and each
+   character matches their sheet.
 
 ## Screen check criteria
 

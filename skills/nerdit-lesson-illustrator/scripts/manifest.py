@@ -18,7 +18,9 @@ from lessonhtml import (AnchorNotFound, find_section, fixture_text, locate, remo
                         section_fingerprint, section_text)
 
 STATUSES = ("planned", "converted", "passed", "failed", "inserted")
-POSITIONS = ("after-explanation", "before-practice")
+POSITIONS = ("after-explanation", "before-practice", "before-code")
+# "contrast" draws the misconception (left, ✗) beside the correct way (right, ✓).
+LAYOUTS = ("single", "contrast")
 MAX_PER_LESSON = 3
 STYLE_FILE = Path(__file__).resolve().parent.parent / "references" / "style.md"
 PLAN_KEYS = ("lessonId", "section", "heading", "position", "reason", "subject", "alt", "caption")
@@ -31,7 +33,7 @@ V2_KEYS = ("lessonId", "section", "heading", "position", "kind", "question", "ob
 
 
 def style_block(labels: list[str], markers: int = 0, path: Path = STYLE_FILE,
-                kind: str = "illustration", app: str = "") -> str:
+                kind: str = "illustration", app: str = "", contrast: bool = False) -> str:
     """The house style, or for kind "screen" the screen style: a realistic, logo-free window
     of `app` in its own colours, allowed to show only the listed labels."""
     raw = path.read_text(encoding="utf-8").replace("\r\n", "\n")
@@ -48,6 +50,8 @@ def style_block(labels: list[str], markers: int = 0, path: Path = STYLE_FILE,
         allowed.append("these exact labels: " + ", ".join(f'"{l}"' for l in labels))
     if markers:
         allowed.append("the numbered markers " + " ".join(MARKERS[:markers]))
+    if contrast:
+        allowed.append("one ✗ on the left panel and one ✓ on the right panel")
     clause = ("no words, letters or numbers except " + "; and ".join(allowed) + ".") if allowed \
         else "no words, letters or numbers at all."
     return block.replace("{text_clause}", clause)
@@ -158,14 +162,32 @@ def build_prompt(m: dict, s: dict) -> str:
              f"Question it answers: {s['question']}"]
     if m["course"].get("cast"):
         lines.append(f"Recurring characters and setting: {m['course']['cast']}")
+    if m["course"].get("props"):
+        lines.append(f"Objects from this course: {m['course']['props']}")
     steps = s["explanation"]
     marks = MARKERS[:len(steps)] if len(steps) >= 2 else ""
+    contrast = s.get("layout") == "contrast"
     body = [s["subject"].strip()]
+    if contrast:
+        body.append(f"Two panels side by side: the left panel shows the mistake ({s['misconception']}) "
+                    "marked ✗; the right panel shows the correct way marked ✓.")
     if marks:
         body.append("Numbered markers: " + "; ".join(
             f"place {mk} on the part showing: {st}" for mk, st in zip(marks, steps)))
-    style = style_block(s["labels"], len(marks), kind=s.get("kind", "illustration"), app=s.get("app", ""))
+    if s.get("kind") != "screen":
+        # Say what the picture must prove, so the scene teaches instead of decorating.
+        body.append(f"The picture must make this obvious: {s['takeaway']}")
+        body.append(f"It must not suggest: {s['misconception']}")
+        for c in m["course"].get("characters") or []:
+            if c["name"].lower() in s["subject"].lower():
+                body.append(f"Attach {cast_file(c['name'])} as the reference for {c['name']}.")
+    style = style_block(s["labels"], len(marks), kind=s.get("kind", "illustration"), app=s.get("app", ""),
+                        contrast=contrast)
     return "\n".join(lines) + "\n\n" + "\n".join(body) + "\n\n" + style
+
+
+def cast_file(name: str) -> str:
+    return "cast/cast-" + re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-") + ".png"
 
 
 def _validate_v2(s: dict) -> list[str]:
@@ -197,6 +219,9 @@ def add_slots_v2(m: dict, course: dict, plan: dict, replan: str | None = None) -
     lessons = {l["id"]: l for l in course.get("lessons", [])}
     if plan.get("cast") is not None:
         m["course"]["cast"] = plan["cast"]
+    for key in ("props", "characters"):
+        if plan.get(key) is not None:
+            m["course"][key] = plan[key]
     if replan:
         m["images"] = [s for s in m["images"] if s["lessonId"] != replan]
     already = {s["lessonId"] for s in m["images"]}
@@ -225,6 +250,10 @@ def add_slots_v2(m: dict, course: dict, plan: dict, replan: str | None = None) -
             continue
         if p["position"] not in POSITIONS or p["kind"] not in KINDS:
             errors.append(f"{where}: unknown position or kind")
+            continue
+        layout = p.get("layout") or "single"
+        if layout not in LAYOUTS or (layout == "contrast" and p["kind"] not in ("illustration", "process")):
+            errors.append(f"{where}: layout {layout} needs kind illustration or process")
             continue
         content = remove_visual_blocks(lessons[lid].get("content") or "")
         try:
@@ -259,7 +288,7 @@ def add_slots_v2(m: dict, course: dict, plan: dict, replan: str | None = None) -
             "takeaway": p["takeaway"], "misconception": p["misconception"], "intro": p["intro"],
             "caption": p["caption"], "alt": p["alt"], "explanation": list(p["explanation"]),
             "checkQuestion": dict(p["checkQuestion"]), "subject": p.get("subject", ""),
-            "app": p.get("app", ""),
+            "app": p.get("app", ""), "layout": layout,
             "sourceFingerprint": section_fingerprint(content, p["section"], p["heading"]),
             "requestFile": f"{image_id}.{'svg' if diagram else 'png'}",
             "outputFile": f"{image_id}.{'svg' if diagram else 'webp'}",
@@ -283,6 +312,16 @@ def render_prompts(m: dict) -> str:
            "Generate each image, then save it into `incoming/` with the exact filename shown.",
            "PNG, JPG or WebP all work. Use the shape each prompt's Format line asks for. "
            "Deliver in any order and in batches.", ""]
+    characters = m["course"].get("characters") or []
+    if characters:
+        out += ["## Character sheets", "",
+                "Generate these first and save them under `cast/`. Attach each one in Codex whenever a "
+                "prompt below says so, so every image draws the same person.", ""]
+        for c in characters:
+            out += [f"### {cast_file(c['name'])}", "", "```text",
+                    f"Character reference sheet: {c['name']}, {c['look']}. Front view and three-quarter view, "
+                    "full body, neutral pose, plain light background.\n\n"
+                    + style_block([], 0), "```", ""]
     if redo:
         out += ["## Regenerate", ""]
         for s in redo:
