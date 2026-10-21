@@ -12,6 +12,10 @@ characters and not quizzes. A scene is one of:
   diagram - one of the lesson's own SVG figures, by its data-nerdit-img id;
   broll   - a short real-world stock clip (Pexels) found by `query`, fetched by broll.py.
 
+Each scene belongs to one topic: `topic` is the number of the lesson section it explains (the
+"2 — ..." heading). build_video.py cuts one short clip per topic, placed at the end of that section,
+plus an intro clip and a recap clip; so a topic's first scene must stand on its own.
+
 Each scene has a key-idea panel, key terms that pop in when spoken, optional camera focus
 points, and an optional misconception check (myth). Narration is Hinglish, written from the
 lesson text; the check refuses invented numbers in narration and in drawn vectors.
@@ -39,6 +43,10 @@ ANIM_ROOT = re.compile(r'\bclass="[^"]*\bnerdit-anim\b')
 ANIM_PART = re.compile(r'\bclass="[^"]*\bna-(?:show|slide|draw|open|pulse)\b')
 OWN_MOTION = re.compile(r"<(?:style|script|animate\w*|set|image|foreignObject)\b", re.I)
 HEX = re.compile(r"(?<!&)#[0-9a-fA-F]{3,8}\b")
+TOPIC_HEADING = re.compile(r"<h2[^>]*>\s*(\d+)\s*[—–-]\s*(.*?)</h2>", re.S)
+EMOJI = re.compile("[\U0001F000-\U0001FAFF\u2600-\u27BF\uFE0F]")
+# A topic clip plays on its own, so its first scene cannot lean on another clip.
+BACK_REFERENCE = re.compile(r"पिछले|पहले देखा|जैसा हमने देखा|ऊपर देखा|\b(?:earlier|previous(?:ly)?|as we saw|last part)\b", re.I)
 DEFAULT_VOICE = {"engine": "google", "name": "hi-IN-Chirp3-HD-Aoede", "rate": 1.0}
 
 
@@ -62,6 +70,15 @@ def plain(markup: str) -> str:
 def lesson_texts(course_path: Path) -> dict:
     """Plain text of each lesson, by lesson id, for the number and fact checks."""
     return {l.get("id", ""): plain(l.get("content") or l.get("html") or "") for l in course_lessons(course_path)}
+
+
+def lesson_topics(course_path: Path) -> dict:
+    """{lessonId: {topic number: heading text}} from each lesson's numbered sections ("2 — Title")."""
+    out = {}
+    for lesson in course_lessons(course_path):
+        out[lesson.get("id", "")] = {int(n): " ".join(EMOJI.sub("", plain(h)).split())
+                                     for n, h in TOPIC_HEADING.findall(lesson.get("content") or "")}
+    return out
 
 
 def lesson_figures(course_path: Path, images_dir: Path | None = None) -> dict:
@@ -119,8 +136,8 @@ def scaffold(images_dir: Path, course_path: Path) -> Path:
     lessons = course_lessons(course_path)
     data = load_json(course_path)
     title = data.get("title") or data.get("course", {}).get("title", "")
-    scenes = [{"kind": "vector", "vector": f"{l['id']}-v1.svg", "lessonId": l["id"], "title": l.get("title", ""),
-               "narration": "", "keyIdea": "", "terms": [], "focus": [], "myth": None} for l in lessons]
+    scenes = [{"kind": "vector", "vector": f"{l['id']}-v1.svg", "lessonId": l["id"], "topic": 1,
+               "title": l.get("title", ""), "narration": "", "keyIdea": "", "terms": [], "focus": [], "myth": None} for l in lessons]
     figures = [{"id": fid, "lessonId": f["lessonId"], "label": f["label"]}
                for fid, f in lesson_figures(course_path, images_dir).items()]
     plan = {"version": 3, "course": title, "source": str(Path(course_path).resolve()), "language": "hi",
@@ -180,7 +197,32 @@ def _limit(tag: str, field: str, value: str, most: int, errors: list) -> None:
         errors.append(f"{tag}: {field} is {len(value)} chars; keep to {most} so it fits the screen")
 
 
-def check_plan(plan: dict, video_dir: Path, figures: dict | None = None, texts: dict | None = None) -> list[str]:
+def check_topics(scenes: list[dict], topics: dict | None) -> list[str]:
+    """Every scene names its lesson section; one topic's scenes sit together; each clip stands alone."""
+    errors, done, last = [], set(), None
+    for n, s in enumerate(scenes, 1):
+        tag, topic = f"scene {n}", s.get("topic")
+        if not isinstance(topic, int) or isinstance(topic, bool) or topic < 1:
+            errors.append(f"{tag}: topic must be the number of the lesson section it explains (1, 2, ...)")
+            continue
+        known = (topics or {}).get(s.get("lessonId"))
+        if known and topic not in known:
+            errors.append(f"{tag}: lesson {s.get('lessonId')} has no section {topic} "
+                          f"(sections: {', '.join(map(str, known))})")
+        key = (s.get("lessonId"), topic)
+        if key != last:
+            if key in done:
+                errors.append(f"{tag}: keep the scenes of {key[0]} topic {topic} together; it starts earlier")
+            elif BACK_REFERENCE.search(s.get("narration") or ""):
+                errors.append(f"{tag}: first scene of a topic clip refers back to another clip; "
+                              "each clip plays on its own")
+            done.add(key)
+            last = key
+    return errors
+
+
+def check_plan(plan: dict, video_dir: Path, figures: dict | None = None, texts: dict | None = None,
+               topics: dict | None = None) -> list[str]:
     errors = []
     if plan.get("version") != 3:
         return ["plan.version must be 3; delete plan.json and scaffold again"]
@@ -264,6 +306,7 @@ def check_plan(plan: dict, video_dir: Path, figures: dict | None = None, texts: 
                 errors.append(f"{tag}: say must be all Devanagari (write English terms as डेटा, मॉडल)")
             if NUMBER.findall(say) != NUMBER.findall(s.get("narration") or ""):
                 errors.append(f"{tag}: say and narration must carry the same numbers")
+    errors += check_topics(scenes, topics)
     if "quiz" in json.dumps(plan.get("intro") or {}) + json.dumps(plan.get("recap") or {}):
         errors.append("intro/recap: the video has no quizzes")
     for tag, lid, text in narrated_parts(plan):
@@ -291,7 +334,8 @@ def main(argv=None) -> int:
     course = a.course or (Path(plan["source"]) if plan.get("source") else None)
     texts = lesson_texts(course) if course else None
     figures = lesson_figures(course, a.images_dir) if course else None
-    errors = check_plan(plan, a.images_dir / "video", figures, texts)
+    topics = lesson_topics(course) if course else None
+    errors = check_plan(plan, a.images_dir / "video", figures, texts, topics)
     for e in errors:
         print("ERROR", e)
     print("plan OK" if not errors else f"{len(errors)} problem(s)")

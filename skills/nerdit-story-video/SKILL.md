@@ -24,6 +24,11 @@ present). Keys, in the user's environment only, never in a plan or a message:
    `<images>/video/plan.json` (version 3) with one `vector` scene per lesson to start from, and
    `availableFigures`: every SVG figure in the lessons by id and label.
 2. Read the lessons, then edit the plan into one explanation in course order (6–10 scenes):
+   - **One topic per clip.** Every scene names `topic`: the number of the lesson section it
+     explains (the `2 — …` heading). The build cuts one short clip per topic (1–3 scenes,
+     about 60–120 s) and places it at the end of that section, so a learner stuck on one section
+     watches only its clip. Keep a topic's scenes together. Skip sections that need no video.
+     A topic's first scene must stand on its own: never "पिछले part में" or "as we saw".
    - **Explain with visuals, not people.** Most scenes are `vector`: an animated SVG you write
      to `<images>/video/vectors/<file>.svg` that shows the idea's structure:
        - a **process** (boxes and arrows, one step appearing per sentence),
@@ -75,17 +80,19 @@ present). Keys, in the user's environment only, never in a plan or a message:
 Pexels credits) to `<images>/video/`. It re-runs the plan check first. `stage.html` draws every
 frame; open it and call `renderAt(seconds)` to inspect a moment.
 
-It also cuts **one clip per lesson** (`clip-01-<lessonId>.mp4`, …; the intro rides on the first,
-the recap on the last) and lists them in `clips.json` with each clip's YouTube title.
+It also cuts **one clip per topic** (`clip-02-<lessonId>-t1.mp4`, …), an intro clip and a recap
+clip, and lists them in `clips.json` with each clip's key, place and YouTube title.
 
 ## 4. Place the clips in the course
 
 `python scripts/place_video.py --images-dir <images> --course <course .with-images.json>` writes
-`<course>.with-images.with-video.json`: one empty slot per clip, before each lesson's cheat sheet.
+`<course>.with-images.with-video.json`: one empty slot per clip. A topic clip goes at the end of
+its section, the intro clip before the first lesson's first section, the recap clip before the
+last lesson's cheat sheet.
 
 Tell the user: upload each clip to YouTube (Unlisted) with its title from `clips.json`; then in
 the admin, Import JSON + Images → the `.with-video.json` and the images folder → in the **Videos**
-box paste each clip's YouTube link next to its lesson → Apply video links → preview → publish.
+box paste each clip's YouTube link next to its slot (same key as the file name) → Apply video links → preview → publish.
 Empty slots stay hidden from learners. Look at the thumbnail and one frame per scene kind first.
 Never upload an MP4 to Firebase.
 
