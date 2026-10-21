@@ -7,6 +7,7 @@ def test_main_words_get_capitals_and_joining_words_stay_small():
     assert title_case("why isn't a prediction a guarantee?") == "Why Isn't a Prediction a Guarantee?"
     assert title_case("🧠 practice: training, testing and predictions") == "🧠 Practice: Training, Testing and Predictions"
     assert title_case("what to look for") == "What to Look For"            # last word always capital
+    assert title_case("counting sums up what happened") == "Counting Sums Up What Happened"
     assert title_case("step-by-step guide to the data") == "Step-by-Step Guide to the Data"
     assert title_case("Joins With The Other Table") == "Joins with the Other Table"
 

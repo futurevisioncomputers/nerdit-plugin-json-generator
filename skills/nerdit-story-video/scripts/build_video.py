@@ -10,6 +10,7 @@ Host the MP4 on YouTube (unlisted is fine) and link it from the course; never up
 import argparse, array, json, subprocess, sys, time, wave
 from pathlib import Path
 
+import lessonparts
 import render
 import stage
 import storyplan
@@ -124,13 +125,17 @@ def cut_command(ff: str, video: Path, clip: dict, out: Path) -> list[str]:
             "-b:a", "128k", "-movflags", "+faststart", str(out)]
 
 
-def scene_svgs(plan: dict, vid: Path, figures: dict) -> list:
+def scene_svgs(plan: dict, vid: Path, figures: dict, parts: dict | None = None) -> list:
     out = []
     for s in plan["scenes"]:
         if s["kind"] == "vector":
             out.append((vid / "vectors" / s["vector"]).read_text(encoding="utf-8-sig"))
         elif s["kind"] == "diagram":
             out.append(figures[s["figure"]]["svg"])
+        elif s["kind"] == "table":   # the page's own table, redrawn
+            out.append(lessonparts.table_svg(storyplan.part_of(s, parts), s.get("highlight")))
+        elif s["kind"] == "code":    # the page's own worked example and its output
+            out.append(lessonparts.code_svg(storyplan.part_of(s, parts), s.get("highlight")))
         else:
             out.append(None)
     return out
@@ -143,8 +148,9 @@ def build(images_dir: Path, workers: int = 3, music: Path | None = None) -> Path
     plan = storyplan.load_json(vid / "plan.json")
     course = Path(plan["source"]) if plan.get("source") else None
     figures = storyplan.lesson_figures(course, images_dir) if course else {}
+    parts = storyplan.lesson_parts(course) if course else None
     errors = storyplan.check_plan(plan, vid, figures, storyplan.lesson_texts(course) if course else None,
-                                  storyplan.lesson_topics(course) if course else None)
+                                  storyplan.lesson_topics(course) if course else None, parts)
     clips = [vid / "broll" / f"s{n}.mp4" for n, s in enumerate(plan["scenes"], 1) if s["kind"] == "broll"]
     errors += [f"missing {c}; run broll.py first" for c in clips if not c.is_file()]
     if errors:
@@ -154,7 +160,9 @@ def build(images_dir: Path, workers: int = 3, music: Path | None = None) -> Path
     work = vid / "parts"
     work.mkdir(parents=True, exist_ok=True)
     html = vid / "stage.html"
-    html.write_text(stage.build_stage(plan, tl, scene_svgs(plan, vid, figures), stage.lesson_css()), encoding="utf-8")
+    headings = {(lid, n): p["heading"] for lid, secs in (parts or {}).items() for n, p in secs.items()}
+    html.write_text(stage.build_stage(plan, tl, scene_svgs(plan, vid, figures, parts), stage.lesson_css(), headings),
+                    encoding="utf-8")
     narration = mix(vid / "audio", tl["audio"], tl["duration"], work / "narration.wav")
     silent = render.render(html, tl["duration"], FPS, workers, work / "video.mp4", ff)
     if tl["broll"]:

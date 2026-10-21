@@ -11,7 +11,7 @@ Only first letters are raised: SQL, iPhone, df.head(), pandas_ai, 0.25 and anyth
 import re
 
 SMALL = {"a", "an", "the", "and", "but", "or", "nor", "for", "so", "yet", "as", "at", "by", "in",
-         "of", "off", "on", "per", "to", "up", "via", "vs", "vs.", "v.", "with", "from", "into", "onto",
+         "of", "on", "per", "to", "via", "vs", "vs.", "v.", "with", "from", "into", "onto",
          "over", "than", "if"}
 WORD = re.compile(r"[^\s]+")
 # Words that look like code, file names or mixed-case brands: never touched.

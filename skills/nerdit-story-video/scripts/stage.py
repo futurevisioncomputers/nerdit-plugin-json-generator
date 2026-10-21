@@ -190,11 +190,13 @@ def lesson_css(css_dir: Path = CSS_DIR) -> str:
                      if (css_dir / name).is_file())
 
 
-def build_stage(plan: dict, timeline: dict, svgs: list, css: str) -> str:
-    """svgs: one entry per scene, the SVG markup to draw (None for a B-roll scene)."""
+def build_stage(plan: dict, timeline: dict, svgs: list, css: str, headings: dict | None = None) -> str:
+    """svgs: one entry per scene, the SVG markup to draw (None for a B-roll scene).
+    headings: {(lessonId, topic): section heading}; the top bar shows the page's own heading."""
     scenes = []
     for s, svg in zip(plan["scenes"], svgs):
-        item = {"kind": s["kind"], "title": title_case(s["title"]), "keyIdea": s["keyIdea"], "myth": s.get("myth")}
+        shown = (headings or {}).get((s.get("lessonId"), s.get("topic"))) or s["title"]
+        item = {"kind": s["kind"], "title": title_case(shown), "keyIdea": s["keyIdea"], "myth": s.get("myth")}
         if svg is not None:
             item["srcdoc"] = figure_doc(svg, css)
         scenes.append(item)

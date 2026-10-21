@@ -10,7 +10,15 @@ characters and not quizzes. A scene is one of:
             saved as <images>/video/vectors/<file>.svg, drawn with the lesson CSS tokens and
             animated with the lesson's na-* classes in step with the narration;
   diagram - one of the lesson's own SVG figures, by its data-nerdit-img id;
-  broll   - a short real-world stock clip (Pexels) found by `query`, fetched by broll.py.
+  broll   - a short real-world stock clip (Pexels) found by `query`, fetched by broll.py;
+  table   - the section's own table (`table`: 1 = its first), redrawn row by row, with
+            `highlight` ["row:E2", "col:branch"] ringed in the order the narration names them;
+  code    - the section's own worked example (`code`: 1 = its first): the code typed in line by
+            line (`highlight` ["line:3"]), then the output the lesson shows.
+
+Each topic clip mirrors its section on the page: the same heading, the same table and code, all
+its key terms spoken, at least MIN_TOPIC_SCENES scenes and MIN_TOPIC_WORDS words (about a
+minute). A section with no clip is listed in `skipTopics` with a reason.
 
 Each scene belongs to one topic: `topic` is the number of the lesson section it explains (the
 "2 — ..." heading). build_video.py cuts one short clip per topic, placed at the end of that section,
@@ -23,11 +31,15 @@ lesson text; the check refuses invented numbers in narration and in drawn vector
 import argparse, html, json, re, sys
 from pathlib import Path
 
+import lessonparts
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "nerdit-chapter-generator" / "scripts"))
 from titlecase import title_case  # noqa: E402  (the same Title Case as the lesson headings)
 
-KINDS = ("vector", "diagram", "broll")
-MIN_SCENES, MAX_SCENES = 4, 12
+KINDS = ("vector", "diagram", "broll", "table", "code")
+MIN_SCENES, MAX_SCENES = 4, 60
+MIN_TOPIC_SCENES, MIN_TOPIC_WORDS = 3, 110   # about a minute of narration per topic clip
+MAX_PART_SCENES = 2                          # tables / code runs the scaffold takes per section
 MAX_SENTENCES, MAX_CHARS = 4, 360
 MAX_KEY_IDEA, MAX_MYTH_LINE, MAX_POINT = 90, 80, 70
 MAX_TERMS, MAX_FOCUS = 4, 4
@@ -84,6 +96,16 @@ def lesson_topics(course_path: Path) -> dict:
     return out
 
 
+def lesson_parts(course_path: Path) -> dict:
+    """{lessonId: {topic: {"heading", "tables", "runs", "terms"}}} from each numbered section."""
+    out = {}
+    for lesson in course_lessons(course_path):
+        content = lesson.get("content") or ""
+        out[lesson.get("id", "")] = {n: lessonparts.section_parts(content, n)
+                                     for n in lessonparts.numbered_topics(content)}
+    return out
+
+
 def lesson_figures(course_path: Path, images_dir: Path | None = None) -> dict:
     """Every SVG figure in the lessons (and the illustrator's diagrams), by figure id."""
     figures = {}
@@ -135,18 +157,36 @@ def check_vector(svg: str, source: str) -> list[str]:
 
 
 def scaffold(images_dir: Path, course_path: Path) -> Path:
-    """One vector scene per lesson to start from, plus every lesson figure listed to choose from."""
+    """One clip per numbered section, pre-filled from the page: a concept vector, then the
+    section's own tables and code runs. The writer adds narration, key ideas and the vectors."""
     lessons = course_lessons(course_path)
     data = load_json(course_path)
     title = data.get("title") or data.get("course", {}).get("title", "")
-    scenes = [{"kind": "vector", "vector": f"{l['id']}-v1.svg", "lessonId": l["id"], "topic": 1,
-               "title": l.get("title", ""), "narration": "", "keyIdea": "", "terms": [], "focus": [], "myth": None} for l in lessons]
+    parts = lesson_parts(course_path)
+
+    def scene(kind: str, lid: str, topic: int, heading: str, **extra) -> dict:
+        return {"kind": kind, "lessonId": lid, "topic": topic, "title": heading, **extra,
+                "narration": "", "keyIdea": "", "terms": [], "focus": [], "myth": None}
+
+    scenes = []
+    for l in lessons:
+        lid = l["id"]
+        if not parts.get(lid):
+            scenes.append(scene("vector", lid, 1, l.get("title", ""), vector=f"{lid}-v1.svg"))
+            continue
+        for topic, part in parts[lid].items():
+            scenes.append(scene("vector", lid, topic, part["heading"], vector=f"{lid}-t{topic}-concept.svg"))
+            for n, _ in enumerate(part["tables"][:MAX_PART_SCENES], 1):
+                scenes.append(scene("table", lid, topic, part["heading"], table=n, highlight=[]))
+            for n, _ in enumerate(part["runs"][:MAX_PART_SCENES], 1):
+                scenes.append(scene("code", lid, topic, part["heading"], code=n, highlight=[]))
     figures = [{"id": fid, "lessonId": f["lessonId"], "label": f["label"]}
                for fid, f in lesson_figures(course_path, images_dir).items()]
     plan = {"version": 3, "course": title, "source": str(Path(course_path).resolve()), "language": "hi",
             "voice": dict(DEFAULT_VOICE),
             "intro": {"title": title, "points": [], "narration": ""},
             "scenes": scenes,
+            "skipTopics": [],
             "recap": {"points": [], "narration": ""},
             "availableFigures": figures}
     out = images_dir / "video" / "plan.json"
@@ -224,8 +264,51 @@ def check_topics(scenes: list[dict], topics: dict | None) -> list[str]:
     return errors
 
 
+def part_of(s: dict, parts: dict | None) -> dict | None:
+    """The lesson table or code run a table/code scene shows, or None."""
+    section = ((parts or {}).get(s.get("lessonId")) or {}).get(s.get("topic"))
+    n, pool = (s.get("table"), "tables") if s.get("kind") == "table" else (s.get("code"), "runs")
+    if not section or not isinstance(n, int) or not 1 <= n <= len(section[pool]):
+        return None
+    return section[pool][n - 1]
+
+
+def check_coverage(plan: dict, parts: dict) -> list[str]:
+    """Each section's clip mirrors the page: every section covered (or skipped with a reason),
+    enough scenes and narration, its own table or code shown, all its key terms spoken."""
+    errors = []
+    skipped = {(k.get("lessonId"), k.get("topic")) for k in plan.get("skipTopics") or []
+               if (k.get("reason") or "").strip()}
+    by_topic = {}
+    for s in plan.get("scenes") or []:
+        by_topic.setdefault((s.get("lessonId"), s.get("topic")), []).append(s)
+    for lid, sections in parts.items():
+        for topic, part in sections.items():
+            tag = f"{lid} section {topic} ({part['heading']})"
+            scenes = by_topic.get((lid, topic), [])
+            if not scenes:
+                if (lid, topic) not in skipped:
+                    errors.append(f"{tag}: no clip; add scenes or list it in skipTopics with a reason")
+                continue
+            words = " ".join((s.get("narration") or "") + " " + ((s.get("myth") or {}).get("narration") or "")
+                             for s in scenes)
+            steps = len(scenes) + sum(1 for s in scenes if s.get("myth"))   # a myth is the "mistake" step
+            if steps < MIN_TOPIC_SCENES:
+                errors.append(f"{tag}: {len(scenes)} scene(s); explain it in at least {MIN_TOPIC_SCENES} steps "
+                              "(concept, the page's table or code, the mistake or takeaway; a myth counts as one)")
+            if len(words.split()) < MIN_TOPIC_WORDS:
+                errors.append(f"{tag}: {len(words.split())} words of narration; give at least {MIN_TOPIC_WORDS} "
+                              "(about a minute) so the clip explains what the page explains")
+            if (part["tables"] or part["runs"]) and not any(s.get("kind") in ("table", "code") for s in scenes):
+                errors.append(f"{tag}: show the section's own table or code (a table or code scene)")
+            for term in part["terms"]:
+                if term.lower() not in words.lower():
+                    errors.append(f"{tag}: key term {term!r} from the page is never spoken")
+    return errors
+
+
 def check_plan(plan: dict, video_dir: Path, figures: dict | None = None, texts: dict | None = None,
-               topics: dict | None = None) -> list[str]:
+               topics: dict | None = None, parts: dict | None = None) -> list[str]:
     errors = []
     if plan.get("version") != 3:
         return ["plan.version must be 3; delete plan.json and scaffold again"]
@@ -249,7 +332,9 @@ def check_plan(plan: dict, video_dir: Path, figures: dict | None = None, texts: 
     seen = set()
     for n, s in enumerate(scenes, 1):
         kind = s.get("kind")
-        ref = {"vector": s.get("vector"), "diagram": s.get("figure"), "broll": s.get("query")}.get(kind)
+        ref = {"vector": s.get("vector"), "diagram": s.get("figure"), "broll": s.get("query"),
+               "table": f"{s.get('lessonId')} section {s.get('topic')} table {s.get('table')}",
+               "code": f"{s.get('lessonId')} section {s.get('topic')} code {s.get('code')}"}.get(kind)
         tag = f"scene {n} ({ref or '?'})"
         if "quiz" in s:
             errors.append(f"{tag}: the video has no quizzes; remove quiz")
@@ -269,6 +354,15 @@ def check_plan(plan: dict, video_dir: Path, figures: dict | None = None, texts: 
                 errors.append(f"{tag}: no figure with this id in the lessons or diagrams")
             elif s.get("lessonId") != figures[ref]["lessonId"]:
                 errors.append(f"{tag}: lessonId should be {figures[ref]['lessonId']}")
+        elif kind in ("table", "code"):
+            if parts is None:
+                errors.append(f"{tag}: {kind} scenes need the course JSON (plan.source)")
+            else:
+                part = part_of(s, parts)
+                if part is None:
+                    errors.append(f"{tag}: the section has no {kind} {s.get(kind)!r}; count from 1 in page order")
+                else:
+                    errors += [f"{tag}: {e}" for e in lessonparts.highlight_problems(kind, part, s.get("highlight"))]
         elif kind == "broll":
             if not (ref or "").strip():
                 errors.append(f"{tag}: broll needs a search query (2-5 plain English words)")
@@ -310,6 +404,8 @@ def check_plan(plan: dict, video_dir: Path, figures: dict | None = None, texts: 
             if NUMBER.findall(say) != NUMBER.findall(s.get("narration") or ""):
                 errors.append(f"{tag}: say and narration must carry the same numbers")
     errors += check_topics(scenes, topics)
+    if parts is not None:
+        errors += check_coverage(plan, parts)
     if "quiz" in json.dumps(plan.get("intro") or {}) + json.dumps(plan.get("recap") or {}):
         errors.append("intro/recap: the video has no quizzes")
     for tag, lid, text in narrated_parts(plan):
@@ -338,7 +434,8 @@ def main(argv=None) -> int:
     texts = lesson_texts(course) if course else None
     figures = lesson_figures(course, a.images_dir) if course else None
     topics = lesson_topics(course) if course else None
-    errors = check_plan(plan, a.images_dir / "video", figures, texts, topics)
+    parts = lesson_parts(course) if course else None
+    errors = check_plan(plan, a.images_dir / "video", figures, texts, topics, parts)
     for e in errors:
         print("ERROR", e)
     print("plan OK" if not errors else f"{len(errors)} problem(s)")
