@@ -335,6 +335,13 @@
   border-top: 0;
 }
 
+/* Comparison boxes: two columns only when the lesson column has room for both (css8 switched on
+   the window width, so a narrow lesson beside a sidebar overflowed), and long code scrolls
+   inside its box instead of widening the grid. */
+.nerdit-wrapper .nerdit-compare { grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
+.nerdit-wrapper .nerdit-compare > * { min-width: 0; }
+.nerdit-wrapper .nerdit-compare pre { max-width: 100%; overflow-x: auto; }
+
 /* Video slots (nerdit-story-video): the admin pastes a YouTube link into each slot on
    Import JSON + Images. Until then the slot is empty and learners never see it. */
 .nerdit-video:empty { display: none; }
