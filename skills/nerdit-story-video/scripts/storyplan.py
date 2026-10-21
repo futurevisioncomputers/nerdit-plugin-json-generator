@@ -23,6 +23,9 @@ lesson text; the check refuses invented numbers in narration and in drawn vector
 import argparse, html, json, re, sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "nerdit-chapter-generator" / "scripts"))
+from titlecase import title_case  # noqa: E402  (the same Title Case as the lesson headings)
+
 KINDS = ("vector", "diagram", "broll")
 MIN_SCENES, MAX_SCENES = 4, 12
 MAX_SENTENCES, MAX_CHARS = 4, 360

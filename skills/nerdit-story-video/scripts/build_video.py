@@ -109,6 +109,7 @@ def topic_clips(plan: dict, tl: dict, titles: dict, topics: dict) -> list[dict]:
     out.append(clip("recap", last, None, f"{plan.get('course') or titles.get(last, last)}: recap",
                     recap["start"], tl["duration"]))
     for i, c in enumerate(out, 1):
+        c["title"] = storyplan.title_case(c["title"])
         c["file"] = f"clip-{i:02d}-{c['key'][:-len('-video')]}.mp4"
     return out
 
@@ -180,7 +181,7 @@ def build(images_dir: Path, workers: int = 3, music: Path | None = None) -> Path
     clips = topic_clips(plan, tl, titles, topics)
     for c in clips:
         subprocess.run(cut_command(ff, final, c, vid / c["file"]), check=True)
-        c["youtubeTitle"] = f"{plan.get('course', '')}: {c['title']}"
+        c["youtubeTitle"] = storyplan.title_case(f"{plan.get('course', '')}: {c['title']}")
     (vid / "clips.json").write_text(json.dumps(clips, ensure_ascii=False, indent=2), encoding="utf-8")
     return final
 

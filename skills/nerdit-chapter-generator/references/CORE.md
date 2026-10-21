@@ -394,6 +394,11 @@ Two rules that matter more than the list:
 - **One emoji per heading, at the front.** Never mid-sentence, never two.
 - **Never invent a new one.** A symbol that appears once teaches nothing; the value is
   entirely in the repetition.
+- **Title Case every heading** (h1–h4): a capital first letter on every main word, joining
+  words small (a, an, the, and, or, of, to, in, on, for, with, vs) unless first or last —
+  `2 — Pick the Measure: Count or Share?`. Code, acronyms and names keep their own case
+  (`df.head()`, `SQL`, `iPhone`). `check_prose.py` fails a lower-case heading and
+  `assemble_course.py` fixes it (`scripts/titlecase.py`).
 
 ### Name the example, don't number it
 

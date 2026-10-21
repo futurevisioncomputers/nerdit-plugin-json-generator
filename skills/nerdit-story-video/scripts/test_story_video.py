@@ -345,8 +345,8 @@ def test_one_clip_per_topic_plus_intro_and_recap(tmp_path):
                                          "l5-t1-video", "l5-recap-video"]
     assert clips[0]["start"] == 0.0 and clips[-1]["end"] == tl["duration"]
     assert all(a["end"] <= b["start"] for a, b in zip(clips, clips[1:]))
-    assert clips[2]["title"] == "Counting" and clips[1]["title"] == plan["scenes"][0]["title"]
-    assert clips[2]["file"] == "clip-03-l1-t2.mp4" and clips[0]["title"] == "Lesson One: introduction"
+    assert clips[2]["title"] == "Counting" and clips[1]["title"] == storyplan.title_case(plan["scenes"][0]["title"])
+    assert clips[2]["file"] == "clip-03-l1-t2.mp4" and clips[0]["title"] == "Lesson One: Introduction"
     cmd = build_video.cut_command("ff", Path("story.mp4"), clips[1], Path("c.mp4"))
     assert cmd[cmd.index("-ss") + 1] == f"{clips[1]['start']:.3f}" and "+faststart" in cmd
 

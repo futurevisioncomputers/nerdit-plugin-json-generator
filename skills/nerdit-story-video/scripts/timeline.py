@@ -4,6 +4,8 @@ Pure functions, no I/O: build() takes the plan and each clip's length and word t
 returns segments (absolute seconds), YouTube chapters and audio placements. Word timings place
 key terms and camera moves at the moment the narration says them.
 """
+from storyplan import title_case
+
 PAD_IN, PAD_OUT = 0.5, 0.8       # silence before and after each narration clip
 MOVE = 0.9                       # camera move to a focus point, seconds
 
@@ -83,7 +85,7 @@ def stamp(seconds: float) -> str:
 
 def description(plan: dict, chapters: list) -> str:
     lines = [f"{plan.get('course', '')}: concept recap", "", "Chapters"]
-    lines += [f"{stamp(t)} {title}" for t, title in chapters]
+    lines += [f"{stamp(t)} {title_case(title)}" for t, title in chapters]
     lines += ["", "In this video:"] + [f"- {p}" for p in plan["intro"]["points"]]
     lines += ["", "Examples use a fictional learning centre."]
     return "\n".join(lines) + "\n"

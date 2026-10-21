@@ -24,6 +24,8 @@ import re
 import sys
 import time
 
+from titlecase import fix_headings, title_case
+
 # The website serves these from future-vision/public/, which Vite exposes at the
 # site root — /nerdit-excel-engine.js, not /assets/js/nerdit-excel-engine.js. The
 # lesson HTML references them at the root too, so these must agree.
@@ -138,9 +140,9 @@ def build_course(chapter, input_lessons, meta, html_dir, now_ms=None):
         html_path = os.path.join(html_dir, lid + ".html")
         if os.path.exists(html_path):
             with open(html_path, encoding="utf-8") as f:
-                content = f.read().strip()
+                content = fix_headings(f.read().strip())   # every heading in Title Case
         lesson = {
-            "id": lid, "title": src["title"], "content": content,
+            "id": lid, "title": title_case(src["title"]), "content": content,
             "duration": m.get("duration") or estimate_duration(content),
             "questions": with_ids(m.get("lessonQuestions", []), "lesson", session, lid, batch),
         }

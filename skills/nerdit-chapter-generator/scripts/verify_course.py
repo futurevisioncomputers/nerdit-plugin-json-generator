@@ -35,6 +35,8 @@ import sys
 from html.parser import HTMLParser
 from pathlib import Path
 
+from titlecase import title_case
+
 # Blocks that PAINT a container - border, fill, radius or shadow. Nesting these is what
 # produced "four borders around one line of output".
 #
@@ -297,7 +299,8 @@ def verify_schema(rep: Report, out: dict, inp: list):
         src = inp[i] if i < len(inp) else {}
         tag = lesson.get("id", f"#{i}")
         rep.check(lesson.get("id") == src.get("id"), f"lesson {i+1}: id copied exactly")
-        rep.check(lesson.get("title") == src.get("title"), f"lesson {i+1}: title copied exactly")
+        rep.check(lesson.get("title") in (src.get("title"), title_case(src.get("title") or "")),
+                  f"lesson {i+1}: title copied exactly (Title Case allowed)")
         rep.check("description" not in lesson, f"{tag}: no description field")
         rep.check(bool(re.fullmatch(r"\d+m", lesson.get("duration", ""))),
                   f"{tag}: duration NNm (got {lesson.get('duration')!r})")

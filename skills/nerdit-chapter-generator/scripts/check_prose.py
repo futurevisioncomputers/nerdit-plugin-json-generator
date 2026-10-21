@@ -17,6 +17,7 @@ import re
 import sys
 from pathlib import Path
 
+from titlecase import heading_problems
 from verify_course import Node, parse, walk
 
 VOICE = Path(__file__).resolve().parent.parent / "references" / "voice.md"
@@ -133,6 +134,11 @@ def check_lesson(content: str, patterns) -> tuple[list[str], list[str]]:
         fails += _simple_section(sec, p, n_sec)
     if len(openers) >= 3 and len(set(openers)) == 1:
         warns.append(f'every concept section opens with the same words ("{openers[0]}"); vary the openings')
+
+    lower = heading_problems(content)
+    if lower:
+        fails.append(f'{len(lower)} heading(s) not in Title Case (capital first letter on every main word), '
+                     f'e.g. "{lower[0][:60]}"; assemble_course.py fixes this, or run titlecase.fix_headings')
 
     for word, simpler in plain_words():
         m = re.search(r"(?<!\w)" + re.escape(word) + r"(?!\w)", text, re.I)
