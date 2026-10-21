@@ -24,6 +24,7 @@ SKIP = {"pre", "code", "textarea", "svg", "script", "style", "table"}
 MAX_WORDS = 15
 MAX_SENTENCES = 3
 MAX_DASHES = 1
+MAX_NEW_TERMS = 2   # key terms (<strong>) one concept section may introduce
 
 
 def banned_patterns(path: Path = VOICE) -> list[tuple[str, re.Pattern]]:
@@ -44,6 +45,15 @@ def banned_patterns(path: Path = VOICE) -> list[tuple[str, re.Pattern]]:
 
 
 BR = " "  # stands in for <br>: a void element, so it has no text of its own
+
+
+def plain_words(path: Path = VOICE) -> list[tuple[str, str]]:
+    """The ```plain block of voice.md: `hard word => simpler word`, one per line."""
+    block = re.search(r"```plain\n(.*?)```", path.read_text(encoding="utf-8"), re.S)
+    if block is None:
+        return []
+    pairs = [line.split("=>") for line in block.group(1).splitlines() if "=>" in line]
+    return [(a.strip(), b.strip()) for a, b in pairs]
 
 
 def prose(node: Node) -> str:
@@ -107,22 +117,66 @@ def check_lesson(content: str, patterns) -> tuple[list[str], list[str]]:
         long_p += len(sentences(body)) > MAX_SENTENCES
         dashy += body.count("—") > MAX_DASHES
     if long_s:
-        warns.append(f'{len(long_s)} sentence(s) over {MAX_WORDS} words, e.g. "{long_s[0][:60]}"')
+        fails.append(f'{len(long_s)} sentence(s) over {MAX_WORDS} words; split each, e.g. "{long_s[0][:60]}"')
     if long_p:
         warns.append(f"{long_p} paragraph(s) with more than {MAX_SENTENCES} sentences")
     if dashy:
         warns.append(f"{dashy} paragraph(s) with more than {MAX_DASHES} em dash")
 
     openers = []
-    for sec in [n for n in tree.all if n.tag == "section"]:
+    for n_sec, sec in enumerate([n for n in tree.all if n.tag == "section"], 1):
         if any(n.classes & {"nerdit-cheatsheet", "nerdit-practical"} for n in walk(sec)):
             continue
         p = _first_paragraph(sec)
         if p is not None:
             openers.append(" ".join(prose(p).lower().split()[:2]))
+        fails += _simple_section(sec, p, n_sec)
     if len(openers) >= 3 and len(set(openers)) == 1:
         warns.append(f'every concept section opens with the same words ("{openers[0]}"); vary the openings')
+
+    for word, simpler in plain_words():
+        m = re.search(r"(?<!\w)" + re.escape(word) + r"(?!\w)", text, re.I)
+        if m:
+            fails.append(f'"{m.group(0)}" is hard for a beginner; say "{simpler}" (references/voice.md plain words)')
     return fails, warns
+
+
+def _terms(sec: Node) -> list[Node]:
+    """The section's key words: <strong> in its prose paragraphs (CORE.md §10).
+    A bold label such as "Fix:" or "Task 1:" names a part of a block, not a new term."""
+    return [n for n in _in_order(sec) if n.tag == "strong" and not _inside(n, SKIP)
+            and any(a.tag in ("p", "li") for a in _ancestors(n)) and not prose(n).rstrip().endswith(":")]
+
+
+def _in_order(node: Node):
+    """Elements under `node` in reading order."""
+    stack = list(reversed(node.content))
+    while stack:
+        item = stack.pop()
+        if not isinstance(item, str):
+            yield item
+            stack.extend(reversed(item.content))
+
+
+def _ancestors(node: Node):
+    n = node.parent
+    while n is not None:
+        yield n
+        n = n.parent
+
+
+def _simple_section(sec: Node, first: Node | None, n: int) -> list[str]:
+    """Simplicity rules for one concept section (CORE.md §10)."""
+    out = []
+    terms = _terms(sec)
+    if len(terms) > MAX_NEW_TERMS:
+        names = ", ".join(prose(t) for t in terms[:4])
+        out.append(f"section {n} introduces {len(terms)} key terms ({names}); keep to {MAX_NEW_TERMS} so a "
+                   "beginner can hold them, and move the rest to their own section")
+    if first is not None and any(first in _ancestors(t) for t in terms):
+        out.append(f"section {n} opens with a definition; start with an everyday example or scene the learner "
+                   "knows, then name the idea")
+    return out
 
 
 def main() -> int:

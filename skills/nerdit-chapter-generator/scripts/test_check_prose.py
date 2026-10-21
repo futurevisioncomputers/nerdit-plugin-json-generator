@@ -21,12 +21,35 @@ def test_regex_entry_and_whole_words():
     assert fails == []
 
 
-def test_long_sentence_and_long_paragraph_warn():
+def test_long_sentence_fails_and_long_paragraph_warns():
     long = "You " + "really " * 15 + "need this."
-    _, warns = check_lesson(lesson(f"<p>{long}</p>"), PATS)
-    assert any("over 15 words" in w for w in warns)
+    fails, _ = check_lesson(lesson(f"<p>{long}</p>"), PATS)
+    assert any("over 15 words" in f for f in fails)
     _, warns = check_lesson(lesson("<p>One. Two. Three. Four.</p>"), PATS)
     assert any("more than 3 sentences" in w for w in warns)
+
+
+def test_concept_section_opens_with_an_example_not_a_definition():
+    defined_first = "<section><h2>Records</h2><p>A <strong>record</strong> is one stored item.</p></section>"
+    fails, _ = check_lesson(lesson(defined_first), PATS)
+    assert any("section 1 opens with a definition" in f for f in fails)
+    example_first = ("<section><h2>Records</h2><p>Meera writes one line for Aarav: Monday, 45 minutes.</p>"
+                     "<p>That line is a <strong>record</strong>: one stored item.</p></section>")
+    assert check_lesson(lesson(example_first), PATS)[0] == []
+
+
+def test_at_most_two_key_terms_per_section_and_labels_do_not_count():
+    body = ("<section><h2>X</h2><p>Meera counts learners.</p><p>A <strong>count</strong> and a "
+            "<strong>total</strong> differ.</p><p><strong>Fix:</strong> add.</p></section>")
+    assert check_lesson(lesson(body), PATS)[0] == []
+    body = body.replace("<strong>Fix:</strong>", "<strong>mean</strong>")
+    fails, _ = check_lesson(lesson(body), PATS)
+    assert any("introduces 3 key terms (count, total, mean)" in f for f in fails)
+
+
+def test_hard_words_name_the_simpler_one():
+    fails, _ = check_lesson(lesson("<p>Choose a bounded action.</p>"), PATS)
+    assert fails == ['"bounded" is hard for a beginner; say "limited" (references/voice.md plain words)']
 
 
 def test_same_opening_in_every_section_warns():

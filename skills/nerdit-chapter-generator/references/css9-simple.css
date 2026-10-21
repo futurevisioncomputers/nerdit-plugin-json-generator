@@ -335,6 +335,11 @@
   border-top: 0;
 }
 
+/* Video slots (nerdit-story-video): the admin pastes a YouTube link into each slot on
+   Import JSON + Images. Until then the slot is empty and learners never see it. */
+.nerdit-video:empty { display: none; }
+.nerdit-video iframe { display: block; width: 100%; aspect-ratio: 16 / 9; height: auto; border: 0; border-radius: 12px; margin: 1rem 0; }
+
 /* Animated figures (figures.md template 18). Without "na-play" a figure shows its finished
    picture; the site adds "na-play" (held by "na-paused") and releases it when the figure
    scrolls into view. Each part sets its start time with style="--d:2.5s". */

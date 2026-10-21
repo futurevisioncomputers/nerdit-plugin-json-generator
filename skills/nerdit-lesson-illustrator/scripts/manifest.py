@@ -30,6 +30,9 @@ KINDS = ("diagram", "illustration", "screen", "process")
 # AI-drawn kinds whose prompt comes from build_prompt; "process" pictures a process or data flow.
 PROMPTED = ("illustration", "screen", "process")
 MARKERS = "①②③④⑤"
+PANEL_NAMES = {2: ("left half", "right half"), 3: ("left third", "middle third", "right third"),
+               4: ("first quarter", "second quarter", "third quarter", "last quarter"),
+               5: ("first fifth", "second fifth", "third fifth", "fourth fifth", "last fifth")}
 V2_KEYS = ("lessonId", "section", "heading", "position", "kind", "question", "objective", "takeaway",
            "misconception", "intro", "caption", "alt", "explanation", "checkQuestion")
 
@@ -169,14 +172,27 @@ def build_prompt(m: dict, s: dict) -> str:
     steps = s["explanation"]
     marks = MARKERS[:len(steps)] if len(steps) >= 2 else ""
     contrast = s.get("layout") == "contrast"
+    screen = s.get("kind") == "screen"
     body = [s["subject"].strip()]
     if contrast:
-        body.append(f"Two panels side by side: the left panel shows the mistake ({s['misconception']}) "
-                    "marked ✗; the right panel shows the correct way marked ✓.")
-    if marks:
+        body.append(f"Two panels side by side, split down the middle by a thin divider: the left half shows "
+                    f"the mistake ({s['misconception']}) marked ✗; the right half shows the correct way marked ✓.")
+    if marks and screen:
         body.append("Numbered markers: " + "; ".join(
             f"place {mk} on the part showing: {st}" for mk, st in zip(marks, steps)))
-    if s.get("kind") != "screen":
+    elif marks and contrast:
+        body.append("Numbered markers: " + "; ".join(
+            f"place {mk} on the part showing: {st}" for mk, st in zip(marks, steps)))
+    elif marks:
+        # Fixed panels let the story video move its camera panel by panel without guessing.
+        where = PANEL_NAMES[len(marks)]
+        body.append(f"Layout: {len(marks)} equal panels side by side, read left to right, separated by clear "
+                    "space or a thin divider; one action per panel: " + "; ".join(
+                        f"the {pos} shows {st.rstrip('. ')}, with {mk} in its top-left corner"
+                        for pos, mk, st in zip(where, marks, steps)) + ".")
+    if not screen:
+        body.append("Keep every person, object and marker well inside the frame with a clear margin at "
+                    "every edge, so the picture can be zoomed; show only the people and objects each part needs.")
         # Say what the picture must prove, so the scene teaches instead of decorating.
         body.append(f"The picture must make this obvious: {s['takeaway']}")
         body.append(f"It must not suggest: {s['misconception']}")
@@ -186,6 +202,23 @@ def build_prompt(m: dict, s: dict) -> str:
     style = style_block(s["labels"], len(marks), kind=s.get("kind", "illustration"), app=s.get("app", ""),
                         contrast=contrast)
     return "\n".join(lines) + "\n\n" + "\n".join(body) + "\n\n" + style
+
+
+def regions(s: dict) -> list[dict]:
+    """Where each panel sits in the picture (0-1 boxes), as the prompt asks for it.
+
+    The story video turns these into camera moves. Empty when the layout is free (one step,
+    or a screen, whose markers sit on interface parts).
+    """
+    if s.get("kind") == "screen":
+        return []
+    if s.get("layout") == "contrast":
+        return [{"x": 0.0, "y": 0.0, "w": 0.5, "h": 1.0, "mark": "✗"},
+                {"x": 0.5, "y": 0.0, "w": 0.5, "h": 1.0, "mark": "✓"}]
+    n = len(s.get("explanation") or [])
+    if n < 2:
+        return []
+    return [{"x": round(i / n, 4), "y": 0.0, "w": round(1 / n, 4), "h": 1.0, "mark": MARKERS[i]} for i in range(n)]
 
 
 def cast_file(name: str) -> str:
@@ -306,6 +339,7 @@ def add_slots_v2(m: dict, course: dict, plan: dict, replan: str | None = None) -
         }
         if not diagram:
             slot["prompt"] = build_prompt(m, slot)
+            slot["regions"] = regions(slot)
         errors += _validate_v2(slot)
         m["images"].append(slot)
         added.add(lid)

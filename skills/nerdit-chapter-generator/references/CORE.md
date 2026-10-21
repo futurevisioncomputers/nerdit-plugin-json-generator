@@ -872,8 +872,17 @@ Chart.js (rare in v9): reuse the v8 `withChart` lazy-load pattern inside this sa
 
 ## 10. LANGUAGE RULES (validator spot-checks these)
 
-- Sentences ≤ 15 words. Split long sentences.
+- Sentences ≤ 15 words. Split long sentences (`check_prose.py` fails a longer one).
 - Paragraphs ≤ 3 sentences.
+- **Example before definition.** Each concept section opens with an everyday example or a scene
+  from the course's world the learner already understands; the definition (the `<strong>` key
+  word) comes after it, never in the section's first paragraph.
+  Not: "A **record** is one stored item." Instead: "Meera writes one line for Aarav: Monday,
+  Morning group, 45 minutes. That line is a **record**: one stored item."
+- **At most 2 key terms per concept section.** A third new term gets its own section or waits
+  for a later lesson. Bold labels ending in a colon ("Fix:") are not terms.
+- **Plain words.** Never a word from the `plain` block of `references/voice.md`; use the simpler
+  word it names ("bounded" → "limited").
 - Second person, active voice: "You use `ORDER BY` to sort results."
 - Plain words: use → not utilize; get → not retrieve; make → not construct; show → not
   render (unless "render" is the technical term being taught).
