@@ -28,7 +28,9 @@ def test_v2_illustration_prompt_carries_context_cast_and_markers():
     p = planned_v2()["images"][1]["prompt"]
     assert "Course: Test Course" in p and "Lesson: Old Style" in p and "Section: Introduction" in p
     assert "Learning objective: Picture a student" in p and "Recurring characters and setting: Asha" in p
-    assert "place ① on the part showing: The student opens the notebook." in p
+    assert "2 equal panels side by side, read left to right" in p
+    assert "the left half shows The student opens the notebook, with ① in its top-left corner" in p
+    assert "clear margin at every edge" in p
     assert "no words, letters or numbers except the numbered markers ① ②." in p
     assert "{text_clause}" not in p
     assert "No logos, screenshots, user-interface elements or watermarks." in p

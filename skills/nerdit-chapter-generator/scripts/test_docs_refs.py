@@ -30,8 +30,8 @@ def test_writer_trim_rule_matches_the_refresh_guard():
     assert "seed or a view" not in (HERE / "verify_course.py").read_text(encoding="utf-8")
 
 
-def test_plugin_version_is_3_6_0():
-    assert json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))["version"] == "3.6.0"
+def test_plugin_version_is_3_7_0():
+    assert json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))["version"] == "3.7.0"
 
 
 def test_skill_md_matches_the_v11_figure_rules():

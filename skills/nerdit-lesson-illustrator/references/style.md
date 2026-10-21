@@ -41,6 +41,13 @@ shows each section's planned `visual` and suggested `illustration`; plan from th
   that match its 2–3 reading steps: no words, letters or numbers, and its subject names no
   values. It replaces the diagram for that section (`manifest.py` refuses both), so the exact
   values must already be in the section's text, run output or an existing table.
+  Prefer a process picture for every step-by-step idea a learner must follow (a workflow, a
+  train/test split, a cleaning pipeline): most courses need two to four.
+- **Fixed panels.** Any picture with two or more reading steps is drawn as equal panels side by
+  side, read left to right, one action per panel, each marker in its panel's top-left corner;
+  a contrast picture is split into halves (✗ left, ✓ right). `manifest.py` writes this into the
+  prompt and records the panel boxes as `regions`, which the story video uses to move its
+  camera panel by panel. Every picture keeps a clear margin at all edges so it can be zoomed.
 - **Teach, don't decorate.** Every prompt states the takeaway the picture must make obvious and
   the misconception it must not suggest. When the misconception is the lesson (a leaky refit,
   a wrong unit), use `"layout": "contrast"`: the mistake on the left marked ✗, the correct way
@@ -74,6 +81,9 @@ PASS only when all hold:
 4. Labels are readable on the phone-size preview.
 5. Process illustrations: the flow reads in marker order ① ② ③, each marker sits on its step,
    and nothing else is written — no words, numbers or chart values.
+   Pictures with panels: the panels are equal, side by side in marker order left to right, each
+   showing one action, and nothing important touches the edge of the picture (a picture with
+   the steps out of panel order fails, because the video's camera would show the wrong part).
 6. Illustrations: no extra text, numbers, logos or brands; Indian context where people appear;
    the course's recurring cast when one is set.
 7. Nothing contradicts the lesson or invites the brief's stated misconception.
