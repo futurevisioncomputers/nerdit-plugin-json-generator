@@ -74,6 +74,17 @@ def load_world(ref: str) -> dict:
     return world
 
 
+TEACHER = re.compile(r"trainer|teacher|professor|faculty|instructor|mentor", re.I)
+
+
+def presenter_of(world: dict | None) -> dict | None:
+    """The world's own trainer explains its topics on camera; None means the skill's default professor."""
+    for c in (world or {}).get("cast", []):
+        if TEACHER.search(c.get("role", "")):
+            return {"name": c["name"], "role": c["role"], "visual": c["visual"]}
+    return None
+
+
 def world_brief(world: dict) -> dict:
     business = world.get("business", {})
     missing = [c["name"] for c in world.get("cast", []) if not c.get("visual")]
@@ -110,6 +121,8 @@ def main(argv=None) -> int:
     doc = {"course": title_case(course.get("title", "")), "source": str(a.course.resolve()), "topics": items}
     if a.world:
         doc["world"] = world_brief(load_world(a.world))
+        if presenter_of(doc["world"]):
+            doc["presenter"] = presenter_of(doc["world"])
     (a.out / "briefs.json").write_text(json.dumps(doc, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"{len(items)} topic brief(s) from {len(course.get('lessons', []))} lesson(s) -> {a.out / 'briefs.json'}")
     return 0

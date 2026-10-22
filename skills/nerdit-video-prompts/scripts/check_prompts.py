@@ -12,6 +12,8 @@ prompts.json:
   {"language": "english" | "hinglish", "style": "<look shared by every Veo shot>",
    "skip": [{"key": "...", "reason": "..."}],
    "topics": [{"key": "<lessonId>-t<N>-video", "shots": [
+       {"type": "teach", "prop": "six paper slips", "action": "...", "camera": "...", "voiceover": "...",
+        "cast": []},                      # the teacher explains with an everyday object, on camera
        {"type": "veo", "cast": ["Neha"], "visual": "...", "camera": "...", "voiceover": "..."},
        {"type": "overlay", "show": "code1" | "table1", "highlight": ["line:2"], "voiceover": "..."}]}]}
 """
@@ -30,6 +32,14 @@ MIN_SHOTS, MAX_SHOTS = 1, 12     # 8 s for a one-idea topic, up to about 1.5 min
 FULL_CLIP = 3                    # from here a clip also shows the section's own example
 MAX_VOICE_WORDS = 22             # what a calm narrator says in 8 seconds
 MIN_VISUAL_WORDS = 15
+MIN_PROP_WORDS, MIN_ACTION_WORDS = 2, 10
+# Without a world: one fixed professor and classroom, the same in every course.
+DEFAULT_PRESENTER = {"name": "Professor Mehta", "role": "professor",
+                     "visual": "Indian man in his early 50s, medium build, wheat skin, short salt-and-pepper hair, "
+                               "neatly trimmed grey beard, rimless glasses, light-blue shirt under a navy sleeveless "
+                               "sweater, dark trousers"}
+DEFAULT_SETTING = ("A bright modern classroom: a wooden demonstration table at the front, a plain whiteboard "
+                   "behind it, rows of desks with a few attentive adult students, large windows with daylight.")
 MAX_OVERLAY_SHARE = 0.5          # Veo carries the explanation; overlays carry exact facts
 NUMBER = re.compile(r"\d+(?:[.,]\d+)?")
 # Veo garbles written words; exact text belongs on overlays.
@@ -50,61 +60,83 @@ def part(brief: dict, ref: str) -> tuple[str, dict] | None:
     return None
 
 
-def check_topic(brief: dict, shots: list[dict], world: dict | None = None) -> list[str]:
+def _people(world: dict | None, presenter: dict) -> dict:
+    cast = {c["name"]: c for c in (world or {}).get("cast", [])}
+    cast[presenter["name"]] = presenter
+    return cast
+
+
+def _scene_problems(st: str, text: str, what: str, least: int, brief: dict, world: dict | None) -> list[str]:
+    errors = []
+    if len(text.split()) < least:
+        errors.append(f"{st}: describe the {what} in at least {least} words")
+    m = ON_SCREEN_TEXT.search(text)
+    if m:
+        errors.append(f"{st}: {what} asks Veo for written words ({m.group(0)!r}); put exact text on an overlay")
+    for num in NUMBER.findall(text):
+        if num not in brief["numbers"]:
+            errors.append(f"{st}: {what} uses number {num}, which the lesson section does not")
+    if world and world.get("owner") and world["owner"].split()[0].lower() in text.lower():
+        errors.append(f"{st}: the owner is a real person; mention them in the voiceover, never on screen")
+    return errors
+
+
+def check_topic(brief: dict, shots: list[dict], world: dict | None = None, presenter: dict | None = None) -> list[str]:
     tag = f"{brief['key']} ({brief['heading']})"
     errors = []
+    presenter = presenter or DEFAULT_PRESENTER
+    people = _people(world, presenter)
     if not MIN_SHOTS <= len(shots) <= MAX_SHOTS:
         errors.append(f"{tag}: {len(shots)} shot(s); give {MIN_SHOTS}-{MAX_SHOTS} (8 s each)")
     overlays = [s for s in shots if s.get("type") == "overlay"]
     if shots and len(overlays) / len(shots) > MAX_OVERLAY_SHARE:
-        errors.append(f"{tag}: {len(overlays)} of {len(shots)} shots are overlays; let Veo shots explain")
-    if shots and shots[0].get("type") != "veo":
-        errors.append(f"{tag}: open with a Veo shot that sets up the question, not an overlay")
+        errors.append(f"{tag}: {len(overlays)} of {len(shots)} shots are overlays; let the teacher explain")
+    teaching = [s for s in shots if s.get("type") == "teach"]
+    if shots and shots[0].get("type") != "teach":
+        errors.append(f"{tag}: open with a teach shot: {presenter['name']} explaining the idea to the students")
+    if shots and len(teaching) * 2 < len(shots):
+        errors.append(f"{tag}: {len(teaching)} of {len(shots)} shots are teach shots; at least half must show "
+                      f"{presenter['name']} explaining with an object")
     shown = set()
     for n, s in enumerate(shots, 1):
         st = f"{tag} shot {n}"
+        kind = s.get("type")
         voice = (s.get("voiceover") or "").strip()
         if not voice:
-            errors.append(f"{st}: voiceover is empty")
+            errors.append(f"{st}: voiceover (the spoken line) is empty")
         elif len(voice.split()) > MAX_VOICE_WORDS:
-            errors.append(f"{st}: voiceover is {len(voice.split())} words; keep to {MAX_VOICE_WORDS} for 8 seconds")
+            errors.append(f"{st}: the spoken line is {len(voice.split())} words; keep to {MAX_VOICE_WORDS} for 8 seconds")
         for num in NUMBER.findall(voice):
             if num not in brief["numbers"]:
                 errors.append(f"{st}: number {num} is not in the lesson section")
-        if s.get("type") == "veo":
-            visual = (s.get("visual") or "").strip()
-            if len(visual.split()) < MIN_VISUAL_WORDS:
-                errors.append(f"{st}: describe the scene in at least {MIN_VISUAL_WORDS} words (who, where, action)")
-            m = ON_SCREEN_TEXT.search(visual)
-            if m:
-                errors.append(f"{st}: visual asks Veo for written words ({m.group(0)!r}); put exact text on an overlay")
-            for num in NUMBER.findall(visual):
-                if num not in brief["numbers"]:
-                    errors.append(f"{st}: visual uses number {num}, which the lesson section does not")
-            if world:
-                names = {c["name"] for c in world["cast"]}
-                cast = s.get("cast")
-                if not isinstance(cast, list):
-                    errors.append(f"{st}: list the cast in the shot (names from the world; [] for no one)")
-                else:
-                    for who in cast:
-                        if who not in names:
-                            errors.append(f"{st}: {who!r} is not in the world's cast ({', '.join(sorted(names))})")
-                if world.get("owner") and world["owner"].split()[0].lower() in visual.lower():
-                    errors.append(f"{st}: the owner is a real person; mention them in the voiceover, never on screen")
+        if kind in ("teach", "veo"):
+            if kind == "teach":
+                errors += _scene_problems(st, (s.get("prop") or "").strip(), "prop (an everyday object)",
+                                          MIN_PROP_WORDS, brief, world)
+                errors += _scene_problems(st, (s.get("action") or "").strip(), "action (what the teacher does "
+                                          "with the object)", MIN_ACTION_WORDS, brief, world)
+            else:
+                errors += _scene_problems(st, (s.get("visual") or "").strip(), "scene", MIN_VISUAL_WORDS, brief, world)
+            cast = s.get("cast", [])
+            if not isinstance(cast, list):
+                errors.append(f"{st}: cast must be a list of names")
+            else:
+                for who in cast:
+                    if who not in people:
+                        errors.append(f"{st}: {who!r} is not in the cast ({', '.join(sorted(people))})")
             if not (s.get("camera") or "").strip():
-                errors.append(f"{st}: name the camera move (slow push-in, static wide, pan left ...)")
-        elif s.get("type") == "overlay":
+                errors.append(f"{st}: name the camera move (slow push-in, static medium shot, close-up on the object ...)")
+        elif kind == "overlay":
             found = part(brief, s.get("show") or "")
             if not found:
                 ids = [p["id"] for p in brief["runs"] + brief["tables"]]
                 errors.append(f"{st}: show {s.get('show')!r} is not in this section ({', '.join(ids) or 'none'})")
                 continue
-            kind, p = found
+            what, p = found
             shown.add(p["id"])
-            errors += [f"{st}: {e}" for e in lessonparts.highlight_problems(kind, p, s.get("highlight"))]
+            errors += [f"{st}: {e}" for e in lessonparts.highlight_problems(what, p, s.get("highlight"))]
         else:
-            errors.append(f"{st}: type must be 'veo' or 'overlay'")
+            errors.append(f"{st}: type must be 'teach', 'veo' or 'overlay'")
     if len(shots) >= FULL_CLIP and (brief["runs"] or brief["tables"]) and not shown:
         errors.append(f"{tag}: show at least one of the section's own examples on an overlay "
                       f"({', '.join(p['id'] for p in brief['runs'] + brief['tables'])})")
@@ -129,61 +161,79 @@ def check(briefs: dict, prompts: dict) -> list[str]:
             errors.append(f"{key}: no such topic in briefs.json")
     for b in briefs["topics"]:
         if b["key"] in written:
-            errors += check_topic(b, written[b["key"]], briefs.get("world"))
+            errors += check_topic(b, written[b["key"]], briefs.get("world"), briefs.get("presenter"))
         elif b["key"] not in skipped:
             errors.append(f"{b['key']} ({b['heading']}): no shots; write them or list it in skip with a reason")
     return errors
 
 
-def veo_prompt(prompts: dict, shot: dict, world: dict | None = None) -> str:
+def veo_prompt(prompts: dict, shot: dict, world: dict | None = None, presenter: dict | None = None) -> str:
+    """One self-contained 8-second Veo prompt. Every person is described in the same words each time,
+    so Veo draws the same people in every shot and every course."""
     voice = VOICE[prompts["language"]]
-    people = ""
-    if world:
-        # The same words every time, so Veo draws the same person in every shot and course.
-        cast = {c["name"]: c for c in world["cast"]}
-        people = f"Setting: {world['setting']}\n" + "".join(
-            f"{who} ({cast[who]['role']}): {cast[who]['visual']}.\n" for who in shot.get("cast") or [])
-    return (f"{prompts['style'].strip()}\n"
-            f"{people}"
+    presenter = presenter or DEFAULT_PRESENTER
+    people = _people(world, presenter)
+    setting = (world or {}).get("setting") or DEFAULT_SETTING
+    names = list(shot.get("cast") or [])
+    if shot["type"] == "teach" and presenter["name"] not in names:
+        names.insert(0, presenter["name"])
+    who = "".join(f"{n} ({people[n]['role']}): {people[n]['visual']}.\n" for n in names)
+    head = f"{prompts['style'].strip()}\nSetting: {setting}\n{who}"
+    tail = ("No on-screen text, no subtitles, no captions, no logos, no watermarks. "
+            f"{SECONDS} seconds, 16:9, 1080p.")
+    if shot["type"] == "teach":
+        p = presenter["name"]
+        return (head +
+                f"Scene: a classroom lesson. {p} stands at the front table facing a small group of attentive adult "
+                f"students seated at desks. Object on the table: {shot['prop'].strip()}. {shot['action'].strip()}\n"
+                f"Camera: {shot['camera'].strip()}.\n"
+                f"Dialogue: {p} looks at the students and says, lip-synced, in {voice}: \"{shot['voiceover'].strip()}\"\n"
+                f"The students watch the object and nod; no one else speaks. Soft room tone, no music.\n" + tail)
+    return (head +
             f"Scene: {shot['visual'].strip()}\n"
             f"Camera: {shot['camera'].strip()}.\n"
-            f"Audio: voiceover in {voice}, unhurried and clear: \"{shot['voiceover'].strip()}\" "
-            f"Soft room tone, no music.\n"
-            f"No on-screen text, no subtitles, no captions, no logos, no watermarks. "
-            f"{SECONDS} seconds, 16:9, 1080p.")
+            f"Audio: voiceover by {presenter['name']}, the teacher, in {voice}, unhurried and clear: "
+            f"\"{shot['voiceover'].strip()}\" Soft room tone, no music.\n" + tail)
 
 
 def sheet(briefs: dict, prompts: dict) -> str:
     by_key = {b["key"]: b for b in briefs["topics"]}
+    world, presenter = briefs.get("world"), briefs.get("presenter") or DEFAULT_PRESENTER
+    people = _people(world, presenter)
+    setting = (world or {}).get("setting") or DEFAULT_SETTING
     lines = [f"# Veo prompts — {briefs['course']}", "",
-             "Paste each Veo prompt into Veo / Flow as its own 8-second generation. Place overlay stills from "
-             "`overlays/` where marked and record their voiceover line (or generate it with any TTS). Join the "
-             "shots in order, export one MP4 per topic named by its slot key, upload it to YouTube (Unlisted) and "
-             "paste the link into the admin slot with the same key.", ""]
-    world = briefs.get("world")
-    if world:
-        lines += ["## Character references (make once, reuse in every course of this world)", "",
-                  "Generate each portrait once (Flow image, Imagen or any image tool), save it as `cast/<Name>.png`, "
-                  "and attach it as an ingredient to every shot that lists that character.", ""]
-        for c in world["cast"]:
-            lines += [f"### {c['name']} — {c['role']}", "", "```text",
-                      f"Photorealistic waist-up portrait of {c['visual']}. Standing in {world['setting']} "
-                      f"Facing the camera, friendly neutral expression, soft daylight, plain softly blurred background, "
-                      f"16:9. No text, no logos.", "```", ""]
+             f"Teacher: {presenter['name']} ({presenter['role']}). Paste each Veo prompt into Veo / Flow as its own "
+             "8-second generation, attaching the portraits it lists. Place overlay stills from `overlays/` where "
+             "marked and record their line in the teacher's voice (or TTS). Join the shots in order, export one MP4 "
+             "per topic named by its slot key, upload it to YouTube (Unlisted) and paste the link into the admin "
+             "slot with the same key.", "",
+             "## Character references (make once, reuse in every course with this cast)", "",
+             "Generate each portrait once (Flow image, Imagen or any image tool), save it as `cast/<Name>.png`, "
+             "and attach it as an ingredient to every shot that lists that person.", ""]
+    for c in people.values():
+        lines += [f"### {c['name']} — {c['role']}", "", "```text",
+                  f"Photorealistic waist-up portrait of {c['visual']}. Standing in {setting} "
+                  f"Facing the camera, friendly neutral expression, soft daylight, plain softly blurred background, "
+                  f"16:9. No text, no logos.", "```", ""]
     for t in prompts["topics"]:
         b = by_key[t["key"]]
         lines += [f"## {b['lessonTitle']} — {b['topic']}. {b['heading']}", "",
-                  f"Slot key: `{b['key']}` · {len(t['shots'])} shots · about {len(t['shots']) * SECONDS} s", ""]
+                  f"Slot key: `{b['key']}` · {len(t['shots'])} shot(s) · about {len(t['shots']) * SECONDS} s", ""]
         for n, s in enumerate(t["shots"], 1):
-            if s["type"] == "veo":
-                ref = f" · attach: {', '.join(f'cast/{w}.png' for w in s.get('cast') or [])}" if s.get("cast") else ""
-                lines += [f"### Shot {n} · Veo{ref}", "", "```text", veo_prompt(prompts, s, briefs.get("world")), "```", ""]
+            if s["type"] in ("teach", "veo"):
+                names = list(s.get("cast") or [])
+                if s["type"] == "teach" and presenter["name"] not in names:
+                    names.insert(0, presenter["name"])
+                ref = f" · attach: {', '.join(f'cast/{w}.png' for w in names)}" if names else ""
+                label = "Teach" if s["type"] == "teach" else "Veo"
+                lines += [f"### Shot {n} · {label}{ref}", "", "```text",
+                          veo_prompt(prompts, s, world, presenter), "```", ""]
             else:
                 kind, p = part(b, s["show"])
                 lines += [f"### Shot {n} · Overlay ({kind})", "",
                           f"Still: `overlays/{b['key']}-s{n:02d}.png` (the lesson's own {kind}"
                           + (f", highlight {', '.join(s['highlight'])}" if s.get("highlight") else "") + ")", "",
-                          f"Voiceover ({SECONDS} s): \"{s['voiceover'].strip()}\"", ""]
+                          f"{presenter['name']}'s voice ({SECONDS} s): \"{s['voiceover'].strip()}\"", ""]
     for k in prompts.get("skip") or []:
         lines += [f"Skipped `{k['key']}`: {k['reason']}", ""]
     return "\n".join(lines)
