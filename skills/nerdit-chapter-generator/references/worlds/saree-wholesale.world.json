@@ -7,6 +7,7 @@
     "realName": {"approvedBy": "Rohit Jain (owner)", "date": "2026-10-20", "note": "owner has no objection; confirmed by the course author"},
     "since": "over 26 years in business",
     "type": "saree manufacturer and wholesaler with an online store",
+    "setting": "A saree wholesale shop and dispatch room in Surat: shelves stacked with folded silk sarees in bright colours, a low counter, brown parcels tied with string, tube lights.",
     "city": "Surat",
     "currency": "INR",
     "moneyUnit": "paise",
@@ -18,8 +19,8 @@
     "dataNote": "Business name used with permission. All retailers, orders and amounts are synthetic."
   },
   "cast": [
-    {"name": "Kavya", "role": "sales analyst", "trait": "reconciles every order list with the invoices", "look": "invented adult with a maroon dupatta and a laptop bag"},
-    {"name": "Rohan", "role": "dispatch lead", "trait": "counts parcels before they leave", "look": "invented adult with a cap and a clipboard"}
+    {"name": "Kavya", "role": "sales analyst", "trait": "reconciles every order list with the invoices", "look": "invented adult with a maroon dupatta and a laptop bag", "visual": "Indian woman in her late 20s, slim build, warm brown skin, long black hair in a single braid, maroon dupatta over a beige kurta, brown leather laptop bag"},
+    {"name": "Rohan", "role": "dispatch lead", "trait": "counts parcels before they leave", "look": "invented adult with a cap and a clipboard", "visual": "Indian man in his early 30s, sturdy build, dark brown skin, short black hair under a navy cap, light moustache, grey polo shirt, holds a wooden clipboard"}
   ],
   "stages": ["collect", "clean", "explore", "model", "report"],
   "messiness": ["quantity", "parcel"],

@@ -4,6 +4,7 @@
     "name": "Practice Retail",
     "fictional": true,
     "type": "fictional teaching retailer",
+    "setting": "A small modern retail chain office in an Indian city: open desks, a wall shelf of product boxes, a whiteboard with blank sticky notes, soft daylight.",
     "city": "Surat",
     "branches": ["Central", "West"],
     "channels": ["store", "web"],
@@ -14,8 +15,8 @@
     "seasons": "An invented October peak, not observed business statistics."
   },
   "cast": [
-    {"name": "Mira", "role": "analyst", "trait": "checks totals by hand", "look": "invented adult with a blue shirt and short hair"},
-    {"name": "Dev", "role": "data engineer", "trait": "records each pipeline run", "look": "invented adult with glasses and a green shirt"}
+    {"name": "Mira", "role": "analyst", "trait": "checks totals by hand", "look": "invented adult with a blue shirt and short hair", "visual": "Indian woman in her early 30s, slim build, medium brown skin, short black bob haircut, light-blue button-down shirt with sleeves rolled up, thin silver watch, carries a calculator"},
+    {"name": "Dev", "role": "data engineer", "trait": "records each pipeline run", "look": "invented adult with glasses and a green shirt", "visual": "Indian man in his early 30s, tall lean build, light brown skin, short side-parted black hair, rectangular black glasses, plain green shirt, khaki trousers, holds a laptop"}
   ],
   "stages": ["source", "staging", "clean", "warehouse", "report"],
   "messiness": ["amount_paise", "customer_name", "sold_on"],

@@ -6,6 +6,7 @@
     "owner": {"name": "Rashi Agarwal", "title": "CEO, Founder and Designer"},
     "realName": {"approvedBy": "Rashi Agarwal (owner)", "date": "2026-10-20", "note": "owner has no objection; confirmed by the course author"},
     "type": "handmade, sustainable stationery and home-decor brand sold online",
+    "setting": "A small home studio of an Indian stationery brand: shelves of notebooks and pens, a packing table with kraft boxes, pastel walls, a ring light, warm daylight.",
     "city": "Mumbai",
     "currency": "INR",
     "moneyUnit": "paise",
@@ -15,8 +16,8 @@
     "dataNote": "Business name used with permission. All customers, orders, ratings and reviews are synthetic."
   },
   "cast": [
-    {"name": "Ira", "role": "founder", "trait": "reads every review herself", "look": "invented adult with paint-stained sleeves and a bun"},
-    {"name": "Sameer", "role": "growth analyst", "trait": "checks a chart against its numbers", "look": "invented adult with a striped shirt and a canvas tote"}
+    {"name": "Ira", "role": "founder", "trait": "reads every review herself", "look": "invented adult with paint-stained sleeves and a bun", "visual": "Indian woman in her early 30s, petite build, light brown skin, black hair in a messy high bun, loose white shirt with paint-stained sleeves, small hoop earrings"},
+    {"name": "Sameer", "role": "growth analyst", "trait": "checks a chart against its numbers", "look": "invented adult with a striped shirt and a canvas tote", "visual": "Indian man in his late 20s, lean build, medium brown skin, curly black hair, short beard, navy-and-white striped shirt, beige canvas tote bag on one shoulder"}
   ],
   "stages": ["collect", "clean", "explore", "model", "report"],
   "messiness": [],

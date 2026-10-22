@@ -6,6 +6,7 @@
     "owner": {"name": "Khushboo Singhvi", "title": "Founder and Principal Designer"},
     "realName": {"approvedBy": "Khushboo Singhvi (owner)", "date": "2026-10-20", "note": "owner has no objection; confirmed by the course author"},
     "type": "luxury interior design studio for homes, offices and hospitality spaces",
+    "setting": "An interior design studio: large table with fabric swatches and floor plans, tile and wood samples on shelves, warm lamp light, a half-finished living-room site visible through a doorway.",
     "city": "Mumbai",
     "currency": "INR",
     "moneyUnit": "paise",
@@ -15,8 +16,8 @@
     "dataNote": "Business name used with permission. All clients, projects and amounts are synthetic."
   },
   "cast": [
-    {"name": "Tara", "role": "project manager", "trait": "checks every estimate against the site measurements", "look": "invented adult with a sage kurta and a measuring tape"},
-    {"name": "Vivaan", "role": "data analyst", "trait": "asks which project a number came from", "look": "invented adult with a navy shirt and a laptop"}
+    {"name": "Tara", "role": "project manager", "trait": "checks every estimate against the site measurements", "look": "invented adult with a sage kurta and a measuring tape", "visual": "Indian woman in her mid 30s, slim build, wheat skin, long wavy black hair loose over one shoulder, sage-green kurta, yellow retractable measuring tape clipped at her waist"},
+    {"name": "Vivaan", "role": "data analyst", "trait": "asks which project a number came from", "look": "invented adult with a navy shirt and a laptop", "visual": "Indian man in his early 30s, athletic build, brown skin, short neat black hair, clean-shaven, navy formal shirt, carries a slim black laptop"}
   ],
   "stages": ["collect", "clean", "explore", "model", "explain"],
   "messiness": [],

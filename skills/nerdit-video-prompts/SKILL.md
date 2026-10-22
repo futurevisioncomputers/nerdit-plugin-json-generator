@@ -2,7 +2,7 @@
 name: nerdit-video-prompts
 description: >
   Writes Google Veo / Flow video prompts for every topic of a NERDIT course: one shot list per
-  numbered lesson section (7-12 shots of 8 seconds), each Veo shot a self-contained prompt with
+  numbered lesson section (1-12 shots of 8 seconds), each Veo shot a self-contained prompt with
   scene, camera and the narrator's line, plus overlay stills that carry the lesson's exact code,
   output and tables (Veo cannot draw text reliably). Built from the course output JSON, so every
   clip teaches what its section on the page teaches. Use when the user wants AI-generated video,
@@ -20,7 +20,9 @@ for `--overlays`.
 ## 1. Briefs
 
 `python scripts/topic_briefs.py --course <course_output.json> --out <dir>` writes
-`<dir>/briefs.json`: per numbered lesson section, its slot key (`<lessonId>-t<N>-video`, the same
+`<dir>/briefs.json`. Add `--world <course_world.json | name>` (e.g. `fvc-institute`) when the
+course has a world: the briefs then carry its fixed `setting` and `cast` (name, role, `visual`),
+so the same people appear in every topic and in every course on that world. Per numbered lesson section, its slot key (`<lessonId>-t<N>-video`, the same
 key the admin's Videos box uses), heading, prose, key terms, worked examples (`code1`, `code2`:
 code and the output the lesson prints), tables (`table1` …) and every number the section uses.
 
@@ -29,9 +31,14 @@ code and the output the lesson prints), tables (`table1` …) and every number t
 Read `briefs.json` and write `<dir>/prompts.json` (format in `scripts/check_prompts.py`). Work
 one lesson at a time. For every topic:
 
-- **7–12 shots, 8 seconds each**, in the section's own order: the question it answers → the
-  idea → the section's worked example → what the output means → the common mistake → the
-  takeaway.
+- **As short as the idea allows: 1–12 shots of 8 seconds.** One clear idea (a definition, one
+  rule) is one 8-second Veo shot. A topic with a worked example uses 3 or more shots in the
+  section's own order: the question → the idea → the section's example on an overlay → what
+  the output means → the mistake or takeaway. Never pad a topic to make it longer.
+- **Cast (with a world):** every Veo shot lists `cast`, names from the world only (`[]` for an
+  empty room). The sheet repeats each named character's `visual` word for word, so Veo draws the
+  same person every time. Never invent another named person. The business owner is a real
+  person: mention them in the voiceover, never show them.
 - **`veo` shots explain.** `visual` (15+ words) is one continuous 8-second scene: who, where,
   what they do, what objects show the idea (a counsellor sorting enquiry cards into two piles,
   a shopkeeper comparing two receipts). People are generic Indian professionals and students in
@@ -39,9 +46,9 @@ one lesson at a time. For every topic:
   left). Never ask Veo for written words: no quoted text, captions, labels, code or logos —
   the check refuses them.
 - **`overlay` shots carry exact facts.** `show` names the section's own `code1` / `table1`;
-  `highlight` (`line:3`, `row:O2`, `col:amount`) marks what the voiceover reads out. Show at
-  least one of the section's examples; keep overlays to half the shots or fewer. Open with a
-  Veo shot.
+  `highlight` (`line:3`, `row:O2`, `col:amount`) marks what the voiceover reads out. A clip of 3
+  or more shots shows at least one of the section's examples; keep overlays to half the shots or
+  fewer. Open with a Veo shot.
 - **voiceover** ≤ 22 words per shot (8 seconds), professional teacher tone, beginner-friendly.
   `language: "english"` by default (Veo speaks English most clearly); `"hinglish"` only when the
   owner asks. Speak every key term from `terms`. Every number spoken must be in the brief's
@@ -59,11 +66,14 @@ and voiceover line) and `<dir>/overlays/<key>-sNN.png` (1280×720, the lesson's 
 output or table, in the lesson's styles).
 
 Tell the user:
-1. In Veo / Flow, generate each Veo shot from `prompts.md` (8 s, 16:9). Keep the same style
-   line; regenerate a shot if a face, hand or object looks wrong, or if any text appears.
-2. In a video editor, place the shots in order, with each overlay still on screen for 8 s and its
+1. With a world: generate each character portrait from the sheet's "Character references" once,
+   save as `cast/<Name>.png`, and reuse them for every course on that world.
+2. In Veo / Flow, generate each Veo shot from `prompts.md` (8 s, 16:9), attaching the portraits
+   the shot lists ("Ingredients to Video"). Regenerate a shot if a face, hand or object looks
+   wrong, or if any text appears.
+3. In a video editor, place the shots in order, with each overlay still on screen for 8 s and its
    voiceover line recorded (or TTS) over it.
-3. Export one MP4 per topic named by its slot key, upload to YouTube (Unlisted), then in the admin
+4. Export one MP4 per topic named by its slot key, upload to YouTube (Unlisted), then in the admin
    Import JSON + Images → Videos box paste each link next to the same key → Apply video links.
    Topic slots come from the story video's `place_video.py`, or "Add video slot" in the admin.
 

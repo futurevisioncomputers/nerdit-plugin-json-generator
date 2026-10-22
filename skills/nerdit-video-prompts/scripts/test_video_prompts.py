@@ -78,5 +78,28 @@ def test_every_topic_needs_shots_or_a_reason():
     base = {"language": "english", "style": STYLE, "topics": []}
     assert any("no shots" in e for e in check_prompts.check(briefs, base))
     assert check_prompts.check(briefs, {**base, "skip": [{"key": "eda-01-t1-video", "reason": "covered by the demo"}]}) == []
-    short = check_prompts.check(briefs, {**base, "topics": [{"key": "eda-01-t1-video", "shots": good_shots()[:3]}]})
-    assert any("3 shot(s)" in e for e in short)
+    one = [veo("A DataFrame is a table with named columns and numbered rows.")]
+    assert check_prompts.check(briefs, {**base, "topics": [{"key": "eda-01-t1-video", "shots": one}]}) == []
+    long = check_prompts.check(briefs, {**base, "topics": [{"key": "eda-01-t1-video", "shots": good_shots() * 2}]})
+    assert any("14 shot(s)" in e for e in long)
+    three = [veo("A DataFrame is a table with named columns."), veo("Each order is one row."), veo("Check it first.")]
+    assert any("own examples" in e for e in check_prompts.check(
+        briefs, {**base, "topics": [{"key": "eda-01-t1-video", "shots": three}]}))
+
+
+def test_world_cast_is_fixed_and_the_owner_stays_off_screen():
+    import topic_briefs as tb
+    world = tb.world_brief(tb.load_world("fvc-institute"))
+    assert world["owner"] == "Siddharth Parakh" and "teal cotton kurta" in world["cast"][0]["visual"]
+    briefs = {"course": "EDA", "world": world, "topics": topic_briefs.briefs({"lessons": [LESSON]})}
+    shot = {**veo("A DataFrame is a table with named columns and numbered rows."), "cast": ["Neha"]}
+    prompts = {"language": "english", "style": STYLE, "topics": [{"key": "eda-01-t1-video", "shots": [shot]}]}
+    assert check_prompts.check(briefs, prompts) == []
+    md = check_prompts.sheet(briefs, prompts)
+    assert "Neha (admissions counsellor): Indian woman in her early 30s" in md and "attach: cast/Neha.png" in md
+    assert "### Arjun — data analyst" in md and md.count("Photorealistic waist-up portrait") == 3
+    bad = [{**shot, "cast": ["Priya"]}, veo("A DataFrame is a table.", visual="Siddharth walks into the classroom and greets the batch "
+                                             "warmly before the class begins today.")]
+    bad[1].pop("cast", None)
+    errors = "\n".join(check_prompts.check(briefs, {**prompts, "topics": [{"key": "eda-01-t1-video", "shots": bad}]}))
+    assert "'Priya' is not in the world's cast" in errors and "list the cast" in errors and "never on screen" in errors

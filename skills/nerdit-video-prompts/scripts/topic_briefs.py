@@ -1,6 +1,11 @@
 """Topic briefs for Veo video prompts: one brief per numbered lesson section of a course JSON.
 
-    python topic_briefs.py --course <course_output.json> --out <dir> [--lesson <id> ...]   # writes <dir>/briefs.json
+    python topic_briefs.py --course <course_output.json> --out <dir> [--lesson <id> ...]
+                           [--world <course_world.json | world name>]          # writes <dir>/briefs.json
+
+With a world (references/worlds, e.g. fvc-institute) the briefs also carry its fixed setting
+and cast: every character's name, role and visual description, so the same people appear in
+every topic and every course built on that world.
 
 Each brief carries what the topic clip must teach, taken from the page: the section heading
 (Title Case), its prose, its key terms, its worked examples (code and the output the lesson
@@ -25,6 +30,7 @@ NUMBER = re.compile(r"\d+(?:[.,]\d+)?")
 PRACTICE = re.compile(r'<div class="nerdit-(?:predict|tryit|fillblank)\b.*', re.S)
 CODE_AND_TABLES = re.compile(r"<pre\b.*?</pre>|<table\b.*?</table>|<script\b.*?</script>", re.S)
 MAX_PROSE = 1600
+WORLDS = HERE.parents[1] / "nerdit-chapter-generator" / "references" / "worlds"
 
 
 def load_course(path: Path) -> dict:
@@ -57,6 +63,28 @@ def brief(lesson: dict, topic: int) -> dict | None:
     }
 
 
+def load_world(ref: str) -> dict:
+    """A world file, a course_world.json ({"use": name} allowed) or a bundled world's name."""
+    path = Path(ref)
+    if not path.is_file():
+        path = WORLDS / f"{ref}.world.json"
+    world = json.loads(path.read_text(encoding="utf-8-sig"))
+    if "use" in world:
+        world = json.loads((WORLDS / f"{world['use']}.world.json").read_text(encoding="utf-8-sig"))
+    return world
+
+
+def world_brief(world: dict) -> dict:
+    business = world.get("business", {})
+    missing = [c["name"] for c in world.get("cast", []) if not c.get("visual")]
+    if missing or not business.get("setting"):
+        raise SystemExit(f"world needs business.setting and a visual for every cast member (missing: "
+                         f"{', '.join(missing) or 'setting'})")
+    return {"business": business.get("name", ""), "setting": business["setting"],
+            "owner": (business.get("owner") or {}).get("name", ""),
+            "cast": [{"name": c["name"], "role": c["role"], "visual": c["visual"]} for c in world["cast"]]}
+
+
 def briefs(course: dict, only: list[str] | None = None) -> list[dict]:
     out = []
     for lesson in course.get("lessons", []):
@@ -74,11 +102,14 @@ def main(argv=None) -> int:
     ap.add_argument("--course", required=True, type=Path)
     ap.add_argument("--out", required=True, type=Path)
     ap.add_argument("--lesson", action="append", help="only this lesson id (repeatable); default: every lesson")
+    ap.add_argument("--world", help="course world file or bundled world name, for a fixed cast and setting")
     a = ap.parse_args(argv)
     course = load_course(a.course)
     items = briefs(course, a.lesson)
     a.out.mkdir(parents=True, exist_ok=True)
     doc = {"course": title_case(course.get("title", "")), "source": str(a.course.resolve()), "topics": items}
+    if a.world:
+        doc["world"] = world_brief(load_world(a.world))
     (a.out / "briefs.json").write_text(json.dumps(doc, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"{len(items)} topic brief(s) from {len(course.get('lessons', []))} lesson(s) -> {a.out / 'briefs.json'}")
     return 0
