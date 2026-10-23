@@ -22,8 +22,9 @@ html, body { width:1280px; height:720px; overflow:hidden; background:var(--bg);
 .layer { position:absolute; inset:0; opacity:0; }
 .top { position:absolute; left:40px; right:40px; top:34px; height:44px; display:flex;
   align-items:center; justify-content:space-between; }
-.top .title { font-size:26px; font-weight:700; }
-.top .dots { display:flex; gap:8px; }
+.top .title { flex:1 1 auto; min-width:0; margin-right:24px; font-size:26px; font-weight:700;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.top .dots { display:flex; gap:8px; flex-shrink:0; }
 .top .dot { width:12px; height:12px; border-radius:50%; background:#C9D5E3; }
 .top .dot.on { background:var(--teal); }
 .top .dot.now { background:var(--navy); transform:scale(1.25); }
@@ -166,7 +167,9 @@ window.renderAt = function (t) {
   topBar.style.opacity = current ? 1 : 0;
   if (current) {
     topTitle.textContent = current.s.title;
-    dotEls.forEach((d, i) => { d.className = 'dot' + (i + 1 < current.n ? ' on' : i + 1 === current.n ? ' now' : ''); });
+    // one dot per scene of the current topic, so long courses keep the heading readable
+    dotEls.forEach((d, i) => { d.style.display = D.scenes[i].group === current.s.group ? '' : 'none';
+      d.className = 'dot' + (i + 1 < current.n ? ' on' : i + 1 === current.n ? ' now' : ''); });
   }
 };
 
@@ -196,7 +199,8 @@ def build_stage(plan: dict, timeline: dict, svgs: list, css: str, headings: dict
     scenes = []
     for s, svg in zip(plan["scenes"], svgs):
         shown = (headings or {}).get((s.get("lessonId"), s.get("topic"))) or s["title"]
-        item = {"kind": s["kind"], "title": title_case(shown), "keyIdea": s["keyIdea"], "myth": s.get("myth")}
+        item = {"kind": s["kind"], "title": title_case(shown), "keyIdea": s["keyIdea"], "myth": s.get("myth"),
+                "group": f"{s.get('lessonId')}|{s.get('topic')}"}
         if svg is not None:
             item["srcdoc"] = figure_doc(svg, css)
         scenes.append(item)

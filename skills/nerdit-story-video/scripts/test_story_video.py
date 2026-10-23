@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 import broll
+import pronounce
 import build_video
 import render
 import stage
@@ -194,6 +195,37 @@ def test_edge_engine_keeps_word_timings(tmp_path, monkeypatch):
     calls = []
     voice.run(images, "edge", None, None, runner=lambda cmd, **kw: calls.append(cmd), edge=fake_edge)
     assert len(calls) == len(voice.clips(plan))
+
+
+def test_edge_speaks_code_words_respelled(tmp_path, monkeypatch):
+    plan, images = write_plan(tmp_path)
+    plan["scenes"][0]["narration"] = "json.dumps dict को JSON text बनाता है।"
+    (images / "video" / "plan.json").write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    monkeypatch.setattr(voice, "ffmpeg", lambda: "ff")
+    sent = []
+
+    async def fake_edge(text, name, rate, mp3):
+        sent.append(text)
+        return []
+
+    voice.run(images, "edge", None, None, runner=lambda cmd, **kw: None, edge=fake_edge)
+    assert "Jason dot dumps dictionary को Jason text बनाता है।" in sent
+
+
+def test_spoken_respells_code_words():
+    say = pronounce.spoken
+    assert say("Python dict और json.loads") == "Python dictionary और Jason dot loads"
+    assert say("max_tokens, request_id, __init__, main.py, print()") == \
+        "max tokens, request I D, dunder init, main dot P Y, print"
+    assert say("HTTPException, LLM_API_KEY, CONNECT_TIMEOUT") == "H T T P Exception, L L M A P I key, connect timeout"
+    assert say("SSE, PRICES, DONE, Kabir, A loop repeats steps.") == "S S E, prices, done, Kabir, A loop repeats steps."
+    assert say("इस video में 12 rows हैं।") == "इस video में 12 rows हैं।"
+
+
+def test_key_term_found_when_spoken_respelled():
+    words = [{"t": 0.2, "w": "Jason"}, {"t": 0.6, "w": "dot"}, {"t": 0.9, "w": "dumps"}, {"t": 1.4, "w": "dictionary"}]
+    assert timeline.first_spoken(words, "json.dumps", 1.0) == 1.2
+    assert timeline.first_spoken(words, "dict", 1.0) == 2.4
 
 
 def test_clone_engine_cleans_refs_then_calls_the_venv_once(tmp_path, monkeypatch):
