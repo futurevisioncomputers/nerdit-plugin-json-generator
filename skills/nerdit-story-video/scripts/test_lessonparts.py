@@ -61,7 +61,7 @@ def test_scaffold_fills_each_section_with_its_table_and_code(tmp_path):
 
 def test_coverage_makes_each_clip_explain_its_section(tmp_path):
     parts = storyplan.lesson_parts(course_file(tmp_path))
-    talk = "A record is one row and each column holds one detail. " * 12
+    talk = "A record is one row and each column holds one detail. " * 17
     plan = {"scenes": [{"lessonId": "l1", "topic": 1, "kind": "vector", "narration": talk},
                        {"lessonId": "l1", "topic": 1, "kind": "table", "table": 1, "narration": "x"},
                        {"lessonId": "l1", "topic": 1, "kind": "code", "code": 1, "narration": "y"}],
@@ -74,6 +74,19 @@ def test_coverage_makes_each_clip_explain_its_section(tmp_path):
     assert any("section 2" in e and "no clip" in e for e in errors)
     assert any("1 scene(s)" in e for e in errors) and any("words of narration" in e for e in errors)
     assert any("own table or code" in e for e in errors) and any("'column'" in e for e in errors)
+
+
+def test_a_clip_explains_before_it_shows_the_table_or_code(tmp_path):
+    parts = storyplan.lesson_parts(course_file(tmp_path))
+    talk = "A record is one row and each column holds one detail. " * 17
+    plan = {"scenes": [{"lessonId": "l1", "topic": 1, "kind": "broll", "narration": "x"},
+                       {"lessonId": "l1", "topic": 1, "kind": "table", "table": 1, "narration": talk},
+                       {"lessonId": "l1", "topic": 1, "kind": "vector", "narration": "y"},
+                       {"lessonId": "l1", "topic": 1, "kind": "code", "code": 1, "narration": "z"}],
+            "skipTopics": [{"lessonId": "l1", "topic": 2, "reason": "a one-line reminder"}]}
+    assert any("opens with a table scene" in e for e in storyplan.check_coverage(plan, parts))
+    plan["scenes"][1:3] = plan["scenes"][2:0:-1]                 # broll, vector, table, code
+    assert not any("opens with" in e for e in storyplan.check_coverage(plan, parts))
 
 
 def test_table_and_code_scenes_must_point_at_the_page(tmp_path):

@@ -22,29 +22,44 @@ def test_regex_entry_and_whole_words():
 
 
 def test_long_sentence_fails_and_long_paragraph_warns():
-    long = "You " + "really " * 15 + "need this."
+    long = "You " + "really " * 20 + "need this."
     fails, _ = check_lesson(lesson(f"<p>{long}</p>"), PATS)
-    assert any("over 15 words" in f for f in fails)
-    _, warns = check_lesson(lesson("<p>One. Two. Three. Four.</p>"), PATS)
-    assert any("more than 3 sentences" in w for w in warns)
+    assert any("over 20 words" in f for f in fails)
+    ok = "You " + "really " * 15 + "need this."
+    assert check_lesson(lesson(f"<p>{ok}</p>"), PATS)[0] == []
+    _, warns = check_lesson(lesson("<p>One. Two. Three. Four. Five.</p>"), PATS)
+    assert any("more than 4 sentences" in w for w in warns)
 
 
-def test_concept_section_opens_with_an_example_not_a_definition():
-    defined_first = "<section><h2>Records</h2><p>A <strong>record</strong> is one stored item.</p></section>"
-    fails, _ = check_lesson(lesson(defined_first), PATS)
-    assert any("section 1 opens with a definition" in f for f in fails)
-    example_first = ("<section><h2>Records</h2><p>Meera writes one line for Aarav: Monday, 45 minutes.</p>"
-                     "<p>That line is a <strong>record</strong>: one stored item.</p></section>")
-    assert check_lesson(lesson(example_first), PATS)[0] == []
+def test_concept_section_explains_the_idea_before_the_story():
+    story_first = ("<section><h2>Records</h2><p>Neha writes one line for enquiry E00012: Vesu, Python.</p>"
+                   "<p>That line is a <strong>record</strong>: one stored item.</p></section>")
+    fails, _ = check_lesson(lesson(story_first), PATS)
+    assert any("section 1 opens with a story or example" in f for f in fails)
+    defined_first = ("<section><h2>Records</h2><p>A <strong>record</strong> is one stored item.</p>"
+                     "<p>Neha writes one line for enquiry E00012: Vesu, Python.</p></section>")
+    assert check_lesson(lesson(defined_first), PATS)[0] == []
+    question_first = ("<section><h2>Records</h2><p>What is one row of a table?</p>"
+                      "<p>It is a <strong>record</strong>: one stored item.</p></section>")
+    assert check_lesson(lesson(question_first), PATS)[0] == []
 
 
-def test_at_most_two_key_terms_per_section_and_labels_do_not_count():
-    body = ("<section><h2>X</h2><p>Meera counts learners.</p><p>A <strong>count</strong> and a "
-            "<strong>total</strong> differ.</p><p><strong>Fix:</strong> add.</p></section>")
+def test_a_thin_concept_section_warns():
+    thin = "<section><h2>Records</h2><p>A <strong>record</strong> is one stored item.</p></section>"
+    _, warns = check_lesson(lesson(thin), PATS)
+    assert any("section 1 has 6 words of explanation" in w for w in warns)
+    full = "<section><h2>Records</h2><p>A <strong>record</strong> is one item.</p>" + "<p>Rows hold data.</p>" * 110
+    _, warns = check_lesson(lesson(full + "</section>"), PATS)
+    assert not any("words of explanation" in w for w in warns)
+
+
+def test_at_most_three_key_terms_per_section_and_labels_do_not_count():
+    body = ("<section><h2>X</h2><p>A <strong>count</strong>, a <strong>total</strong> and a "
+            "<strong>mean</strong> differ.</p><p><strong>Fix:</strong> add.</p></section>")
     assert check_lesson(lesson(body), PATS)[0] == []
-    body = body.replace("<strong>Fix:</strong>", "<strong>mean</strong>")
+    body = body.replace("<strong>Fix:</strong>", "<strong>median</strong>")
     fails, _ = check_lesson(lesson(body), PATS)
-    assert any("introduces 3 key terms (count, total, mean)" in f for f in fails)
+    assert any("introduces 4 key terms (count, total, mean, median)" in f for f in fails)
 
 
 def test_hard_words_name_the_simpler_one():
@@ -69,5 +84,5 @@ def test_a_line_break_ends_a_legend_line():
             '<br>② UPPER changes every letter of the code to capitals<br>③ NULLIF turns blanks into NULL</p>'
             '</section>')
     _, warns = check_lesson(html, [])
-    assert not any("over 15 words" in w for w in warns)
-    assert not any("more than 3 sentences" in w for w in warns)
+    assert not any("over 20 words" in w for w in warns)
+    assert not any("more than 4 sentences" in w for w in warns)

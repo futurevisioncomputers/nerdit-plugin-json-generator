@@ -61,7 +61,8 @@ no real logos, and mistakes confined to data work rather than allegations about 
 ## Your checklist
 
 - Each numbered `<h2>` teaches **exactly one** concept — not two smuggled into one
-- Language: sentences ≤ ~15 words, ≤3 per paragraph, second person, no undefined jargon
+- Language: sentences ≤ ~20 words, ≤4 per paragraph, second person, no undefined jargon;
+  each concept section explains the idea before its case study and covers what, how and when
 - **Conceptual** sequencing leaks the script cannot name: a lesson that *explains* a later
   lesson's idea (defining embeddings three lessons before the embeddings lesson) FAILS even
   with no code involved. Prose-only forward references ("you will learn X later", ≤1 per

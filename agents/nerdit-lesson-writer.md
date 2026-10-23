@@ -89,19 +89,21 @@ The rulebook is authoritative; these are the spine (violating any = rejected by 
 - **No tick lists.** There is no "what you will learn" opener and no "what you learned"
   recap. The numbered section headings carry the contents while the learner reads, and
   the cheatsheet table carries it afterwards. Emitting either is rejected.
-- **One concept per section.** Meaning and purpose (2–3 short sentences, one `<strong>` key
-  word, optional 1-line analogy) → concrete case → figure when the concept is a relationship,
-  sequence, change or decision → numbered reading steps → syntax box if syntax exists →
-  worked **run line(s)** → ≤1 callout → one Try It block.
-- **Teaching sequence (CORE.md §2):** meaning → concrete case → figure → read the figure →
-  worked example → practice, using only the rows the concept needs.
+- **One concept per section, explained first.** Explain (3–5 sentences: what it is, the
+  problem it solves, its `<strong>` key word in the first paragraph) → how it works (mapping or
+  figure + 2–4 sentences, numbered reading steps) → when to use it and when not (2–3
+  sentences) → case study on the course world's records → syntax box if syntax exists →
+  worked **run line(s)** → ≤1 callout → one Try It block. Never open a section with a story.
+- **Teaching sequence (CORE.md §2):** explain → how it works → when to use it → case study →
+  worked example → practice, using only the rows the concept needs. 300–450 words of prose
+  per concept section.
 - **Figures come from the lesson's data.** Every label, key, name, date and amount in a figure
   appears in the section or its seed. Number the parts and write matching ① ② ③ reading steps.
 - **Headings match code; practice matches the concept** (CORE.md §2 teaching rules, §4c).
 - **Reform mode and old images:** keep an old raster image only when every value in it matches
   the lesson's data; otherwise drop it and draw the relationship as an SVG figure.
-- **Every code block shows its result.** A run line is `nerdit-runhead` heading + one
-  sentence + `nerdit-run` holding a `nerdit-in` and a matching `nerdit-out`, each with
+- **Every code block shows its result.** A run line is `nerdit-runhead` heading + two or
+  three sentences (what it does, what to notice, why the output follows) + `nerdit-run` holding a `nerdit-in` and a matching `nerdit-out`, each with
   its own `nerdit-tag`. No orphan code, and no `nerdit-in` without a `nerdit-out`.
 - **Never emit the old example box.** `nerdit-example`, `nerdit-example-head`,
   `nerdit-example-lead`, `nerdit-example-note`, `nerdit-output` and
@@ -114,8 +116,8 @@ The rulebook is authoritative; these are the spine (violating any = rejected by 
 - **Try It every concept:** `nerdit-predict` (predict output), `nerdit-fillblank` (instant
   check), or — SQL courses, max once per lesson — `nerdit-tryit` live sql.js runner with its
   seed `<script type="text/plain">`.
-- **Language:** sentences ≤15 words, paragraphs ≤3 sentences, second person, plain words,
-  every technical term defined in plain words at first use.
+- **Language:** sentences ≤20 words, paragraphs ≤4 sentences, second person, plain words,
+  every technical term defined in plain words at first use, at most 3 key terms per section.
 - **Visuals teach or die:** SVG only for flow/structure/overlap/anatomy (in `nerdit-figure`
   or `nerdit-flow-wrap`); Chart.js only for real numbers. Banned: stat cards, donut, gauge,
   rings, funnel, metric-compare, dashboard, both card grids, CSS bar charts, callout bands,
@@ -219,8 +221,8 @@ its teaching into the v9 skeleton above — do not generate from the title alone
   **and the retired example box** — an old lesson's `nerdit-example` blocks are rewritten as run
   lines, not carried over. Reform mode flattens; it never preserves the old nesting.
 - Add what v10 requires and the source lacks: a run line per code block (`nerdit-runhead` +
-  one sentence + `nerdit-run`), one Try It per concept, plain-language rewrite
-  (≤15-word sentences, one concept per section).
+  2–3 sentences + `nerdit-run`), one Try It per concept, plain-language rewrite
+  (≤20-word sentences, one concept per section, the idea explained before the case study).
 - Sequencing rule still applies: an old example using a construct an `UPCOMING_TOPICS`
   lesson owns → rewrite that example with taught constructs, keeping what it teaches.
 - Do not invent facts the source never taught.

@@ -2,8 +2,9 @@
 """Human-voice check for lesson prose (CORE.md §10, references/voice.md).
 
 Lessons that read as machine-written share a small set of phrases and one rhythm. This fails
-a lesson on a banned phrase and warns on long sentences, long paragraphs, em-dash habits and
-concept sections that all open the same way. Code, tables and figures are not prose.
+a lesson on a banned phrase, a long sentence or a concept section that opens with a story
+instead of the idea, and warns on long paragraphs, em-dash habits, thin sections and concept
+sections that all open the same way. Code, tables and figures are not prose.
 
     python check_prose.py --course <course_output.json> [--lesson <id>]
 
@@ -22,10 +23,11 @@ from verify_course import Node, parse, walk
 
 VOICE = Path(__file__).resolve().parent.parent / "references" / "voice.md"
 SKIP = {"pre", "code", "textarea", "svg", "script", "style", "table"}
-MAX_WORDS = 15
-MAX_SENTENCES = 3
+MAX_WORDS = 20
+MAX_SENTENCES = 4
 MAX_DASHES = 1
-MAX_NEW_TERMS = 2   # key terms (<strong>) one concept section may introduce
+MAX_NEW_TERMS = 3        # key terms (<strong>) one concept section may introduce
+MIN_SECTION_WORDS = 300  # prose a concept section needs to explain what, how, when and the case
 
 
 def banned_patterns(path: Path = VOICE) -> list[tuple[str, re.Pattern]]:
@@ -86,16 +88,14 @@ def sentences(text: str) -> list[str]:
     return [s for s in re.split(r"(?<=[.!?])\s+", text) if s.strip()]
 
 
+def _paragraphs(sec: Node) -> list[Node]:
+    """The section's prose paragraphs in reading order."""
+    return [n for n in _in_order(sec) if n.tag == "p" and not _inside(n, SKIP)]
+
+
 def _first_paragraph(sec: Node) -> Node | None:
-    stack = list(reversed(sec.content))
-    while stack:
-        item = stack.pop()
-        if isinstance(item, str):
-            continue
-        if item.tag == "p":
-            return item
-        stack.extend(reversed(item.content))
-    return None
+    paras = _paragraphs(sec)
+    return paras[0] if paras else None
 
 
 def check_lesson(content: str, patterns) -> tuple[list[str], list[str]]:
@@ -131,7 +131,12 @@ def check_lesson(content: str, patterns) -> tuple[list[str], list[str]]:
         p = _first_paragraph(sec)
         if p is not None:
             openers.append(" ".join(prose(p).lower().split()[:2]))
-        fails += _simple_section(sec, p, n_sec)
+        fails += _simple_section(sec, n_sec)
+        words = sum(len(prose(n).split()) for n in _in_order(sec)
+                    if n.tag in ("p", "li") and not _inside(n, SKIP))
+        if words < MIN_SECTION_WORDS:
+            warns.append(f"section {n_sec} has {words} words of explanation; aim for {MIN_SECTION_WORDS}-450: "
+                         "what it is, how it works, when to use it, then the case study")
     if len(openers) >= 3 and len(set(openers)) == 1:
         warns.append(f'every concept section opens with the same words ("{openers[0]}"); vary the openings')
 
@@ -171,17 +176,22 @@ def _ancestors(node: Node):
         n = n.parent
 
 
-def _simple_section(sec: Node, first: Node | None, n: int) -> list[str]:
+def _simple_section(sec: Node, n: int) -> list[str]:
     """Simplicity rules for one concept section (CORE.md §10)."""
     out = []
     terms = _terms(sec)
     if len(terms) > MAX_NEW_TERMS:
-        names = ", ".join(prose(t) for t in terms[:4])
+        names = ", ".join(prose(t) for t in terms[:5])
         out.append(f"section {n} introduces {len(terms)} key terms ({names}); keep to {MAX_NEW_TERMS} so a "
                    "beginner can hold them, and move the rest to their own section")
-    if first is not None and any(first in _ancestors(t) for t in terms):
-        out.append(f"section {n} opens with a definition; start with an everyday example or scene the learner "
-                   "knows, then name the idea")
+    # Explain first: the first key word sits in the first paragraph, or in the second when the
+    # first is a single question. A story or case study opening pushes it later.
+    paras = _paragraphs(sec)
+    if terms and paras:
+        lead = paras[:2] if len(sentences(prose(paras[0]))) == 1 and prose(paras[0]).endswith("?") else paras[:1]
+        if not any(p in _ancestors(terms[0]) for p in lead):
+            out.append(f"section {n} opens with a story or example; explain the idea first (its key word in the "
+                       "first paragraph), then give the case study")
     return out
 
 

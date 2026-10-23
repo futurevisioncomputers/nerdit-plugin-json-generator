@@ -25,14 +25,17 @@ present). Keys, in the user's environment only, never in a plan or a message:
    scene, then a `table` scene for each of the section's tables and a `code` scene for each of
    its worked examples (up to 2 each), all titled with the section heading; plus
    `availableFigures`, every SVG figure in the lessons by id and label.
-2. Read each section, then write its clip so it **mirrors the page** (4–6 scenes, 60–120 s):
+2. Read each section, then write its clip so it **mirrors the page** (4–7 scenes, 90–180 s):
    - **One topic per clip.** Every scene names `topic`: the number of the lesson section it
      explains (the `2 — …` heading). The build cuts one clip per topic and places it at the end
      of that section; the top bar always shows the page's own heading. Keep a topic's scenes
      together. A topic's first scene must stand on its own: never "पिछले part में" or "as we saw".
-   - **Follow the section's order:** the question it answers → the concept (`vector` or the
-     lesson's own `diagram`) → the page's table (`table`) → the page's worked example (`code`)
-     → the common mistake (`myth`) or the takeaway.
+   - **Follow the section's order, explaining first:** what the idea is and the problem it
+     solves (`vector`) → how it works and when to use it (a second `vector` or the lesson's own
+     `diagram`) → the case study from the course world (`table`) → the page's worked example
+     (`code`) → the common mistake (`myth`) or the takeaway. Never open a topic with a story or
+     with the table or code; `storyplan.py check` fails a topic whose first scene after B-roll
+     is not a `vector` or `diagram`.
    - **table** scenes redraw the section's own table (`table: 1` = its first). `highlight`
      lists `row:<first cell>` / `col:<column>` in the order the narration names them; say the
      row or column out loud as it lights up, following the page's reading steps.
@@ -41,7 +44,7 @@ present). Keys, in the user's environment only, never in a plan or a message:
      explains. Read the key line and the output aloud: "print(enquiry["branch"]) Citylight
      देता है".
    - Every key term the section bolds is spoken in its clip; each clip has at least 3 scenes and
-     110 words. A section that needs no video goes in `skipTopics` with a `reason`.
+     180 words. A section that needs no video goes in `skipTopics` with a `reason`.
    - **Explain with visuals, not people.** Most scenes are `vector`: an animated SVG you write
      to `<images>/video/vectors/<file>.svg` that shows the idea's structure:
        - a **process** (boxes and arrows, one step appearing per sentence),
@@ -62,7 +65,7 @@ present). Keys, in the user's environment only, never in a plan or a message:
      words (`students in classroom`, `office laptop typing`); never a person's name or a brand.
      Use B-roll to open a topic, never to explain it.
    - Characters and quizzes are not used in the video.
-   - **narration**: 1–4 short sentences for a first-time learner, professional instructor tone,
+   - **narration**: 2–6 short sentences (at most 550 characters) for a first-time learner, professional instructor tone,
      not storytelling: the concept first, then the course example. Hinglish the way a good Indian
      teacher speaks it: correct Hindi grammar and Hindi verbs (खड़ी होकर, शुरू होने के बाद,
      check करें), English for technical terms and key nouns. Never force an English verb into

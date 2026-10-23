@@ -506,8 +506,9 @@ reader, not a parser. Always pass the input JSON path (it needs lesson order) an
 What the agent owns, and nothing else:
 
 - [ ] Each numbered `<h2>` section teaches **exactly one** concept — not two smuggled into one
-- [ ] Language: sentences ≤ 15 words, ≤3 per paragraph, second person, no undefined jargon;
-      each concept opens with an everyday example before its definition; ≤2 key terms per
+- [ ] Language: sentences ≤ 20 words, ≤4 per paragraph, second person, no undefined jargon;
+      each concept explains the idea (what, how it works, when to use it) before its case
+      study from the course world; ≤3 key terms per
       section; plain words (`check_prose.py` fails each of these)
 - [ ] **Conceptual** sequencing leaks that `check_sequence.py` cannot name mechanically — an
       idea used before the lesson that explains it, where no shared term gives it away

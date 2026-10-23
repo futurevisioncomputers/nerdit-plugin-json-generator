@@ -3,13 +3,14 @@
 `check_prose.py` reads this file. A lesson **fails** on:
 - any phrase in the `banned` block below
 - any hard word in the `plain` block below (it names the simpler word to use)
-- sentences over 15 words
-- a concept section with more than 2 key terms (`<strong>`)
-- a concept section whose first paragraph is the definition: open with an everyday example or
-  scene the learner already knows, then name the idea
+- sentences over 20 words
+- a concept section with more than 3 key terms (`<strong>`)
+- a concept section that opens with a story or example: explain the idea first, with its key
+  word in the first paragraph (or the second, after a one-sentence question), then the case study
 
 and gets **warnings** for:
-- paragraphs over 3 sentences
+- paragraphs over 4 sentences
+- a concept section with under 300 words of explanation
 - more than one em dash in a paragraph
 - concept sections that all open with the same two words
 
@@ -19,8 +20,9 @@ Why: these phrases and that rhythm make a lesson read as machine-written. A lear
 teacher who talks plainly.
 
 - Contractions are welcome: "you'll", "it's", "don't".
-- Open sections in different ways: a question, a short story beat, a surprising number, a picture.
-- Name real things from the course's world: the store, the person, the amount.
+- Open sections in different ways: a question, the problem stated plainly, a surprising number.
+  Never a story first; the story is the case study that follows the explanation.
+- Name real things from the course's world in the case study: the branch, the person, the record.
 
 One phrase per line. A line starting `re:` is a regular expression (case-insensitive).
 

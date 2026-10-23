@@ -22,12 +22,15 @@ and injects the fragment into an inner-HTML region.
 1. **One idea per section.** Each `<h2>` section teaches exactly one concept. Never two.
 2. **3–5 concepts per lesson.** Bigger topic = the orchestrator splits it into more lessons.
    Never cram.
-3. **Show, then explain.** Code example first, output immediately after, short explanation
-   last. Never a wall of theory before the first example.
+3. **Explain, then show.** Open each concept with the idea itself: what it is, the problem it
+   solves, how it works and when to use it. Then apply it to the course world's case study,
+   then the code with its output. Explain in short, plain sentences; a learner should
+   understand the idea before the first example, not decode it from the example.
 4. **Every code block shows its output.** No exceptions. A learner must be able to verify
    understanding without running anything.
-5. **Simple language.** Sentences ≤ 15 words. Paragraphs ≤ 3 sentences. Grade 7–8
-   vocabulary. Second person ("You use `WHERE` to filter rows.").
+5. **Simple language, full explanation.** Sentences ≤ 20 words. Paragraphs ≤ 4 sentences.
+   Grade 7–8 vocabulary. Second person ("You use `WHERE` to filter rows."). Short sentences,
+   but enough of them: each concept section has 300–450 words of prose.
 6. **Visuals must teach.** A diagram appears only when it explains structure, flow, or
    overlap. Decoration is banned (see §7).
 7. **Practice inside the lesson.** Every concept ends with a small "Try It" task. The
@@ -64,13 +67,14 @@ and injects the fragment into an inner-HTML region.
 
   <section>                                      ← CONCEPT 1
     <h2>1 — Concept Name</h2>
-    [meaning and purpose: 2–3 short sentences — what the term is and the problem it solves; ONE key word in <strong>]
-    [analogy line — optional, 1 sentence]
-    [concrete case: one small example from the running scenario, using only the rows this concept needs]
-    [figure — when the concept is a relationship, sequence, change or decision (§7); drawn from those same rows]
+    [explain: 3–5 sentences — what the idea is and the problem it solves; its key word in <strong> in this first paragraph (a one-sentence question may come before it)]
+    [how it works: a mapping or figure (§7) + 2–4 sentences on the mechanism]
     [read the figure: 2–4 numbered steps whose numbers ① ② ③ match markers in the figure]
+    [when to use it: 2–3 sentences — when you need it, when you don't, the trade-off]
+    [analogy line — optional, 1 sentence]
+    [case study: the same idea on the course world's records (§5), using only the rows this concept needs]
     [syntax box — if the concept has syntax]
-    [worked example: code → output → why the output follows]
+    [worked example: run line(s) — 2–3 sentences each: what the code does, what to notice, why the output follows]
     [ONE callout max — only if there is a real gotcha]
     [Try It block — practises this concept, not a neighbouring one]
   </section>
@@ -238,8 +242,8 @@ A syntax box never gets a copy button and never needs an output block.
 
 ## 4. THE RUN LINE (core of every concept)
 
-Every worked example is a **run line**: a heading that names the concept, one sentence
-of explanation, then the code and its result joined by a single rule down the left
+Every worked example is a **run line**: a heading that names the concept, two or three
+sentences of explanation, then the code and its result joined by a single rule down the left
 gutter — clay where the learner types, green where the machine answers.
 
 This replaced the old `nerdit-example` box in v10. The old unit wrapped four nested
@@ -274,9 +278,9 @@ Rules:
   the concept name and the code beneath it read as one object. Put the API, formula or
   keyword in the heading itself — `=SUM(E2:E9)`, `.head(n)`, `SELECT … WHERE`. The
   `<span class="why">` half is plain language and starts with an em dash.
-- **One sentence of explanation, not three.** The old unit had a lead sentence *and* a
-  closing note. Write one sentence that says what the code does. If the learner needs a
-  second, the example is doing too much — split it.
+- **Two or three sentences of explanation.** Before the code: what it does and what to
+  notice. After the output, when it helps: why the output follows. Never more than three;
+  if the learner needs a fourth, the example is doing too much — split it.
 - **The output half is mandatory.** Every `nerdit-in` has a matching `nerdit-out`.
   For SQL show an ASCII result table; for Python show printed output; for Excel show the
   cell value; for HTML/CSS describe what renders in one line.
@@ -877,14 +881,19 @@ Chart.js (rare in v9): reuse the v8 `withChart` lazy-load pattern inside this sa
 
 ## 10. LANGUAGE RULES (validator spot-checks these)
 
-- Sentences ≤ 15 words. Split long sentences (`check_prose.py` fails a longer one).
-- Paragraphs ≤ 3 sentences.
-- **Example before definition.** Each concept section opens with an everyday example or a scene
-  from the course's world the learner already understands; the definition (the `<strong>` key
-  word) comes after it, never in the section's first paragraph.
-  Not: "A **record** is one stored item." Instead: "Meera writes one line for Aarav: Monday,
-  Morning group, 45 minutes. That line is a **record**: one stored item."
-- **At most 2 key terms per concept section.** A third new term gets its own section or waits
+- Sentences ≤ 20 words. Split long sentences (`check_prose.py` fails a longer one).
+- Paragraphs ≤ 4 sentences.
+- **Explain before the case study.** Each concept section opens with the idea itself: what it
+  is and what problem it solves, with the `<strong>` key word in the first paragraph. A
+  one-sentence question may come first. The case study from the course world comes after the
+  explanation; never open a section with a story (`check_prose.py` fails it).
+  Not: "Neha logs enquiry E00012 at the Vesu desk. That line is a **record**." Instead: "A
+  **record** is one stored item: one row in a table. … At the Vesu desk, Neha logs enquiry
+  E00012 as one record."
+- **Explain fully.** Each concept section has 300–450 words of prose: what it is, how it works,
+  when to use it (and when not), the case study, and the common mistake. Short sentences, more
+  of them; `check_prose.py` warns under 300.
+- **At most 3 key terms per concept section.** A fourth new term gets its own section or waits
   for a later lesson. Bold labels ending in a colon ("Fix:") are not terms.
 - **Plain words.** Never a word from the `plain` block of `references/voice.md`; use the simpler
   word it names ("bounded" → "limited").

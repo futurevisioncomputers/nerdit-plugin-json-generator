@@ -18,7 +18,8 @@ characters and not quizzes. A scene is one of:
 
 Each topic clip mirrors its section on the page: the same heading, the same table and code, all
 its key terms spoken, at least MIN_TOPIC_SCENES scenes and MIN_TOPIC_WORDS words (about a
-minute). A section with no clip is listed in `skipTopics` with a reason.
+minute and a half). It explains first: its first scene after any B-roll is a concept (`vector`
+or `diagram`), never the table or code. A section with no clip is listed in `skipTopics` with a reason.
 
 Each scene belongs to one topic: `topic` is the number of the lesson section it explains (the
 "2 — ..." heading). build_video.py cuts one short clip per topic, placed at the end of that section,
@@ -38,9 +39,9 @@ from titlecase import title_case  # noqa: E402  (the same Title Case as the less
 
 KINDS = ("vector", "diagram", "broll", "table", "code")
 MIN_SCENES, MAX_SCENES = 4, 60
-MIN_TOPIC_SCENES, MIN_TOPIC_WORDS = 3, 110   # about a minute of narration per topic clip
+MIN_TOPIC_SCENES, MIN_TOPIC_WORDS = 3, 180   # about a minute and a half of narration per topic clip
 MAX_PART_SCENES = 2                          # tables / code runs the scaffold takes per section
-MAX_SENTENCES, MAX_CHARS = 4, 360
+MAX_SENTENCES, MAX_CHARS = 6, 550
 MAX_KEY_IDEA, MAX_MYTH_LINE, MAX_POINT = 90, 80, 70
 MAX_TERMS, MAX_FOCUS = 4, 4
 MAX_BROLL_SHARE = 0.3            # B-roll sets the scene; the vectors do the explaining
@@ -298,7 +299,11 @@ def check_coverage(plan: dict, parts: dict) -> list[str]:
                               "(concept, the page's table or code, the mistake or takeaway; a myth counts as one)")
             if len(words.split()) < MIN_TOPIC_WORDS:
                 errors.append(f"{tag}: {len(words.split())} words of narration; give at least {MIN_TOPIC_WORDS} "
-                              "(about a minute) so the clip explains what the page explains")
+                              "(about a minute and a half) so the clip explains what the page explains")
+            first = next((s for s in scenes if s.get("kind") != "broll"), None)
+            if first is not None and first.get("kind") not in ("vector", "diagram"):
+                errors.append(f"{tag}: opens with a {first.get('kind')} scene; explain the idea first with a "
+                              "vector or diagram scene, then the case study's table or code")
             if (part["tables"] or part["runs"]) and not any(s.get("kind") in ("table", "code") for s in scenes):
                 errors.append(f"{tag}: show the section's own table or code (a table or code scene)")
             for term in part["terms"]:
