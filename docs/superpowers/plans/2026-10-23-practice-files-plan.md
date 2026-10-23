@@ -1,9 +1,9 @@
 # Practice Files (CSV, Excel, JSON, SQL, Python, notebooks) Plan
 
-**Goal:** Every lesson that works with data or code gives enrolled learners the exact files it uses, with names
+**Goal:** Every lesson that works with data or code gives learners who bought the certificate the exact files it uses, with names
 that say which lesson and section they belong to, plus the complete runnable code. The page keeps short,
 explained code; the download holds the full code. The plugin makes and checks every file; the admin uploads
-them with the course JSON; the learner site shows them to enrolled learners only. A lesson ships only when all
+them with the course JSON; the learner site lets certificate holders download them (§11). A lesson ships only when all
 its code, answers and files run on current Python with no deprecated code.
 
 **Linked plans:** [admin import plan](../../../../nerdit-admin/docs/course-json-images-import-plan.md) ·
@@ -244,9 +244,9 @@ newest library releases reports lessons whose code has become deprecated, before
 - [ ] **Private storage:** `courses/<courseId>/files/<sha256 8 chars>/<original name>`, `Content-Type` by extension,
       `Content-Disposition: attachment; filename="<original name>"`. Not public: no download tokens are created,
       and the HTML keeps the relative `files/<name>` link plus `data-nerdit-file`; the learner site resolves it.
-- [ ] **Storage security rules:** read allowed for admins, and for a signed-in user whose enrolment record for
-      that course exists (rules read Firestore, one read per download); write for admins only. Rules tests cover
-      enrolled, not enrolled, signed out and admin.
+- [ ] **Storage security rules:** read allowed for admins, and for a signed-in user whose certificate purchase for
+      that course is recorded (§11; rules read Firestore, one read per download); write for admins only. Rules
+      tests cover bought, enrolled without buying, signed out and admin.
 - [ ] Media records hold `kind: "file"`, name, sha256, bytes and storage path, so re-import and Export output JSON
       round-trip by original name, as images do.
 - [ ] Media library lists files with the lessons and sections that use them; replacing one flags those lessons
@@ -260,9 +260,9 @@ newest library releases reports lessons whose code has become deprecated, before
 - [ ] `shared`: media record gains `kind: "image" | "file"`, `format`, `bytes`, `sha256`, `storagePath`; rebuild.
 - [ ] Lesson CSS copies updated with the plugin (§5); `normalizeLessonHtml` keeps the box and links, drops links to
       other origins.
-- [ ] **Enrolled-only downloads:** a click on `a.nerdit-file` fetches the file with the Firebase SDK (`getBlob` on the
-      storage path, which the security rules check) and saves it under `data-nerdit-file`. Not enrolled: the box
-      shows the file list with an "Enrol to download" button instead of links. Signed out: "Sign in to download".
+- [ ] **Certificate-only downloads (§11):** a click on `a.nerdit-file` fetches the file with the Firebase SDK (`getBlob`
+      on the storage path, which the security rules check) and saves it under `data-nerdit-file`. Not bought: the box
+      shows the file list locked, with "Unlock with certificate — ₹<certificatePrice>". Signed out: "Sign in".
 - [ ] Runners: with a `.nerdit-files` box, the Python/plot runners skip their own Blob links and write the listed
       files into Pyodide's file system — built from the recipe as today, or fetched with `getBlob` for files without
       a recipe (JSON, xlsx). Runners move to Pyodide 314.x (§4). Fetched files are kept in the browser's Cache
@@ -271,7 +271,7 @@ newest library releases reports lessons whose code has become deprecated, before
 - [ ] Download UX: format, size and "Python 3.14" shown; one tap on a phone. The course pack button is the main
       action in Lesson 1; other lessons show their pack folder, with single files folded away. Optional: the course
       page also shows the pack button, found by reading Lesson 1's `.nerdit-course-pack` box (no schema change).
-- [ ] Tests: `normalizeLessonHtml` keeps the markup; Playwright as enrolled, not enrolled and signed out; an enrolled
+- [ ] Tests: `normalizeLessonHtml` keeps the markup; Playwright as certificate holder, enrolled without buying and signed out; a holder's
       download has the right name and bytes; a Try It that reads the file runs.
 
 ## 10. Rollout
@@ -281,7 +281,7 @@ newest library releases reports lessons whose code has become deprecated, before
 | 1 | plugin | §7 complete; pilot course pack (Lesson 2 folder complete, other lessons' folders as they are regenerated) passes checks a–h |
 | 2 | admin | import, private upload, rules tests and round-trip pass with the pilot folder |
 | 3 | learner site | CSS sync check passes; Pyodide 314 runners; Playwright access tests pass |
-| 4 | all three | end-to-end: generate → import → preview → publish → enrolled learner downloads and runs everything |
+| 4 | all three | end-to-end: generate → import → preview → publish → certificate holder downloads and runs everything |
 | 4b | plugin | capstone for the pilot course: lesson, pack folder, tests, video; every §12 check passes |
 | 5 | courses | backfill published courses (capstone added per course): worlds per decision 7, files, solutions, re-check on Python 3.14; re-import each reviewed final JSON |
 
@@ -367,6 +367,6 @@ capstone test run".
 About 6 GB of files for 500 courses, about 12 GB with the course packs (still about ₹25 a month to store);
 downloads are free up to 100 GB a month, then about $0.12 per GB. A course pack is downloaded whole, even by
 learners who stop early: at 10,000 learners × a 30 MB pack that is about 300 GB, about ₹2,000 a month; API-style
-courses are under 1 MB per pack. Private files cost the same per GB as public ones. The only extra is the enrolment check: one
+courses are under 1 MB per pack. Private files cost the same per GB as public ones. The only extra is the certificate check: one
 Firestore read per download (50,000 reads a day free, then a few cents per 100,000). No server or Cloud Function
 streams the files; the SDK reads Storage directly under the security rules. Videos stay on YouTube. Set a budget alert.
