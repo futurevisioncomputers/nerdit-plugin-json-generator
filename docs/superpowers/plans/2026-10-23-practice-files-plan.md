@@ -1,16 +1,30 @@
-# Practice Files (CSV, Excel, JSON, SQL, code) Plan
+# Practice Files (CSV, Excel, JSON, SQL, Python, notebooks) Plan
 
-**Goal:** Every lesson that works with data or code gives the learner the exact files it uses, with names that
-say which lesson and section they belong to. The plugin makes and checks the files; the admin uploads them to
-the course's storage with the course JSON; the learner site shows them in one "Practice files" box and in each
-section that uses them.
+**Goal:** Every lesson that works with data or code gives enrolled learners the exact files it uses, with names
+that say which lesson and section they belong to, plus the complete runnable code. The page keeps short,
+explained code; the download holds the full code. The plugin makes and checks every file; the admin uploads
+them with the course JSON; the learner site shows them to enrolled learners only. A lesson ships only when all
+its code, answers and files run on current Python with no deprecated code.
 
 **Linked plans:** [admin import plan](../../../../nerdit-admin/docs/course-json-images-import-plan.md) ·
 [course import contract](../../course-import-contract.md) ·
 [Plan C, data science datasets](2026-10-17-plan-c-data-science-datasets.md) (browser-built CSVs, kept).
 
-**Repos:** the plugin is done here. `nerdit` (learner site, `future-vision`, `shared`) and `nerdit-admin` were not
-reachable from the planning session, so their sections below are the contract they implement.
+**Repos:** the plugin is done here. `nerdit` (learner site: `future-vision`, `shared`) and `nerdit-admin` were not
+reachable from the planning session; their sections are the contract they implement. Phases 2–3 need the
+Claude GitHub App to have access to both repos.
+
+## Decisions (owner, 2026-10-23)
+
+| # | Question | Decision |
+|---|---|---|
+| 1 | Who can download | **Enrolled learners only** (and admins) |
+| 2 | Size | **5 MiB per file**; a lesson's zip also stays under 5 MiB (§3) |
+| 3 | Formats | **CSV, Excel, JSON, SQL, Python, notebooks** |
+| 4 | Solutions | **Downloadable full code.** The page shows short code with explanations; the download holds the complete, runnable code |
+| 5 | Where file details live | **Lesson HTML only** (like images); no course-JSON schema change |
+| 6 | Python version | **Latest Python, no deprecated code** (§4) |
+| 7 | Worlds | **`fvc-institute`** for tech and AI courses, **`practice-retail`** for business courses |
 
 ---
 
@@ -18,59 +32,97 @@ reachable from the planning session, so their sections below are the contract th
 
 | Today | Gap |
 |---|---|
-| Python/plot lessons with a world recipe build CSVs in the browser and add `Download enquiries.csv` after the first Try It (Plan C). | Only Python with a recipe; only CSV; the link appears inside a runner, not where the learner starts. |
-| SQL seeds live in `<script type="text/plain">`; Excel grids in `data-grid`. | No downloadable `.sql` or `.xlsx`, so learners cannot practise in their own SQLite, MySQL or Excel. |
-| JSON payloads, request lists and starter code are typed in run lines. | Learners copy them by hand. |
-| File names come from the entity (`enquiries.csv`). | Two lessons can both ship `enquiries.csv` with different rows, and a learner cannot tell which lesson a file is from. |
-| Images: relative `images/<name>` links, matched by unique file name on admin import, stored under the course id. | Data files have no such path through the admin. |
+| Python/plot lessons with a world recipe build CSVs in the browser and add `Download enquiries.csv` after the first Try It (Plan C). | Only Python with a recipe; only CSV; inside a runner, not where the learner starts. |
+| SQL seeds in `<script type="text/plain">`; Excel grids in `data-grid`. | No `.sql` or `.xlsx` to practise in the learner's own SQLite, MySQL or Excel. |
+| Payloads, request lists and code typed in run lines, at most 15 lines each. | No complete program to download and run. |
+| File names from the entity (`enquiries.csv`). | Not traceable to a lesson; two lessons can clash. |
+| Website Python is 3.12 (Pyodide 0.26.2). | Not the current Python; deprecated APIs are not checked anywhere. |
+| Checks cover run lines, Try It starters, SQL results, Excel formulas, world values. | Solutions, predict and fill-in answers, offline code (FastAPI, httpx …) and quiz answers are not run. |
 
 ## 2. File naming (the tracing rule)
 
 ```
-L<lesson 2 digits>-S<section>-<what-it-holds>.<ext>     one section's file
-L<lesson 2 digits>-practice-<what>.<ext>               the closing practice set
-L<lesson 2 digits>-practice-files.zip                  every file of the lesson + README.txt
+L<nn>-S<section>-<what-it-holds>.<ext>     a section's data file       L02-S1-enquiry-messages.csv
+L<nn>-practice-starter.py | .ipynb        practice tasks, no answers   L02-practice-starter.ipynb
+L<nn>-solutions.py | .ipynb               complete code, every example and task, with answers
+L<nn>-full-app.py                         the lesson's pieces in one runnable program (project lessons)
+L<nn>-requirements.txt                    pinned libraries for the downloads (code lessons)
+L<nn>-practice-files.zip                  all of the above + README.txt
 ```
 
-- Examples: `L02-S1-enquiry-messages.csv`, `L02-S2-provider-replies.json`, `L03-S1-seed.sql`,
-  `L05-S3-monthly-sales.xlsx`, `L02-practice-starter.py`.
-- Lower case `a-z`, digits and hyphens; at most 60 characters; the lesson number is its position in the input.
-- **Unique across the whole course, images included**: the admin matches by file name in one upload.
-- **Code uses the same name** the learner downloads: `pd.read_csv("L02-S1-enquiry-messages.csv")`. A learner
-  who saves the file next to their notebook runs the lesson's code unchanged.
-- A dataset recipe's file key (Plan C) uses the same name, so the browser-built file and the download match.
-- The zip holds a `README.txt`: one line per file — name, what is inside (rows, columns), the section that uses it.
+- Lower case `a-z`, digits and hyphens; at most 60 characters; `<nn>` is the lesson's position in the input.
+- Unique across the whole course, images included: the admin matches by file name in one upload.
+- Code opens files by the downloaded name: `pd.read_csv("L02-S1-enquiry-messages.csv")`. Saved next to the
+  notebook, the code runs unchanged. A dataset recipe's file key (Plan C) uses the same name.
+- `README.txt` in the zip: one line per file (what is inside, rows and columns, the section that uses it), the
+  Python version, and `pip install -r L<nn>-requirements.txt`.
+- If the course order changes, names are regenerated and re-uploaded; lesson ids stay unchanged.
 
-If the course order changes, file names are regenerated and re-uploaded; lesson ids stay unchanged.
-
-## 3. Formats
+## 3. Formats and the solutions split
 
 | Format | Made from | Rules |
 |---|---|---|
-| `.csv` | world entity slice, a lesson table, or a dataset recipe | UTF-8, header row, comma, quoted per RFC 4180; Plan C's quoting tests apply |
-| `.xlsx` | the same rows | one sheet per table, sheet named after it, bold header, no macros (`.xlsm` refused), formulas only in Excel lessons and only ones `nerdit-excel-engine.js` computes |
-| `.json` / `.jsonl` | a payload or record list the lesson shows | pretty-printed, 2-space indent; `.jsonl` one object per line (log lessons) |
-| `.sql` | the lesson's seed script, byte for byte | `CREATE TABLE` + `INSERT`; runs in SQLite; header comment names lesson, section and tables |
-| `.py` | Try It starters and practice tasks, without solutions | runs as is; each task a commented block |
-| `.ipynb` (optional) | the same tasks as notebook cells | one markdown cell per task, one starter code cell |
-| `.txt` / `.md` | prompts (Conversational preset) | plain text |
+| `.csv` | world entity slice, lesson table, or dataset recipe | UTF-8, header row, RFC 4180 quoting |
+| `.xlsx` | the same rows | one sheet per table named after it, bold header, no macros (`.xlsm` refused), formulas only in Excel lessons and only ones `nerdit-excel-engine.js` computes |
+| `.json` / `.jsonl` | payloads or records the lesson shows | 2-space indent; `.jsonl` one object per line |
+| `.sql` | the lesson's seed script, byte for byte | runs in SQLite; header comment names lesson, section and tables |
+| `.py` | starters, solutions, full app | runs as is on the pinned Python; sections in page order, each with a one-line comment |
+| `.ipynb` | the same as `.py`, as cells | starter: a markdown cell per task + an empty code cell; solutions: filled and run, outputs saved |
 
-Limits (to confirm, §9): 5 MiB per file, 50 MiB per course. Bytes never go into the course JSON.
+**Page vs download.** The page keeps each shown block within the CORE.md limits (15 lines, explained in 2–3
+sentences). `L<nn>-solutions.*` holds the complete code: imports, setup, every example in order, every practice
+task answered, short comments. Project lessons (an API, an app) add `L<nn>-full-app.py`, which combines the
+lesson's pieces (for Lesson 2: one endpoint with timeouts, retries with backoff, a token bucket and clear HTTP
+errors). The page still shows each answer in its `<details>`; the download adds, it never replaces.
 
-## 4. Lesson markup
+**Size.** At most 5 MiB per file. A data file over 5 MiB is cut to a smaller sample. If the zip would pass
+5 MiB, it holds the code, notebooks and README, and the large data files stay separate downloads.
 
-The writer declares files once in a spec; the plugin draws the markup from it (the same pattern as screen specs).
+## 4. Python version and modern code
+
+- **Download and offline code: Python 3.14.** It is stable, a year old, and every library the courses use
+  ships wheels for it.
+- **Website runner: move from Pyodide 0.26.2 (Python 3.12) to Pyodide 314.x (Python 3.14),** so the page and
+  the downloads run the same Python. This changes `nerdit-python-runner.js` and `nerdit-plot-runner.js`
+  (plugin references + the learner site's copies) and the checker's `tools/pyodide` pin. Before switching,
+  `check_python_outputs.py --probe numpy,pandas,sklearn,scipy,matplotlib,statsmodels` must pass on the new
+  engine, and every published Python lesson is re-checked on it.
+- **Python 3.15** (released 2026-10-09): used now only for lessons about 3.15's new features. Those examples are
+  offline run lines checked on CPython 3.15, and their downloads say "needs Python 3.15". 3.15 becomes the
+  default when Pyodide ships a 3.15 build and the course libraries publish 3.15 wheels.
+- **Each course records its versions** in `course-<chapter>_requirements.txt`: Python version and the latest
+  stable release of each library at generation time (for example `fastapi`, `httpx`, `pydantic`, `pandas`).
+  The downloads copy it as `L<nn>-requirements.txt`.
+- **No deprecated code**, enforced by `check_modern_code.py` (§6 g) and a banned list in
+  `references/deprecated.md`, read like `voice.md`. Starting entries:
+
+  | Instead of (deprecated) | Write |
+  |---|---|
+  | `typing.List`, `Dict`, `Optional[X]`, `Union[X, Y]` | `list`, `dict`, `X \| None`, `X \| Y` |
+  | `datetime.utcnow()`, `utcfromtimestamp()` | `datetime.now(UTC)`, `datetime.fromtimestamp(ts, UTC)` |
+  | `asyncio.get_event_loop()` to run code | `asyncio.run()` |
+  | FastAPI `@app.on_event("startup")` | `lifespan=` context manager |
+  | Pydantic v1 `.dict()`, `.json()`, `class Config`, `@validator` | `.model_dump()`, `.model_dump_json()`, `model_config`, `@field_validator` |
+  | pandas `DataFrame.append`, chained assignment with `inplace=True` | `pd.concat`, assign the result |
+  | scikit-learn `OneHotEncoder(sparse=…)` | `sparse_output=…` |
+  | `os.popen`, `distutils`, `imp` | `subprocess.run`, `setuptools`/`sysconfig`, `importlib` |
+
+## 5. Lesson markup
+
+The writer declares the files once; the plugin draws the markup from it, as with screen specs.
 
 ```html
 <script type="application/json" class="nerdit-files-spec">
-{"files": [
+{"python": "3.14",
+ "files": [
   {"name": "L02-S1-enquiry-messages.csv", "sections": [1], "about": "4 enquiry messages Neha pasted",
    "from": {"world": "enquiry_messages", "rows": ["M1", "M2", "M7", "M12"], "columns": ["message_id", "intent", "message"]}},
-  {"name": "L02-S2-provider-replies.json", "sections": [2], "about": "status codes per attempt for M2 and M12",
-   "from": {"json": {"M2": [503, 429, 200], "M12": [400, 200, 200]}}},
+  {"name": "L02-S2-provider-replies.json", "sections": [2], "from": {"json": {"M2": [503, 429, 200], "M12": [400, 200, 200]}}},
   {"name": "L02-S4-neha-requests.csv", "sections": [4], "from": {"table": "Neha's requests: capacity 3, refill 0.5 per second"}},
-  {"name": "L02-practice-starter.py", "sections": ["practice"], "from": {"practice": "starters"}}
-]}
+  {"name": "L02-practice-starter.ipynb", "sections": ["practice"], "from": {"practice": "starters"}},
+  {"name": "L02-solutions.ipynb", "sections": "all", "from": {"solutions": "all"}},
+  {"name": "L02-full-app.py", "sections": "all", "from": {"file": "full-app.py"}}
+ ]}
 </script>
 ```
 
@@ -78,13 +130,15 @@ Generated under the overview (before section 1):
 
 ```html
 <div class="nerdit-files" data-nerdit-files="timeouts-retries-rate-limits-and-errors-02">
-  <p class="nerdit-files-head">📂 Practice files for this lesson</p>
+  <p class="nerdit-files-head">📂 Practice files for this lesson <span class="nerdit-files-py">Python 3.14</span></p>
   <table>
     <thead><tr><th>File</th><th>What's inside</th><th>Used in</th></tr></thead>
     <tbody>
       <tr><td><a class="nerdit-file" href="files/L02-S1-enquiry-messages.csv" download="L02-S1-enquiry-messages.csv"
              data-nerdit-file="L02-S1-enquiry-messages.csv" data-format="csv" data-bytes="412">L02-S1-enquiry-messages.csv</a></td>
           <td>4 rows: message_id, intent, message</td><td>Section 1</td></tr>
+      <tr><td><a class="nerdit-file" href="files/L02-solutions.ipynb" … >L02-solutions.ipynb</a></td>
+          <td>Full code: every example and practice answer</td><td>Whole lesson</td></tr>
     </tbody>
   </table>
   <a class="nerdit-file nerdit-file-all" href="files/L02-practice-files.zip" download="L02-practice-files.zip"
@@ -92,117 +146,92 @@ Generated under the overview (before section 1):
 </div>
 ```
 
-And at the start of each section's case study:
+Each section's case study starts with `<p class="nerdit-file-use">📎 This section uses <a class="nerdit-file" …>…</a>.</p>`.
+New classes (`nerdit-files`, `nerdit-files-head`, `nerdit-files-py`, `nerdit-file`, `nerdit-file-all`,
+`nerdit-file-use`) go into the canonical `references/css9-simple.css` and both apps' `src/lesson-css/` copies in
+the same change; `node ../nerdit/scripts/check-lesson-sync.mjs` must pass.
 
-```html
-<p class="nerdit-file-use">📎 This section uses <a class="nerdit-file" href="files/L02-S1-enquiry-messages.csv"
-   download="L02-S1-enquiry-messages.csv" data-nerdit-file="L02-S1-enquiry-messages.csv">L02-S1-enquiry-messages.csv</a>.</p>
-```
-
-The new classes (`nerdit-files`, `nerdit-files-head`, `nerdit-file`, `nerdit-file-all`, `nerdit-file-use`) go into
-the canonical `references/css9-simple.css` and both apps' `src/lesson-css/` copies in the same change;
-`node ../nerdit/scripts/check-lesson-sync.mjs` must pass.
-
-## 5. Plugin work (this repo)
-
-- [ ] **Rules:** CORE.md §5 and a new §6e "Practice files"; writer agent; QA checklist; runners/python.md
-      (recipe file key = practice file name); runners/sql.md and excel.md (seed → `.sql`, grid → `.xlsx`).
-- [ ] **`scripts/practice_files.py`**: parses `nerdit-files-spec`, builds each file from its source (world slice via
-      `make_world_data.py`, lesson table, recipe build, seed script, JSON literal, practice starters), writes
-      `<workdir>/upload/files/`, the zip with README, `<workdir>/files.manifest.json`
-      (`name, format, bytes, sha256, lessonId, sections, about, source`) and inserts the box and section lines.
-- [ ] **`scripts/check_files.py`** (gate + verify v11):
-  - names follow §2 and are unique with the course's images;
-  - every `files/` link has a file and every file is linked;
-  - each file parses (CSV rectangular, JSON loads, SQL runs in in-memory SQLite, xlsx opens);
-  - the file holds what the page shows: shown rows are in it, a `.sql` file equals the seed, a recipe build has
-    the same sha256 as the CSV;
-  - every name the code opens (`read_csv`, `read_excel`, `open`, `json.load`) is a listed file;
-  - size limits.
-- [ ] **`check_python_outputs.py`** writes the lesson's files into Pyodide's file system by name before the run
-      lines, so examples are checked against the real files.
-- [ ] **Output folder** (one folder for the admin to select):
-      `course-<chapter>_output.with-media.json` + `upload/images/…` + `upload/files/…`.
-      The illustrator writes to `upload/images/`; the old `<images>/upload/` path stays readable.
-- [ ] **Story video:** a `table` scene may name its practice file; the description lists the lesson's files.
-- [ ] Tests for each script; pilot on Lesson 2 of *Building Production-Ready AI APIs* (the four files above).
-
-## 5b. Verification: no broken code or data reaches a learner
-
-Today the gates check run lines (exact output, website Pyodide), Try It starters (no error), SQL results
-(against the seed), Excel formulas (site engine) and world data. Not checked: practice solutions, predict
-answers, fill-in-the-blank answers, offline code (FastAPI, httpx, TensorFlow …), quiz answers, and courses
-without a world file. Phase 1 closes every gap; a lesson ships only when all of these pass.
+## 6. Verification: no broken or outdated code reaches a learner
 
 | # | Check | Script | Fails when |
 |---|---|---|---|
-| a | **Every answer runs.** Practice solutions (alone), predict answers (in the run lines' namespace), fill-in-the-blank code with `data-answer` filled in | `check_python_outputs.py`, `check_sql_outputs.py` (extended) | an output differs from the shown one, or code raises / does not compile |
-| b | **Offline code runs for real.** `data-run="offline"` examples run in a local venv pinned per course (`course-<chapter>_requirements.txt`, e.g. `fastapi==…`, `httpx==…`) | new `check_offline_outputs.py` | output differs, or a library is not pinned |
-| c | **All practice data is generated.** A data or code course declares a world (`course-<chapter>_world.json`); typed-in data over 8 rows is refused | `check_input.py --strict`, `check_world.py` | no world, or a table/file value outside the world (declared defects aside) |
-| d | **Learner-eye test.** Unzip `L<nn>-practice-files.zip` into an empty folder and run the starter `.py` (Python 3.12) and the `.sql` (SQLite) there, as a learner would | `check_files.py --as-learner` | any error, a missing file, or a file the code opens that is not in the zip |
-| e | **One source, three copies agree.** The page's tables, the download and the browser runner's file are built from the same spec | `check_files.py` | sha256 of the browser build ≠ download, or shown rows not in the file |
-| f | **Quiz answers that can be computed are computed.** A question quoting code or numbers is run and its correct option compared | `check_quiz.py` (new) | the marked option is not the computed result |
+| a | **Every answer runs**: practice solutions, predict answers (in the run lines' namespace), fill-in code with `data-answer` filled in | `check_python_outputs.py`, `check_sql_outputs.py` (extended) | output differs from the page, or code raises / does not compile |
+| b | **Offline code runs for real**: `data-run="offline"` examples and `L<nn>-full-app.py` in a venv built from the course requirements | new `check_offline_outputs.py` | output differs, a library is not pinned, or the app does not start and answer its test request |
+| c | **All practice data is generated**: data and code courses declare a world (decision 7) | `check_input.py --strict`, `check_world.py` | no world; typed-in data over 8 rows; a value outside the world (declared defects aside) |
+| d | **Learner-eye test**: unzip the lesson zip into an empty folder, `pip install -r` its requirements in a fresh venv, run the starter and solutions `.py`, execute both notebooks, run the `.sql` in SQLite | `check_files.py --as-learner` | any error, a missing file, a file the code opens that is not in the zip, a zip over 5 MiB |
+| e | **One source, three copies agree**: page tables, downloads and the browser runner's files | `check_files.py` | sha256 of the browser build ≠ the download; shown rows not in the file; a solution's output differs from the page's |
+| f | **Computable quiz answers are computed** | `check_quiz.py` (new) | the marked option is not the computed result |
+| g | **No deprecated code**: every run with `-W error::DeprecationWarning -W error::PendingDeprecationWarning -W error::FutureWarning`; a static scan against `references/deprecated.md` and ruff's `UP` rules targeting the course's Python | `check_modern_code.py` (new), and the warning flags in a, b, d | any warning, or a banned API in shown code, starters, solutions or the full app |
+| h | **Names and limits**: §2 names, unique with images; every `files/` link has a file and every file is linked; each file parses; at most 5 MiB | `check_files.py` | any of these |
 
-Rules: every check exits 0/1/2 like the existing ones (2 = environment missing, never a pass); a failure
-regenerates the lesson within the existing 2-attempt budget, then stops and reports.
+Exit codes as the existing checks (2 = environment missing, never a pass). A failure regenerates the lesson
+within the 2-attempt budget, then stops and reports. **Freshness:** a quarterly re-run of b, d and g on the
+newest library releases reports lessons whose code has become deprecated, before learners hit the warning.
 
-## 6. Admin contract (`nerdit-admin`)
+## 7. Plugin work (phase 1)
 
-- [ ] **Import JSON + Media** (today: Import JSON + Images) takes the `upload/` folder:
-      allowed `.csv .xlsx .json .jsonl .sql .py .ipynb .txt .md .zip`; refused `.xlsm .exe .html .js` and anything else.
-- [ ] Matching as for images: by file name across nested folders; a missing file or a duplicate name blocks
-      preparation; extra selected files enter the course library.
-- [ ] Validation mirrors `check_files.py`'s cheap checks: size, extension vs content (zip signature for
-      xlsx/zip, UTF-8 for text, JSON parses).
-- [ ] Storage: `courses/<courseId>/files/<sha256 8 chars>/<original name>`, `Content-Type` by extension,
-      `Content-Disposition: attachment; filename="<original name>"` so the learner gets the traceable name,
-      one-year immutable cache (the hash changes when the file does).
-- [ ] Rewrite `href` to the Storage URL; keep `download`, `data-nerdit-file`, `data-format`, `data-bytes`.
-      Media records store `kind: "file"`, name, sha256 and bytes, so re-import and Export output JSON round-trip
-      by original name, as images do today.
-- [ ] Media library lists files with the lessons and sections that use them; replacing a file flags those lessons
-      for review.
-- [ ] Sanitizer allowlist: the five classes, `a[download]`, the `data-*` attributes above, `href` only to the
-      course's Storage or a relative `files/` path; `script.nerdit-files-spec` kept in the JSON, never rendered.
-- [ ] Tests: import → preview → export round-trip with one file of each format; duplicate-name and
-      missing-file blocks.
+- [ ] Rules: CORE.md §5 and a new §6e "Practice files", the page/download split, `references/deprecated.md`;
+      writer agent, QA checklist, runners/python.md, sql.md, excel.md.
+- [ ] `scripts/practice_files.py`: reads the spec, builds every file (world slices via `make_world_data.py`, lesson
+      tables, recipe builds, seed scripts, JSON, starters, solutions as `.py` and `.ipynb`, full app), the zip
+      with README, `<workdir>/files.manifest.json` (`name, format, bytes, sha256, lessonId, sections, about, source`),
+      and inserts the box and section lines.
+- [ ] The checks a–h, with tests; `gate_lesson.py` and `verify_course.py` run them.
+- [ ] Pyodide 314.x engine for the checker; probe; re-check existing Python lessons; runner JS updated.
+- [ ] Output folder for the admin: `course-<chapter>_output.with-media.json` + `upload/images/…` + `upload/files/…`
+      (the illustrator writes `upload/images/`; the old `<images>/upload/` path stays readable).
+- [ ] Story video: a `table` scene may name its practice file; the description lists the lesson's files.
+- [ ] Pilot: Lesson 2 of *Building Production-Ready AI APIs* with all its files and the full app; every check passes.
 
-## 7. Learner site contract (`nerdit`: `future-vision`, `shared`)
+## 8. Admin contract (`nerdit-admin`)
 
-- [ ] `shared`: media record type gains `kind: "image" | "file"`, `format`, `bytes`, `sha256`; rebuild `shared`.
-- [ ] Lesson CSS copies updated with the plugin (§4); `normalizeLessonHtml` keeps the box and links, adds
-      `rel="noopener"`, drops links to other origins.
-- [ ] Python/plot runners: when a `.nerdit-files` box exists, the runner skips its own Blob `Download` links (no
-      duplicates) and writes the listed files into Pyodide's file system — from the recipe as today, or fetched
-      from the uploaded URL for files without a recipe (JSON, xlsx).
-- [ ] SQL runner: unchanged seed; the `.sql` download sits in the box.
-- [ ] Download UX: format, size, one tap on a phone; "Download all (zip)".
-- [ ] Access: same as images (public, unguessable, hashed URLs) unless §9 decides enrolled-only signed URLs.
-- [ ] Tests: `normalizeLessonHtml` keeps the markup; Playwright downloads a file with the right name and bytes and
-      runs a Try It that reads it.
+- [ ] **Import JSON + Media** takes the `upload/` folder. Allowed: `.csv .xlsx .json .jsonl .sql .py .ipynb .txt .md .zip`;
+      refused: `.xlsm .exe .html .js` and anything else; at most 5 MiB each.
+- [ ] Matching as for images: by file name across nested folders; a missing or duplicate name blocks
+      preparation; extra files enter the course library.
+- [ ] Validation: extension vs content (zip signature for xlsx/zip, UTF-8 text, JSON parses, notebook JSON valid).
+- [ ] **Private storage:** `courses/<courseId>/files/<sha256 8 chars>/<original name>`, `Content-Type` by extension,
+      `Content-Disposition: attachment; filename="<original name>"`. Not public: no download tokens are created,
+      and the HTML keeps the relative `files/<name>` link plus `data-nerdit-file`; the learner site resolves it.
+- [ ] **Storage security rules:** read allowed for admins, and for a signed-in user whose enrolment record for
+      that course exists (rules read Firestore, one read per download); write for admins only. Rules tests cover
+      enrolled, not enrolled, signed out and admin.
+- [ ] Media records hold `kind: "file"`, name, sha256, bytes and storage path, so re-import and Export output JSON
+      round-trip by original name, as images do.
+- [ ] Media library lists files with the lessons and sections that use them; replacing one flags those lessons
+      for review. Admin preview downloads work for admins.
+- [ ] Sanitizer allowlist: the new classes, `a[download]`, the `data-*` attributes above, `href` only to a relative
+      `files/` path; `script.nerdit-files-spec` kept in the JSON, never rendered.
+- [ ] Tests: import → preview → export round-trip with one file of each format; duplicate and missing-file blocks.
 
-## 8. Rollout
+## 9. Learner site contract (`nerdit`: `future-vision`, `shared`)
+
+- [ ] `shared`: media record gains `kind: "image" | "file"`, `format`, `bytes`, `sha256`, `storagePath`; rebuild.
+- [ ] Lesson CSS copies updated with the plugin (§5); `normalizeLessonHtml` keeps the box and links, drops links to
+      other origins.
+- [ ] **Enrolled-only downloads:** a click on `a.nerdit-file` fetches the file with the Firebase SDK (`getBlob` on the
+      storage path, which the security rules check) and saves it under `data-nerdit-file`. Not enrolled: the box
+      shows the file list with an "Enrol to download" button instead of links. Signed out: "Sign in to download".
+- [ ] Runners: with a `.nerdit-files` box, the Python/plot runners skip their own Blob links and write the listed
+      files into Pyodide's file system — built from the recipe as today, or fetched with `getBlob` for files without
+      a recipe (JSON, xlsx). Runners move to Pyodide 314.x (§4).
+- [ ] Download UX: format, size and "Python 3.14" shown; one tap on a phone; "Download all (zip)".
+- [ ] Tests: `normalizeLessonHtml` keeps the markup; Playwright as enrolled, not enrolled and signed out; an enrolled
+      download has the right name and bytes; a Try It that reads the file runs.
+
+## 10. Rollout
 
 | Phase | Where | Done when |
 |---|---|---|
-| 1 | plugin | rules, `practice_files.py`, `check_files.py`, Pyodide mounting, the §5b checks a–f, tests; Lesson 2 pilot passes every gate |
-| 2 | admin | import/upload/rewrite/round-trip and sanitizer tests pass with the pilot folder |
-| 3 | learner site | CSS sync check passes; Playwright download + Try It on the pilot lesson |
-| 4 | all three | end-to-end: generate → import → preview → publish → learner downloads and runs the code |
-| 5 | courses | backfill published courses from their worlds, seeds and shown tables; re-import each reviewed final JSON |
+| 1 | plugin | §7 complete; Lesson 2 pilot passes checks a–h |
+| 2 | admin | import, private upload, rules tests and round-trip pass with the pilot folder |
+| 3 | learner site | CSS sync check passes; Pyodide 314 runners; Playwright access tests pass |
+| 4 | all three | end-to-end: generate → import → preview → publish → enrolled learner downloads and runs everything |
+| 5 | courses | backfill published courses: worlds per decision 7, files, solutions, re-check on Python 3.14; re-import each reviewed final JSON |
 
-Phase 1 can start now and ships nothing to learners until phases 2–3 are released.
+Phase 1 ships nothing to learners until phases 2–3 are released.
 
-## 9. Decisions needed
+## 11. Cost (Google)
 
-1. Downloads public with hashed URLs (like images), or only for enrolled learners (signed URLs)?
-2. Limits: 5 MiB per file, 50 MiB per course?
-3. Formats in phase 1: CSV, XLSX, JSON, SQL, PY — and `.ipynb`?
-4. Ship a solutions file, or keep solutions only on the page (current rule: answers stay on the page)?
-5. HTML-only (like images), or also a lesson-level `practiceFiles` list in the course JSON for a separate
-   "Files" tab? HTML-only needs no schema change; the list needs `assemble_course.py`, `verify_course.py`,
-   admin validation and `shared` types.
-6. Which Python and library versions should the offline check pin (§5b b)? Proposal: Python 3.12 and the
-   latest stable FastAPI, httpx, pandas, scikit-learn, recorded per course so outputs stay reproducible.
-7. Which world for courses whose subject has none yet (§5b c)? Proposal: `fvc-institute` for tech and AI
-   courses, `practice-retail` for business ones, a new world only when neither fits.
+About 6 GB of files for 500 courses (about ₹3 a month to store); downloads are free up to 100 GB a month, then about
+$0.12 per GB; enrolment checks add one Firestore read per download. Videos stay on YouTube. Set a budget alert.
