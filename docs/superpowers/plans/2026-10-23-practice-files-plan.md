@@ -22,17 +22,21 @@ Claude GitHub App to have access to both repos.
 | 1 | Who downloads | **Certificate holders** (and admins). Courses stay free (`price: 0`); the certificate (`certificatePrice`, ₹999 today) unlocks the exam, the certificate, the practice pack and the capstone code |
 | 2 | Packaging | **One course practice pack**, offered in the first chapter; **one folder per chapter**; downloaded once, then used chapter by chapter |
 | 3 | Size | **Course pack at most 10 MiB**; any single file at most 5 MiB |
+| 11 | Admin upload | **One course bundle zip** from the plugin: the output JSON, all images and practice files, and the video list; the admin imports that one file (§10) |
 | 4 | Formats | **CSV, Excel, JSON, SQL, Python, notebooks** |
 | 5 | Solutions | **Full code to download**; the page keeps short code with explanations |
 | 6 | Where file details live | **Lesson HTML only** (like images); no course-JSON schema change |
 | 7 | Python | **Python 3.14** everywhere; **3.15** only for lessons about its new features; **no deprecated code** |
-| 8 | Worlds | **`fvc-institute`** for tech and AI courses, **`practice-retail`** for business courses |
+| 8 | Worlds | **One of the six business worlds per course**, chosen by subject fit (§2b); `practice-retail` (fictional) only when none fits |
 | 9 | Capstone | **A new last chapter** in every code course: one end-to-end project combining every chapter, on the world's data |
 | 10 | Capstone and certificate | **Not required for the certificate.** The capstone is practice; `finalAssignment` stays unused |
 
 **Still open (defaults used until decided):** a pack button on the course page as well as in the first chapter
-(default: first chapter only); whether new AI API courses teach `httpx2` instead of `httpx` (default: `httpx` in
-lessons, `httpx2` pinned for FastAPI's test client, §4).
+(default: first chapter only); whether new AI API courses teach `httpx2` instead of `httpx`. `httpx2` (Pydantic's
+continuation of `httpx`, same author) is a drop-in: same classes, same output, only the import name changes, and
+FastAPI's test client now prefers it. Default: lessons teach `httpx`, which most tutorials and jobs still use and is
+not deprecated; `httpx2` is pinned for the test client; the quarterly freshness check flags the day FastAPI's own
+docs switch, and courses move then (§4).
 
 ---
 
@@ -96,6 +100,28 @@ L<nn>-full-app.py                        the chapter's pieces in one runnable pr
   sample is what the lesson uses and checks). A course that still cannot fit ships a second `…-data-pack-v<n>.zip`
   (at most 10 MiB), listed beside the practice pack. This course's pack is under 1 MiB.
 - If the course order changes, names are regenerated and re-uploaded; lesson ids stay unchanged.
+
+## 2b. Which world a course uses
+
+All practice data, case studies and the capstone come from **one world per course**. The six business worlds use real
+business names with the owners' recorded permission (`business.realName`); cast and records are invented. Pick by fit:
+
+| World | Business | Entities | Fits courses on |
+|---|---|---|---|
+| `fvc-institute` | Future Vision Computer Institute, Surat | enquiries, learners, daily_enquiries, batch_scores, enquiry_messages | AI and LLM apps, AI APIs, NLP, chatbots, statistics, classification, Python basics, CRM funnels |
+| `saree-wholesale` | Akruti Sarees, Surat | retailers, skus, weekly_orders, retailer_sku, order_lines | SQL, pandas and data cleaning, inventory, B2B sales, weekly forecasting, Excel |
+| `stationery-d2c` | Roohani Rang, Mumbai | products, customers, orders, ratings, reviews, daily_sales | e-commerce analytics, customer segmentation, review sentiment, recommendations, daily sales series, Power BI, digital marketing |
+| `boat-cruises` | Australian Boat Parties, Melbourne | bookings, quotes, cancellations, daily_bookings | booking systems and APIs, cancellation prediction, seasonality, business analytics |
+| `wire-mesh` | Jain Wire Netting, Visakhapatnam | products, prices, qc_measurements, roll_defects | NumPy, quality-control statistics, anomaly detection, manufacturing, price lists in Excel |
+| `interior-design` | Singhvi Interiors, Mumbai | enquiries, projects | project tracking, small-business Excel, quotes and CRM, design-business courses |
+| `practice-retail` | Practice Retail (fictional) | stores, products, orders | fallback when no business fits, or when the story needs a mistake that must not touch a real business |
+
+- The choice is recorded per course (`course-<chapter>_world.json`, and `ds-course-map.json` for Data Science);
+  the capstone uses the same world.
+- An owner may appear as themselves (asking the question the analyst answers), never in a mistake, defect or blame
+  story beat; mistakes belong to data entry, queries or pipelines (worlds README).
+- A course may add entities to its world when the subject needs them (for example API request logs for an API
+  course), reviewed like any world change; existing courses keep their reviewed records.
 
 ## 3. Formats, and page vs download
 
@@ -307,15 +333,42 @@ the 2-attempt budget, then stops and reports.
       writer writes the page; the plugin builds `starter/`, `tests/`, `solution/` and `data/`.
 - [ ] **Checks a–i** with tests; `gate_lesson.py` and `verify_course.py` run them.
 - [ ] **Pyodide 314.x** for the checker; probe; re-check existing Python lessons; runner JS updated.
-- [ ] **Output for the admin:** `course-<chapter>_output.with-media.json` + `upload/images/…` + `upload/files/…`
-      (the illustrator writes `upload/images/`; the old `<images>/upload/` path stays readable).
+- [ ] **Output for the admin: one course bundle zip** (§10) with the output JSON, `media/images/`, `media/files/`,
+      `videos/clips.json`, thumbnail, description and `bundle.json` (`scripts/make_bundle.py`, checked by
+      `check_bundle.py`: every link resolves inside the bundle, sha256s match, sizes within limits). The illustrator
+      and story video write into the same workdir; the old `<images>/upload/` path stays readable.
 - [ ] **Story video:** each topic clip ends with a "Now practise" card (§5b) checked against the section's Try It and the starter; a `table` scene may name its practice file; the description lists the pack; one clip per capstone milestone.
 - [ ] **Pilot:** *Building Production-Ready AI APIs*: Lesson 2 folder complete (prototype built and tested on Python
       3.14, 2026-10-23), the other chapters as they are regenerated, and the capstone.
 
 ## 10. Admin contract (`nerdit-admin`)
 
-- [ ] **Import JSON + Media** takes the `upload/` folder. Allowed: `.csv .xlsx .json .jsonl .sql .py .ipynb .txt .md .zip`;
+**One course bundle, one import.** The plugin writes one zip per course version; the admin uploads that single file.
+
+```
+building-production-ready-ai-apis-bundle-v1.zip
+  course-building-production-ready-ai-apis_output.json   the final course JSON: lessons, quiz, media links, video slots
+  media/images/…                                         raster images (public storage, as today)
+  media/files/…                                          the practice pack and every chapter file (private storage)
+  videos/clips.json                                      one entry per clip: key, chapter, section, title, YouTube link
+  videos/thumbnail.jpg  videos/description.txt
+  bundle.json                                            course id, versions, pack version, sha256 of every file
+```
+
+- **Videos stay on YouTube.** MP4s are not in the bundle: hosting video in Firebase would cost about ₹9,000 a month
+  per 10,000 course views, against ₹0 on YouTube. Staff upload the clips to YouTube (Unlisted) and either paste each
+  link into `videos/clips.json` before import, or paste them in the admin's Videos box after import; empty slots stay
+  hidden from learners. Later option: an "Upload to YouTube" button in the admin through the YouTube Data API, which
+  needs a quota increase for bulk uploads (the default daily quota allows only a few uploads).
+- **Import course bundle** replaces "Import JSON + Images": it checks `bundle.json` (every file present, sha256
+  matches, names unique, sizes within limits), shows a preview, then uploads images (public), files (private, §7)
+  and fills video slots from `clips.json`. A newer bundle version uploads only files whose sha256 changed.
+- Bundle size: at most 100 MiB (images are already WebP; the pack is at most 10 MiB).
+- The separate "Import JSON + Images" stays available for old courses.
+
+Details:
+
+- [ ] The bundle's `media/` folder follows these rules. Allowed: `.csv .xlsx .json .jsonl .sql .py .ipynb .txt .md .zip`;
       refused: `.xlsm .exe .html .js` and anything else. At most 5 MiB per file and 10 MiB for a
       `*-practice-pack-v<n>.zip` or `*-data-pack-v<n>.zip`.
 - [ ] Matching as for images: by file name across nested folders; a missing or duplicate name blocks preparation;
@@ -356,7 +409,7 @@ the 2-attempt budget, then stops and reports.
 | Phase | Where | Done when |
 |---|---|---|
 | 1 | plugin | §9 complete; the pilot course's pack (with capstone) passes checks a–i |
-| 2 | admin | import, private upload, rules tests and round-trip pass with the pilot folder |
+| 2 | admin | Import course bundle, private upload, rules tests and round-trip pass with the pilot bundle |
 | 3 | learner site | CSS sync check passes; Pyodide 314 runners; Playwright access tests pass |
 | 4 | all three | end to end: generate → import → preview → publish → a certificate holder downloads the pack and runs every chapter and the capstone |
 | 5 | trial | one batch of 20–30 institute students uses the pilot pack for a week: downloads, finished practice tasks, capstone milestones reached, where they got stuck |
