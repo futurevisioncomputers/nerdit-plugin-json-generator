@@ -18,8 +18,9 @@ Claude GitHub App to have access to both repos.
 
 | # | Question | Decision |
 |---|---|---|
-| 1 | Who can download | **Enrolled learners only** (and admins) |
+| 1 | Who can download | **Learners who bought the certificate** (and admins). Courses are free (`price: 0`); the certificate (`certificatePrice`, ₹999 today) unlocks the exam, the certificate, the practice pack and the capstone code (§11). Free learners keep the full lesson page, the in-browser runner and the on-page answers |
 | 2 | Size | **5 MiB per file**; the course practice pack is the one exception, up to 50 MiB (§3, to confirm) |
+| 9 | Capstone | **An end-to-end capstone project as the last chapter** of every code course: it combines every chapter into one working project on the course world's data at full size, with milestone tests and full code in the pack (§12) |
 | 8 | Packaging | **One course practice pack**: a single zip for the whole course with one folder per lesson, offered at the start (Lesson 1) and downloaded once; each lesson also links its own files singly, for learners who join midway (§2, §5) |
 | 3 | Formats | **CSV, Excel, JSON, SQL, Python, notebooks** |
 | 4 | Solutions | **Downloadable full code.** The page shows short code with explanations; the download holds the complete, runnable code |
@@ -281,11 +282,87 @@ newest library releases reports lessons whose code has become deprecated, before
 | 2 | admin | import, private upload, rules tests and round-trip pass with the pilot folder |
 | 3 | learner site | CSS sync check passes; Pyodide 314 runners; Playwright access tests pass |
 | 4 | all three | end-to-end: generate → import → preview → publish → enrolled learner downloads and runs everything |
-| 5 | courses | backfill published courses: worlds per decision 7, files, solutions, re-check on Python 3.14; re-import each reviewed final JSON |
+| 4b | plugin | capstone for the pilot course: lesson, pack folder, tests, video; every §12 check passes |
+| 5 | courses | backfill published courses (capstone added per course): worlds per decision 7, files, solutions, re-check on Python 3.14; re-import each reviewed final JSON |
 
 Phase 1 ships nothing to learners until phases 2–3 are released.
 
-## 11. Cost (Google)
+## 11. Paid access: the certificate unlocks the files
+
+- **What free learners keep:** every lesson page, every explanation and short code example, the in-browser runner,
+  Try Its, on-page answers, the videos, and the capstone brief. Learning never depends on paying.
+- **What the certificate adds:** the exam and certificate (as today), the course practice pack, each lesson's
+  single-file downloads, and the capstone starter, tests and full solution.
+- **The browser runner never needs a paid file.** Its data comes from the lesson's dataset recipe or a small block
+  inside the lesson (at most 40 KB), so free learners' Try Its keep working. Paid files live under
+  `courses/<courseId>/files/`, runner data never does.
+- **Storage rules** allow reading `courses/<courseId>/files/**` for admins and for a signed-in user whose
+  certificate purchase for that course is recorded: the same record the exam and certificate unlock already use
+  (path to confirm in `nerdit`). One Firestore read per download.
+- **What learners see:**
+
+  | Learner | The files box shows |
+  |---|---|
+  | Bought the certificate | Download buttons (course pack in Lesson 1, files in every lesson, capstone pack) |
+  | Enrolled, not bought | The full file list, locked, with **"Unlock with certificate — ₹999: exam, certificate, practice pack and capstone code"** |
+  | Signed out | The same locked list with **"Sign in"** |
+
+- The price shown comes from the course's `certificatePrice`, never typed into the lesson HTML.
+- Admins see and download everything in preview.
+
+## 12. Capstone project: the whole course, end to end
+
+**Shape.** One extra last chapter per code course, `Capstone: <project>`, with `focus: "project"`. The plugin
+proposes its title and description from the earlier lessons; the owner adds it to the input (the order stays
+theirs). It builds one working project that uses every chapter, on the course world's data at full size
+(synthetic, never real learner records).
+
+**Example for *Building Production-Ready AI APIs*: "The Enquiry Reply Assistant, end to end"** on all 2,000
+synthetic `enquiry_messages` of Future Vision Computer Institute:
+
+| Milestone | From chapter | The learner builds | Proved by |
+|---|---|---|---|
+| M1 | L01 LLM integration and streaming | `/draft-reply` calls the provider and streams the draft | `tests/test_m1_streaming.py` |
+| M2 | L02 timeouts, retries, rate limits | both timeouts, retries with backoff and jitter, a token bucket per counsellor, clear 504/502/429 | `tests/test_m2_resilience.py` |
+| M3 | L03 validation and usage tracking | a Pydantic request model, token estimates, a daily quota, cost per call | `tests/test_m3_usage.py` |
+| M4 | L04 logging and health | one JSON log line per request, liveness and readiness | `tests/test_m4_ops.py` |
+| Final | all | draft replies for all 2,000 messages in a batch and print a spend report by intent and branch | `tests/test_final_batch.py` + `python report.py` |
+
+**The capstone page** (a lesson like the others, explained first): the problem and what the finished app does,
+an architecture figure, then one section per milestone with its goal, what to build, the short key code and the
+tests that prove it, then "run the whole thing" and extension ideas. Free learners can read and build it from the page.
+
+**In the pack** (certificate):
+
+```
+L05-capstone-enquiry-reply-assistant/
+  README.md                 brief, milestones, how to run the tests, how to use a real provider
+  data/                     L05-enquiry-messages.csv (2,000 rows), L05-learners.csv, L05-prices.json
+  starter/                  the project skeleton with TODOs per milestone; imports and runs, tests fail
+  tests/                    pytest, one file per milestone; the learner runs `pytest tests/test_m2_resilience.py`
+  solution/                 the complete app, report script and fake provider; every test passes
+```
+
+The fake provider makes the whole project run offline and without an API key; an environment variable switches
+to a real provider.
+
+**Checks** (added to §6):
+
+- the solution passes every test on Python 3.14 with all warnings as errors; `report.py` prints the documented report;
+- the starter imports and runs, and **each milestone's tests fail on the starter and pass on the solution** (proof the
+  tests check the milestone);
+- the capstone uses only what the course taught (sequence check: everything earlier is allowed, nothing later or
+  outside the course);
+- no deprecated code; learner-eye test on the pack covers the capstone folder;
+- the page's short code is a part of the solution, line for line.
+
+**Video:** the capstone gets a story-video clip per milestone and a final demo of the tests and the report.
+
+**Later, optional:** the course record already has `finalAssignment` (null today). Once its meaning in `nerdit` is
+known, the capstone can become the final assignment, for example "certificate after the exam and a passing
+capstone test run".
+
+## 13. Cost (Google)
 
 About 6 GB of files for 500 courses, about 12 GB with the course packs (still about ₹25 a month to store);
 downloads are free up to 100 GB a month, then about $0.12 per GB. A course pack is downloaded whole, even by
