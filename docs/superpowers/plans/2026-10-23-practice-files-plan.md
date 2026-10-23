@@ -127,6 +127,25 @@ the canonical `references/css9-simple.css` and both apps' `src/lesson-css/` copi
 - [ ] **Story video:** a `table` scene may name its practice file; the description lists the lesson's files.
 - [ ] Tests for each script; pilot on Lesson 2 of *Building Production-Ready AI APIs* (the four files above).
 
+## 5b. Verification: no broken code or data reaches a learner
+
+Today the gates check run lines (exact output, website Pyodide), Try It starters (no error), SQL results
+(against the seed), Excel formulas (site engine) and world data. Not checked: practice solutions, predict
+answers, fill-in-the-blank answers, offline code (FastAPI, httpx, TensorFlow …), quiz answers, and courses
+without a world file. Phase 1 closes every gap; a lesson ships only when all of these pass.
+
+| # | Check | Script | Fails when |
+|---|---|---|---|
+| a | **Every answer runs.** Practice solutions (alone), predict answers (in the run lines' namespace), fill-in-the-blank code with `data-answer` filled in | `check_python_outputs.py`, `check_sql_outputs.py` (extended) | an output differs from the shown one, or code raises / does not compile |
+| b | **Offline code runs for real.** `data-run="offline"` examples run in a local venv pinned per course (`course-<chapter>_requirements.txt`, e.g. `fastapi==…`, `httpx==…`) | new `check_offline_outputs.py` | output differs, or a library is not pinned |
+| c | **All practice data is generated.** A data or code course declares a world (`course-<chapter>_world.json`); typed-in data over 8 rows is refused | `check_input.py --strict`, `check_world.py` | no world, or a table/file value outside the world (declared defects aside) |
+| d | **Learner-eye test.** Unzip `L<nn>-practice-files.zip` into an empty folder and run the starter `.py` (Python 3.12) and the `.sql` (SQLite) there, as a learner would | `check_files.py --as-learner` | any error, a missing file, or a file the code opens that is not in the zip |
+| e | **One source, three copies agree.** The page's tables, the download and the browser runner's file are built from the same spec | `check_files.py` | sha256 of the browser build ≠ download, or shown rows not in the file |
+| f | **Quiz answers that can be computed are computed.** A question quoting code or numbers is run and its correct option compared | `check_quiz.py` (new) | the marked option is not the computed result |
+
+Rules: every check exits 0/1/2 like the existing ones (2 = environment missing, never a pass); a failure
+regenerates the lesson within the existing 2-attempt budget, then stops and reports.
+
 ## 6. Admin contract (`nerdit-admin`)
 
 - [ ] **Import JSON + Media** (today: Import JSON + Images) takes the `upload/` folder:
@@ -166,7 +185,7 @@ the canonical `references/css9-simple.css` and both apps' `src/lesson-css/` copi
 
 | Phase | Where | Done when |
 |---|---|---|
-| 1 | plugin | rules, `practice_files.py`, `check_files.py`, Pyodide mounting, tests; Lesson 2 pilot passes every gate |
+| 1 | plugin | rules, `practice_files.py`, `check_files.py`, Pyodide mounting, the §5b checks a–f, tests; Lesson 2 pilot passes every gate |
 | 2 | admin | import/upload/rewrite/round-trip and sanitizer tests pass with the pilot folder |
 | 3 | learner site | CSS sync check passes; Playwright download + Try It on the pilot lesson |
 | 4 | all three | end-to-end: generate → import → preview → publish → learner downloads and runs the code |
@@ -183,3 +202,7 @@ Phase 1 can start now and ships nothing to learners until phases 2–3 are relea
 5. HTML-only (like images), or also a lesson-level `practiceFiles` list in the course JSON for a separate
    "Files" tab? HTML-only needs no schema change; the list needs `assemble_course.py`, `verify_course.py`,
    admin validation and `shared` types.
+6. Which Python and library versions should the offline check pin (§5b b)? Proposal: Python 3.12 and the
+   latest stable FastAPI, httpx, pandas, scikit-learn, recorded per course so outputs stay reproducible.
+7. Which world for courses whose subject has none yet (§5b c)? Proposal: `fvc-institute` for tech and AI
+   courses, `practice-retail` for business ones, a new world only when neither fits.
