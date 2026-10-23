@@ -334,33 +334,62 @@ def test_mux_adds_music_only_when_given():
     assert "amix" not in " ".join(plain) and any("amix=inputs=2" in a for a in music)
 
 
-def test_one_clip_per_lesson_intro_on_first_recap_on_last(tmp_path):
+def test_one_clip_per_topic_plus_intro_and_recap(tmp_path):
     plan, tl = build_tl(tmp_path)
-    plan["scenes"][1]["lessonId"] = "l1"            # two scenes in lesson l1
-    clips = build_video.lesson_clips(plan, tl, {"l1": "Lesson One"})
-    assert [c["lessonId"] for c in clips] == ["l1", "l3", "l4", "l5"]
+    for s in plan["scenes"]:
+        s["topic"] = 1
+    plan["scenes"][1].update(lessonId="l1", topic=1)    # two scenes in l1 topic 1: one clip
+    plan["scenes"][2].update(lessonId="l1", topic=2)    # same lesson, next topic: its own clip
+    clips = build_video.topic_clips(plan, tl, {"l1": "Lesson One"}, {"l1": {2: "Counting"}})
+    assert [c["key"] for c in clips] == ["l1-intro-video", "l1-t1-video", "l1-t2-video", "l4-t1-video",
+                                         "l5-t1-video", "l5-recap-video"]
     assert clips[0]["start"] == 0.0 and clips[-1]["end"] == tl["duration"]
-    assert all(a["end"] == b["start"] for a, b in zip(clips, clips[1:]))
-    assert clips[0]["key"] == "l1-video" and clips[0]["title"] == "Lesson One" and clips[1]["title"] == "l3"
+    assert all(a["end"] <= b["start"] for a, b in zip(clips, clips[1:]))
+    assert clips[2]["title"] == "Counting" and clips[1]["title"] == storyplan.title_case(plan["scenes"][0]["title"])
+    assert clips[2]["file"] == "clip-03-l1-t2.mp4" and clips[0]["title"] == "Lesson One: Introduction"
     cmd = build_video.cut_command("ff", Path("story.mp4"), clips[1], Path("c.mp4"))
     assert cmd[cmd.index("-ss") + 1] == f"{clips[1]['start']:.3f}" and "+faststart" in cmd
 
 
-def test_place_video_adds_one_slot_before_the_cheat_sheet():
+def test_topics_are_checked():
+    scenes = [{"lessonId": "l1", "topic": 1, "narration": "x"}, {"lessonId": "l1", "topic": 2, "narration": "As we saw, y"},
+              {"lessonId": "l1", "topic": 1, "narration": "z"}, {"lessonId": "l1", "narration": "q"},
+              {"lessonId": "l1", "topic": 9, "narration": "w"}]
+    errors = storyplan.check_topics(scenes, {"l1": {1: "A", 2: "B"}})
+    assert any("scene 2" in e and "refers back" in e for e in errors)
+    assert any("scene 3" in e and "together" in e for e in errors)
+    assert any("scene 4" in e and "topic must be" in e for e in errors)
+    assert any("scene 5" in e and "no section 9" in e for e in errors)
+    assert len(errors) == 4
+
+
+def test_lesson_topics_read_numbered_sections(tmp_path):
+    path = tmp_path / "c.json"
+    path.write_text(json.dumps({"lessons": [{"id": "l1", "content": "<h2>1 — 🔍 From a worry</h2><h2>📌 Cheat</h2>"}]}),
+                    encoding="utf-8")
+    assert storyplan.lesson_topics(path) == {"l1": {1: "From a worry"}}
+
+
+def test_place_video_puts_each_clip_where_it_belongs():
     import place_video
     course = {"lessons": [
-        {"id": "l1", "content": '<div class="nerdit-wrapper"><section><h2>1 — A</h2></section>'
-                                '<section><h2>📌 Quick cheat sheet</h2></section></div>'},
+        {"id": "l1", "content": '<div class="nerdit-wrapper"><p>intro</p><section><h2>1 — A</h2><p>a</p></section>'
+                                '<section><h2>2 — B</h2></section><section><h2>📌 Quick cheat sheet</h2></section></div>'},
         {"id": "l2", "content": '<div class="nerdit-wrapper"><p>x</p></div>'}]}
-    clips = [{"key": "l1-video", "lessonId": "l1", "title": 'Rates & "counts"'},
-             {"key": "l2-video", "lessonId": "l2", "title": "B"}]
+    clips = [{"key": "l1-intro-video", "place": "intro", "lessonId": "l1", "topic": None, "title": "Intro"},
+             {"key": "l1-t1-video", "place": "topic", "lessonId": "l1", "topic": 1, "title": 'Rates & "counts"'},
+             {"key": "l1-t2-video", "place": "topic", "lessonId": "l1", "topic": 2, "title": "B"},
+             {"key": "l1-recap-video", "place": "recap", "lessonId": "l1", "topic": None, "title": "Recap"},
+             {"key": "l2-t1-video", "place": "topic", "lessonId": "l2", "topic": 1, "title": "C"}]
     course, added = place_video.add_slots(course, clips)
-    assert added == ["l1-video", "l2-video"]
+    assert added == [c["key"] for c in clips]
     c1 = course["lessons"][0]["content"]
-    assert c1.index('data-nerdit-video="l1-video"') < c1.index("📌")
-    assert c1.index('data-nerdit-video="l1-video"') > c1.index("1 — A")
+    at = {c["key"]: c1.find(f'data-nerdit-video="{c["key"]}"') for c in clips[:4]}
+    assert c1.index("<p>intro</p>") < at["l1-intro-video"] < c1.index("1 — A")
+    assert c1.index("<p>a</p>") < at["l1-t1-video"] < c1.index("2 — B") < at["l1-t2-video"] < at["l1-recap-video"]
+    assert at["l1-recap-video"] < c1.index("📌")
     assert 'data-title="Rates &amp; &quot;counts&quot;"></div>' in c1
-    assert course["lessons"][1]["content"].endswith('<div class="nerdit-video" data-nerdit-video="l2-video" data-title="B"></div>\n</div>')
+    assert course["lessons"][1]["content"].endswith('data-nerdit-video="l2-t1-video" data-title="C"></div>\n</div>')
     assert place_video.add_slots(course, clips)[1] == []
 
 

@@ -6,6 +6,7 @@
     "owner": {"name": "Rahul Dosi", "title": "Founder"},
     "realName": {"approvedBy": "Rahul Dosi (owner)", "date": "2026-10-20", "note": "owner has no objection; confirmed by the course author"},
     "type": "wire mesh and fencing products",
+    "setting": "A wire mesh factory floor in Gujarat: weaving machines, rolls of steel mesh, a quality desk with a micrometer and a logbook, yellow safety lines on the floor, high windows.",
     "city": "Visakhapatnam",
     "currency": "INR",
     "moneyUnit": "paise",
@@ -15,8 +16,8 @@
     "dataNote": "Business name used with permission. All products, prices and measurements are synthetic."
   },
   "cast": [
-    {"name": "Dhruv", "role": "quality engineer", "trait": "writes down every out-of-range reading", "look": "invented adult with a hard hat and safety glasses"},
-    {"name": "Leela", "role": "pricing analyst", "trait": "asks what drives a price before setting one", "look": "invented adult with a blue saree and a tablet"}
+    {"name": "Dhruv", "role": "quality engineer", "trait": "writes down every out-of-range reading", "look": "invented adult with a hard hat and safety glasses", "visual": "Indian man in his mid 30s, broad build, dark brown skin, short black hair, thick moustache, white hard hat, clear safety glasses, orange high-visibility vest over a blue work shirt"},
+    {"name": "Leela", "role": "pricing analyst", "trait": "asks what drives a price before setting one", "look": "invented adult with a blue saree and a tablet", "visual": "Indian woman in her early 40s, medium build, wheat skin, black hair with a few grey strands in a low bun, royal-blue cotton saree, holds a tablet in a black case"}
   ],
   "stages": ["collect", "clean", "explore", "model", "report"],
   "messiness": ["wire_diameter_mm", "tensile_kgf", "zinc_coating_gsm"],

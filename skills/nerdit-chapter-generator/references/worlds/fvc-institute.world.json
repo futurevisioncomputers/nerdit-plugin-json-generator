@@ -13,12 +13,13 @@
     "funnel": "enquiry, free counselling, demo class, enrolment",
     "batches": "classroom, group and online",
     "realName": {"approvedBy": "Siddharth Parakh (owner, course author)", "date": "2026-10-17", "note": "approved in the planning chat"},
+    "setting": "A bright computer training institute in Surat: front desk with a register and a desktop, a classroom with rows of monitors, white walls with teal trim, large windows, potted plants.",
     "dataNote": "Every enquiry, learner, score and message is synthetic. No real learner records."
   },
   "cast": [
-    {"name": "Neha", "role": "admissions counsellor", "trait": "logs every enquiry the same day", "look": "invented adult with a teal kurta and a notebook"},
-    {"name": "Arjun", "role": "data analyst", "trait": "asks which column a number came from", "look": "invented adult with round glasses and a grey hoodie"},
-    {"name": "Fatima", "role": "trainer", "trait": "checks scores against attendance", "look": "invented adult with a yellow scarf and a lanyard"}
+    {"name": "Neha", "role": "admissions counsellor", "trait": "logs every enquiry the same day", "look": "invented adult with a teal kurta and a notebook", "visual": "Indian woman in her early 30s, slim build, warm brown skin, shoulder-length straight black hair tied in a low ponytail, small gold stud earrings, teal cotton kurta with white churidar, carries a blue spiral notebook and a black pen"},
+    {"name": "Arjun", "role": "data analyst", "trait": "asks which column a number came from", "look": "invented adult with round glasses and a grey hoodie", "visual": "Indian man in his late 20s, medium build, light brown skin, short wavy black hair, trimmed stubble, round black-rimmed glasses, grey hoodie over a white t-shirt, dark jeans, silver laptop"},
+    {"name": "Fatima", "role": "trainer", "trait": "checks scores against attendance", "look": "invented adult with a yellow scarf and a lanyard", "visual": "Indian woman in her late 30s, medium build, wheat skin, black hair in a neat bun, mustard-yellow scarf over a cream salwar suit, blue lanyard with an ID card, holds a printed attendance sheet"}
   ],
   "stages": ["collect", "clean", "explore", "model", "explain"],
   "messiness": ["age", "enrolled"],

@@ -3,12 +3,14 @@
     python build_video.py --images-dir <images> [--workers 3] [--music <file>]
 
 Writes to <images>/video/: story.mp4 (1280x720, H.264 + AAC), thumbnail.jpg, title.txt and
-description.txt (with YouTube chapters).
+description.txt (with YouTube chapters), plus one short clip per lesson topic, an intro clip and
+a recap clip (clip-NN-<key>.mp4), listed in clips.json.
 Host the MP4 on YouTube (unlisted is fine) and link it from the course; never upload it to Firebase.
 """
 import argparse, array, json, subprocess, sys, time, wave
 from pathlib import Path
 
+import lessonparts
 import render
 import stage
 import storyplan
@@ -81,18 +83,36 @@ def broll_command(ff: str, video: Path, windows: list[dict], clips: list[Path], 
                   "-crf", "22", "-pix_fmt", "yuv420p", "-colorspace", "bt709", str(out)]
 
 
-def lesson_clips(plan: dict, tl: dict, titles: dict) -> list[dict]:
-    """One clip per lesson: its scenes (and myths) in order; the intro rides on the first clip and
-    the recap on the last, so each clip plays on its own inside its lesson."""
-    order = list(dict.fromkeys(s["lessonId"] for s in plan["scenes"]))
-    clips = []
-    for i, lid in enumerate(order):
-        parts = [s for s in tl["segments"] if s.get("scene") and plan["scenes"][s["scene"] - 1]["lessonId"] == lid]
-        start = 0.0 if i == 0 else parts[0]["start"]
-        end = tl["duration"] if i == len(order) - 1 else parts[-1]["end"]
-        clips.append({"key": f"{lid}-video", "lessonId": lid, "title": titles.get(lid, lid),
-                      "file": f"clip-{i + 1:02d}-{lid}.mp4", "start": round(start, 3), "end": round(end, 3)})
-    return clips
+def topic_clips(plan: dict, tl: dict, titles: dict, topics: dict) -> list[dict]:
+    """One short clip per lesson topic (its scenes and myths), plus an intro clip and a recap clip.
+    A learner stuck on one section watches only that section's clip, placed at its end."""
+    def clip(place: str, lid: str, topic, title: str, start: float, end: float) -> dict:
+        key = f"{lid}-{place}-video" if place != "topic" else f"{lid}-t{topic}-video"
+        return {"key": key, "place": place, "lessonId": lid, "topic": topic, "title": title,
+                "start": round(start, 3), "end": round(end, 3)}
+
+    scenes = [s for s in tl["segments"] if s.get("scene")]
+    groups = []
+    for seg in scenes:
+        s = plan["scenes"][seg["scene"] - 1]
+        key = (s["lessonId"], s.get("topic", 1))
+        if groups and groups[-1][0] == key:
+            groups[-1][1].append(seg)
+        else:
+            groups.append((key, [seg], s["title"]))
+    first, last = groups[0][0][0], groups[-1][0][0]
+    lesson = titles.get(first, first)
+    out = [clip("intro", first, None, f"{lesson}: introduction", 0.0, groups[0][1][0]["start"])]
+    for (lid, topic), segs, scene_title in groups:
+        title = (topics.get(lid) or {}).get(topic) or scene_title
+        out.append(clip("topic", lid, topic, title, segs[0]["start"], segs[-1]["end"]))
+    recap = next(s for s in tl["segments"] if s["kind"] == "recap")
+    out.append(clip("recap", last, None, f"{plan.get('course') or titles.get(last, last)}: recap",
+                    recap["start"], tl["duration"]))
+    for i, c in enumerate(out, 1):
+        c["title"] = storyplan.title_case(c["title"])
+        c["file"] = f"clip-{i:02d}-{c['key'][:-len('-video')]}.mp4"
+    return out
 
 
 def cut_command(ff: str, video: Path, clip: dict, out: Path) -> list[str]:
@@ -105,13 +125,17 @@ def cut_command(ff: str, video: Path, clip: dict, out: Path) -> list[str]:
             "-b:a", "128k", "-movflags", "+faststart", str(out)]
 
 
-def scene_svgs(plan: dict, vid: Path, figures: dict) -> list:
+def scene_svgs(plan: dict, vid: Path, figures: dict, parts: dict | None = None) -> list:
     out = []
     for s in plan["scenes"]:
         if s["kind"] == "vector":
             out.append((vid / "vectors" / s["vector"]).read_text(encoding="utf-8-sig"))
         elif s["kind"] == "diagram":
             out.append(figures[s["figure"]]["svg"])
+        elif s["kind"] == "table":   # the page's own table, redrawn
+            out.append(lessonparts.table_svg(storyplan.part_of(s, parts), s.get("highlight")))
+        elif s["kind"] == "code":    # the page's own worked example and its output
+            out.append(lessonparts.code_svg(storyplan.part_of(s, parts), s.get("highlight")))
         else:
             out.append(None)
     return out
@@ -124,7 +148,9 @@ def build(images_dir: Path, workers: int = 3, music: Path | None = None) -> Path
     plan = storyplan.load_json(vid / "plan.json")
     course = Path(plan["source"]) if plan.get("source") else None
     figures = storyplan.lesson_figures(course, images_dir) if course else {}
-    errors = storyplan.check_plan(plan, vid, figures, storyplan.lesson_texts(course) if course else None)
+    parts = storyplan.lesson_parts(course) if course else None
+    errors = storyplan.check_plan(plan, vid, figures, storyplan.lesson_texts(course) if course else None,
+                                  storyplan.lesson_topics(course) if course else None, parts)
     clips = [vid / "broll" / f"s{n}.mp4" for n, s in enumerate(plan["scenes"], 1) if s["kind"] == "broll"]
     errors += [f"missing {c}; run broll.py first" for c in clips if not c.is_file()]
     if errors:
@@ -134,7 +160,9 @@ def build(images_dir: Path, workers: int = 3, music: Path | None = None) -> Path
     work = vid / "parts"
     work.mkdir(parents=True, exist_ok=True)
     html = vid / "stage.html"
-    html.write_text(stage.build_stage(plan, tl, scene_svgs(plan, vid, figures), stage.lesson_css()), encoding="utf-8")
+    headings = {(lid, n): p["heading"] for lid, secs in (parts or {}).items() for n, p in secs.items()}
+    html.write_text(stage.build_stage(plan, tl, scene_svgs(plan, vid, figures, parts), stage.lesson_css(), headings),
+                    encoding="utf-8")
     narration = mix(vid / "audio", tl["audio"], tl["duration"], work / "narration.wav")
     silent = render.render(html, tl["duration"], FPS, workers, work / "video.mp4", ff)
     if tl["broll"]:
@@ -155,10 +183,13 @@ def build(images_dir: Path, workers: int = 3, music: Path | None = None) -> Path
     (vid / "description.txt").write_text(text, encoding="utf-8")
 
     titles = {l["id"]: l.get("title", "") for l in storyplan.course_lessons(course)} if course else {}
-    clips = lesson_clips(plan, tl, titles)
+    topics = storyplan.lesson_topics(course) if course else {}
+    for old in vid.glob("clip-*.mp4"):   # a rebuild may cut a different set of clips
+        old.unlink()
+    clips = topic_clips(plan, tl, titles, topics)
     for c in clips:
         subprocess.run(cut_command(ff, final, c, vid / c["file"]), check=True)
-        c["youtubeTitle"] = f"{plan.get('course', '')}: {c['title']}"
+        c["youtubeTitle"] = storyplan.title_case(f"{plan.get('course', '')}: {c['title']}")
     (vid / "clips.json").write_text(json.dumps(clips, ensure_ascii=False, indent=2), encoding="utf-8")
     return final
 

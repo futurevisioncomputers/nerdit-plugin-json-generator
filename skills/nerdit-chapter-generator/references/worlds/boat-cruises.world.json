@@ -6,6 +6,7 @@
     "owner": {"name": "Akshay", "title": "Owner"},
     "realName": {"approvedBy": "Akshay (owner)", "date": "2026-10-20", "note": "owner has no objection; confirmed by the course author"},
     "type": "boat party and cruise bookings for four vessels",
+    "setting": "A small harbour booking office by the sea: a wooden counter, a wall calendar, model boats on a shelf, a window onto moored white cruise boats, bright coastal light.",
     "city": "Melbourne",
     "currency": "AUD",
     "moneyUnit": "cents",
@@ -16,8 +17,8 @@
     "dataNote": "Business name used with permission. All bookings, quotes and amounts are synthetic."
   },
   "cast": [
-    {"name": "Mia", "role": "bookings manager", "trait": "confirms every deposit before a date is held", "look": "invented adult with a navy blazer and a headset"},
-    {"name": "Tom", "role": "data analyst", "trait": "plots the calendar before trusting a total", "look": "invented adult with a green jacket and a coffee cup"}
+    {"name": "Mia", "role": "bookings manager", "trait": "confirms every deposit before a date is held", "look": "invented adult with a navy blazer and a headset", "visual": "Woman in her early 30s, medium build, light olive skin, chestnut hair in a high ponytail, navy blazer over a white top, slim black call-centre headset"},
+    {"name": "Tom", "role": "data analyst", "trait": "plots the calendar before trusting a total", "look": "invented adult with a green jacket and a coffee cup", "visual": "Man in his late 20s, stocky build, fair skin with freckles, short sandy hair, olive-green zip jacket, holds a white coffee cup and a tablet"}
   ],
   "stages": ["collect", "clean", "explore", "model", "report"],
   "messiness": [],

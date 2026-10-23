@@ -14,6 +14,9 @@ import re
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "nerdit-chapter-generator" / "scripts"))
+from titlecase import title_case  # noqa: E402  (shared with the lessons and the video)
+
 from lessonhtml import (AnchorNotFound, find_section, fixture_text, locate, remove_visual_blocks,
                         section_fingerprint, section_text)
 
@@ -47,6 +50,7 @@ def style_block(labels: list[str], markers: int = 0, path: Path = STYLE_FILE,
     if not m:
         raise RuntimeError(f"no ```{fence} block in {path}")
     block = m.group(1).replace("{app}", app)
+    labels = [title_case(l) for l in labels]   # words drawn in the picture match the lesson headings
     if "{labels_clause}" in block:  # legacy v1 style file
         clause = (", except these exact labels: " + ", ".join(f'"{l}"' for l in labels)) if labels else ""
         return block.replace("{labels_clause}", clause)
@@ -163,7 +167,7 @@ def build_prompt(m: dict, s: dict) -> str:
               "process": "Educational process illustration"}.get(s.get("kind"), "Educational illustration")
     lines = [f"{opener} for a student meeting this topic for the first time.",
              f"Course: {m['course']['title']}", f"Lesson: {s['lessonTitle']}",
-             f"Section: {s['section']['heading']}", f"Learning objective: {s['objective']}",
+             f"Section: {title_case(s['section']['heading'])}", f"Learning objective: {s['objective']}",
              f"Question it answers: {s['question']}"]
     if m["course"].get("cast"):
         lines.append(f"Recurring characters and setting: {m['course']['cast']}")

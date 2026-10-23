@@ -21,9 +21,27 @@ present). Keys, in the user's environment only, never in a plan or a message:
 ## 1. Plan
 
 1. `python scripts/storyplan.py scaffold --images-dir <images> --course <course.json>` writes
-   `<images>/video/plan.json` (version 3) with one `vector` scene per lesson to start from, and
-   `availableFigures`: every SVG figure in the lessons by id and label.
-2. Read the lessons, then edit the plan into one explanation in course order (6–10 scenes):
+   `<images>/video/plan.json` (version 3): for every numbered lesson section, a `vector` concept
+   scene, then a `table` scene for each of the section's tables and a `code` scene for each of
+   its worked examples (up to 2 each), all titled with the section heading; plus
+   `availableFigures`, every SVG figure in the lessons by id and label.
+2. Read each section, then write its clip so it **mirrors the page** (4–6 scenes, 60–120 s):
+   - **One topic per clip.** Every scene names `topic`: the number of the lesson section it
+     explains (the `2 — …` heading). The build cuts one clip per topic and places it at the end
+     of that section; the top bar always shows the page's own heading. Keep a topic's scenes
+     together. A topic's first scene must stand on its own: never "पिछले part में" or "as we saw".
+   - **Follow the section's order:** the question it answers → the concept (`vector` or the
+     lesson's own `diagram`) → the page's table (`table`) → the page's worked example (`code`)
+     → the common mistake (`myth`) or the takeaway.
+   - **table** scenes redraw the section's own table (`table: 1` = its first). `highlight`
+     lists `row:<first cell>` / `col:<column>` in the order the narration names them; say the
+     row or column out loud as it lights up, following the page's reading steps.
+   - **code** scenes show the section's own code (`code: 1` = its first) typed line by line,
+     then the output the lesson prints. `highlight: ["line:3"]` marks the line the narration
+     explains. Read the key line and the output aloud: "print(enquiry["branch"]) Citylight
+     देता है".
+   - Every key term the section bolds is spoken in its clip; each clip has at least 3 scenes and
+     110 words. A section that needs no video goes in `skipTopics` with a `reason`.
    - **Explain with visuals, not people.** Most scenes are `vector`: an animated SVG you write
      to `<images>/video/vectors/<file>.svg` that shows the idea's structure:
        - a **process** (boxes and arrows, one step appearing per sentence),
@@ -75,17 +93,19 @@ present). Keys, in the user's environment only, never in a plan or a message:
 Pexels credits) to `<images>/video/`. It re-runs the plan check first. `stage.html` draws every
 frame; open it and call `renderAt(seconds)` to inspect a moment.
 
-It also cuts **one clip per lesson** (`clip-01-<lessonId>.mp4`, …; the intro rides on the first,
-the recap on the last) and lists them in `clips.json` with each clip's YouTube title.
+It also cuts **one clip per topic** (`clip-02-<lessonId>-t1.mp4`, …), an intro clip and a recap
+clip, and lists them in `clips.json` with each clip's key, place and YouTube title.
 
 ## 4. Place the clips in the course
 
 `python scripts/place_video.py --images-dir <images> --course <course .with-images.json>` writes
-`<course>.with-images.with-video.json`: one empty slot per clip, before each lesson's cheat sheet.
+`<course>.with-images.with-video.json`: one empty slot per clip. A topic clip goes at the end of
+its section, the intro clip before the first lesson's first section, the recap clip before the
+last lesson's cheat sheet.
 
 Tell the user: upload each clip to YouTube (Unlisted) with its title from `clips.json`; then in
 the admin, Import JSON + Images → the `.with-video.json` and the images folder → in the **Videos**
-box paste each clip's YouTube link next to its lesson → Apply video links → preview → publish.
+box paste each clip's YouTube link next to its slot (same key as the file name) → Apply video links → preview → publish.
 Empty slots stay hidden from learners. Look at the thumbnail and one frame per scene kind first.
 Never upload an MP4 to Firebase.
 
@@ -93,5 +113,6 @@ Never upload an MP4 to Firebase.
 
 - Invent numbers, names or events that the lessons do not contain.
 - Put characters, quizzes or captions in the video.
+- Show code, tables or numbers that differ from the page: use `table`/`code` scenes, never redraw them.
 - Put an API key in a file, a plan or a message.
 - Upload, publish or share the video, or use a cloned voice for anything public.
