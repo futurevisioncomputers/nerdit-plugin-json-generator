@@ -219,6 +219,7 @@ def test_spoken_respells_code_words():
         "max tokens, request I D, dunder init, main dot P Y, print"
     assert say("HTTPException, LLM_API_KEY, CONNECT_TIMEOUT") == "H T T P Exception, L L M A P I key, connect timeout"
     assert say("SSE, PRICES, DONE, Kabir, A loop repeats steps.") == "S S E, prices, done, Kabir, A loop repeats steps."
+    assert say("httpx2 AsyncClient") == "H T T P X two a-sync Client"
     assert say("इस video में 12 rows हैं।") == "इस video में 12 rows हैं।"
 
 

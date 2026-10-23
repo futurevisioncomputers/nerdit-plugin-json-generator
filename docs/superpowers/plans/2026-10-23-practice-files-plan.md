@@ -22,6 +22,7 @@ Claude GitHub App to have access to both repos.
 | 1 | Who downloads | **Certificate holders** (and admins). Courses stay free (`price: 0`); the certificate (`certificatePrice`, ₹999 today) unlocks the exam, the certificate, the practice pack and the capstone code |
 | 2 | Packaging | **One course practice pack**, offered in the first chapter; **one folder per chapter**; downloaded once, then used chapter by chapter |
 | 3 | Size | **Course pack at most 10 MiB**; any single file at most 5 MiB |
+| 12 | HTTP client | **New AI API courses teach `httpx2`** (`import httpx2`), Pydantic's drop-in continuation of `httpx`; existing courses switch when they are regenerated |
 | 11 | Admin upload | **One course bundle zip** from the plugin: the output JSON, all images and practice files, and the video list; the admin imports that one file (§10) |
 | 4 | Formats | **CSV, Excel, JSON, SQL, Python, notebooks** |
 | 5 | Solutions | **Full code to download**; the page keeps short code with explanations |
@@ -31,12 +32,8 @@ Claude GitHub App to have access to both repos.
 | 9 | Capstone | **A new last chapter** in every code course: one end-to-end project combining every chapter, on the world's data |
 | 10 | Capstone and certificate | **Not required for the certificate.** The capstone is practice; `finalAssignment` stays unused |
 
-**Still open (defaults used until decided):** a pack button on the course page as well as in the first chapter
-(default: first chapter only); whether new AI API courses teach `httpx2` instead of `httpx`. `httpx2` (Pydantic's
-continuation of `httpx`, same author) is a drop-in: same classes, same output, only the import name changes, and
-FastAPI's test client now prefers it. Default: lessons teach `httpx`, which most tutorials and jobs still use and is
-not deprecated; `httpx2` is pinned for the test client; the quarterly freshness check flags the day FastAPI's own
-docs switch, and courses move then (§4).
+**Still open (default used until decided):** a pack button on the course page as well as in the first chapter
+(default: first chapter only).
 
 ---
 
@@ -168,8 +165,9 @@ still shows each answer in its `<details>`; the download adds, it never replaces
   | scikit-learn `OneHotEncoder(sparse=…)` | `sparse_output=…` |
   | `os.popen`, `distutils`, `imp` | `subprocess.run`, `setuptools`/`sysconfig`, `importlib` |
 
-  Found by the prototype: Starlette 1.7+ wants `httpx2` (Pydantic's successor to `httpx`) for FastAPI's test client;
-  courses that use `TestClient` pin `httpx2`.
+  Found by the prototype: Starlette 1.7+ wants `httpx2` (Pydantic's continuation of `httpx`, a drop-in with the same
+  classes and output) for FastAPI's test client. Decision 12: new AI API courses teach `httpx2` and pin only it;
+  `import httpx` in a new course is flagged. The pilot course's Lessons 1–2 and its full app switch when regenerated.
 - **Freshness:** a quarterly re-run of the offline, learner-eye and modern-code checks on the newest library releases
   reports chapters whose code has become deprecated, before learners see the warning.
 

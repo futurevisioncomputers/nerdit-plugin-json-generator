@@ -111,6 +111,7 @@
   "gunicorn": "G unicorn",
   "Starlette": "Star-let",
   "httpx": "H T T P X",
+  "httpx2": "H T T P X two",
   "SQLAlchemy": "S Q L alchemy",
   "sqlite": "S Q Lite",
   "SQLite": "S Q Lite",
