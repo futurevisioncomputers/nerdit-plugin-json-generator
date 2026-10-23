@@ -11,11 +11,15 @@ google: Google Cloud Text-to-Speech Chirp 3 HD (default hi-IN-Chirp3-HD-Aoede), 
         voice; key in the GOOGLE_TTS_API_KEY environment variable, never in the plan. Word timings
         are estimated from text length (Chirp returns none). Needs internet.
 edge  : Microsoft neural voice through edge-tts (hi-IN-SwaraNeural), exact word timings, sounds synthetic.
+
+google and edge speak pronounce.spoken(text): code words respelled from pronunciation.json (JSON -> Jason).
 clone : local XTTS-v2 in a separate venv (xtts_narrate.py); word timings are estimated from text length.
         Non-commercial licence: local tests only.
 """
 import argparse, asyncio, json, os, re, subprocess, sys, wave
 from pathlib import Path
+
+from pronounce import spoken
 
 HERE = Path(__file__).parent
 CLONE_LIMIT = 150   # XTTS truncates Hindi input longer than this, so clone speaks one chunk at a time
@@ -174,7 +178,7 @@ def run(images_dir: Path, engine: str | None, python: str | None, ref: Path | No
         for c in items:
             wav = audio / f"{c['id']}.wav"
             raw = audio / f"{c['id']}.google.wav"
-            google(c["text"], name, rate, raw, key)
+            google(spoken(c["text"]), name, rate, raw, key)
             to_wav(ff, raw, wav, runner)
             (audio / f"{c['id']}.words.json").write_text(
                 json.dumps(estimate_words(c["text"], wav_seconds(wav)), ensure_ascii=False), encoding="utf-8")
@@ -182,7 +186,7 @@ def run(images_dir: Path, engine: str | None, python: str | None, ref: Path | No
         for c in items:
             mp3, wav = audio / f"{c['id']}.mp3", audio / f"{c['id']}.wav"
             own = voice.get("engine") == "edge"   # an override keeps edge's own voice, not the plan's
-            words = asyncio.run(edge(c["text"], voice.get("name") if own else "hi-IN-SwaraNeural",
+            words = asyncio.run(edge(spoken(c["text"]), voice.get("name") if own else "hi-IN-SwaraNeural",
                                      voice.get("rate") if own else DEFAULT_RATE, mp3))
             to_wav(ff, mp3, wav, runner)
             (audio / f"{c['id']}.words.json").write_text(json.dumps(words, ensure_ascii=False), encoding="utf-8")

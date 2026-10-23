@@ -81,6 +81,11 @@ present). Keys, in the user's environment only, never in a plan or a message:
 - `python scripts/voice.py --images-dir <images>`: Google Chirp 3 HD, `voice.name` default
   `hi-IN-Chirp3-HD-Aoede`, `voice.rate` 1.0. `python scripts/voice.py --list-voices hi-IN` lists
   the alternatives; try two or three and keep the one the owner prefers.
+  Google and edge voices speak code words respelled from `scripts/pronunciation.json` (JSON →
+  Jason, dict → dictionary, json.dumps → Jason dot dumps; snake_case, dotted names, camelCase and
+  acronyms are handled by `scripts/pronounce.py`). Only the audio changes; the screen keeps the real
+  spelling. When the owner hears a word said wrong, add it there, and confirm any entry that
+  changes the meaning (dict → dictionary) with them first.
   `--engine edge` (free, synthetic-sounding) and `--engine clone` (local XTTS test only, needs
   `say` in Devanagari and `--python`/`--ref`) remain available.
 - `python scripts/broll.py --images-dir <images>` downloads one Pexels clip per B-roll scene to

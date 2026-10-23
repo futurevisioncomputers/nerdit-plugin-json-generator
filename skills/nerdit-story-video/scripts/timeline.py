@@ -4,6 +4,7 @@ Pure functions, no I/O: build() takes the plan and each clip's length and word t
 returns segments (absolute seconds), YouTube chapters and audio placements. Word timings place
 key terms and camera moves at the moment the narration says them.
 """
+from pronounce import spoken
 from storyplan import title_case
 
 PAD_IN, PAD_OUT = 0.5, 0.8       # silence before and after each narration clip
@@ -11,11 +12,13 @@ MOVE = 0.9                       # camera move to a focus point, seconds
 
 
 def first_spoken(words: list[dict], phrase: str, offset: float) -> float | None:
-    """Absolute time the phrase's first word is spoken, or None."""
-    head = phrase.lower().split()[0] if phrase.strip() else ""
+    """Absolute time the phrase's first word is spoken, or None.
+
+    The voice says code words respelled (json.dumps as "Jason dot dumps"), so the respelled head counts too."""
+    heads = {p.lower().split()[0] for p in (phrase, spoken(phrase)) if p.strip()}
     for w in words:
         word = w["w"].lower()
-        if head and (head in word or word in head and len(word) > 2):
+        if any(head in word or word in head and len(word) > 2 for head in heads):
             return round(offset + w["t"], 3)
     return None
 
