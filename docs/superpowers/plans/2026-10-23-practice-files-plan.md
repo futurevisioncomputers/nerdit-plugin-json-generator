@@ -19,7 +19,8 @@ Claude GitHub App to have access to both repos.
 | # | Question | Decision |
 |---|---|---|
 | 1 | Who can download | **Enrolled learners only** (and admins) |
-| 2 | Size | **5 MiB per file**; a lesson's zip also stays under 5 MiB (§3) |
+| 2 | Size | **5 MiB per file**; the course practice pack is the one exception, up to 50 MiB (§3, to confirm) |
+| 8 | Packaging | **One course practice pack**: a single zip for the whole course with one folder per lesson, offered at the start (Lesson 1) and downloaded once; each lesson also links its own files singly, for learners who join midway (§2, §5) |
 | 3 | Formats | **CSV, Excel, JSON, SQL, Python, notebooks** |
 | 4 | Solutions | **Downloadable full code.** The page shows short code with explanations; the download holds the complete, runnable code |
 | 5 | Where file details live | **Lesson HTML only** (like images); no course-JSON schema change |
@@ -46,16 +47,40 @@ L<nn>-S<section>-<what-it-holds>.<ext>     a section's data file       L02-S1-en
 L<nn>-practice-starter.py | .ipynb        practice tasks, no answers   L02-practice-starter.ipynb
 L<nn>-solutions.py | .ipynb               complete code, every example and task, with answers
 L<nn>-full-app.py                         the lesson's pieces in one runnable program (project lessons)
-L<nn>-requirements.txt                    pinned libraries for the downloads (code lessons)
-L<nn>-practice-files.zip                  all of the above + README.txt
+<course-short>-practice-pack-v<n>.zip     the whole course, one folder per lesson   fastapi-ai-apis-practice-pack-v1.zip
 ```
 
-- Lower case `a-z`, digits and hyphens; at most 60 characters; `<nn>` is the lesson's position in the input.
-- Unique across the whole course, images included: the admin matches by file name in one upload.
-- Code opens files by the downloaded name: `pd.read_csv("L02-S1-enquiry-messages.csv")`. Saved next to the
-  notebook, the code runs unchanged. A dataset recipe's file key (Plan C) uses the same name.
-- `README.txt` in the zip: one line per file (what is inside, rows and columns, the section that uses it), the
-  Python version, and `pip install -r L<nn>-requirements.txt`.
+**The course practice pack** (one download, at the start):
+
+```
+fastapi-ai-apis-practice-pack-v1/
+  README.txt                 course map: each lesson folder, its files and what they hold; setup in 3 steps
+  requirements.txt           one set of pinned libraries for the whole course; Python 3.14
+  L01-llm-api-integration-and-streaming/
+    L01-S2-chat-payload.json
+    L01-practice-starter.ipynb   L01-practice-starter.py
+    solutions/   L01-solutions.ipynb   L01-solutions.py
+  L02-timeouts-retries-rate-limits-and-error-handling/
+    L02-S1-enquiry-messages.csv   L02-S2-provider-replies.json   L02-S4-neha-requests.csv
+    L02-practice-starter.ipynb    L02-practice-starter.py        L02-full-app.py
+    solutions/   L02-solutions.ipynb   L02-solutions.py
+  L03-…/   L04-…/
+```
+
+- One setup for the whole course: create a venv once, `pip install -r requirements.txt`, then work lesson by
+  lesson. Every lesson's code uses the same library versions.
+- Folders are `L<nn>-<lesson title slug>`, so they sort in course order. Files keep their `L<nn>-` prefix, so a
+  file copied out of its folder still says where it belongs.
+- Solutions sit in a `solutions/` subfolder: the starter is what a learner opens first.
+- Lower case `a-z`, digits and hyphens; at most 60 characters per name; `<nn>` is the lesson's position in the
+  input. Names are unique across the whole course, images included: the admin matches by file name.
+- **Code finds its files wherever it is run from.** Notebooks open in their own folder, so
+  `pd.read_csv("L02-S1-enquiry-messages.csv")` works as on the page. Downloaded `.py` files read through
+  `HERE = Path(__file__).parent`, so `python L02-…/L02-solutions.py` works from the pack root too. A dataset
+  recipe's file key (Plan C) uses the same name.
+- **Versions.** The pack name carries `v<n>`; any change to a lesson's files rebuilds the pack as `v<n+1>`. The box
+  shows the version and date, and `README.txt` lists what changed. A learner with an older pack re-downloads it,
+  or takes just the changed lesson's files from that lesson's page.
 - If the course order changes, names are regenerated and re-uploaded; lesson ids stay unchanged.
 
 ## 3. Formats and the solutions split
@@ -75,8 +100,9 @@ task answered, short comments. Project lessons (an API, an app) add `L<nn>-full-
 lesson's pieces (for Lesson 2: one endpoint with timeouts, retries with backoff, a token bucket and clear HTTP
 errors). The page still shows each answer in its `<details>`; the download adds, it never replaces.
 
-**Size.** At most 5 MiB per file. A data file over 5 MiB is cut to a smaller sample. If the zip would pass
-5 MiB, it holds the code, notebooks and README, and the large data files stay separate downloads.
+**Size.** At most 5 MiB per file; a data file over 5 MiB is cut to a smaller sample. The course pack may reach
+50 MiB. A course whose files pass 50 MiB ships a code pack (code, notebooks, README, small data) plus a
+separate data pack, both listed in Lesson 1.
 
 ## 4. Python version and modern code
 
@@ -92,7 +118,7 @@ errors). The page still shows each answer in its `<details>`; the download adds,
   default when Pyodide ships a 3.15 build and the course libraries publish 3.15 wheels.
 - **Each course records its versions** in `course-<chapter>_requirements.txt`: Python version and the latest
   stable release of each library at generation time (for example `fastapi`, `httpx`, `pydantic`, `pandas`).
-  The downloads copy it as `L<nn>-requirements.txt`.
+  The course pack ships it as `requirements.txt` at its root.
 - **No deprecated code**, enforced by `check_modern_code.py` (§6 g) and a banned list in
   `references/deprecated.md`, read like `voice.md`. Starting entries:
 
@@ -106,6 +132,11 @@ errors). The page still shows each answer in its `<details>`; the download adds,
   | pandas `DataFrame.append`, chained assignment with `inplace=True` | `pd.concat`, assign the result |
   | scikit-learn `OneHotEncoder(sparse=…)` | `sparse_output=…` |
   | `os.popen`, `distutils`, `imp` | `subprocess.run`, `setuptools`/`sysconfig`, `importlib` |
+  | `except asyncio.TimeoutError` | `except TimeoutError` (one class since Python 3.11) |
+
+  Found by the prototype (2026-10-23): Starlette 1.7+ warns that its test client should use `httpx2` (Pydantic's
+  successor to `httpx`) and raises it as a `UserWarning` subclass, not a `DeprecationWarning`. So checks run
+  with **all** warnings as errors (`-W error`), and courses that use FastAPI's `TestClient` pin `httpx2`.
 
 ## 5. Lesson markup
 
@@ -126,11 +157,28 @@ The writer declares the files once; the plugin draws the markup from it, as with
 </script>
 ```
 
-Generated under the overview (before section 1):
+**Lesson 1 (the start of the course)** gets the course pack box under its overview:
+
+```html
+<div class="nerdit-files nerdit-course-pack" data-nerdit-files="course">
+  <p class="nerdit-files-head">📦 Course practice pack <span class="nerdit-files-py">Python 3.14</span></p>
+  <p>Download once, then practise lesson by lesson: one folder per lesson, with its data, a starter notebook
+     and the full solution code. Setup steps are in README.txt.</p>
+  <a class="nerdit-file nerdit-file-all" href="files/fastapi-ai-apis-practice-pack-v1.zip"
+     download="fastapi-ai-apis-practice-pack-v1.zip" data-nerdit-file="fastapi-ai-apis-practice-pack-v1.zip"
+     data-format="zip" data-bytes="48213">⬇ Download the course practice pack (v1, 47 KB)</a>
+  <p class="nerdit-files-note">4 lesson folders · updated 23 Oct 2026</p>
+</div>
+```
+
+**Every lesson** gets a slim box naming its folder in the pack, with its own files folded away below for
+learners who join midway or want one file again (generated under the overview, before section 1):
 
 ```html
 <div class="nerdit-files" data-nerdit-files="timeouts-retries-rate-limits-and-errors-02">
   <p class="nerdit-files-head">📂 Practice files for this lesson <span class="nerdit-files-py">Python 3.14</span></p>
+  <p>In your course practice pack: folder <code>L02-timeouts-retries-rate-limits-and-error-handling</code>.</p>
+  <details><summary>Download this lesson's files one by one</summary>
   <table>
     <thead><tr><th>File</th><th>What's inside</th><th>Used in</th></tr></thead>
     <tbody>
@@ -141,14 +189,14 @@ Generated under the overview (before section 1):
           <td>Full code: every example and practice answer</td><td>Whole lesson</td></tr>
     </tbody>
   </table>
-  <a class="nerdit-file nerdit-file-all" href="files/L02-practice-files.zip" download="L02-practice-files.zip"
-     data-nerdit-file="L02-practice-files.zip" data-format="zip">Download all files (zip)</a>
+  </details>
 </div>
 ```
 
-Each section's case study starts with `<p class="nerdit-file-use">📎 This section uses <a class="nerdit-file" …>…</a>.</p>`.
-New classes (`nerdit-files`, `nerdit-files-head`, `nerdit-files-py`, `nerdit-file`, `nerdit-file-all`,
-`nerdit-file-use`) go into the canonical `references/css9-simple.css` and both apps' `src/lesson-css/` copies in
+Each section's case study starts with `<p class="nerdit-file-use">📎 This section uses <a class="nerdit-file" …>…</a>
+(folder <code>L02-…</code> in your pack).</p>`.
+New classes (`nerdit-files`, `nerdit-course-pack`, `nerdit-files-head`, `nerdit-files-py`, `nerdit-files-note`,
+`nerdit-file`, `nerdit-file-all`, `nerdit-file-use`) go into the canonical `references/css9-simple.css` and both apps' `src/lesson-css/` copies in
 the same change; `node ../nerdit/scripts/check-lesson-sync.mjs` must pass.
 
 ## 6. Verification: no broken or outdated code reaches a learner
@@ -158,10 +206,10 @@ the same change; `node ../nerdit/scripts/check-lesson-sync.mjs` must pass.
 | a | **Every answer runs**: practice solutions, predict answers (in the run lines' namespace), fill-in code with `data-answer` filled in | `check_python_outputs.py`, `check_sql_outputs.py` (extended) | output differs from the page, or code raises / does not compile |
 | b | **Offline code runs for real**: `data-run="offline"` examples and `L<nn>-full-app.py` in a venv built from the course requirements | new `check_offline_outputs.py` | output differs, a library is not pinned, or the app does not start and answer its test request |
 | c | **All practice data is generated**: data and code courses declare a world (decision 7) | `check_input.py --strict`, `check_world.py` | no world; typed-in data over 8 rows; a value outside the world (declared defects aside) |
-| d | **Learner-eye test**: unzip the lesson zip into an empty folder, `pip install -r` its requirements in a fresh venv, run the starter and solutions `.py`, execute both notebooks, run the `.sql` in SQLite | `check_files.py --as-learner` | any error, a missing file, a file the code opens that is not in the zip, a zip over 5 MiB |
+| d | **Learner-eye test**: unzip the course pack into an empty folder, `pip install -r requirements.txt` in one fresh venv, then for every lesson folder run the starter and solutions `.py` (from the pack root and from the lesson folder), execute both notebooks in their folder, run each `.sql` in SQLite | `check_files.py --as-learner` | any error, a missing file, a file the code opens that is not in its folder, a pack over 50 MiB, a lesson whose single-file links and pack folder differ |
 | e | **One source, three copies agree**: page tables, downloads and the browser runner's files | `check_files.py` | sha256 of the browser build ≠ the download; shown rows not in the file; a solution's output differs from the page's |
 | f | **Computable quiz answers are computed** | `check_quiz.py` (new) | the marked option is not the computed result |
-| g | **No deprecated code**: every run with `-W error::DeprecationWarning -W error::PendingDeprecationWarning -W error::FutureWarning`; a static scan against `references/deprecated.md` and ruff's `UP` rules targeting the course's Python | `check_modern_code.py` (new), and the warning flags in a, b, d | any warning, or a banned API in shown code, starters, solutions or the full app |
+| g | **No deprecated code**: every run with all warnings as errors (`-W error`, since libraries such as Starlette raise deprecations as `UserWarning`); a static scan against `references/deprecated.md` and ruff's `UP` rules targeting the course's Python | `check_modern_code.py` (new), and the warning flags in a, b, d | any warning, or a banned API in shown code, starters, solutions or the full app |
 | h | **Names and limits**: §2 names, unique with images; every `files/` link has a file and every file is linked; each file parses; at most 5 MiB | `check_files.py` | any of these |
 
 Exit codes as the existing checks (2 = environment missing, never a pass). A failure regenerates the lesson
@@ -173,9 +221,10 @@ newest library releases reports lessons whose code has become deprecated, before
 - [ ] Rules: CORE.md §5 and a new §6e "Practice files", the page/download split, `references/deprecated.md`;
       writer agent, QA checklist, runners/python.md, sql.md, excel.md.
 - [ ] `scripts/practice_files.py`: reads the spec, builds every file (world slices via `make_world_data.py`, lesson
-      tables, recipe builds, seed scripts, JSON, starters, solutions as `.py` and `.ipynb`, full app), the zip
-      with README, `<workdir>/files.manifest.json` (`name, format, bytes, sha256, lessonId, sections, about, source`),
-      and inserts the box and section lines.
+      tables, recipe builds, seed scripts, JSON, starters, solutions as `.py` and `.ipynb`, full app), the course
+      pack with its lesson folders, course `README.txt` and one `requirements.txt`, `<workdir>/files.manifest.json`
+      (`name, format, bytes, sha256, lessonId, sections, about, source, packVersion`), and inserts the course pack
+      box (Lesson 1), each lesson's folder box and the section lines.
 - [ ] The checks a–h, with tests; `gate_lesson.py` and `verify_course.py` run them.
 - [ ] Pyodide 314.x engine for the checker; probe; re-check existing Python lessons; runner JS updated.
 - [ ] Output folder for the admin: `course-<chapter>_output.with-media.json` + `upload/images/…` + `upload/files/…`
@@ -186,7 +235,8 @@ newest library releases reports lessons whose code has become deprecated, before
 ## 8. Admin contract (`nerdit-admin`)
 
 - [ ] **Import JSON + Media** takes the `upload/` folder. Allowed: `.csv .xlsx .json .jsonl .sql .py .ipynb .txt .md .zip`;
-      refused: `.xlsm .exe .html .js` and anything else; at most 5 MiB each.
+      refused: `.xlsm .exe .html .js` and anything else; at most 5 MiB each, except the course practice pack
+      (`*-practice-pack-v<n>.zip`, at most 50 MiB). A new pack version replaces the old one in the library.
 - [ ] Matching as for images: by file name across nested folders; a missing or duplicate name blocks
       preparation; extra files enter the course library.
 - [ ] Validation: extension vs content (zip signature for xlsx/zip, UTF-8 text, JSON parses, notebook JSON valid).
@@ -217,7 +267,9 @@ newest library releases reports lessons whose code has become deprecated, before
       a recipe (JSON, xlsx). Runners move to Pyodide 314.x (§4). Fetched files are kept in the browser's Cache
       Storage keyed by their sha256, so repeated runs and page visits do not download them again (private
       downloads skip the shared HTTP cache that public images get).
-- [ ] Download UX: format, size and "Python 3.14" shown; one tap on a phone; "Download all (zip)".
+- [ ] Download UX: format, size and "Python 3.14" shown; one tap on a phone. The course pack button is the main
+      action in Lesson 1; other lessons show their pack folder, with single files folded away. Optional: the course
+      page also shows the pack button, found by reading Lesson 1's `.nerdit-course-pack` box (no schema change).
 - [ ] Tests: `normalizeLessonHtml` keeps the markup; Playwright as enrolled, not enrolled and signed out; an enrolled
       download has the right name and bytes; a Try It that reads the file runs.
 
@@ -225,7 +277,7 @@ newest library releases reports lessons whose code has become deprecated, before
 
 | Phase | Where | Done when |
 |---|---|---|
-| 1 | plugin | §7 complete; Lesson 2 pilot passes checks a–h |
+| 1 | plugin | §7 complete; pilot course pack (Lesson 2 folder complete, other lessons' folders as they are regenerated) passes checks a–h |
 | 2 | admin | import, private upload, rules tests and round-trip pass with the pilot folder |
 | 3 | learner site | CSS sync check passes; Pyodide 314 runners; Playwright access tests pass |
 | 4 | all three | end-to-end: generate → import → preview → publish → enrolled learner downloads and runs everything |
@@ -235,7 +287,9 @@ Phase 1 ships nothing to learners until phases 2–3 are released.
 
 ## 11. Cost (Google)
 
-About 6 GB of files for 500 courses (about ₹3 a month to store); downloads are free up to 100 GB a month, then about
-$0.12 per GB. Private files cost the same per GB as public ones. The only extra is the enrolment check: one
+About 6 GB of files for 500 courses, about 12 GB with the course packs (still about ₹25 a month to store);
+downloads are free up to 100 GB a month, then about $0.12 per GB. A course pack is downloaded whole, even by
+learners who stop early: at 10,000 learners × a 30 MB pack that is about 300 GB, about ₹2,000 a month; API-style
+courses are under 1 MB per pack. Private files cost the same per GB as public ones. The only extra is the enrolment check: one
 Firestore read per download (50,000 reads a day free, then a few cents per 100,000). No server or Cloud Function
 streams the files; the SDK reads Storage directly under the security rules. Videos stay on YouTube. Set a budget alert.
