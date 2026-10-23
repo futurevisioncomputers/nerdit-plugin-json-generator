@@ -110,6 +110,15 @@ def _fit(longest: int, width: float, most: float, least: float = 11, ratio: floa
     return max(least, min(most, width / max(longest * ratio, 1)))
 
 
+def _lines(cell: str, longest: int = 22) -> list[str]:
+    """A long cell on two lines, broken at the space nearest its middle."""
+    if len(cell) <= longest or " " not in cell:
+        return [cell]
+    mid = len(cell) / 2
+    cut = min((i for i, ch in enumerate(cell) if ch == " "), key=lambda i: abs(i - mid))
+    return [cell[:cut], cell[cut + 1:]]
+
+
 def highlight_problems(kind: str, part: dict, highlight: list[str]) -> list[str]:
     errors = []
     for h in highlight or []:
@@ -131,10 +140,22 @@ def table_svg(table: dict, highlight: list[str] | None = None) -> str:
     more = len(rows) - MAX_ROWS if len(rows) > MAX_ROWS else 0
     rows = rows[:MAX_ROWS - 1] if more else rows
     cols = max(len(head), max((len(r) for r in rows), default=1))
-    x0, y0, cw = 20, 70 if table["title"] else 30, (W - 40) / cols
-    rh = min(46, (H - y0 - 30) / (len(rows) + 1 + bool(more)))
-    longest = max([len(c) for r in [head] + rows for c in r] or [4])
-    fs = _fit(longest, cw - 16, 20)
+    x0, y0, pad = 20, 70 if table["title"] else 30, 16
+    cells = [[_lines(c) for c in r] for r in [head] + rows]
+    # Each column as wide as its longest line, so a short id column leaves room for a long message.
+    chars = [max([len(line) for r in cells if i < len(r) for line in r[i]] + [4]) for i in range(cols)]
+    fs = max(11.0, min(20.0, (W - 40 - pad * cols) / (sum(chars) * 0.58)))
+    base = [pad + n * 0.58 * fs for n in chars]
+    cw = [b + max(0.0, W - 40 - sum(base)) / cols for b in base]
+    xs = [x0 + sum(cw[:i]) for i in range(cols)]
+    wrapped = any(len(c) > 1 for r in cells for c in r)
+    rh = min(54 if wrapped else 46, (H - y0 - 30) / (len(rows) + 1 + bool(more)))
+
+    def cell_text(i: int, y: float, lines: list[str], ink: str, bold: bool = False) -> str:
+        weight = ' font-weight="700"' if bold else ""
+        tops = [y + rh * .64] if len(lines) == 1 else [y + rh / 2 - fs * .15, y + rh / 2 + fs]
+        return "".join(f'<text x="{xs[i] + 12:.1f}" y="{t:.1f}" font-size="{fs:.1f}"{weight} fill="{ink}">{_esc(line)}</text>'
+                       for t, line in zip(tops, lines))
     out = [f'<svg class="nerdit-anim" viewBox="0 0 {W} {H}" role="img" aria-label="{_esc(table["title"] or "Lesson table")}" '
            f'font-family="Segoe UI, sans-serif">']
     if table["title"]:
@@ -143,16 +164,14 @@ def table_svg(table: dict, highlight: list[str] | None = None) -> str:
     d = 0.0
     out.append(f'<g class="na-show" style="--d:{d:.2f}s"><rect x="{x0}" y="{y0}" width="{W - 40}" height="{rh}" rx="8" '
                f'fill="var(--nb)"/>' + "".join(
-                   f'<text x="{x0 + cw * i + 12}" y="{y0 + rh * .64:.1f}" font-size="{fs:.1f}" font-weight="700" '
-                   f'fill="var(--white)">{_esc(c)}</text>' for i, c in enumerate(head)) + "</g>")
+                   cell_text(i, y0, c, "var(--white)", bold=True) for i, c in enumerate(cells[0])) + "</g>")
     for r, row in enumerate(rows):
         d += 0.25
         y = y0 + rh * (r + 1)
         fill = "var(--nb-soft)" if r in table["spot"] else ("var(--bg-soft)" if r % 2 else "var(--white)")
         out.append(f'<g class="na-show" style="--d:{d:.2f}s"><rect x="{x0}" y="{y:.1f}" width="{W - 40}" height="{rh:.1f}" '
                    f'fill="{fill}" stroke="var(--bd)"/>' + "".join(
-                       f'<text x="{x0 + cw * i + 12}" y="{y + rh * .64:.1f}" font-size="{fs:.1f}" fill="var(--tx)">{_esc(c)}</text>'
-                       for i, c in enumerate(row)) + "</g>")
+                       cell_text(i, y, c, "var(--tx)") for i, c in enumerate(cells[r + 1])) + "</g>")
     if more:
         d += 0.25
         out.append(f'<text class="na-show" style="--d:{d:.2f}s" x="{W / 2}" y="{y0 + rh * (len(rows) + 1.7):.1f}" '
@@ -170,7 +189,7 @@ def table_svg(table: dict, highlight: list[str] | None = None) -> str:
             if value not in head:
                 continue
             i = head.index(value)
-            box = (x0 + cw * i - 2, y0 - 6, cw + 4, rh * (len(rows) + 1) + 12)
+            box = (xs[i] - 2, y0 - 6, cw[i] + 4, rh * (len(rows) + 1) + 12)
         out.append(f'<rect class="na-show" style="--d:{d:.2f}s" x="{box[0]:.1f}" y="{box[1]:.1f}" width="{box[2]:.1f}" '
                    f'height="{box[3]:.1f}" rx="10" fill="none" stroke="var(--nb-vivid)" stroke-width="5"/>')
     return "".join(out) + "</svg>"

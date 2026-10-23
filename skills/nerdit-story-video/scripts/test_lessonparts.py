@@ -1,5 +1,5 @@
 """Topic clips mirror their section: the page's own tables and code, coverage of every section."""
-import json
+import json, re
 from pathlib import Path
 
 import lessonparts
@@ -44,6 +44,17 @@ def test_table_and_code_draw_as_animated_svg_with_highlights():
         "highlight 'row:E9': no row starts with 'E9'", "highlight 'col:x': no column 'x' (columns: enquiry_id, branch)",
         "highlight 'line:1': use row:<first cell> or col:<column>"]
     assert lessonparts.highlight_problems("code", p["runs"][0], ["line:3"]) == ["highlight 'line:3': the code has 2 lines"]
+
+
+def test_a_long_cell_wraps_and_widens_its_column():
+    table = {"title": "", "head": ["message_id", "intent", "message"], "spot": [],
+             "rows": [["M2", "fees", "Is there an instalment option for Computer Basics?"]]}
+    svg = lessonparts.table_svg(table)
+    lines = re.findall(r'fill="var\(--tx\)">([^<]*)</text>', svg)
+    assert " ".join(lines[2:]) == "Is there an instalment option for Computer Basics?"   # two lines, nothing cut
+    xs = [float(x) for x in re.findall(r'<text x="([\d.]+)"[^>]*font-weight="700"', svg)]
+    assert lessonparts.W - xs[2] > xs[2] - xs[1] > 0 and lessonparts.W - xs[2] > xs[1] - xs[0]   # message is widest
+    assert min(float(f) for f in re.findall(r'font-size="([\d.]+)"', svg)) >= 16
 
 
 def course_file(tmp_path: Path) -> Path:
