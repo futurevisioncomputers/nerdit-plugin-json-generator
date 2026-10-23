@@ -214,7 +214,9 @@ newest library releases reports lessons whose code has become deprecated, before
       shows the file list with an "Enrol to download" button instead of links. Signed out: "Sign in to download".
 - [ ] Runners: with a `.nerdit-files` box, the Python/plot runners skip their own Blob links and write the listed
       files into Pyodide's file system — built from the recipe as today, or fetched with `getBlob` for files without
-      a recipe (JSON, xlsx). Runners move to Pyodide 314.x (§4).
+      a recipe (JSON, xlsx). Runners move to Pyodide 314.x (§4). Fetched files are kept in the browser's Cache
+      Storage keyed by their sha256, so repeated runs and page visits do not download them again (private
+      downloads skip the shared HTTP cache that public images get).
 - [ ] Download UX: format, size and "Python 3.14" shown; one tap on a phone; "Download all (zip)".
 - [ ] Tests: `normalizeLessonHtml` keeps the markup; Playwright as enrolled, not enrolled and signed out; an enrolled
       download has the right name and bytes; a Try It that reads the file runs.
@@ -234,4 +236,6 @@ Phase 1 ships nothing to learners until phases 2–3 are released.
 ## 11. Cost (Google)
 
 About 6 GB of files for 500 courses (about ₹3 a month to store); downloads are free up to 100 GB a month, then about
-$0.12 per GB; enrolment checks add one Firestore read per download. Videos stay on YouTube. Set a budget alert.
+$0.12 per GB. Private files cost the same per GB as public ones. The only extra is the enrolment check: one
+Firestore read per download (50,000 reads a day free, then a few cents per 100,000). No server or Cloud Function
+streams the files; the SDK reads Storage directly under the security rules. Videos stay on YouTube. Set a budget alert.
