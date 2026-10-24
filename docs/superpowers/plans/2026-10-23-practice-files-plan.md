@@ -396,21 +396,31 @@ passes with the pilot bundle (`nerdit-admin/tests/fixtures/ai-apis-bundle-v1.zip
 
 ## 11. Learner site contract (`nerdit`: `future-vision`, `shared`)
 
-- [ ] `shared`: media record gains `kind: "image" | "file"`, `format`, `bytes`, `sha256`, `storagePath`; rebuild.
-- [ ] Lesson CSS copies updated with the plugin (§6); `normalizeLessonHtml` keeps the boxes and links, drops links to
-      other origins.
-- [ ] **Certificate-only downloads (§7):** a click on `a.nerdit-file` fetches the file with the Firebase SDK (`getBlob`
+Phase 3 status (24 Oct 2026, `nerdit` d75a056, `nerdit-admin` de1bcef, plugin 7440cb7): done except where marked.
+Browser check on the emulators (`functions/scripts/practice-files-browser-seed.mjs`, sign-in at
+`/tests/emulator-login.html`): the paid learner's box opens and the CSV downloads with its name and exact bytes, kept
+in Cache Storage by sha256; the unpaid learner sees "Unlock with certificate — ₹999", and a click opens the
+certificate step with no download. Signed out, free and revoked cases: unit tests plus `practice-files-itest.mjs`.
+
+- [x] `shared`: media record gains `kind: "image" | "file"`, `format`, `bytes`, `sha256`, `storagePath`; rebuild.
+- [x] Lesson CSS copies updated with the plugin (§6); `normalizeLessonHtml` keeps the boxes and links, drops links to
+      other origins. *(A practice link to anything but `files/<name>` becomes plain text.)*
+- [x] **Certificate-only downloads (§7):** a click on `a.nerdit-file` fetches the file with the Firebase SDK (`getBlob`
       on the storage path, checked by the rules) and saves it under `data-nerdit-file`. Not bought: the box shows the
       list locked with "Unlock with certificate — ₹<certificatePrice>", linking to the certificate purchase. Signed out:
       "Sign in".
-- [ ] **Runners:** stay on Pyodide 0.26.2 (§4). Data only from recipes or in-lesson blocks; never a paid file. With a
+- [x] **Runners:** stay on Pyodide 0.26.2 (§4). Data only from recipes or in-lesson blocks; never a paid file. With a
       files box present, the runners skip their own Blob download links.
-- [ ] Files fetched for download are kept in the browser's Cache Storage by sha256, so a second click does not
+- [x] Files fetched for download are kept in the browser's Cache Storage by sha256, so a second click does not
       download again.
-- [ ] Download UX: format, size and "Python 3.14" shown; one tap on a phone; the pack button is the main action in the
-      first chapter; other chapters show their folder, with single files folded away.
-- [ ] Tests: `normalizeLessonHtml` keeps the markup; Playwright as certificate holder, enrolled without certificate and
-      signed out; a holder's download has the right name and bytes; a Try It runs without any paid file.
+- [x] Download UX: format, size and "Python 3.14" shown; one tap on a phone; the pack button is the main action in the
+      first chapter; other chapters show their folder, with single files folded away. *(Busy look while a file
+      downloads; locked links dimmed but readable.)*
+- [ ] Tests: `normalizeLessonHtml` keeps the markup *(done)*; browser check as certificate holder and enrolled without
+      certificate *(done, through the Playwright tools, not yet a committed Playwright suite)*; signed out is not
+      reachable in the classroom (sign-in is required) and is unit tested; a Try It without any paid file is covered by
+      the runner tests, not yet in a browser.
+- [ ] Admin preview downloads *(done, moved from §10)*; per-section use and the "replaced, review" flag still open.
 
 ## 12. Rollout
 
