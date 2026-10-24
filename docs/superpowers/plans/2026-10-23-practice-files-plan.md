@@ -369,23 +369,30 @@ building-production-ready-ai-apis-bundle-v1.zip
 
 Details:
 
-- [ ] The bundle's `media/` folder follows these rules. Allowed: `.csv .json .jsonl .sql .py .ipynb .txt .md .zip`;
+Phase 2 status (24 Oct 2026, `nerdit` 1630bae, `nerdit-admin` 73e6baf): the import screen takes the bundle; round trip
+passes with the pilot bundle (`nerdit-admin/tests/fixtures/ai-apis-bundle-v1.zip`). Open items are marked below.
+
+- [x] The bundle's `media/` folder follows these rules. Allowed: `.csv .json .jsonl .sql .py .ipynb .txt .md .zip`;
       refused: `.xlsx .xlsm .exe .html .js` and anything else (`.xlsx` dropped for now). Size limits as decision 3 (50 MiB while measuring; target 5 MiB per file and 10 MiB for a
       `*-practice-pack-v<n>.zip` or `*-data-pack-v<n>.zip`).
-- [ ] Matching as for images: by file name across nested folders; a missing or duplicate name blocks preparation;
-      extra files enter the course library; a new pack version replaces the old one.
-- [ ] Validation: extension vs content (zip signature for zip, UTF-8 text, JSON and notebook JSON parse).
-- [ ] **Private storage:** `courses/<courseId>/files/<sha256 8 chars>/<original name>`, `Content-Type` by extension,
+- [x] Matching as for images: by file name across nested folders; a missing or duplicate name blocks preparation;
+      extra files enter the course library; a new pack version replaces the old one. *(A new pack has a new name, so
+      the lessons link it; the old pack stays in the private library, listed "Not linked from any lesson".)*
+- [x] Validation: extension vs content (zip signature for zip, UTF-8 text, JSON and notebook JSON parse).
+- [x] **Private storage:** `courses/<courseId>/files/<sha256 8 chars>/<original name>`, `Content-Type` by extension,
       `Content-Disposition: attachment; filename="<original name>"`; no public download tokens. The HTML keeps the
       relative `files/<name>` link and `data-nerdit-file`; the learner site resolves it.
-- [ ] **Storage security rules** as §7; rules tests for certificate holder, enrolled without certificate, signed out, admin.
-- [ ] Media records hold `kind: "file"`, name, sha256, bytes, storage path, so re-import and Export output JSON
+- [x] **Storage security rules** as §7; rules tests for certificate holder, enrolled without certificate, signed out, admin.
+- [x] Media records hold `kind: "file"`, name, sha256, bytes, storage path, so re-import and Export output JSON
       round-trip by original name, as images do.
-- [ ] Media library lists files with the chapters and sections that use them; replacing one flags those chapters for
-      review; admin preview downloads work.
-- [ ] Sanitizer allowlist: the new classes, `a[download]`, `details`/`summary` in the box, the `data-*` attributes above,
-      `href` only to a relative `files/` path; `script.nerdit-files-spec` kept in the JSON, never rendered.
-- [ ] Tests: import → preview → export round-trip with one file of each format and a pack; duplicate and missing-file blocks.
+- [ ] Media library lists files with the chapters that use them *(done)*; sections, the "replaced, review these
+      chapters" flag and admin preview downloads move to Phase 3, which builds the one download helper both sites use.
+- [x] Sanitizer allowlist: the new classes, `a[download]`, `details`/`summary` in the box, the `data-*` attributes above;
+      `script.nerdit-files-spec` kept in the JSON, never rendered. The two `<!-- nerdit-files -->` marker comments are
+      kept (every other comment is removed), so an exported course re-runs through `mark_lesson` without doubling boxes.
+      *(Open: `href` limited to relative `files/` on `a.nerdit-file`; today DOMPurify's own URL rules apply.)*
+- [x] Tests: import → publish → export → import round trip with the pilot bundle (csv, json, py, ipynb, pack zip);
+      duplicate and missing-file blocks. *(jsonl, sql, txt and md are covered by the bundle reader's own tests.)*
 
 ## 11. Learner site contract (`nerdit`: `future-vision`, `shared`)
 
