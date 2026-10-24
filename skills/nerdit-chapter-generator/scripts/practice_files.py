@@ -10,18 +10,22 @@ Stdlib only. Names follow the plan's tracing rule: L<nn>-S<section>-<what>.<ext>
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import io
 import json
 from pathlib import Path
 import re
 import sys
+import textwrap
 import zipfile
 
 CORE = Path(__file__).resolve().parent.parent / 'references' / 'nerdit_world_gen.py'
 if str(CORE.parent) not in sys.path:
     sys.path.append(str(CORE.parent))
 from nerdit_world_gen import to_csv  # noqa: E402
+from check_python_outputs import _code, _first, _in_order, _is_python  # noqa: E402
+from verify_course import parse, text_of  # noqa: E402
 
 SPEC = re.compile(r'<script\b[^>]*\bclass="[^"]*\bnerdit-files-spec\b[^"]*"[^>]*>(.*?)</script>', re.S | re.I)
 EXTENSIONS = {'csv', 'xlsx', 'json', 'jsonl', 'sql', 'py', 'ipynb', 'txt', 'md'}
@@ -82,9 +86,144 @@ def _world_slice(source: dict, world: dict) -> str:
     return to_csv(rows, columns)
 
 
-def build_file(entry: dict, world: dict | None = None, workdir: Path | None = None) -> bytes:
+def _squash(text: str) -> str:
+    return ' '.join(text.split())
+
+
+def _inside(node, cls: str) -> bool:
+    while node is not None:
+        if cls in node.classes:
+            return True
+        node = node.parent
+    return False
+
+
+def practice_tasks(html: str) -> list[dict]:
+    """Each nerdit-task's prompt (its text outside the solution) and its Python solution, in page order."""
+    tasks = []
+    for node in parse(html).all:
+        if 'nerdit-task' not in node.classes:
+            continue
+        prompt = ''.join(text_of(c) if not isinstance(c, str) else c
+                         for c in node.content if isinstance(c, str) or c.tag != 'details')
+        sol = _first(node, lambda n: n.tag == 'pre' and _is_python(n) and _inside(n, 'nerdit-solution'))
+        tasks.append({'task': _squash(prompt), 'solution': _code(sol).strip('\n') if sol is not None else None})
+    return tasks
+
+
+def page_examples(html: str) -> list[tuple[str, str]]:
+    """(section heading, code) for every Python run line, in page order: the examples learners read."""
+    heading, out = '', []
+    for node in parse(html).all:
+        if node.tag == 'h2':
+            heading = _squash(text_of(node))
+        elif 'nerdit-run' in node.classes:
+            half = _first(node, lambda n: 'nerdit-in' in n.classes)
+            pre = half and _first(half, lambda n: n.tag == 'pre' and _is_python(n))
+            if pre is not None:
+                out.append((heading, _code(pre).strip('\n')))
+    return out
+
+
+# Downloaded .py files find their chapter's files wherever they run; solutions/ reads from its parent.
+PY_PRELUDE = ('import os\nfrom pathlib import Path\n\n'
+              'HERE = Path(__file__).resolve().parent\n'
+              "os.chdir(HERE.parent if HERE.name == 'solutions' else HERE)  # this chapter's files\n")
+# Notebooks open in their own folder; the solutions notebook steps up to the chapter folder once.
+NB_PRELUDE = "import os\nif os.path.basename(os.getcwd()) == 'solutions':\n    os.chdir('..')  # this chapter's files\n"
+
+
+def _comment(text: str) -> str:
+    return '\n'.join('# ' + line for line in textwrap.wrap(text, 100)) or '#'
+
+
+def _notebook(cells: list[tuple[str, str]]) -> bytes:
+    def cell(kind, text):
+        lines = text.splitlines(keepends=True)
+        if kind == 'markdown':
+            return {'cell_type': 'markdown', 'metadata': {}, 'source': lines}
+        return {'cell_type': 'code', 'execution_count': None, 'metadata': {}, 'outputs': [], 'source': lines}
+    nb = {'cells': [cell(k, t) for k, t in cells], 'nbformat': 4, 'nbformat_minor': 4,
+          'metadata': {'kernelspec': {'name': 'python3', 'display_name': 'Python 3', 'language': 'python'},
+                       'language_info': {'name': 'python'}}}
+    return (json.dumps(nb, ensure_ascii=False, indent=1) + '\n').encode('utf-8')
+
+
+def _practice_file(name: str, chapter: dict, solutions: bool) -> bytes:
+    position, title, html = chapter['position'], chapter['title'], chapter['html']
+    tasks = practice_tasks(html)
+    tag = f'L{position:02d}'
+    if solutions:
+        intro = (f'{tag} solutions: {title}. Every example on the page in order, then every practice answer. '
+                 'Check your work here after you try.')
+        parts = [('code', f'# {s}\n{code}' if s else code) for s, code in page_examples(html)]
+        parts += [('task', t) for t in tasks]
+    else:
+        intro = f'{tag} practice starter: {title}. Open this first; check your work in solutions/ after you try.'
+        parts = [('task', t) for t in tasks]
+    if name.endswith('.ipynb'):
+        cells = [('markdown', f'# {intro}')]
+        if solutions:
+            cells.append(('code', NB_PRELUDE))
+        for kind, item in parts:
+            if kind == 'code':
+                cells.append(('code', item))
+            else:
+                cells.append(('markdown', f'**{item["task"]}**'))
+                cells.append(('code', (item['solution'] or '') if solutions else ''))
+        return _notebook(cells)
+    blocks = [_comment(intro) + '\n' + PY_PRELUDE]
+    for kind, item in parts:
+        if kind == 'code':
+            blocks.append(item)
+        else:
+            body = (item['solution'] or '# (no Python solution on the page)') if solutions else '# Your code here'
+            blocks.append(_comment(item['task']) + '\n' + body)
+    return ('\n\n\n'.join(blocks) + '\n').encode('utf-8')
+
+
+def _table_csv(label: str, html: str) -> str:
+    """The lesson table whose caption or figcaption reads `label`, as CSV."""
+    tree = parse(html)
+    for node in tree.all:
+        if node.tag not in ('caption', 'figcaption') or _squash(text_of(node)) != _squash(label):
+            continue
+        holder = node.parent  # <table> for a caption, the figure for a figcaption
+        table = holder if holder.tag == 'table' else _first(holder, lambda n: n.tag == 'table')
+        if table is None:
+            break
+        rows = [[_squash(text_of(c)) for c in _in_order(tr) if c.tag in ('th', 'td')]
+                for tr in _in_order(table) if tr.tag == 'tr']
+        buf = io.StringIO()
+        csv.writer(buf, lineterminator='\n').writerows(rows)
+        return buf.getvalue()
+    raise ValueError(f'no table captioned {label!r} in the lesson')
+
+
+def _seed_sql(seed_id: str, chapter: dict, sections) -> str:
+    tree = parse(chapter['html'])
+    block = next((n for n in tree.all if n.tag == 'script' and n.el_id == seed_id), None)
+    if block is None:
+        raise ValueError(f'no seed script with id {seed_id!r} in the lesson')
+    body = ''.join(c for c in block.content if isinstance(c, str)).lstrip('\n')
+    tables = ', '.join(dict.fromkeys(re.findall(r'CREATE TABLE\s+"?(\w+)', body, re.I))) or 'none'
+    where = f', section {", ".join(map(str, sections))}' if isinstance(sections, list) and sections else ''
+    return f'-- L{chapter["position"]:02d} {chapter["title"]}{where}: tables {tables}\n{body}'
+
+
+def build_file(entry: dict, world: dict | None = None, workdir: Path | None = None,
+               chapter: dict | None = None) -> bytes:
     """The bytes of one declared file, from its `from` source."""
     source, name = entry['from'], entry['name']
+    lesson_sources = {'practice', 'solutions', 'table', 'sql'} & set(source)
+    if lesson_sources and chapter is None:
+        raise ValueError(f'{name}: a {next(iter(lesson_sources))} source needs its chapter')
+    if 'practice' in source or 'solutions' in source:
+        return _practice_file(name, chapter, solutions='solutions' in source)
+    if 'table' in source:
+        return _table_csv(source['table'], chapter['html']).encode('utf-8')
+    if 'sql' in source:
+        return _seed_sql(source['sql'], chapter, entry.get('sections')).encode('utf-8')
     if 'world' in source:
         if world is None:
             raise ValueError(f'{name}: a world source needs the course world data')
@@ -140,7 +279,8 @@ def build_pack(chapters: list[dict], course_short: str, version: int, world: dic
             seen.add(entry['name'])
         folders.append((folder, spec['files']))
         for entry in spec['files']:
-            built.append((chapter, folder, entry, build_file(entry, world, workdir)))
+            built.append((chapter, folder, entry,
+                          build_file(entry, world, workdir, {**chapter, 'position': position})))
     for _, _, entry, data in built:
         if len(data) > FILE_LIMIT:
             problems.append(f'{entry["name"]}: {len(data)} bytes, over the {FILE_LIMIT / MIB:g} MiB file limit')
