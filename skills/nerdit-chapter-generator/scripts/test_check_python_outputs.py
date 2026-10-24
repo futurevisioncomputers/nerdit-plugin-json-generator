@@ -255,7 +255,7 @@ def test_python_parts_finds_answers_in_page_order():
 @engine
 def test_practice_answers_run_after_the_run_lines():
     good = lesson(dataset(), run_line(READ, "(5, 7)"), task("Task 1: Count rows.", "print(len(df))", "5"),
-                  task("Task 2: Columns.", "print(df.shape[1])"))
+                  task("Task 2: Columns.", "print(df.shape[1])", "7"))
     r = check_lesson(good)
     assert r["answers"] == 2 and r["answer_fail"] == [], r
     r = check_lesson(good.replace("<code>5</code>", "<code>6</code>"))
@@ -267,7 +267,7 @@ def test_practice_answers_run_after_the_run_lines():
 @engine
 def test_predict_and_fill_in_answers_run_in_place():
     html = lesson(run_line("x = 2", ""), predict("x = 5\nprint(x * 2)", "10"), run_line("print(x)", "2"),
-                  fillblank("print(x ", "+", " 1)"), predict("print(x)", None))
+                  fillblank("print(x ", "+", " 1)"), predict("print(x)", "2"))
     r = check_lesson(html)
     assert r["match"] == 2 and r["mismatch"] == [], r  # the predict's x = 5 never reaches the run lines
     assert r["answers"] == 3 and r["answer_fail"] == [], r
@@ -275,3 +275,17 @@ def test_predict_and_fill_in_answers_run_in_place():
     assert len(r["answer_fail"]) == 1 and "predict 1" in r["answer_fail"][0]
     r = check_lesson(lesson(run_line("x = 2", ""), fillblank("print(x ", "plus", " 1)")))
     assert "fill-in 1" in r["answer_fail"][0] and "SyntaxError" in r["answer_fail"][0]
+
+
+@engine
+def test_answers_must_show_their_output_strictly():
+    # CORE.md §8: a revealed solution shows the work and its result, so the result is compared.
+    r = check_lesson(lesson(run_line("x = 2", ""), task("Task 1: Show x.", "print(x)")))
+    assert len(r["answer_fail"]) == 1 and "shows no output" in r["answer_fail"][0], r
+    r = check_lesson(lesson(run_line("x = 2", ""), predict("print(x * 5)", None)))
+    assert "predict 1" in r["answer_fail"][0] and "shows no output" in r["answer_fail"][0]
+    chart = "import matplotlib.pyplot as plt\nplt.bar([&quot;a&quot;], [2])\nplt.show()"
+    r = check_lesson(lesson(task("Task 1: Draw it.", chart)))
+    assert r["answer_fail"] == [], r  # a chart answer is checked by drawing its figure
+    r = check_lesson(lesson(task("Task 1: Draw it.", "x = 1")))
+    assert "shows no output" in r["answer_fail"][0]

@@ -108,6 +108,10 @@ no real logos, and mistakes confined to data work rather than allegations about 
 - **Refreshed lessons** (a `_before` copy exists): every sentence still matches what the shown
   code and figures now show. A trim must not leave prose describing code it removed, and a
   removed text map must not leave a sentence without its referent
+- **Explanation matches code, strictly:** `check_code_prose.py` already proves named code and
+  printed numbers. Judge the rest: what the prose says a line does is what it does (a sentence
+  calling a filter "the top 3" when the code sorts ascending FAILS), and each step the prose
+  walks through is in the code in that order
 - **Practice files** (a `nerdit-files-spec` block, CORE.md §6e): do not judge names, sizes,
   links or deprecated code: `practice_files.py` and `check_modern_code.py` enforce them. Judge
   that each file's `about` is true, that `sections` point at the sections that use the file,

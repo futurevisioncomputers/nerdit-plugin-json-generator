@@ -65,6 +65,11 @@ Before writing anything:
   Give every practice task a Python answer. Code runs on Python 3.12 with no deprecated API:
   `check_modern_code.py` fails the lesson on one. **Capstone chapter** (`focus: "project"`):
   follow CORE.md §8b; its data comes from the course world only.
+- **Explanation and code never differ.** Every code name you put in `<code>` in a sentence is
+  on the page exactly (or as a call: `head()` for `head(3)`); every "prints / returns N" is the
+  number the output shows. Every practice solution and Python predict answer shows its output
+  in a `nerdit-out` block. `check_code_prose.py` and `check_python_outputs.py` fail the lesson
+  otherwise.
 - Do **not** read the css files in full. Grep `css8.css` / `css9-simple.css` for specific class names only when `CORE.md` leaves exact markup unclear
 
 If the orchestrator attached a sample `course-[chaptername]_output.json`, read it too for field ordering and tone reference.

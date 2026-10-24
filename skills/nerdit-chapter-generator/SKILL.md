@@ -501,8 +501,17 @@ Then three more checks for code courses, each blocking like the ones above:
   a library is not pinned in the requirements, or an output differs (fix the shown output to
   what the line reports). Exit 2 = Python 3.14 and 3.12 are both missing, or pip had no network.
 
+And, for every course, the check that explanation and code agree:
+
+    python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/check_code_prose.py" --course <workdir>/course-<chaptername>_output.json
+
+Exit 1 = the prose names code the page does not have (`df.tail(2)` when the code calls
+`df.head(2)`), or says a number is printed that the output does not show. Change the prose to
+match the code and its real output, never the other way round.
+
 `check_python_outputs.py` also runs every answer now (practice solutions, predict blocks,
-fill-ins): an `answer` failure is regenerated like any mismatch.
+fill-ins): an `answer` failure is regenerated like any mismatch. A practice solution or a
+Python predict answer must show its output (`shows no output` fails): the output is compared.
 
 `WARN` lines from these scripts are advice: fix them when cheap, never loop on them.
 

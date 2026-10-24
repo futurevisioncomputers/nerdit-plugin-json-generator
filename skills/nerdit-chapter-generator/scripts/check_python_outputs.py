@@ -210,10 +210,17 @@ def check_lesson(content: str, timeout: int = 120) -> dict:
             steps.append({"id": f"ans{k}", "code": ans["code"], "fresh": False})
     # Predict and fill-in answers run where they sit on the page, in a second engine, so the
     # values they set never change what a later run line prints.
+    # Each one runs on a saved copy of the names, restored after it, so a predict's `x = 5`
+    # never reaches the next answer either (mutating a shared object still would).
     in_place = []
     for i in range(len(runs) + 1):
-        in_place += [{"id": f"ans{k}", "code": a["code"], "fresh": False}
-                     for k, a in enumerate(answers) if a["kind"] != "practice" and a["after"] == i]
+        for k, a in enumerate(answers):
+            if a["kind"] != "practice" and a["after"] == i:
+                in_place += [{"id": f"save{k}", "code": "__nerdit_saved__ = dict(globals())", "fresh": False},
+                             {"id": f"ans{k}", "code": a["code"], "fresh": False},
+                             {"id": f"restore{k}", "code": "(lambda saved: (globals().clear(), "
+                                                           "globals().update(saved)))(__nerdit_saved__)",
+                              "fresh": False}]
         if i < len(runs) and not runs[i]["offline"]:
             in_place.append({"id": f"place-run{i + 1}", "code": runs[i]["code"], "fresh": False})
 
@@ -247,7 +254,12 @@ def check_lesson(content: str, timeout: int = 120) -> dict:
         if got["error"] is not None and has_offline and "NameError" in got["error"]:
             report["offline"].append(f"{labels[k]}: uses a value from an offline run line; check it locally")
             continue
-        if got["error"] is not None and (shown is None or got["error"] not in normalise(shown)):
+        if (shown is None and ans["kind"] != "fill-in" and got["error"] is None
+                and not got.get("figures")):
+            # CORE.md §8: a revealed answer shows its result, so it is compared, never trusted.
+            report["answer_fail"].append(f"{labels[k]}: shows no output, so it cannot be checked; add the "
+                                         f"<div class=\"nerdit-out\"> with what Python prints")
+        elif got["error"] is not None and (shown is None or got["error"] not in normalise(shown)):
             report["answer_fail"].append(f"{labels[k]}: the answer raises '{got['error']}'")
         elif got["error"] is None and shown is not None and normalise(got["stdout"]) != normalise(shown):
             report["answer_fail"].append(f"{labels[k]}: shown {_short(shown)!r} "
