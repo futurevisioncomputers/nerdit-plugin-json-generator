@@ -1747,3 +1747,25 @@
 .nerdit-wrapper .nerdit-tile.nerdit-spot { outline: 2px solid var(--blue); outline-offset: 2px; }
 /* The base flow-text rule overrides SVG fill attributes; keep the active stage readable. */
 .nerdit-wrapper [data-visual="course-map"] .nerdit-flow-text[fill="var(--white)"] { fill: var(--white); }
+
+/* ====================================================================
+   PRACTICE FILES
+   ====================================================================
+   The course pack box (first chapter), each chapter's files box and the
+   "This section uses" line, drawn by practice_files.py. Lock and price
+   states are the learner site's job, never the lesson's. Tokens only.
+   ==================================================================== */
+.nerdit-wrapper .nerdit-files { background: var(--bg-soft); border: 1px solid var(--bd); border-radius: 10px; padding: .9rem 1rem; margin: 1rem 0 1.4rem; }
+.nerdit-wrapper .nerdit-files > p { margin: 0 0 .5rem; color: var(--tx); }
+.nerdit-wrapper .nerdit-files .nerdit-files-head { font-weight: 800; display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.nerdit-wrapper .nerdit-files-py { font-family: var(--font-code); font-size: .72rem; font-weight: 700; color: var(--blue); background: var(--blue-bg); border-radius: 999px; padding: .1rem .55rem; }
+.nerdit-wrapper .nerdit-course-pack { border: 2px solid var(--blue); }
+.nerdit-wrapper .nerdit-file { color: var(--blue); font-family: var(--font-code); font-size: .85rem; word-break: break-all; }
+/* The pack button is the first chapter's main action: one tap on a phone (44px). */
+.nerdit-wrapper a.nerdit-file-all { display: inline-flex; align-items: center; min-height: 44px; padding: .55rem 1rem; margin: .2rem 0 .5rem; border-radius: 8px; background: var(--blue); color: var(--white); font-family: inherit; font-size: .95rem; font-weight: 700; text-decoration: none; word-break: normal; }
+.nerdit-wrapper .nerdit-files .nerdit-files-note { font-size: .78rem; color: var(--tx-m); margin: 0; }
+.nerdit-wrapper .nerdit-files details summary { cursor: pointer; font-size: .88rem; font-weight: 600; color: var(--tx-s); }
+.nerdit-wrapper .nerdit-files table { width: 100%; border-collapse: collapse; font-size: .85rem; margin-top: .5rem; background: var(--white); }
+.nerdit-wrapper .nerdit-files th { text-align: left; font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--tx-m); padding: .4rem .5rem; border-bottom: 1px solid var(--bd); }
+.nerdit-wrapper .nerdit-files td { padding: .4rem .5rem; border-bottom: 1px solid var(--bd-soft); vertical-align: top; color: var(--tx); }
+.nerdit-wrapper .nerdit-file-use { font-size: .88rem; color: var(--tx-s); background: var(--blue-bg); border-left: 3px solid var(--blue); border-radius: 0 6px 6px 0; padding: .4rem .7rem; margin: .4rem 0 .9rem; }

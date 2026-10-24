@@ -59,3 +59,12 @@ def test_demo_table_scrolls_instead_of_clipping_on_a_phone():
     rule = css.split(".nerdit-demo-table {", 1)[1].split("}", 1)[0]
     assert "overflow: hidden" not in rule
     assert "overflow-x: auto" in rule
+
+
+FILES_CLASSES = ["nerdit-files", "nerdit-course-pack", "nerdit-files-head", "nerdit-files-py", "nerdit-files-note",
+                 "nerdit-file", "nerdit-file-all", "nerdit-file-use"]
+
+
+def test_css9_defines_every_practice_files_class():
+    css = CSS9.read_text(encoding="utf-8")
+    assert [c for c in FILES_CLASSES if not re.search(rf"\.{c}(?![\w-])", css)] == []
