@@ -27,7 +27,7 @@ Claude GitHub App to have access to both repos.
 | 4 | Formats | **CSV, Excel, JSON, SQL, Python, notebooks** |
 | 5 | Solutions | **Full code to download**; the page keeps short code with explanations |
 | 6 | Where file details live | **Lesson HTML only** (like images); no course-JSON schema change |
-| 7 | Python | **Python 3.14** everywhere; **3.15** only for lessons about its new features; **no deprecated code** |
+| 7 | Python | **Python 3.14** for downloads and offline checks; the website runner **stays on Pyodide 0.26.2 (Python 3.12)**: the Pyodide upgrade is dropped for now (2026-10-24); **3.15** only for lessons about its new features; **no deprecated code** |
 | 8 | Worlds | **One of the six business worlds per course**, chosen by subject fit (§2b); `practice-retail` (fictional) only when none fits |
 | 9 | Capstone | **A new last chapter** in every code course: one end-to-end project combining every chapter, on the world's data |
 | 10 | Capstone and certificate | **Not required for the certificate.** The capstone is practice; `finalAssignment` stays unused |
@@ -46,7 +46,7 @@ Claude GitHub App to have access to both repos.
 | SQL seeds in `<script type="text/plain">`; Excel grids in `data-grid`. | No `.sql` or `.xlsx` for the learner's own SQLite, MySQL or Excel. |
 | Code shown in blocks of at most 15 lines. | No complete program to run at home. |
 | File names from the entity (`enquiries.csv`). | Not traceable to a chapter; two chapters can clash. |
-| Website Python 3.12 (Pyodide 0.26.2). | Not current; deprecated APIs unchecked. |
+| Website Python 3.12 (Pyodide 0.26.2). | Kept for now (§4); deprecated APIs unchecked. |
 | Checks: run lines, Try It starters, SQL results, Excel formulas, world values. | Solutions, predict and fill-in answers, offline code (FastAPI, httpx …) and quiz answers are not run. |
 | Courses end with a cheat sheet and practice tasks. | No project that joins the chapters together. |
 
@@ -140,11 +140,10 @@ still shows each answer in its `<details>`; the download adds, it never replaces
 
 ## 4. Python version and modern code
 
-- **Python 3.14 for everything:** downloads, offline checks and the website. The website runner moves from Pyodide
-  0.26.2 (Python 3.12) to **Pyodide 314.x (Python 3.14)**, so the page and the pack run the same Python. This changes
-  `nerdit-python-runner.js` and `nerdit-plot-runner.js` (plugin references and the learner site's copies) and the
-  checker's `tools/pyodide` pin. Before switching, `check_python_outputs.py --probe numpy,pandas,sklearn,scipy,matplotlib,statsmodels`
-  passes on the new engine, and every published Python lesson is re-checked on it.
+- **Python 3.14 for downloads and offline checks.** The website runner and the checker's `tools/pyodide` pin **stay on
+  Pyodide 0.26.2 (Python 3.12)**. The Pyodide upgrade is dropped for now (owner, 2026-10-24): newer NumPy and pandas
+  print some values differently (`np.float64(3.5)`, `str` dtype), so every published lesson's shown output would have
+  to be re-checked first. Page code therefore stays valid on both 3.12 and 3.14; downloaded files may use 3.14.
 - **Python 3.15** (released 2026-10-09): only for lessons about its new features, as offline run lines checked on
   CPython 3.15, marked "needs Python 3.15". It becomes the default when Pyodide ships a 3.15 build and the course
   libraries publish 3.15 wheels.
@@ -331,7 +330,6 @@ the 2-attempt budget, then stops and reports.
 - [ ] **Capstone generator:** proposes the capstone chapter's title and description from the earlier chapters; the
       writer writes the page; the plugin builds `starter/`, `tests/`, `solution/` and `data/`.
 - [ ] **Checks a–i** with tests; `gate_lesson.py` and `verify_course.py` run them.
-- [ ] **Pyodide 314.x** for the checker; probe; re-check existing Python lessons; runner JS updated.
 - [ ] **Output for the admin: one course bundle zip** (§10) with the output JSON, `media/images/`, `media/files/`,
       `videos/clips.json`, thumbnail, description and `bundle.json` (`scripts/make_bundle.py`, checked by
       `check_bundle.py`: every link resolves inside the bundle, sha256s match, sizes within limits). The illustrator
@@ -394,7 +392,7 @@ Details:
       on the storage path, checked by the rules) and saves it under `data-nerdit-file`. Not bought: the box shows the
       list locked with "Unlock with certificate — ₹<certificatePrice>", linking to the certificate purchase. Signed out:
       "Sign in".
-- [ ] **Runners:** move to Pyodide 314.x (§4). Data only from recipes or in-lesson blocks; never a paid file. With a
+- [ ] **Runners:** stay on Pyodide 0.26.2 (§4). Data only from recipes or in-lesson blocks; never a paid file. With a
       files box present, the runners skip their own Blob download links.
 - [ ] Files fetched for download are kept in the browser's Cache Storage by sha256, so a second click does not
       download again.
@@ -409,7 +407,7 @@ Details:
 |---|---|---|
 | 1 | plugin | §9 complete; the pilot course's pack (with capstone) passes checks a–i |
 | 2 | admin | Import course bundle, private upload, rules tests and round-trip pass with the pilot bundle |
-| 3 | learner site | CSS sync check passes; Pyodide 314 runners; Playwright access tests pass |
+| 3 | learner site | CSS sync check passes; Playwright access tests pass |
 | 4 | all three | end to end: generate → import → preview → publish → a certificate holder downloads the pack and runs every chapter and the capstone |
 | 5 | trial | one batch of 20–30 institute students uses the pilot pack for a week: downloads, finished practice tasks, capstone milestones reached, where they got stuck |
 | 6 | courses | backfill published courses: worlds per decision 8, packs, solutions, a capstone chapter each, re-check on Python 3.14; re-import each reviewed final JSON |
