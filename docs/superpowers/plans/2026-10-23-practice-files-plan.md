@@ -435,6 +435,17 @@ certificate step with no download. Signed out, free and revoked cases: unit test
 
 Phase 1 ships nothing to learners until phases 2 and 3 are released.
 
+**Phase 4, first run (24 Oct 2026, emulators only, owner's choice; no deploy):** with the pilot as it stands (L02 only;
+L01, L03, L04 and the L05 capstone not yet written). Admin: "Import course" took a one-lesson pilot bundle (8 practice
+files, all linked), uploaded them privately, previewed (the pack downloaded from the preview), published, and the
+course went live from the course list. Site: the paying learner's boxes opened and all 8 files downloaded with the
+same sha256 as `bundle.json`; the pack built from those downloaded bytes passed the learner run on Python 3.14
+(8 runs, `check_files.py --as-learner`). Accounts: `functions/scripts/practice-files-e2e-seed.mjs`.
+Found on the way: publish refuses a course whose lessons are empty (correct, so the run used L02 only); the learner
+check fails with WinError 267 when the unzipped chapter folder path passes 260 characters (Windows working-folder
+limit), so it now needs a short `--workdir` on Windows, and the pack README could tell learners to unzip near the
+top of a drive. Still to do for phase 4: the remaining lessons and the capstone, then this run again in full.
+
 ## 13. Cost (Google)
 
 - **Storage:** about 12 GB for 500 courses with packs, about ₹25 a month.
