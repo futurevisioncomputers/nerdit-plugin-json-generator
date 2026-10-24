@@ -137,3 +137,53 @@ def test_gate_fails_an_svg_number_the_lesson_never_states_even_without_a_world(t
     fails, _ = gate(inp, d, "c-01")
     assert "labels: figure svg 1: draws 4,000, which the lesson and its seed never state" in fails
     assert not any("draws 3," in f for f in fails)
+
+
+# The gate runs every per-lesson accuracy check (plan checks a, c, f, g, h and prose-code).
+
+def with_quiz(tmp_path, html, quiz):
+    inp, d = setup(tmp_path, html)
+    (d / "c-01.quiz.json").write_text(json.dumps(quiz), encoding="utf-8")
+    return inp, d
+
+
+def test_gate_fails_prose_naming_code_the_page_lacks(tmp_path):
+    bad = LESSON.replace("<p>You count rows with one query.</p>",
+                         "<p>You count rows with <code>COUNT(id)</code> in one query.</p>")
+    inp, d = setup(tmp_path, bad)
+    fails, _ = gate(inp, d, "c-01")
+    assert any(f.startswith("prose-code:") and "COUNT(id)" in f for f in fails), fails
+
+
+def test_gate_fails_a_wrongly_marked_quiz_answer(tmp_path):
+    quiz = json.loads(json.dumps(QUIZ))
+    quiz["lessonQuestions"][0] = {"text": "What does `SELECT 1 AS n;` return?", "options": ["0", "1", "2", "3"],
+                                  "correctOptionIndex": 0}
+    inp, d = with_quiz(tmp_path, LESSON.replace("<section>", '<script type="text/plain" id="s1">'
+                                                "CREATE TABLE t (a INT);</script><section>", 1), quiz)
+    fails, _ = gate(inp, d, "c-01")
+    assert any(f.startswith("quiz:") and "option 2" in f for f in fails), fails
+
+
+def test_gate_fails_deprecated_code_and_bad_file_names(tmp_path):
+    spec = ('<script type="application/json" class="nerdit-files-spec">'
+            '{"python": "3.12", "files": [{"name": "L02-S1-Wrong.csv", "from": {"json": []}}]}</script>')
+    bad = LESSON.replace("<h1>Counting rows</h1>", "<h1>Counting rows</h1>" + spec).replace(
+        "<p>The query returns the number one.</p>",
+        '<p>The query returns the number one.</p><pre data-lang="python"><code>from datetime import datetime\n'
+        'stamp = datetime.utcnow()</code></pre>')
+    inp, d = setup(tmp_path, bad)
+    fails, _ = gate(inp, d, "c-01")
+    assert any(f.startswith("modern:") and "utcnow" in f for f in fails), fails
+    assert any(f.startswith("files:") and "L01-" in f for f in fails), fails
+
+
+def test_gate_fails_a_python_answer_with_no_output(tmp_path, monkeypatch):
+    import gate_lesson
+    monkeypatch.setattr(gate_lesson, "engine_available", lambda: (True, ""))
+    monkeypatch.setattr(gate_lesson, "has_python", lambda html: True)
+    monkeypatch.setattr(gate_lesson, "check_python", lambda html: {
+        "mismatch": [], "tryit_fail": [], "offline": [], "answer_fail": ["practice task 1: shows no output"]})
+    inp, d = setup(tmp_path)
+    fails, _ = gate(inp, d, "c-01")
+    assert "python: practice task 1: shows no output" in fails

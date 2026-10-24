@@ -11,7 +11,8 @@ tables, figures or the cheat sheet):
    editors or seed scripts. `head()` matches a call such as `head(3)`. Placeholders
    (`<item>`, `...`) and plain words (`if`, `None`, `TypeError`) are not judged.
 2. A number the prose says is printed must be printed: "prints 12", "returns 1,250",
-   "shows 3.5" need that number in the same section's shown output.
+   "shows 3.5" need that number in the same section's shown output. (Inside an answer's
+   <details> the answer checks compare the result instead.)
 
 Exit 0 = prose and code agree; 1 = a disagreement; 2 = an unreadable file. Stdlib only.
 Whether a sentence describes the code truly in other ways is judged by the QA agent.
@@ -39,6 +40,15 @@ def _squash(text: str) -> str:
 def _skipped(node) -> bool:
     while node is not None:
         if node.tag in SKIP or SKIP_CLASSES & node.classes:
+            return True
+        node = node.parent
+    return False
+
+
+def _in_details(node) -> bool:
+    node = node.parent
+    while node is not None:
+        if node.tag == 'details':
             return True
         node = node.parent
     return False
@@ -80,6 +90,8 @@ def check_lesson(content: str) -> list[str]:
                     or _on_page(token, corpus)):
                 continue
             fails.append(f'{section}: the prose names `{token}`, but no code or output on the page has it')
+        if _in_details(node):
+            continue  # an answer's own result is checked by the answer checks, not here
         shown = outputs.get(section, '').replace(',', '')
         for number in SAID_PRINTED.findall(text_of(node)):
             value = number.replace(',', '').rstrip('.')

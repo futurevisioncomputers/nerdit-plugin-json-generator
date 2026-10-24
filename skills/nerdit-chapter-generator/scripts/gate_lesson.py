@@ -7,8 +7,11 @@
 Builds a one-lesson course from <dir>/<id>.html, .quiz.json and .concepts.json, then runs:
 verify_course (schema, structure, density) -> check_world (with --world; without one, its SVG
 number check) -> check_sql_outputs -> check_python_outputs (only
-when the lesson has Python; a missing engine fails it) -> SVG checks -> check_screens -> check_prose
--> check_refresh (only with --before-dir). Replaces the course-specific rollout/gate.py.
+when the lesson has Python, every answer included; a missing engine fails it) -> deprecated code
+(check_modern_code) -> prose names only code the page has (check_code_prose) -> computable quiz
+answers (check_quiz) -> practice file names (files spec) -> SVG checks -> check_screens ->
+check_prose -> check_refresh (only with --before-dir). Offline examples and the practice pack
+need a venv; they are course-level steps (SKILL.md Step 4c and 5c). Replaces the course-specific rollout/gate.py.
 Exit 0 = pass, 1 = a check failed, 2 = a file or the lesson id is missing. Stdlib only.
 """
 from __future__ import annotations
@@ -23,7 +26,11 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent.parent / "nerdit-lesson-illustrator" / "scripts"))
 
 from assemble_course import build_course  # noqa: E402
+from check_code_prose import check_lesson as check_code_prose  # noqa: E402
+from check_modern_code import lesson_code, scan as scan_modern  # noqa: E402
 from check_prose import banned_patterns, check_lesson as check_voice  # noqa: E402
+from check_quiz import check_questions as check_quiz  # noqa: E402
+from practice_files import name_problems, read_spec  # noqa: E402
 from check_python_outputs import check_lesson as check_python, has_python  # noqa: E402
 from pyodide_engine import EngineError, engine_available  # noqa: E402
 from check_refresh import check as check_refresh  # noqa: E402
@@ -38,7 +45,8 @@ SVG_RE = re.compile(r"<svg\b.*?</svg>", re.S | re.I)
 
 
 def gate(input_path: Path, lesson_dir: Path, lid: str, contract: str = "v11",
-         before_dir: Path | None = None, modes=(), world_path: Path | None = None) -> tuple[list[str], list[str]]:
+         before_dir: Path | None = None, modes=(), world_path: Path | None = None,
+         new_course: bool = False) -> tuple[list[str], list[str]]:
     lessons = json.loads(Path(input_path).read_text(encoding="utf-8"))
     one = [s for s in lessons if s.get("id") == lid]
     if not one:
@@ -78,10 +86,34 @@ def gate(input_path: Path, lesson_dir: Path, lid: str, contract: str = "v11",
         else:
             try:
                 py = check_python(html)
-                fails += [f"python: {m}" for m in py["mismatch"] + py["tryit_fail"]]
+                fails += [f"python: {m}" for m in py["mismatch"] + py["tryit_fail"] + py.get("answer_fail", [])]
                 warns += [f"python: {o}" for o in py["offline"]]
             except EngineError as exc:
                 fails.append(f"python: engine error: {exc}")
+
+    # Strict code accuracy: modern code only, prose that matches its code, computed quiz answers,
+    # and practice file names that trace to this lesson.
+    for i, code in enumerate(lesson_code(html), 1):
+        fails += [f"modern: block {i} line {h['line']}: {h['found']} -> write {h['instead']}"
+                  for h in scan_modern(code, new_course)]
+    fails += [f"prose-code: {p}" for p in check_code_prose(html)]
+    labelled = [(f"question {i}", qn) for i, qn in enumerate(course["lessons"][0].get("questions", []), 1)]
+    labelled += [(f"assessment {i}", qn) for i, qn in enumerate(course["assessment"]["questions"], 1)]
+    try:
+        q_fails, q_warns = check_quiz(html, labelled)
+        fails += [f"quiz: {f}" for f in q_fails]
+        warns += [f"quiz: {w}" for w in q_warns]
+    except EngineError as exc:
+        fails.append(f"quiz: engine missing for a Python question ({exc})")
+    try:
+        spec = read_spec(html)
+    except ValueError as exc:
+        fails.append(f"files: {exc}")
+        spec = None
+    position = next(i for i, s in enumerate(lessons, 1) if s.get("id") == lid)
+    for entry in (spec or {}).get("files", []):
+        if "name" in entry:
+            fails += [f"files: {p}" for p in name_problems(entry["name"], position)]
 
     for n, svg in enumerate(SVG_RE.findall(html), 1):
         fails += [f"svg {n}: {e}" for e in check_svg(svg, [], 0)]
@@ -116,12 +148,14 @@ def main() -> int:
     ap.add_argument("--before-dir")
     ap.add_argument("--world", help="check seed and figure records against the course world")
     ap.add_argument("--modes", default="", help="comma list for the refresh guard")
+    ap.add_argument("--new-course", action="store_true",
+                    help="a course made after 2026-10-23: also require httpx2 (references/deprecated.md)")
     args = ap.parse_args()
     modes = {m.strip() for m in args.modes.split(",") if m.strip()}
     try:
         fails, warns = gate(Path(args.input), Path(args.dir), args.id, args.contract,
                             Path(args.before_dir) if args.before_dir else None, modes,
-                            Path(args.world) if args.world else None)
+                            Path(args.world) if args.world else None, args.new_course)
     except (OSError, KeyError, ValueError) as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return 2

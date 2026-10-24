@@ -553,6 +553,37 @@ def walk(node: Node):
         stack.extend(n.children)
 
 
+def verify_code_accuracy(rep: Report, out: dict, new_course: bool = False) -> None:
+    """v11: prose names only code the page has, no deprecated API, and practice file names that
+    trace to their chapter and are unique in the course (CORE.md §6e). Engine checks (outputs,
+    answers, quiz) stay in check_python_outputs / check_quiz."""
+    # Lazy imports: these modules import this one's DOM helpers.
+    from check_code_prose import check_lesson as code_prose
+    from check_modern_code import lesson_code, scan
+    from practice_files import name_problems, read_spec
+    seen: dict[str, str] = {}
+    for position, lesson in enumerate(out.get("lessons", []), 1):
+        lid, html = lesson.get("id", "?"), lesson.get("content", "")
+        for problem in code_prose(html):
+            rep.check(False, f"{lid}: prose-code: {problem}")
+        for i, code in enumerate(lesson_code(html), 1):
+            for hit in scan(code, new_course):
+                rep.check(False, f"{lid}: modern: block {i} line {hit['line']}: {hit['found']} -> {hit['instead']}")
+        try:
+            spec = read_spec(html)
+        except ValueError as exc:
+            rep.check(False, f"{lid}: files: {exc}")
+            continue
+        for entry in (spec or {}).get("files", []):
+            name = entry.get("name")
+            if not name:
+                continue
+            for problem in name_problems(name, position):
+                rep.check(False, f"{lid}: files: {problem}")
+            rep.check(name not in seen, f"{lid}: files: {name} used twice in the course (also {seen.get(name)})")
+            seen.setdefault(name, lid)
+
+
 def main() -> int:
     # Messages quote lesson text (①, ·, ₹, §). A Windows pipe defaults to cp1252 and would crash.
     sys.stdout.reconfigure(encoding="utf-8")
@@ -563,6 +594,8 @@ def main() -> int:
                     help="v10 rejects retired blocks; v11 adds the teaching-visuals checks")
     ap.add_argument("--quiet", action="store_true", help="print failures only")
     ap.add_argument("--world", help="optional world file; v11 checks records and course-map continuity")
+    ap.add_argument("--new-course", action="store_true",
+                    help="a course made after 2026-10-23: also require httpx2 (references/deprecated.md)")
     args = ap.parse_args()
 
     try:
@@ -577,6 +610,7 @@ def main() -> int:
     verify_structure(rep, out, args.contract)
     if args.contract == "v11":
         verify_density(rep, out, inp)
+        verify_code_accuracy(rep, out, args.new_course)
         if args.world:
             # Lazy import keeps the standalone DOM helpers usable by check_world.py.
             from pathlib import Path
