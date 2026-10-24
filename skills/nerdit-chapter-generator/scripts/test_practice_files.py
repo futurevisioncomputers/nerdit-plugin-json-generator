@@ -57,7 +57,15 @@ def test_bad_names(name, why):
 
 def test_chapter_folder_slug():
     assert pf.chapter_folder(2, 'Timeouts, Retries & Rate Limits!') == 'L02-timeouts-retries-rate-limits'
-    assert len(pf.chapter_folder(1, 'x' * 200)) <= 60
+    assert len(pf.chapter_folder(1, 'x' * 200)) <= pf.MAX_FOLDER
+    # Short enough for Windows (final review finding 4): the pilot's L02 title fits in 32.
+    assert pf.chapter_folder(2, 'Timeouts, Retries, Rate Limits and Error Handling') == 'L02-timeouts-retries-rate-limits'
+    assert pf.MAX_FOLDER <= 32
+
+
+def test_readme_tells_windows_learners_where_to_unzip():
+    text = pf._readme('ai-apis-practice-pack-v1', [])
+    assert 'top of a drive' in text and 'C:\\practice' in text
 
 
 def test_world_slice_picks_rows_and_columns_as_csv():

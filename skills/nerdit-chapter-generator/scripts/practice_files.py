@@ -34,6 +34,11 @@ from verify_course import parse, text_of  # noqa: E402
 SPEC = re.compile(r'<script\b[^>]*\bclass="[^"]*\bnerdit-files-spec\b[^"]*"[^>]*>(.*?)</script>', re.S | re.I)
 EXTENSIONS = {'csv', 'json', 'jsonl', 'sql', 'py', 'ipynb', 'txt', 'md'}  # .xlsx dropped for now (2026-10-24)
 MAX_NAME = 60
+# Windows (final review, 24 Oct 2026): "Extract All" puts the pack in a second folder of the same
+# name, and a path past 260 characters fails. Short chapter folders and a cap on every path inside
+# the pack keep C:\Users\<name>\Downloads\<pack>\<pack>\... well inside that.
+MAX_FOLDER = 32
+MAX_PACK_PATH = 120
 # Measuring phase (owner, 2026-10-24): 50 MiB to see what real courses weigh; to be lowered later.
 FILE_LIMIT = 50 * 1024 * 1024
 PACK_LIMIT = 50 * 1024 * 1024
@@ -67,11 +72,12 @@ def name_problems(name: str, position: int) -> list[str]:
 
 
 def chapter_folder(position: int, title: str) -> str:
-    """L<nn>-<title slug>, at most 60 characters, cut at a hyphen."""
+    """L<nn>-<title slug>, at most MAX_FOLDER characters, cut at a hyphen."""
     slug = re.sub(r'[^a-z0-9]+', '-', title.lower()).strip('-')
     folder = f'L{position:02d}-{slug}'
-    if len(folder) > MAX_NAME:
-        folder = folder[:MAX_NAME].rsplit('-', 1)[0]
+    if len(folder) > MAX_FOLDER:
+        folder = folder[:MAX_FOLDER + 1].rsplit('-', 1)[0] if '-' in folder[4:MAX_FOLDER + 1] else folder[:MAX_FOLDER]
+        folder = re.sub(r'(?:-(?:and|or|of|the|for|with|to|a|an|in|on))+$', '', folder)   # never end on "and"
     return folder
 
 
@@ -334,7 +340,10 @@ def mark_lesson(html: str, files: list[dict], folder: str, lesson_id: str, pytho
 
 
 def _readme(pack: str, folders: list[tuple[str, list[dict]]]) -> str:
-    lines = [pack, '', 'Setup (once):',
+    lines = [pack, '',
+             'Unzip near the top of a drive, for example C:\\practice on Windows: Windows refuses',
+             'paths longer than 260 characters, and a deep Downloads folder can reach that.',
+             '', 'Setup (once):',
              '  1. python3.14 -m venv .venv',
              '  2. Activate it: .venv\\Scripts\\activate (Windows) or source .venv/bin/activate',
              '  3. pip install -r requirements.txt',

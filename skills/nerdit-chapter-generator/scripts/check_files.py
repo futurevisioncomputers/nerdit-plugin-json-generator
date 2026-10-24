@@ -32,6 +32,7 @@ import shutil
 import sqlite3
 import subprocess
 import sys
+import tempfile
 import zipfile
 
 import practice_files as pf
@@ -82,6 +83,8 @@ def static_problems(out_dir: Path, course: Path | None = None) -> list[str]:
         problems.append(f'{zpath.name}: {zpath.stat().st_size} bytes, over the pack limit')
     with zipfile.ZipFile(zpath) as z:
         in_pack = {Path(n).name: z.read(n) for n in z.namelist() if not n.endswith('/')}
+        problems += [f'{n}: {len(n)} characters, too long for Windows (at most {pf.MAX_PACK_PATH} inside the pack)'
+                     for n in z.namelist() if len(n) > pf.MAX_PACK_PATH]
     for row in manifest['files']:
         name = row['name']
         position = int(row['folder'][1:3]) if re.match(r'L\d{2}-', row.get('folder', '')) else 0
@@ -172,6 +175,9 @@ def _run_with(pack_root: Path, python: str, venv_dir: Path, requirements: str) -
         except subprocess.TimeoutExpired:
             problems.append(f'{label}: still running after {TIMEOUT} s')
             return
+        except OSError as exc:   # WinError 267: Windows cannot use a working folder past 260 characters
+            problems.append(f'{label}: path too long or not usable ({len(str(cwd))} characters: {exc})')
+            return
         ran.append(label)
         if proc.returncode != 0:
             problems.append(f'{label}: {_last_line(proc)}')
@@ -194,6 +200,14 @@ def _run_with(pack_root: Path, python: str, venv_dir: Path, requirements: str) -
             except sqlite3.Error as exc:
                 problems.append(f'{rel}: SQLite {exc}')
     return problems, ran
+
+
+def default_workdir(out_dir: Path) -> Path:
+    """<out-dir>/learner, except on Windows: a short folder in the system temp, so a deep out-dir
+    does not push the unzipped chapter folders past the 260-character limit."""
+    if sys.platform == 'win32':
+        return Path(tempfile.mkdtemp(prefix='nerdit-learner-'))
+    return Path(out_dir) / 'learner'
 
 
 def run_as_learner(out_dir: Path, pythons: list[str], workdir: Path) -> dict:
@@ -228,14 +242,15 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument('--course', help='the marked course JSON practice_files.py wrote')
     ap.add_argument('--as-learner', action='store_true')
     ap.add_argument('--pythons', default='3.14,3.12')
-    ap.add_argument('--workdir', help='where to unzip and make venvs (default <out-dir>/learner)')
+    ap.add_argument('--workdir', help='where to unzip and make venvs (default <out-dir>/learner; '
+                                      'on Windows a short folder in the system temp)')
     args = ap.parse_args(argv)
     out = Path(args.out_dir)
     try:
         problems = static_problems(out, Path(args.course) if args.course else None)
         report = None
         if args.as_learner and not problems:
-            report = run_as_learner(out, args.pythons.split(','), Path(args.workdir or out / 'learner'))
+            report = run_as_learner(out, args.pythons.split(','), Path(args.workdir) if args.workdir else default_workdir(out))
     except (OSError, ValueError, KeyError) as exc:
         print(f'ERROR: {exc}', file=sys.stderr)
         return 2

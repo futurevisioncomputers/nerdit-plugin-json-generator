@@ -601,7 +601,9 @@ Never write a download link or a files box by hand.
 - **Names trace to the page:** `L<nn>-S<section>-<what>.<ext>` for a section's data,
   `L<nn>-practice-starter`, `L<nn>-solutions`, `L<nn>-full-app.py`. `<nn>` is the chapter's
   position. Lower case, digits, hyphens; at most 60 characters; unique in the course, images
-  included. Formats: `.csv .json .jsonl .sql .py .ipynb .txt .md`.
+  included. Formats: `.csv .json .jsonl .sql .py .ipynb .txt .md`. The plugin keeps chapter
+  folders to 32 characters and every path inside the pack to 120, so the pack unzips on Windows
+  (260-character limit); `check_files.py` fails a longer path.
 - **`sections` must name a numbered `<h2>`** (`1 — …`): the plugin puts "📎 This section uses"
   under that heading. Use `"practice"` or `"all"` for the starter and the solutions.
 - **Data comes from the course world** (or the lesson's own seed or table). Never type data

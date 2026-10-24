@@ -124,6 +124,38 @@ def test_learner_run_falls_back_to_the_next_python(tmp_path, monkeypatch):
     assert report['tried']['3.97'] == ['Python 3.97 is not installed']
 
 
+# Final review finding 4: Windows "Extract All" adds a second pack-named folder, and a path past
+# 260 characters fails there. Every path inside the pack stays within MAX_PACK_PATH.
+def test_a_path_too_long_for_windows_fails(tmp_path):
+    out = build(tmp_path)
+    zpath = out / 'fees-practice-pack-v1.zip'
+    with zipfile.ZipFile(zpath, 'a') as z:
+        z.writestr('fees-practice-pack-v1/L01-reading-fees/' + 'x' * 120 + '.txt', 'deep\n')
+    assert any('too long for Windows' in p for p in cf.static_problems(out))
+
+
+def test_learner_run_reports_a_folder_windows_cannot_enter(tmp_path, monkeypatch):
+    out = build(tmp_path)
+    real = cf.subprocess.run
+
+    def refuse(args, **kw):
+        if kw.get('cwd') is not None and 'reading-fees' in str(kw['cwd']):
+            raise NotADirectoryError(267, 'The directory name is invalid')
+        return real(args, **kw)
+    monkeypatch.setattr(cf.subprocess, 'run', refuse)
+    report = cf.run_as_learner(out, pythons=[sys.executable], workdir=tmp_path / 'learner')
+    assert any('own folder' in p and 'path too long' in p for p in report['problems']), report['problems']
+
+
+def test_the_learner_workdir_is_short_on_windows(tmp_path, monkeypatch):
+    monkeypatch.setattr(cf.sys, 'platform', 'win32')
+    work = cf.default_workdir(tmp_path / ('deep' * 30))
+    assert len(str(work)) < 120 and work.exists() and 'deep' not in str(work)
+    work.rmdir()
+    monkeypatch.setattr(cf.sys, 'platform', 'linux')
+    assert cf.default_workdir(tmp_path) == tmp_path / 'learner'
+
+
 def test_size_limits(tmp_path, monkeypatch):
     out = build(tmp_path)
     monkeypatch.setattr(pf, 'PACK_LIMIT', 10)
