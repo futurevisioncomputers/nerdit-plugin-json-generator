@@ -302,6 +302,11 @@ Rules:
   Weak:   "How are a workbook and a worksheet related in Excel?"
   Strong: "`=SUM(E2:E9)` returns 185600. What does `=AVERAGE(E2:E9)` return?"
   Strong: "A formula shows `#REF!` after you deleted column D. What caused it?"
+- **A snippet question is computed.** Put its code in backticks in the text. A Python snippet
+  that prints runs after the lesson's run lines, with their variables; a `SELECT` runs on the
+  lesson's seed. `check_quiz.py` fails the quiz when the marked option is not the result, so
+  write the options as Python prints them (`250`, not `250.0`), and name an error by its class
+  (`IndexError`)
 - Vary what each of the 6 tests: mix conceptual, applied/troubleshooting, and comparative angles
 - **The checkpoint is not where the learning happens** — the Try It blocks are (CORE.md §6).
   The 6 questions confirm the lesson landed; they are not a substitute for one Try It per
