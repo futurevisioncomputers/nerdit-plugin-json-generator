@@ -27,7 +27,7 @@ Claude GitHub App to have access to both repos.
 | 4 | Formats | **CSV, Excel, JSON, SQL, Python, notebooks** |
 | 5 | Solutions | **Full code to download**; the page keeps short code with explanations |
 | 6 | Where file details live | **Lesson HTML only** (like images); no course-JSON schema change |
-| 7 | Python | **Python 3.14** for downloads and offline checks; the website runner **stays on Pyodide 0.26.2 (Python 3.12)**: the Pyodide upgrade is dropped for now (2026-10-24); **3.15** only for lessons about its new features; **no deprecated code** |
+| 7 | Python | The website runner **stays on Pyodide 0.26.2 (Python 3.12)**: the Pyodide upgrade is dropped for now (2026-10-24). Downloads use **the same code as the page, written for 3.12**: a course's pack is marked **Python 3.14** when every file runs on 3.14 with no change, otherwise **Python 3.12**; **3.15** only for lessons about its new features; **no deprecated code** |
 | 8 | Worlds | **One of the six business worlds per course**, chosen by subject fit (§2b); `practice-retail` (fictional) only when none fits |
 | 9 | Capstone | **A new last chapter** in every code course: one end-to-end project combining every chapter, on the world's data |
 | 10 | Capstone and certificate | **Not required for the certificate.** The capstone is practice; `finalAssignment` stays unused |
@@ -140,10 +140,15 @@ still shows each answer in its `<details>`; the download adds, it never replaces
 
 ## 4. Python version and modern code
 
-- **Python 3.14 for downloads and offline checks.** The website runner and the checker's `tools/pyodide` pin **stay on
+- **The website stays on Python 3.12.** The website runner and the checker's `tools/pyodide` pin **stay on
   Pyodide 0.26.2 (Python 3.12)**. The Pyodide upgrade is dropped for now (owner, 2026-10-24): newer NumPy and pandas
   print some values differently (`np.float64(3.5)`, `str` dtype), so every published lesson's shown output would have
-  to be re-checked first. Page code therefore stays valid on both 3.12 and 3.14; downloaded files may use 3.14.
+  to be re-checked first.
+- **Downloads: the page's code, no second version.** Starters, solutions, full apps and the capstone are written for
+  Python 3.12 (no 3.13+ only features). The offline checks run them on Python 3.14 first: when every file passes with
+  no change, the course's pack and boxes say **Python 3.14**; when any file needs a change on 3.14 (a library without a
+  3.14 build, different output), nothing is changed, the course pins **Python 3.12** in its requirements and its pack
+  and boxes say **Python 3.12**, and the checks run on 3.12. The spec's `"python"` holds the result.
 - **Python 3.15** (released 2026-10-09): only for lessons about its new features, as offline run lines checked on
   CPython 3.15, marked "needs Python 3.15". It becomes the default when Pyodide ships a 3.15 build and the course
   libraries publish 3.15 wheels.
