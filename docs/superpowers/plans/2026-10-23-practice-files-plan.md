@@ -19,7 +19,7 @@ Claude GitHub App to have access to both repos.
 
 | # | Question | Decision |
 |---|---|---|
-| 1 | Who downloads | **Certificate holders** (and admins). Courses stay free (`price: 0`); the certificate (`certificatePrice`, ₹999 today) unlocks the exam, the certificate, the practice pack and the capstone code |
+| 1 | Who downloads | **Only learners who paid for the certificate** (and admins), confirmed 2026-10-24: a paid certificate order for the course, or a paid career program that includes it. A certificate held without a paid order, or a free (₹0) certificate, does not unlock the files; a revoked one locks them. Courses stay free (`price: 0`); the certificate (`certificatePrice`, ₹999 today) unlocks the exam, the certificate, the practice pack and the capstone code |
 | 2 | Packaging | **One course practice pack**, offered in the first chapter; **one folder per chapter**; downloaded once, then used chapter by chapter |
 | 3 | Size | **Measuring phase (2026-10-24): pack and single file at most 50 MiB**, to see what real courses weigh; the target stays 10 MiB pack / 5 MiB file and is tightened once sizes are known. Samples and the separate data pack wait until then |
 | 12 | HTTP client | **New AI API courses teach `httpx2`** (`import httpx2`), Pydantic's drop-in continuation of `httpx`; existing courses switch when they are regenerated |
