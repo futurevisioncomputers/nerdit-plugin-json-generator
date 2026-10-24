@@ -219,3 +219,59 @@ def test_cold_cache_without_network_exits_2(offline_engine, tmp_path):
     assert subprocess.run(cli + ["--probe", "pandas"], capture_output=True).returncode == 2
     plain = run_job({"files": {}, "steps": [{"id": "a", "code": "print(6 * 7)", "fresh": True}], "probe": []})
     assert plain["results"][0]["stdout"] == "42"  # the core itself needs no download
+
+
+# Check a: every answer on the page runs (practice solutions, predict answers, fill-ins).
+
+def task(prompt: str, code: str, shown: str | None = None) -> str:
+    out = (f'<div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>{shown}</code></pre></div>'
+           if shown is not None else '')
+    return (f'<div class="nerdit-task">{prompt}<details class="nerdit-solution"><summary>Show solution</summary>'
+            f'<pre data-lang="python"><code>{code}</code></pre>{out}</details></div>')
+
+
+def predict(code: str, shown: str | None) -> str:
+    out = (f'<div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>{shown}</code></pre></div>'
+           if shown is not None else '<div class="nerdit-out"><div class="nerdit-answer">10</div></div>')
+    return (f'<div class="nerdit-predict"><div class="nerdit-predict-head">Predict</div>'
+            f'<pre data-lang="python"><code>{code}</code></pre>'
+            f'<details class="nerdit-predict-answer"><summary>Show answer</summary>{out}</details></div>')
+
+
+def fillblank(before: str, answer: str, after: str) -> str:
+    return (f'<div class="nerdit-fillblank" data-answer="{answer}"><pre data-lang="python"><code>{before}'
+            f'<input class="nerdit-blank" size="7" aria-label="your answer">{after}</code></pre></div>')
+
+
+def test_python_parts_finds_answers_in_page_order():
+    html = lesson(run_line("x = 2", ""), predict("print(x * 5)", "10"), fillblank("print(x ", "+|plus", " 1)"),
+                  run_line("y = 3", ""), task("Task 1: Print x.", "print(x)", "2"))
+    answers = python_parts(html)["answers"]
+    assert [(a["kind"], a["code"], a["shown"], a["after"]) for a in answers] == [
+        ("predict", "print(x * 5)", "10", 1), ("fill-in", "print(x + 1)", None, 1),
+        ("practice", "print(x)", "2", 2)]
+
+
+@engine
+def test_practice_answers_run_after_the_run_lines():
+    good = lesson(dataset(), run_line(READ, "(5, 7)"), task("Task 1: Count rows.", "print(len(df))", "5"),
+                  task("Task 2: Columns.", "print(df.shape[1])"))
+    r = check_lesson(good)
+    assert r["answers"] == 2 and r["answer_fail"] == [], r
+    r = check_lesson(good.replace("<code>5</code>", "<code>6</code>"))
+    assert len(r["answer_fail"]) == 1 and "practice task 1" in r["answer_fail"][0] and "'6'" in r["answer_fail"][0]
+    r = check_lesson(lesson(task("Task 1: Oops.", "print(missing)")))
+    assert "NameError" in r["answer_fail"][0]
+
+
+@engine
+def test_predict_and_fill_in_answers_run_in_place():
+    html = lesson(run_line("x = 2", ""), predict("x = 5\nprint(x * 2)", "10"), run_line("print(x)", "2"),
+                  fillblank("print(x ", "+", " 1)"), predict("print(x)", None))
+    r = check_lesson(html)
+    assert r["match"] == 2 and r["mismatch"] == [], r  # the predict's x = 5 never reaches the run lines
+    assert r["answers"] == 3 and r["answer_fail"] == [], r
+    r = check_lesson(html.replace("<code>10</code>", "<code>12</code>"))
+    assert len(r["answer_fail"]) == 1 and "predict 1" in r["answer_fail"][0]
+    r = check_lesson(lesson(run_line("x = 2", ""), fillblank("print(x ", "plus", " 1)")))
+    assert "fill-in 1" in r["answer_fail"][0] and "SyntaxError" in r["answer_fail"][0]
