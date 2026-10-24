@@ -21,7 +21,7 @@ Claude GitHub App to have access to both repos.
 |---|---|---|
 | 1 | Who downloads | **Certificate holders** (and admins). Courses stay free (`price: 0`); the certificate (`certificatePrice`, ₹999 today) unlocks the exam, the certificate, the practice pack and the capstone code |
 | 2 | Packaging | **One course practice pack**, offered in the first chapter; **one folder per chapter**; downloaded once, then used chapter by chapter |
-| 3 | Size | **Course pack at most 10 MiB**; any single file at most 5 MiB |
+| 3 | Size | **Measuring phase (2026-10-24): pack and single file at most 50 MiB**, to see what real courses weigh; the target stays 10 MiB pack / 5 MiB file and is tightened once sizes are known. Samples and the separate data pack wait until then |
 | 12 | HTTP client | **New AI API courses teach `httpx2`** (`import httpx2`), Pydantic's drop-in continuation of `httpx`; existing courses switch when they are regenerated |
 | 11 | Admin upload | **One course bundle zip** from the plugin: the output JSON, all images and practice files, and the video list; the admin imports that one file (§10) |
 | 4 | Formats | **CSV, Excel, JSON, SQL, Python, notebooks** |
@@ -31,6 +31,7 @@ Claude GitHub App to have access to both repos.
 | 8 | Worlds | **One of the six business worlds per course**, chosen by subject fit (§2b); `practice-retail` (fictional) only when none fits |
 | 9 | Capstone | **A new last chapter** in every code course: one end-to-end project combining every chapter, on the world's data |
 | 10 | Capstone and certificate | **Not required for the certificate.** The capstone is practice; `finalAssignment` stays unused |
+| 13 | Capstone scope (2026-10-24) | **One problem statement, one complete project.** Up to **20 % of the solution's code lines** may use libraries or techniques the course did not teach; each such block is marked `# Beyond the course: <what and why>` and explained in the capstone README. The other 80 % uses only what the chapters taught |
 
 **Still open (default used until decided):** a pack button on the course page as well as in the first chapter
 (default: first chapter only).
@@ -311,7 +312,7 @@ lock states are drawn by the learner site (§11), never written into the lesson 
 | f | **Computable quiz answers are computed** | `check_quiz.py` (new) | the marked option is not the computed result |
 | g | **No deprecated code:** all runs with `-W error`; static scan against `references/deprecated.md` and ruff `UP` | `check_modern_code.py` (new), and the flags in a, b, d | any warning, or a banned API anywhere a learner sees or downloads |
 | h | **Names and links:** §2 names, unique with images; every `files/` link has a file and every file is linked; each file parses | `check_files.py` | any of these |
-| i | **Capstone:** the solution passes every test and `report.py` prints the documented report; the starter imports and runs; **each milestone's tests fail on the starter and pass on the solution**; the page's short code is part of the solution; only constructs the course taught | `check_capstone.py` (new), `check_sequence.py` | any of these |
+| i | **Capstone:** the solution passes every test and `report.py` prints the documented report; the starter imports and runs; **each milestone's tests fail on the starter and pass on the solution**; the page's short code is part of the solution; at most 20 % of solution code lines outside what the course taught, every such block marked `# Beyond the course:` (decision 13) | `check_capstone.py` (new), `check_sequence.py` | any of these |
 
 Exit codes as the existing checks (2 = environment missing, never a pass). A failure regenerates the chapter within
 the 2-attempt budget, then stops and reports.

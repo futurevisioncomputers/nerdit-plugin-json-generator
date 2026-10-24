@@ -142,11 +142,11 @@ def test_build_pack_rejects_bad_name(tmp_path):
 
 def test_build_pack_enforces_file_and_pack_limits(tmp_path, monkeypatch):
     monkeypatch.setattr(pf, 'FILE_LIMIT', 10)
-    with pytest.raises(ValueError, match='5 MiB|limit'):
+    with pytest.raises(ValueError, match='file limit'):
         pf.build_pack(chapters(), course_short='ai-apis', version=1, world=WORLD, requirements='',
                       out_dir=tmp_path)
     monkeypatch.setattr(pf, 'FILE_LIMIT', 10**6)
     monkeypatch.setattr(pf, 'PACK_LIMIT', 50)
-    with pytest.raises(ValueError, match='pack'):
+    with pytest.raises(ValueError, match='pack limit'):
         pf.build_pack(chapters(), course_short='ai-apis', version=1, world=WORLD, requirements='',
                       out_dir=tmp_path)

@@ -26,8 +26,10 @@ from nerdit_world_gen import to_csv  # noqa: E402
 SPEC = re.compile(r'<script\b[^>]*\bclass="[^"]*\bnerdit-files-spec\b[^"]*"[^>]*>(.*?)</script>', re.S | re.I)
 EXTENSIONS = {'csv', 'xlsx', 'json', 'jsonl', 'sql', 'py', 'ipynb', 'txt', 'md'}
 MAX_NAME = 60
-FILE_LIMIT = 5 * 1024 * 1024
-PACK_LIMIT = 10 * 1024 * 1024
+# Measuring phase (owner, 2026-10-24): 50 MiB to see what real courses weigh; to be lowered later.
+FILE_LIMIT = 50 * 1024 * 1024
+PACK_LIMIT = 50 * 1024 * 1024
+MIB = 1024 * 1024
 
 
 def read_spec(html: str) -> dict | None:
@@ -141,7 +143,7 @@ def build_pack(chapters: list[dict], course_short: str, version: int, world: dic
             built.append((chapter, folder, entry, build_file(entry, world, workdir)))
     for _, _, entry, data in built:
         if len(data) > FILE_LIMIT:
-            problems.append(f'{entry["name"]}: {len(data)} bytes, over the 5 MiB file limit')
+            problems.append(f'{entry["name"]}: {len(data)} bytes, over the {FILE_LIMIT / MIB:g} MiB file limit')
     if problems:
         raise ValueError('\n'.join(problems))
 
@@ -152,7 +154,7 @@ def build_pack(chapters: list[dict], course_short: str, version: int, world: dic
         for _, folder, entry, data in built:
             z.writestr(f'{pack}/{folder}/{_arcname(entry)}', data)
     if buf.tell() > PACK_LIMIT:
-        raise ValueError(f'{pack}.zip: {buf.tell()} bytes, over the 10 MiB pack limit')
+        raise ValueError(f'{pack}.zip: {buf.tell()} bytes, over the {PACK_LIMIT / MIB:g} MiB pack limit')
 
     files_dir = out_dir / 'files'
     files_dir.mkdir(parents=True, exist_ok=True)
@@ -191,7 +193,9 @@ def main():
     except (OSError, ValueError, KeyError, TypeError) as exc:
         print(f'ERROR: {exc}', file=sys.stderr)
         return 2
-    print(f'Built {result["pack"]}: {len(result["files"])} files, {result["packBytes"]} bytes')
+    largest = max(result['files'], key=lambda f: f['bytes'], default=None)
+    print(f'Built {result["pack"]}: {len(result["files"])} files, {result["packBytes"] / MIB:.2f} MiB zipped'
+          + (f'; largest {largest["name"]} {largest["bytes"] / MIB:.2f} MiB' if largest else ''))
     return 0
 
 
