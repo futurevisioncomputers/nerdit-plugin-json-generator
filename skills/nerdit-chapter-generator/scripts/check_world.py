@@ -9,10 +9,13 @@ their computed values are checked by SQL output checks and QA, not domain member
 SVG figures (relationships, timelines) are not record tables, but their drawn numbers must be
 stated in the lesson or its seed, and a drawn name that is a world record must be one the lesson
 shows. Other labels are left to QA; drawn app screens are left to check_screens.py.
+Practice data (plan check c): no Python block types in more than 8 rows, and a files spec's
+world sources name an entity, rows and columns the world has; its json sources stay small.
 """
 from __future__ import annotations
 
 import argparse
+import ast
 import html
 import json
 from pathlib import Path
@@ -20,7 +23,9 @@ import re
 import sqlite3
 import sys
 
+from check_modern_code import lesson_code
 from make_world_data import generate, load_world
+from practice_files import read_spec, row_key
 from render_screens import strip_drawings
 from screens import lesson_text
 from verify_course import parse, text_of
@@ -86,6 +91,48 @@ def svg_label_failures(content: str, domains: dict) -> list[str]:
         for name in dict.fromkeys(p for p in parts if p):
             if name.casefold() in records and not re.search(rf'(?<!\w){re.escape(name.casefold())}(?!\w)', words):
                 fails.append(f'figure svg {i}: draws {name}, a world record the lesson never shows')
+    return fails
+
+
+MAX_TYPED_ROWS = 8
+
+
+def _typed_rows(code: str) -> list[int]:
+    """Sizes of list, tuple and set literals longer than MAX_TYPED_ROWS (runners/python.md)."""
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return []
+    return [len(n.elts) for n in ast.walk(tree)
+            if isinstance(n, (ast.List, ast.Tuple, ast.Set)) and len(n.elts) > MAX_TYPED_ROWS]
+
+
+def practice_data_failures(content: str, data: dict) -> list[str]:
+    """Plan check c: no data typed into code or a files spec, and every world source names
+    an entity, rows and columns the course world has."""
+    fails = []
+    for i, code in enumerate(lesson_code(content), 1):
+        fails += [f'Python block {i}: {n} rows typed in; build them from the world (dataset block or files spec)'
+                  for n in _typed_rows(code)]
+    try:
+        spec = read_spec(content)
+    except ValueError as exc:
+        return fails + [f'files spec: {exc}']
+    for entry in (spec or {}).get('files', []):
+        name, source = entry.get('name', '?'), entry.get('from', {})
+        if 'json' in source and isinstance(source['json'], (list, dict)) and len(source['json']) > MAX_TYPED_ROWS:
+            fails.append(f'{name}: {len(source["json"])} rows typed in; use a world source')
+        if 'world' not in source:
+            continue
+        rows = data.get(source['world'])
+        if rows is None:
+            fails.append(f'{name}: the world has no entity {source["world"]}')
+            continue
+        key = row_key(rows, source.get('rows', []), source.get('key'))
+        ids = {row[key] for row in rows} if key in (rows[0] if rows else {}) else set()
+        fails += [f'{name}: {source["world"]} has no row {r}' for r in source.get('rows', []) if r not in ids]
+        columns = set(rows[0]) if rows else set()
+        fails += [f'{name}: {source["world"]} has no column {c}' for c in source.get('columns', []) if c not in columns]
     return fails
 
 
@@ -200,6 +247,7 @@ def check_lesson(content: str, world: dict, data: dict) -> tuple[list[str], list
                     value = cell.attrs.get('data-world-value', text_of(cell).strip())
                     check_cell(entity, column, index, value, 'figure')
     fails += svg_label_failures(content, domains)
+    fails += practice_data_failures(content, data)
     return fails, warns
 
 

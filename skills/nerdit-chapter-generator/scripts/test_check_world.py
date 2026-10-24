@@ -150,3 +150,44 @@ def test_a_world_value_inside_a_longer_label_is_not_a_record():
     assert svg_errors('<p>Stores report daily.</p>' + svg_figure('Pune stores')) == []
     assert svg_errors('<p>Stores report daily.</p>' + svg_figure('Pune')) == [
         'figure svg 1: draws Pune, a world record the lesson never shows']
+
+
+# Check c: practice data comes from the world, never typed in.
+
+def run(code):
+    return ('<div class="nerdit-run"><div class="nerdit-in"><pre data-lang="python"><code>'
+            f'{code}</code></pre></div></div>')
+
+
+def files_spec(*files):
+    import json
+    return (f'<script type="application/json" class="nerdit-files-spec">'
+            f'{json.dumps({"python": "3.12", "files": list(files)})}</script>')
+
+
+def test_typed_in_rows_over_eight_fail():
+    w = world()
+    data = generate(w)
+    nine = ', '.join(f'({i}, {i * 10})' for i in range(9))
+    errors, _ = check_lesson(lesson(body=run(f'orders = [{nine}]')), w, data)
+    assert any('9 rows typed in' in e for e in errors)
+    cols = ', '.join(str(i) for i in range(12))
+    errors, _ = check_lesson(lesson(body=run(f'df = pd.DataFrame({{"units": [{cols}]}})')), w, data)
+    assert any('12 rows typed in' in e for e in errors)
+    eight = ', '.join(f'({i}, {i})' for i in range(8))
+    assert check_lesson(lesson(body=run(f'orders = [{eight}]')), w, data)[0] == []
+
+
+def test_files_spec_world_sources_must_exist_in_the_world():
+    w = world()
+    data = generate(w)
+    good = {'name': 'L01-S1-orders.csv', 'from': {'world': 'orders', 'rows': [data['orders'][0]['order_id']],
+                                                  'columns': ['order_id', 'units']}}
+    assert check_lesson(lesson(body=files_spec(good)), w, data)[0] == []
+    bad_entity = {**good, 'from': {'world': 'refunds'}}
+    bad_row = {**good, 'from': {'world': 'orders', 'rows': ['O999']}}
+    bad_col = {**good, 'from': {'world': 'orders', 'columns': ['colour']}}
+    typed = {'name': 'L01-S2-x.json', 'from': {'json': [{'a': i} for i in range(9)]}}
+    errors, _ = check_lesson(lesson(body=files_spec(bad_entity, bad_row, bad_col, typed)), w, data)
+    text = '\n'.join(errors)
+    assert 'refunds' in text and 'O999' in text and 'colour' in text and 'L01-S2-x.json: 9 rows typed in' in text

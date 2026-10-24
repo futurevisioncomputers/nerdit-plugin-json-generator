@@ -75,12 +75,22 @@ def chapter_folder(position: int, title: str) -> str:
     return folder
 
 
+def row_key(rows: list[dict], wanted: list, key: str | None = None) -> str | None:
+    """The column a world source's `rows` ids live in: `key` when given, else the unique-valued
+    column (an `_id` one first) holding every wanted id. Generated rows are not in schema order."""
+    if key or not rows:
+        return key
+    unique = [c for c in rows[0] if len({row[c] for row in rows}) == len(rows)]
+    unique.sort(key=lambda c: not c.endswith('_id'))
+    return next((c for c in unique if set(wanted) <= {row[c] for row in rows}), unique[0] if unique else None)
+
+
 def _world_slice(source: dict, world: dict) -> str:
     rows = world.get(source['world'])
     if rows is None:
         raise ValueError(f'world has no entity {source["world"]}')
     if 'rows' in source:
-        key = next(iter(rows[0])) if rows else None
+        key = row_key(rows, source['rows'], source.get('key'))
         by_id = {row[key]: row for row in rows}
         missing = [r for r in source['rows'] if r not in by_id]
         if missing:

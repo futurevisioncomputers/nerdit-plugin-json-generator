@@ -590,7 +590,7 @@ Never write a download link or a files box by hand.
 
 | Source | Builds |
 |---|---|
-| `world` | rows and columns of a course-world entity, as CSV (`rows` by first-column id) |
+| `world` | rows and columns of a course-world entity, as CSV (`rows` by id; `"key"` names the id column if it is not the entity's `_id` one) |
 | `json` | the value as `.json` (2-space indent) or `.jsonl` (one object per line) |
 | `table` | the lesson table whose `<caption>` or `<figcaption>` reads exactly this text, as CSV |
 | `sql` | the seed `<script type="text/plain" id="…">`, byte for byte, under a header comment |

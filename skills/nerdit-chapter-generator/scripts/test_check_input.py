@@ -117,3 +117,38 @@ def test_focus_must_be_concept_or_hands_on():
     sev, lid, msg = audit(bad)[0]
     assert (sev, lid) == ("ERROR", "a-01") and "unknown focus" in msg
     assert audit([dict(GOOD[0], focus="concept"), dict(GOOD[1], focus="hands-on")]) == []
+
+
+# Check c and the capstone (plan decisions 8 and 9).
+
+CODE = [dict(GOOD[0], runner="python"), dict(GOOD[1], runner="python"),
+        {"id": "a-03", "title": "Capstone: The Fee Report", "focus": "project", "runner": "python",
+         "description": "Build one report from the enquiries data that uses every chapter of the course."}]
+
+
+def test_project_focus_is_allowed_only_as_the_single_last_chapter():
+    assert audit(CODE, world_declared=True) == []
+    moved = [CODE[2], CODE[0], CODE[1]]
+    assert any(s == "ERROR" and "last chapter" in m for s, _, m in audit(moved, world_declared=True))
+    two = CODE + [dict(CODE[2], id="a-04")]
+    assert any(s == "ERROR" and "one capstone" in m for s, _, m in audit(two, world_declared=True))
+
+
+def test_code_course_without_capstone_is_a_warning():
+    findings = audit(CODE[:2], world_declared=True)
+    assert [(s, m) for s, _, m in findings if "capstone" in m] and all(s == "WARN" for s, _, _ in findings)
+
+
+def test_code_course_needs_a_world():
+    assert any(s == "ERROR" and "world" in m for s, _, m in audit(CODE, world_declared=False))
+    assert audit(GOOD, world_declared=False) == []  # no runner, no preset: not a code course
+
+
+def test_cli_finds_the_sibling_world_file(tmp_path):
+    p = tmp_path / "course-fees_input.json"
+    p.write_text(json.dumps(CODE), encoding="utf-8")
+    r = subprocess.run([sys.executable, SCRIPT, "--input", str(p), "--strict"], capture_output=True, text=True)
+    assert r.returncode == 2 and "world" in r.stdout
+    (tmp_path / "course-fees_world.json").write_text(json.dumps({"use": "fvc-institute"}), encoding="utf-8")
+    r = subprocess.run([sys.executable, SCRIPT, "--input", str(p), "--strict"], capture_output=True, text=True)
+    assert r.returncode == 0, r.stdout

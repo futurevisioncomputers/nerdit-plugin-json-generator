@@ -67,6 +67,16 @@ def test_world_slice_picks_rows_and_columns_as_csv():
     assert data.decode() == 'message_id,message\nM1,How much?\nM2,"Next batch, ""evening""?"\n'
 
 
+def test_world_slice_finds_the_id_column_in_generated_rows():
+    # make_world_data rows carry their columns in alphabetical order, so the id is rarely first.
+    world = {'orders': [{'amount': 5, 'order_id': 'O1', 'units': 1}, {'amount': 5, 'order_id': 'O2', 'units': 2}]}
+    entry = {'name': 'L01-S1-o.csv', 'from': {'world': 'orders', 'rows': ['O2'], 'columns': ['order_id', 'units']}}
+    assert pf.build_file(entry, world=world).decode() == 'order_id,units\nO2,2\n'
+    assert pf.row_key(world['orders'], ['O1']) == 'order_id'
+    keyed = {'name': 'L01-S1-o.csv', 'from': {'world': 'orders', 'key': 'units', 'rows': [2], 'columns': ['units']}}
+    assert pf.build_file(keyed, world=world).decode() == 'units\n2\n'
+
+
 def test_world_slice_unknown_row_fails():
     entry = {'name': 'L02-S1-msgs.csv', 'from': {'world': 'enquiry_messages', 'rows': ['M99']}}
     with pytest.raises(ValueError, match='M99'):
