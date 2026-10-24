@@ -33,7 +33,8 @@
   var dataset = null; // { py, key, promise }: built once per page and Pyodide instance
   var addDownloads = function (files) {
     var anchor = document.querySelector('.nerdit-tryit');
-    if (!anchor) return;
+    // A practice files box (practice files plan §11) is where this lesson's files download.
+    if (!anchor || document.querySelector('.nerdit-files')) return;
     Object.keys(files).forEach(function (name) {
       var have = document.querySelectorAll('a.nerdit-dataset-download');
       for (var i = 0; i < have.length; i++) {
