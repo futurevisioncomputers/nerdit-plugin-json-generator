@@ -907,8 +907,12 @@ practice, not a certificate requirement. Free learners can read it and build it 
   its code `# Beyond the course: <what and why>`, and give README.md a "New tools in this
   project" section naming each library and what it does here. How much may go beyond the
   course is not fixed yet.
+- **Tests must really test.** They run at least 80% of the solution's lines, and they catch at
+  least 80% of small bugs the check plants in each milestone block (`+` to `-`, `<` to `<=`,
+  `0` to `1`, a `return` made `None`). Assert exact values from the world data, not just
+  types or "not None".
 - `check_capstone.py` fails a project whose milestone tests pass on the starter or fail on
-  the solution, whose page code is not in the solution, whose data is not from the world, or
+  the solution, whose tests miss either 80% bar, whose page code is not in the solution, whose data is not from the world, or
   whose libraries are not pinned and named in the README.
 
 ---

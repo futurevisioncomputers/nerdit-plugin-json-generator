@@ -10,6 +10,10 @@ Fails when:
 - a starter module does not import;
 - any test file fails on the solution (pytest, warnings as errors);
 - a milestone's or the final test file passes on the starter (it proves nothing);
+- the tests run under 80% of the solution's lines (the __main__ block aside);
+- a milestone's tests (with the final tests) catch under 80% of the small bugs planted one at a
+  time in its block (+ -> -, < -> <=, 0 -> 1, return -> return None ...); survivors are listed.
+  --quick skips this for drafts; a final run never uses it;
 - with --course/--lesson: a line of the page's run-line code is not in the solution;
 - with --manifest: a data/ file is not built from the course world (decision 13);
 - with --requirements: the solution imports a library that is not pinned, or that README.md
@@ -19,30 +23,221 @@ The interpreter needs pytest (pin it in the course requirements). Exit 0 / 1 / 2
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
+import types
 
 from capstone import milestones
 from check_python_outputs import python_parts
 
 TIMEOUT = 300
+MIN_COVERAGE = 80   # % of the solution's executable lines the tests must run
+MIN_KILLED = 80     # % of a milestone's planted bugs its tests must catch
+MAX_MUTANTS = 12    # per milestone, spread over its block
+
+COVERAGE_RUNNER = '''import json, os, sys, threading
+root = os.path.normcase(os.path.realpath(sys.argv[1]))
+hits = set()
+def local(frame, event, arg):
+    if event == "line":
+        hits.add((frame.f_code.co_filename, frame.f_lineno))
+    return local
+def outer(frame, event, arg):
+    if os.path.normcase(os.path.realpath(frame.f_code.co_filename)).startswith(root):
+        hits.add((frame.f_code.co_filename, frame.f_lineno))
+        return local
+    return None
+sys.settrace(outer)
+threading.settrace(outer)
+import pytest
+rc = pytest.main(["-q", "-p", "no:cacheprovider", *sys.argv[3:]])
+sys.settrace(None)
+json.dump({"rc": int(rc), "hits": [[os.path.normcase(os.path.realpath(f)), n] for f, n in hits]},
+          open(sys.argv[2], "w"))
+'''
 
 
-def _pytest(python: str, root: Path, code_dir: str, test: Path) -> int:
-    env = {**os.environ, 'PYTHONPATH': str(root / code_dir), 'PYTHONDONTWRITEBYTECODE': '1',
+def _pytest(python: str, root: Path, code_dir: str | Path, test: Path | list) -> int:
+    tests = [str(t) for t in (test if isinstance(test, list) else [test])]
+    env = {**os.environ, 'PYTHONPATH': str(Path(root) / code_dir), 'PYTHONDONTWRITEBYTECODE': '1',
            'PYTEST_DISABLE_PLUGIN_AUTOLOAD': '1'}
     try:
-        return subprocess.run([python, '-m', 'pytest', '-q', '-W', 'error', '-p', 'no:cacheprovider', str(test)],
+        return subprocess.run([python, '-m', 'pytest', '-q', '-W', 'error', '-p', 'no:cacheprovider', *tests],
                               cwd=root, env=env, capture_output=True, timeout=TIMEOUT).returncode
     except subprocess.TimeoutExpired:
         return -1
 
 
-def check(root: Path, python: str = sys.executable) -> dict:
+def _main_block_lines(tree: ast.Module) -> set[int]:
+    lines = set()
+    for node in tree.body:
+        if (isinstance(node, ast.If) and isinstance(node.test, ast.Compare)
+                and isinstance(node.test.left, ast.Name) and node.test.left.id == '__name__'):
+            lines |= set(range(node.lineno, node.end_lineno + 1))
+    return lines
+
+
+def executable_lines(path: Path) -> set[int]:
+    """Lines Python can run, without the `if __name__ == "__main__":` block (run by check_files)."""
+    source = Path(path).read_text(encoding='utf-8')
+    stack, lines = [compile(source, str(path), 'exec')], set()
+    while stack:
+        code = stack.pop()
+        lines |= {line for _, _, line in code.co_lines() if line}
+        stack += [c for c in code.co_consts if isinstance(c, types.CodeType)]
+    return lines - _main_block_lines(ast.parse(source))
+
+
+def _ranges(numbers: list[int]) -> str:
+    out, start = [], None
+    for n in sorted(numbers) + [None]:
+        if start is None:
+            start = prev = n
+        elif n is not None and n == prev + 1:
+            prev = n
+        else:
+            out.append(f'{start}' if start == prev else f'{start}-{prev}')
+            start = prev = n
+    return ', '.join(out)
+
+
+def coverage(root: Path, python: str = sys.executable) -> tuple[int, list[str]]:
+    """(% of the solution's executable lines the whole test suite runs, ['report.py lines 27-30'])."""
+    root = Path(root)
+    solution = root / 'solution'
+    with tempfile.TemporaryDirectory() as tmp:
+        runner, result = Path(tmp) / 'cover.py', Path(tmp) / 'hits.json'
+        runner.write_text(COVERAGE_RUNNER, encoding='utf-8')
+        env = {**os.environ, 'PYTHONPATH': str(solution), 'PYTHONDONTWRITEBYTECODE': '1',
+               'PYTEST_DISABLE_PLUGIN_AUTOLOAD': '1'}
+        tests = [str(p) for p in sorted((root / 'tests').glob('test_*.py'))]
+        subprocess.run([python, str(runner), str(solution), str(result), *tests], cwd=root, env=env,
+                       capture_output=True, timeout=TIMEOUT)
+        hits = json.loads(result.read_text(encoding='utf-8'))['hits'] if result.exists() else []
+    ran: dict[str, set[int]] = {}
+    for name, line in hits:
+        ran.setdefault(name, set()).add(line)
+    total = covered = 0
+    missed = []
+    for path in sorted(solution.rglob('*.py')):
+        lines = executable_lines(path)
+        done = lines & ran.get(os.path.normcase(os.path.realpath(path)), set())
+        total, covered = total + len(lines), covered + len(done)
+        if lines - done:
+            missed.append(f'{path.relative_to(solution).as_posix()} lines {_ranges(list(lines - done))}')
+    return (100 if not total else covered * 100 // total), missed
+
+
+# Planted bugs: one small change at a time, only inside a milestone's marked block.
+OPS = {ast.Add: ast.Sub, ast.Sub: ast.Add, ast.Mult: ast.Div, ast.Div: ast.Mult, ast.FloorDiv: ast.Mult,
+       ast.Lt: ast.LtE, ast.LtE: ast.Lt, ast.Gt: ast.GtE, ast.GtE: ast.Gt, ast.Eq: ast.NotEq,
+       ast.NotEq: ast.Eq, ast.In: ast.NotIn, ast.NotIn: ast.In, ast.And: ast.Or, ast.Or: ast.And}
+SYMBOL = {ast.Add: '+', ast.Sub: '-', ast.Mult: '*', ast.Div: '/', ast.FloorDiv: '//', ast.Lt: '<',
+          ast.LtE: '<=', ast.Gt: '>', ast.GtE: '>=', ast.Eq: '==', ast.NotEq: '!=', ast.In: 'in',
+          ast.NotIn: 'not in', ast.And: 'and', ast.Or: 'or'}
+
+
+def _block_lines(source: str) -> dict[int, str]:
+    """{line number: milestone} for every line strictly inside a # >>> / # <<< block."""
+    inside, current = {}, None
+    for number, line in enumerate(source.splitlines(), 1):
+        opened, closed = re.match(r'^\s*# >>> (M\d+):', line), re.match(r'^\s*# <<< (M\d+)', line)
+        if opened:
+            current = opened.group(1)
+        elif closed:
+            current = None
+        elif current:
+            inside[number] = current
+    return inside
+
+
+def _changes(node) -> list[tuple[str, callable]]:
+    found = []
+    if isinstance(node, (ast.BinOp, ast.BoolOp)) and type(node.op) in OPS:
+        new = OPS[type(node.op)]
+        found.append((f'{SYMBOL[type(node.op)]} -> {SYMBOL[new]}', lambda n, new=new: setattr(n, 'op', new())))
+    elif isinstance(node, ast.Compare) and type(node.ops[0]) in OPS:
+        new = OPS[type(node.ops[0])]
+        found.append((f'{SYMBOL[type(node.ops[0])]} -> {SYMBOL[new]}',
+                      lambda n, new=new: n.ops.__setitem__(0, new())))
+    elif isinstance(node, ast.Constant) and type(node.value) in (int, float):
+        found.append((f'{node.value!r} -> {node.value + 1!r}', lambda n: setattr(n, 'value', n.value + 1)))
+    elif isinstance(node, ast.Constant) and type(node.value) is bool:
+        found.append((f'{node.value} -> {not node.value}', lambda n: setattr(n, 'value', not n.value)))
+    elif isinstance(node, ast.Return) and node.value is not None and not (
+            isinstance(node.value, ast.Constant) and node.value.value is None):
+        found.append(('return -> return None', lambda n: setattr(n, 'value', ast.Constant(None))))
+    return found
+
+
+def mutants(source: str) -> list[dict]:
+    """[{milestone, line, change, source}] — each a copy of the module with one planted bug."""
+    inside = _block_lines(source)
+    out = []
+    for index, node in enumerate(ast.walk(ast.parse(source))):
+        milestone = inside.get(getattr(node, 'lineno', 0))
+        if not milestone:
+            continue
+        for k, (label, apply) in enumerate(_changes(node)):
+            tree = ast.parse(source)
+            target = list(ast.walk(tree))[index]
+            _changes(target)[k][1](target)
+            out.append({'milestone': milestone, 'line': node.lineno, 'change': label,
+                        'source': ast.unparse(ast.fix_missing_locations(tree)) + '\n'})
+    by_milestone: dict[str, list[dict]] = {}
+    for m in out:
+        by_milestone.setdefault(m['milestone'], []).append(m)
+    kept = []
+    for items in by_milestone.values():
+        step = max(1, -(-len(items) // MAX_MUTANTS))
+        kept += items[::step][:MAX_MUTANTS]
+    return kept
+
+
+def mutation(root: Path, python: str = sys.executable) -> dict:
+    """{'score': {milestone: (caught, planted)}, 'problems'} — each milestone's tests plus the final
+    tests must catch at least MIN_KILLED % of the bugs planted in its block."""
+    root = Path(root)
+    tests = {}
+    for path in sorted((root / 'tests').glob('test_*.py')):
+        m = re.match(r'test_(m\d+|final)_', path.name)
+        if m:
+            tests.setdefault(m.group(1).upper() if m.group(1) != 'final' else 'final', []).append(path)
+    score, survivors = {}, {}
+    work = root / '.mutants'
+    try:
+        for path in sorted((root / 'solution').rglob('*.py')):
+            rel = path.relative_to(root / 'solution')
+            for mutant in mutants(path.read_text(encoding='utf-8')):
+                mid = mutant['milestone']
+                shutil.rmtree(work, ignore_errors=True)
+                shutil.copytree(root / 'solution', work / 'solution')
+                if (root / 'data').is_dir():
+                    shutil.copytree(root / 'data', work / 'data')
+                (work / 'solution' / rel).write_text(mutant['source'], encoding='utf-8')
+                caught = _pytest(python, root, work / 'solution', tests.get(mid, []) + tests.get('final', [])) != 0
+                done, total = score.get(mid, (0, 0))
+                score[mid] = (done + caught, total + 1)
+                if not caught:
+                    survivors.setdefault(mid, []).append(f'{rel.as_posix()} line {mutant["line"]} {mutant["change"]}')
+    finally:
+        shutil.rmtree(work, ignore_errors=True)
+    problems = []
+    for mid, (caught, total) in score.items():
+        if caught * 100 < MIN_KILLED * total:
+            problems.append(f'{mid}: {total - caught} of {total} planted bugs survive the tests (they must catch '
+                            f'{MIN_KILLED}%): ' + '; '.join(survivors[mid]))
+    return {'score': score, 'problems': problems}
+
+
+def check(root: Path, python: str = sys.executable, mutate: bool = True) -> dict:
     root = Path(root)
     problems = []
     marked = []
@@ -74,6 +269,13 @@ def check(root: Path, python: str = sys.executable) -> dict:
                 problems.append(f'{mid}: tests/{test.name} fail on the solution (pytest exit {on_solution})')
             if _pytest(python, root, 'starter', test) == 0:
                 problems.append(f'{mid}: tests/{test.name} pass on the starter, so they prove nothing')
+    if not problems:  # strict accuracy: the tests must run the solution and catch planted bugs
+        pct, missed = coverage(root, python)
+        if pct < MIN_COVERAGE:
+            problems.append(f'coverage: the tests run {pct}% of the solution lines (at least {MIN_COVERAGE}%); '
+                            f'never runs: ' + '; '.join(missed))
+        if mutate:
+            problems += mutation(root, python)['problems']
     return {'milestones': [m for m in order if m in tests], 'problems': problems}
 
 
@@ -121,9 +323,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument('--lesson')
     ap.add_argument('--manifest')
     ap.add_argument('--requirements', help='the course requirements.txt (the pack root copy)')
+    ap.add_argument('--quick', action='store_true', help='skip the mutation run (drafts only, never a final pass)')
     args = ap.parse_args(argv)
     try:
-        report = check(Path(args.dir), args.python)
+        report = check(Path(args.dir), args.python, mutate=not args.quick)
         if args.requirements:
             report['problems'] += library_problems(Path(args.dir),
                                                    Path(args.requirements).read_text(encoding='utf-8'))

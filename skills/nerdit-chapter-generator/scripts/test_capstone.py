@@ -160,3 +160,53 @@ def test_data_files_must_come_from_the_world(tmp_path):
     assert cc.data_problems(out, rows) == []
     assert 'not built from the course world' in cc.data_problems(out, [])[0]
     assert cc.data_problems(out, [{'name': 'L05-fees.csv', 'source': {'json': []}}])
+
+
+# Strict accuracy: tests must run the solution (coverage) and catch planted bugs (mutation).
+
+LOOP_SOLUTION = SOLUTION.replace('''    # >>> M2: add up the fees
+    return sum(fees)
+    # <<< M2''', '''    # >>> M2: add up the fees
+    result = 0
+    for fee in fees:
+        result = result + fee
+    return result
+    # <<< M2''')
+
+
+def test_coverage_counts_solution_lines_the_tests_run(tmp_path):
+    out = written(tmp_path, project(tmp_path))
+    pct, missed = cc.coverage(out, python=sys.executable)
+    assert pct == 100 and missed == [], missed
+    extra = SOLUTION + '\n\ndef unused(rows):\n    kept = [r for r in rows if r]\n    kept.sort()\n    return kept\n'
+    out = written(tmp_path / 'u', project(tmp_path / 'u', solution=extra))
+    pct, missed = cc.coverage(out, python=sys.executable)
+    assert pct < 80 and any('report.py' in m for m in missed)
+    assert any('runs' in p and 'unused' not in p for p in cc.check(out, python=sys.executable)['problems'])
+
+
+def test_mutants_are_made_only_inside_milestone_blocks():
+    found = cc.mutants(LOOP_SOLUTION)
+    assert {m['milestone'] for m in found} == {'M1', 'M2'}
+    labels = [m['change'] for m in found if m['milestone'] == 'M2']
+    assert '0 -> 1' in labels and '+ -> -' in labels and 'return -> return None' in labels
+    for m in found:
+        compile(m['source'], 'report.py', 'exec')
+
+
+def test_strong_tests_kill_the_mutants(tmp_path):
+    out = written(tmp_path, project(tmp_path, solution=LOOP_SOLUTION))
+    report = cc.mutation(out, python=sys.executable)
+    assert report['problems'] == [], report
+    assert report['score']['M2'] == (3, 3)
+
+
+def test_weak_tests_let_mutants_survive_and_fail(tmp_path):
+    weak = {'test_m1_load.py': TEST_M1,
+            'test_m2_total.py': 'from report import total\n\n\ndef test_type():\n'
+                                '    assert isinstance(total([1, 2]), int)\n',
+            'test_final_report.py': 'from report import load_fees, total\n\n\ndef test_whole():\n'
+                                    '    assert total(load_fees()) is not None\n'}
+    out = written(tmp_path, project(tmp_path, solution=LOOP_SOLUTION, tests=weak))
+    report = cc.mutation(out, python=sys.executable)
+    assert any(p.startswith('M2:') and 'survive' in p and '0 -> 1' in p for p in report['problems']), report
