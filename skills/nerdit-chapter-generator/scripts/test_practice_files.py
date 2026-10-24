@@ -16,7 +16,8 @@ WORLD = {
 
 def lesson(spec: dict) -> str:
     return ('<h2>Overview</h2><p>Text.</p>'
-            f'<script type="application/json" class="nerdit-files-spec">{json.dumps(spec)}</script>')
+            f'<script type="application/json" class="nerdit-files-spec">{json.dumps(spec)}</script>'
+            '<h2>1 — First idea</h2><p>One.</p><h2>2 — Second idea</h2><p>Two.</p>')
 
 
 def spec(*files):
@@ -230,6 +231,63 @@ def test_build_pack_layout_manifest_and_readme(tmp_path):
     assert row['lessonId'] == 'retries-02' and row['sections'] == [1] and row['packVersion'] == 1
     assert row['format'] == 'csv' and len(row['sha256']) == 64 and row['bytes'] > 0
     assert (tmp_path / 'files' / 'L02-S1-msgs.csv').is_file()
+
+
+MARK_PAGE = ('<section><h2>Overview</h2><p>Intro.</p>'
+             '<script type="application/json" class="nerdit-files-spec">{}</script></section>'
+             '<section><h2>1 — Load the messages</h2><p>Case.</p></section>'
+             '<section><h2>2 — Count them</h2><p>More.</p></section>')
+MARK_FILES = [
+    {'name': 'L02-S1-msgs.csv', 'bytes': 273, 'format': 'csv', 'sections': [1], 'about': '4 rows & <ids>'},
+    {'name': 'L02-solutions.py', 'bytes': 900, 'format': 'py', 'sections': 'all', 'about': ''},
+]
+
+
+def test_mark_lesson_adds_folder_box_after_spec_and_section_lines():
+    html = pf.mark_lesson(MARK_PAGE, MARK_FILES, folder='L02-timeouts', lesson_id='retries-02', python='3.14')
+    spec_end = html.index('</script>')
+    box = html.index('data-nerdit-files="retries-02"')
+    assert spec_end < box < html.index('1 — Load')
+    assert 'folder <code>L02-timeouts</code>' in html and 'Python 3.14' in html
+    assert ('<a class="nerdit-file" href="files/L02-S1-msgs.csv" download="L02-S1-msgs.csv" '
+            'data-nerdit-file="L02-S1-msgs.csv" data-format="csv" data-bytes="273">') in html
+    assert '4 rows &amp; &lt;ids&gt;' in html and '<td>Section 1</td>' in html and '<td>All sections</td>' in html
+    use = html.index('class="nerdit-file-use"')
+    assert html.index('1 — Load the messages</h2>') < use < html.index('<p>Case.</p>')
+    assert html.count('nerdit-file-use') == 1
+    assert 'nerdit-course-pack' not in html
+
+
+def test_mark_lesson_is_idempotent():
+    once = pf.mark_lesson(MARK_PAGE, MARK_FILES, folder='L02-timeouts', lesson_id='retries-02', python='3.14')
+    twice = pf.mark_lesson(once, MARK_FILES, folder='L02-timeouts', lesson_id='retries-02', python='3.14')
+    assert once == twice
+
+
+def test_mark_lesson_first_chapter_gets_pack_box():
+    pack = {'name': 'ai-apis-practice-pack-v1.zip', 'bytes': 48213, 'version': 1, 'chapters': 5,
+            'date': '23 Oct 2026'}
+    html = pf.mark_lesson(MARK_PAGE, MARK_FILES, folder='L01-x', lesson_id='llm-01', python='3.12', pack=pack)
+    assert html.index('nerdit-course-pack') < html.index('data-nerdit-files="llm-01"')
+    assert 'href="files/ai-apis-practice-pack-v1.zip"' in html and 'data-format="zip"' in html
+    assert 'Download the course practice pack (v1, 47 KB)' in html
+    assert '5 chapter folders · updated 23 Oct 2026' in html and 'Python 3.12' in html
+
+
+def test_mark_lesson_unknown_section_fails():
+    files = [{**MARK_FILES[0], 'sections': [7]}]
+    with pytest.raises(ValueError, match='section 7'):
+        pf.mark_lesson(MARK_PAGE, files, folder='L02-x', lesson_id='x', python='3.14')
+
+
+def test_mark_course_boxes_every_chapter_with_files(tmp_path):
+    ch = chapters()
+    result = pf.build_pack(ch, course_short='ai-apis', version=1, world=WORLD, requirements='', out_dir=tmp_path)
+    htmls = pf.mark_course(ch, result, date='24 Oct 2026')
+    assert 'nerdit-course-pack' in htmls[0] and 'data-nerdit-files="llm-01"' in htmls[0]
+    assert 'nerdit-course-pack' not in htmls[1] and 'folder <code>L02-timeouts-and-retries</code>' in htmls[1]
+    assert htmls[2] == ch[2]['html']
+    assert '2 chapter folders' in htmls[0] and 'Python 3.14' in htmls[1]
 
 
 def test_build_pack_rejects_name_clash_with_image(tmp_path):

@@ -4,14 +4,18 @@
 python practice_files.py --course course-x_output.json --world course-x_world.json \
     --course-short ai-apis --version 1 --requirements course-x_requirements.txt --out-dir work
 Writes <out-dir>/<course-short>-practice-pack-v<n>.zip (one folder per chapter, README.txt,
-requirements.txt), every file singly under <out-dir>/files/, and <out-dir>/files.manifest.json.
+requirements.txt), every file singly under <out-dir>/files/, <out-dir>/files.manifest.json, and the
+course JSON again under <out-dir>/ with each chapter's files box, the first chapter's pack box and the
+"This section uses" lines.
 Stdlib only. Names follow the plan's tracing rule: L<nn>-S<section>-<what>.<ext>.
 """
 from __future__ import annotations
 
 import argparse
 import csv
+from datetime import date
 import hashlib
+from html import escape
 import io
 import json
 from pathlib import Path
@@ -243,6 +247,82 @@ def build_file(entry: dict, world: dict | None = None, workdir: Path | None = No
     raise ValueError(f'{name}: unsupported source {sorted(source)}')
 
 
+BOX_START, BOX_END = '<!-- nerdit-files -->', '<!-- /nerdit-files -->'
+OLD_BOXES = re.compile(re.escape(BOX_START) + '.*?' + re.escape(BOX_END), re.S)
+OLD_USES = re.compile(r'<p class="nerdit-file-use">.*?</p>', re.S)
+H2 = re.compile(r'<h2\b[^>]*>(.*?)</h2>', re.S | re.I)
+
+
+def _size(n: int) -> str:
+    return f'{max(1, round(n / 1024))} KB' if n < MIB else f'{n / MIB:.1f} MB'
+
+
+def _link(name: str, n: int, fmt: str, label: str | None = None, cls: str = 'nerdit-file') -> str:
+    return (f'<a class="{cls}" href="files/{escape(name)}" download="{escape(name)}" '
+            f'data-nerdit-file="{escape(name)}" data-format="{escape(fmt)}" data-bytes="{n}">'
+            f'{escape(label or name)}</a>')
+
+
+def _used_in(sections) -> str:
+    if sections == 'all':
+        return 'All sections'
+    labels = ['Practice' if s == 'practice' else f'Section {s}' for s in sections or []]
+    return ', '.join(labels) or '—'
+
+
+def mark_lesson(html: str, files: list[dict], folder: str, lesson_id: str, python: str,
+                pack: dict | None = None) -> str:
+    """The lesson with its files box (and, for the first chapter, the pack box) after its files spec, and a
+    "This section uses" line under each numbered section heading. Re-running replaces what an earlier run added."""
+    html = OLD_USES.sub('', OLD_BOXES.sub('', html))
+    spec = SPEC.search(html)
+    if spec is None:
+        raise ValueError(f'{lesson_id}: no nerdit-files-spec block to place the files box after')
+    py = f'<span class="nerdit-files-py">Python {escape(python)}</span>'
+    parts = [BOX_START]
+    if pack:
+        parts.append(
+            '<div class="nerdit-files nerdit-course-pack" data-nerdit-files="course">'
+            f'<p class="nerdit-files-head">📦 Course practice pack {py}</p>'
+            '<p>Download once, then practise chapter by chapter: one folder per chapter with its data, a starter '
+            'notebook and the full solution code, plus the capstone project. Setup steps are in README.txt.</p>'
+            + _link(pack['name'], pack['bytes'], 'zip',
+                    f'⬇ Download the course practice pack (v{pack["version"]}, {_size(pack["bytes"])})',
+                    'nerdit-file nerdit-file-all')
+            + f'<p class="nerdit-files-note">{pack["chapters"]} chapter folders · updated {escape(pack["date"])}</p>'
+            '</div>')
+    rows = ''.join(f'<tr><td>{_link(f["name"], f["bytes"], f["format"])}</td><td>{escape(f.get("about", ""))}</td>'
+                   f'<td>{_used_in(f.get("sections"))}</td></tr>' for f in files)
+    parts.append(
+        f'<div class="nerdit-files" data-nerdit-files="{escape(lesson_id)}">'
+        f'<p class="nerdit-files-head">📂 Practice files for this chapter {py}</p>'
+        f'<p>In your course practice pack: folder <code>{escape(folder)}</code>.</p>'
+        "<details><summary>Download this chapter's files one by one</summary><table>"
+        "<thead><tr><th>File</th><th>What's inside</th><th>Used in</th></tr></thead>"
+        f'<tbody>{rows}</tbody></table></details></div>')
+    parts.append(BOX_END)
+    html = html[:spec.end()] + ''.join(parts) + html[spec.end():]
+
+    headings = {}
+    for m in H2.finditer(html):
+        num = re.match(r'\s*(\d+)(?!\d)', re.sub(r'<[^>]+>', '', m.group(1)))
+        if num:
+            headings.setdefault(int(num.group(1)), m.end())
+    uses: dict[int, list[str]] = {}
+    for f in files:
+        for s in f.get('sections') if isinstance(f.get('sections'), list) else []:
+            if s == 'practice':
+                continue
+            if s not in headings:
+                raise ValueError(f'{f["name"]}: the lesson has no section {s} heading')
+            uses.setdefault(headings[s], []).append(
+                f'<p class="nerdit-file-use">📎 This section uses {_link(f["name"], f["bytes"], f["format"])} '
+                f'(folder <code>{escape(folder)}</code> in your pack).</p>')
+    for at in sorted(uses, reverse=True):
+        html = html[:at] + ''.join(uses[at]) + html[at:]
+    return html
+
+
 def _readme(pack: str, folders: list[tuple[str, list[dict]]]) -> str:
     lines = [pack, '', 'Setup (once):',
              '  1. python3.14 -m venv .venv',
@@ -312,6 +392,26 @@ def build_pack(chapters: list[dict], course_short: str, version: int, world: dic
     return result
 
 
+def mark_course(chapters: list[dict], result: dict, date: str) -> list[str]:
+    """Every chapter's HTML with its boxes; the first chapter with files also carries the pack box."""
+    by_lesson: dict[str, list[dict]] = {}
+    for f in result['files']:
+        by_lesson.setdefault(f['lessonId'], []).append(f)
+    version = result['files'][0]['packVersion'] if result['files'] else 1
+    pack = {'name': result['pack'], 'bytes': result['packBytes'], 'version': version,
+            'chapters': len(by_lesson), 'date': date}
+    out = []
+    for chapter in chapters:
+        files = by_lesson.get(chapter['id'])
+        if not files:
+            out.append(chapter['html'])
+            continue
+        python = (read_spec(chapter['html']) or {}).get('python', '3.12')
+        out.append(mark_lesson(chapter['html'], files, files[0]['folder'], chapter['id'], python, pack))
+        pack = None
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--course', required=True, help='the course output JSON')
@@ -330,6 +430,10 @@ def main():
         reqs = Path(args.requirements).read_text(encoding='utf-8') if args.requirements else ''
         result = build_pack(chapters, args.course_short, args.version, world, reqs, Path(args.out_dir),
                             Path(args.workdir) if args.workdir else None)
+        for lesson, html in zip(lessons, mark_course(chapters, result, date.today().strftime('%d %b %Y'))):
+            lesson['content'] = html
+        marked = Path(args.out_dir) / Path(args.course).name
+        marked.write_text(json.dumps(course, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     except (OSError, ValueError, KeyError, TypeError) as exc:
         print(f'ERROR: {exc}', file=sys.stderr)
         return 2
