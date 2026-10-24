@@ -633,7 +633,22 @@ version (1 for a new course, +1 whenever any file changes).
    (`--python <path>`) when that is not the one you run the script with; it needs pytest.
 
 6. Deliver `<workdir>/pack/course-<chaptername>_output.json` (not the Step 4 file) and the pack
-   folder together.
+   folder together, as the course bundle of Step 5d.
+
+## Step 5d — Course bundle for the admin (deterministic script)
+
+The admin imports one zip per course version. Build it last, after the images are applied
+(illustrator `apply`) and the story video is built, so their files are inside:
+
+    python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/make_bundle.py" --course <workdir>/pack/course-<chaptername>_output.json --pack <workdir>/pack --images <images folder> --slug <course-slug> --version <n> --out-dir <workdir>/bundle
+
+It writes `<workdir>/bundle/<course-slug>-bundle-v<n>.zip` (course JSON, `media/images/`,
+`media/files/`, `videos/clips.json` with an empty `youtube` link per clip, the video
+description and thumbnail, `bundle.json`) and checks it with `check_bundle.py`. Exit 2 = a
+lesson links an image or file that does not exist: produce it, never delete the link to pass.
+Exit 1 = the check failed: each `FAIL` line names the file. MP4s never go in the bundle; staff
+upload them to YouTube and paste the links into `videos/clips.json` or the admin's Videos box.
+A course without practice files uses `<workdir>` as `--pack` and the Step 4 course JSON.
 
 ## Step 6 — Deliver Output File
 
