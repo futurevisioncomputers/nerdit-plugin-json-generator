@@ -139,6 +139,15 @@ def _last_line(proc) -> str:
     return lines[-1].strip() if lines else f'exit code {proc.returncode}'
 
 
+def _capstone_starter_or_test(path: Path, pack_root: Path) -> bool:
+    for parent in path.parents:
+        if parent == pack_root:
+            return False
+        if parent.name in ('starter', 'tests') and (parent.parent / 'solution').is_dir():
+            return True
+    return False
+
+
 def _run_with(pack_root: Path, python: str, venv_dir: Path, requirements: str) -> tuple[list[str], list[str]]:
     """Problems and a log of what ran, in one fresh venv of `python`."""
     needs_pip = any(ln.strip() and not ln.lstrip().startswith('#') for ln in requirements.splitlines())
@@ -169,6 +178,8 @@ def _run_with(pack_root: Path, python: str, venv_dir: Path, requirements: str) -
 
     for path in sorted(pack_root.rglob('*')):
         rel = path.relative_to(pack_root).as_posix()
+        if path.suffix == '.py' and _capstone_starter_or_test(path, pack_root):
+            continue  # check_capstone.py runs these: the starter is meant to fail its tests
         if path.suffix == '.py':
             run(f'{rel} (from the pack root)', [rel], pack_root)
             run(f'{rel} (from its own folder)', [path.name], path.parent)

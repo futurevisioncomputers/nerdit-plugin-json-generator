@@ -342,13 +342,35 @@ def _readme(pack: str, folders: list[tuple[str, list[dict]]]) -> str:
              '', 'Course map:']
     for folder, entries in folders:
         lines.append(f'  {folder}/')
-        lines += [f'    {e["name"]}' + (f'  ({e["about"]})' if e.get('about') else '') for e in entries]
+        for e in entries:
+            if 'capstone' in e:
+                lines.append('    README.md, data/, starter/, tests/, solution/'
+                             + (f'  ({e["about"]})' if e.get('about') else ''))
+            else:
+                lines.append(f'    {e["name"]}' + (f'  ({e["about"]})' if e.get('about') else ''))
     return '\n'.join(lines) + '\n'
 
 
-def _arcname(entry: dict) -> str:
-    """Solutions sit in a solutions/ subfolder, so the starter is what a learner opens first."""
+DATA_SOURCES = {'world', 'json', 'table', 'sql'}
+
+
+def _arcname(entry: dict, project: bool = False) -> str:
+    """Solutions sit in a solutions/ subfolder, so the starter is what a learner opens first.
+    In the capstone chapter, data files sit in data/ beside starter/ and solution/."""
+    if project and DATA_SOURCES & set(entry['from']):
+        return 'data/' + entry['name']
     return ('solutions/' if '-solutions.' in entry['name'] else '') + entry['name']
+
+
+def _capstone_tree(entry: dict, workdir: Path | None) -> dict[str, bytes]:
+    from capstone import build_tree
+    if workdir is None:
+        raise ValueError('a capstone entry needs the workdir')
+    root = Path(workdir).resolve()
+    src = (root / entry['capstone']).resolve()
+    if not src.is_relative_to(root):
+        raise ValueError(f'capstone {entry["capstone"]} is outside the workdir')
+    return build_tree(src)
 
 
 def build_pack(chapters: list[dict], course_short: str, version: int, world: dict | None, requirements: str,
@@ -356,22 +378,31 @@ def build_pack(chapters: list[dict], course_short: str, version: int, world: dic
     """Build every declared file, the pack zip and the manifest. Raises ValueError on any rule break."""
     out_dir = Path(out_dir)
     pack = f'{course_short}-practice-pack-v{version}'
-    seen, problems, folders, built = set(image_names), [], [], []
+    seen, problems, folders, built, trees = set(image_names), [], [], [], []
     for position, chapter in enumerate(chapters, 1):
         spec = read_spec(chapter['html'])
         if not spec or not spec.get('files'):
             continue
         folder = chapter_folder(position, chapter['title'])
-        for entry in spec['files']:
+        files = [e for e in spec['files'] if 'capstone' not in e]
+        capstones = [e for e in spec['files'] if 'capstone' in e]
+        if len(capstones) > 1:
+            problems.append(f'{chapter["id"]}: one capstone entry per chapter')
+        for entry in files:
             problems += name_problems(entry['name'], position)
             if entry['name'] in seen:
                 problems.append(f'{entry["name"]}: name used twice in the course (images included)')
             seen.add(entry['name'])
         folders.append((folder, spec['files']))
-        for entry in spec['files']:
+        for entry in files:
             built.append((chapter, folder, entry,
-                          build_file(entry, world, workdir, {**chapter, 'position': position})))
-    for _, _, entry, data in built:
+                          build_file(entry, world, workdir, {**chapter, 'position': position}), bool(capstones)))
+        for entry in capstones:
+            try:
+                trees.append((folder, _capstone_tree(entry, workdir)))
+            except (OSError, ValueError) as exc:
+                problems.append(f'{chapter["id"]}: capstone: {exc}')
+    for _, _, entry, data, _ in built:
         if len(data) > FILE_LIMIT:
             problems.append(f'{entry["name"]}: {len(data)} bytes, over the {FILE_LIMIT / MIB:g} MiB file limit')
     if problems:
@@ -381,8 +412,16 @@ def build_pack(chapters: list[dict], course_short: str, version: int, world: dic
     with zipfile.ZipFile(buf, 'w', zipfile.ZIP_DEFLATED) as z:
         z.writestr(f'{pack}/README.txt', _readme(pack, folders))
         z.writestr(f'{pack}/requirements.txt', requirements)
-        for _, folder, entry, data in built:
-            z.writestr(f'{pack}/{folder}/{_arcname(entry)}', data)
+        written = set()
+        for _, folder, entry, data, project in built:
+            arc = f'{pack}/{folder}/{_arcname(entry, project)}'
+            written.add(arc)
+            z.writestr(arc, data)
+        for folder, tree in trees:
+            for rel, data in tree.items():
+                arc = f'{pack}/{folder}/{rel}'
+                if arc not in written:  # the spec's world files win over a draft copy in data/
+                    z.writestr(arc, data)
     if buf.tell() > PACK_LIMIT:
         raise ValueError(f'{pack}.zip: {buf.tell()} bytes, over the {PACK_LIMIT / MIB:g} MiB pack limit')
 
@@ -390,7 +429,7 @@ def build_pack(chapters: list[dict], course_short: str, version: int, world: dic
     files_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / f'{pack}.zip').write_bytes(buf.getvalue())
     manifest = []
-    for chapter, folder, entry, data in built:
+    for chapter, folder, entry, data, _ in built:
         (files_dir / entry['name']).write_bytes(data)
         manifest.append({'name': entry['name'], 'format': entry['name'].rpartition('.')[2], 'bytes': len(data),
                          'sha256': hashlib.sha256(data).hexdigest(), 'lessonId': chapter['id'], 'folder': folder,

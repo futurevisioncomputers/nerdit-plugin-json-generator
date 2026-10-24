@@ -31,7 +31,7 @@ Claude GitHub App to have access to both repos.
 | 8 | Worlds | **One of the six business worlds per course**, chosen by subject fit (§2b); `practice-retail` (fictional) only when none fits |
 | 9 | Capstone | **A new last chapter** in every code course: one end-to-end project combining every chapter, on the world's data |
 | 10 | Capstone and certificate | **Not required for the certificate.** The capstone is practice; `finalAssignment` stays unused |
-| 13 | Capstone scope (2026-10-24) | **One problem statement, one complete project, on the course world's dataset only** (no other data source). How much code may go beyond what the course taught: **no rule yet, decided later** |
+| 13 | Capstone scope (2026-10-24) | **One problem statement, one complete project, on the course world's dataset only** (no other data source). **New Python libraries are welcome** (charts, images, utility tools) for learning advancement: pinned, marked `# Beyond the course:`, and explained in the project README. How much code may go beyond what the course taught: **no rule yet, decided later** |
 
 **Still open (default used until decided):** a pack button on the course page as well as in the first chapter
 (default: first chapter only).

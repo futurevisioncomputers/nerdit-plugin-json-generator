@@ -884,12 +884,32 @@ practice, not a certificate requirement. Free learners can read it and build it 
   "Run the whole thing"; extension ideas. Each milestone section names the chapter it uses.
 - **Explain first,** as in every lesson: each milestone opens with what it builds and why,
   then the code. Shown code keeps the 15-line limit; the full code is in the pack.
-- **The pack folder** holds `README.md`, `data/`, `starter/` (the skeleton with a TODO per
-  milestone: it imports and runs, its tests fail), `tests/` (pytest, one file per milestone)
-  and `solution/` (every test passes). A fake provider or local stand-in lets it run offline
-  with no API key.
-- How much code may go beyond what the course taught is not fixed yet; mark any such block
-  `# Beyond the course: <what and why>` so it can be counted later.
+- **You write the project once, in `<workdir>/capstone/`:** `README.md`, `solution/` (the
+  complete app), `tests/` (pytest: `test_m1_*.py` per milestone, `test_final_*.py`). Do not
+  write `starter/` or `data/`: `capstone.py` makes the starter from the solution and
+  `practice_files.py` builds the data from the world. In the solution, wrap each milestone's
+  code in marker lines at the code's own indentation:
+
+  ```python
+  def total(fees):
+      # >>> M2: add up the fees
+      return sum(fees)
+      # <<< M2
+  ```
+
+  The starter gets `# TODO M2: add up the fees` and `raise NotImplementedError(...)` there.
+  Code reads data through `Path(__file__).resolve().parents[1] / "data"`. A fake provider or
+  local stand-in lets it run offline with no API key. Pin `pytest` in the course requirements.
+- **Declare it in the chapter's files spec:** one `{"capstone": "capstone", "about": "…"}`
+  entry, plus a `world` source for each data file (they land in `data/`).
+- **New tools are welcome.** The capstone may use Python libraries the course did not teach
+  (charts, images, utilities) to move the learner forward. Pin each in the requirements, mark
+  its code `# Beyond the course: <what and why>`, and give README.md a "New tools in this
+  project" section naming each library and what it does here. How much may go beyond the
+  course is not fixed yet.
+- `check_capstone.py` fails a project whose milestone tests pass on the starter or fail on
+  the solution, whose page code is not in the solution, whose data is not from the world, or
+  whose libraries are not pinned and named in the README.
 
 ---
 

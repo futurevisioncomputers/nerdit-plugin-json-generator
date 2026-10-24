@@ -614,7 +614,16 @@ version (1 for a new course, +1 whenever any file changes).
 4. Run step 2 again with `--python <the version step 3 printed>` added, so every box shows the
    version the pack really passed on. Without it the boxes say Python 3.12.
 
-5. Deliver `<workdir>/pack/course-<chaptername>_output.json` (not the Step 4 file) and the pack
+5. **Capstone chapter only** (`focus: "project"`, CORE.md §8b). After step 3, unzip the pack
+   (step 3 leaves it in `<workdir>/pack/learner/unzipped/<short>-practice-pack-v<n>/`) and run:
+
+       python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/check_capstone.py" --dir <that folder>/<capstone chapter folder> --course <workdir>/pack/course-<chaptername>_output.json --lesson <capstone lesson id> --manifest <workdir>/pack/files.manifest.json --requirements <that folder>/requirements.txt
+
+   Exit 1 lines name the milestone and the problem: fix `<workdir>/capstone/` (solution,
+   tests or README) and start again at step 2. Run it with the Python step 3 passed on
+   (`--python <path>`) when that is not the one you run the script with; it needs pytest.
+
+6. Deliver `<workdir>/pack/course-<chaptername>_output.json` (not the Step 4 file) and the pack
    folder together.
 
 ## Step 6 — Deliver Output File
