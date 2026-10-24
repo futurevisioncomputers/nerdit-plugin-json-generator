@@ -31,7 +31,7 @@ Claude GitHub App to have access to both repos.
 | 8 | Worlds | **One of the six business worlds per course**, chosen by subject fit (§2b); `practice-retail` (fictional) only when none fits |
 | 9 | Capstone | **A new last chapter** in every code course: one end-to-end project combining every chapter, on the world's data |
 | 10 | Capstone and certificate | **Not required for the certificate.** The capstone is practice; `finalAssignment` stays unused |
-| 13 | Capstone scope (2026-10-24) | **One problem statement, one complete project.** Up to **20 % of the solution's code lines** may use libraries or techniques the course did not teach; each such block is marked `# Beyond the course: <what and why>` and explained in the capstone README. The other 80 % uses only what the chapters taught |
+| 13 | Capstone scope (2026-10-24) | **One problem statement, one complete project, on the course world's dataset only** (no other data source). How much code may go beyond what the course taught: **no rule yet, decided later** |
 
 **Still open (default used until decided):** a pack button on the course page as well as in the first chapter
 (default: first chapter only).
@@ -312,7 +312,7 @@ lock states are drawn by the learner site (§11), never written into the lesson 
 | f | **Computable quiz answers are computed** | `check_quiz.py` (new) | the marked option is not the computed result |
 | g | **No deprecated code:** all runs with `-W error`; static scan against `references/deprecated.md` and ruff `UP` | `check_modern_code.py` (new), and the flags in a, b, d | any warning, or a banned API anywhere a learner sees or downloads |
 | h | **Names and links:** §2 names, unique with images; every `files/` link has a file and every file is linked; each file parses | `check_files.py` | any of these |
-| i | **Capstone:** the solution passes every test and `report.py` prints the documented report; the starter imports and runs; **each milestone's tests fail on the starter and pass on the solution**; the page's short code is part of the solution; at most 20 % of solution code lines outside what the course taught, every such block marked `# Beyond the course:` (decision 13) | `check_capstone.py` (new), `check_sequence.py` | any of these |
+| i | **Capstone:** the solution passes every test and `report.py` prints the documented report; the starter imports and runs; **each milestone's tests fail on the starter and pass on the solution**; the page's short code is part of the solution; every data file in `data/` is built from the course world (decision 13) | `check_capstone.py` (new), `check_sequence.py` | any of these |
 
 Exit codes as the existing checks (2 = environment missing, never a pass). A failure regenerates the chapter within
 the 2-attempt budget, then stops and reports.
