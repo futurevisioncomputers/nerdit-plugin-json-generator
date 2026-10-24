@@ -83,6 +83,13 @@ present). Keys, in the user's environment only, never in a plan or a message:
    - **myth** on 1–3 scenes where the misconception is the lesson: `wrong`, `right` (≤ 80 chars)
      and a Hinglish `narration` saying both.
    - **intro** `points` (2–4) and `narration`; **recap** `points` (3–5) and `narration`.
+- **practise** (one entry per topic, scaffolded): every topic clip ends with a 4-second
+  "Now practise" card, so the learner reads, watches, then practises the same idea at once.
+  Fill `tryIt` (≤ 60 chars) with what that section's Try It asks ("fill in `should_retry`").
+  When the chapter has a practice starter, set `task` to the starter task this clip leads to;
+  otherwise leave it `null`. The script writes the file name from the lesson's files spec
+  (`Pack: L02-practice-starter.ipynb, Task 1`); never type it. `check` fails a topic without an
+  entry, a section with no Try It, or a task the starter does not have.
 3. `python scripts/storyplan.py check --images-dir <images>`. Fix every error and run again.
 
 ## 2. Voice and B-roll

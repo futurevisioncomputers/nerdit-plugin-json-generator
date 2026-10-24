@@ -149,14 +149,16 @@ def build(images_dir: Path, workers: int = 3, music: Path | None = None) -> Path
     course = Path(plan["source"]) if plan.get("source") else None
     figures = storyplan.lesson_figures(course, images_dir) if course else {}
     parts = storyplan.lesson_parts(course) if course else None
+    practice = storyplan.lesson_practice(course) if course else None
     errors = storyplan.check_plan(plan, vid, figures, storyplan.lesson_texts(course) if course else None,
-                                  storyplan.lesson_topics(course) if course else None, parts)
+                                  storyplan.lesson_topics(course) if course else None, parts, practice)
     clips = [vid / "broll" / f"s{n}.mp4" for n, s in enumerate(plan["scenes"], 1) if s["kind"] == "broll"]
     errors += [f"missing {c}; run broll.py first" for c in clips if not c.is_file()]
     if errors:
         raise SystemExit("plan has problems; run storyplan.py check:\n" + "\n".join(errors))
 
-    tl = timeline.build(plan, clip_info(vid / "audio", plan))
+    tl = timeline.build(plan, clip_info(vid / "audio", plan),
+                        storyplan.practise_cards(plan, practice) if practice else None)
     work = vid / "parts"
     work.mkdir(parents=True, exist_ok=True)
     html = vid / "stage.html"

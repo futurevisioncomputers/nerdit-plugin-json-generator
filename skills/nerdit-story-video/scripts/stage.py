@@ -56,6 +56,9 @@ html, body { width:1280px; height:720px; overflow:hidden; background:var(--bg);
 .pt { font-size:32px; font-weight:600; margin:10px 0; opacity:0; display:flex; gap:16px; align-items:baseline; }
 .pt i { font-style:normal; color:var(--teal); font-weight:800; min-width:34px; }
 .recap .pt { background:#fff; border-radius:14px; padding:14px 20px; box-shadow:0 4px 14px rgba(11,31,58,.08); }
+.practise { background:var(--navy); color:#fff; }
+.practise .label { margin:0 0 18px; font-size:24px; color:var(--teal); font-weight:800; }
+.practise .pt { opacity:1; }
 .broll { position:absolute; inset:0; background:#0B1F3A; }
 """
 
@@ -137,7 +140,16 @@ function camera(sc, t) {
   } else sc.ring.style.opacity = 0;
 }
 
+// "Now practise" cards: the Try It on the page, then the starter task in the pack
+const practise = TL.segments.filter(s => s.kind === 'practise').map(s => {
+  const layer = $('div', 'layer'), c = $('div', 'card practise');
+  c.append($('div', 'label', 'Now practise'), $('div', 'pt', '<i>1</i><span>' + esc(s.card.tryIt) + '</span>'));
+  if (s.card.pack) c.append($('div', 'pt', '<i>2</i><span>' + esc(s.card.pack) + '</span>'));
+  layer.append(c); stage.append(layer); return { s, layer };
+});
+
 window.renderAt = function (t) {
+  practise.forEach(p => { p.layer.style.opacity = fade(t, p.s.start, p.s.end); });
   intro.style.opacity = fade(t, introSeg.start, introSeg.end);
   introPts.forEach((e, i) => { const p = clamp((t - introSeg.points[i]) / .4, 0, 1);
     e.style.opacity = p; e.style.transform = `translateX(${(1 - ease(p)) * 30}px)`; });

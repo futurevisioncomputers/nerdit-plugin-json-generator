@@ -428,3 +428,84 @@ def test_place_video_puts_each_clip_where_it_belongs():
 
 def test_lesson_css_loads_the_site_stylesheets():
     assert ".nerdit-anim.na-play .na-show" in stage.lesson_css()
+
+
+# ---- "Now practise" card (practice files plan §5b) ----
+
+PRACTICE_LESSON = (
+    '<h2>Overview</h2><script type="application/json" class="nerdit-files-spec">'
+    '{"python": "3.12", "files": [{"name": "L01-practice-starter.py", "from": {"practice": "starters"}},'
+    ' {"name": "L01-practice-starter.ipynb", "from": {"practice": "starters"}}]}</script>'
+    '<section><h2>1 — Read rows</h2><p>Text.</p><div class="nerdit-predict"><pre data-lang="python"><code>print(1)'
+    '</code></pre></div></section>'
+    '<section><h2>2 — No practice here</h2><p>Text.</p></section>'
+    '<section><h2>Practice</h2><div class="nerdit-practical">'
+    '<div class="nerdit-task">Task 1: One.<details class="nerdit-solution"><pre data-lang="python"><code>print(1)'
+    '</code></pre></details></div>'
+    '<div class="nerdit-task">Task 2: Two.<details class="nerdit-solution"><pre data-lang="python"><code>print(2)'
+    '</code></pre></details></div></div></section>')
+
+
+def practice_course(tmp_path):
+    path = tmp_path / "course.json"
+    path.write_text(json.dumps({"id": "c", "title": "C", "lessons": [
+        {"id": "l1", "title": "Lesson 1", "content": PRACTICE_LESSON}]}), encoding="utf-8")
+    return path
+
+
+def test_lesson_practice_reads_try_its_starter_and_tasks(tmp_path):
+    info = storyplan.lesson_practice(practice_course(tmp_path))["l1"]
+    assert info == {"tryits": {1: 1, 2: 0}, "starter": "L01-practice-starter.ipynb", "tasks": 2}
+
+
+def test_scaffold_adds_one_practise_entry_per_topic(tmp_path):
+    images = tmp_path / "images"
+    plan = json.loads(storyplan.scaffold(images, practice_course(tmp_path)).read_text(encoding="utf-8"))
+    assert plan["practise"] == [{"lessonId": "l1", "topic": 1, "tryIt": "", "task": None},
+                                {"lessonId": "l1", "topic": 2, "tryIt": "", "task": None}]
+
+
+def test_check_practise_rules(tmp_path):
+    practice = storyplan.lesson_practice(practice_course(tmp_path))
+    covered = {("l1", 1), ("l1", 2)}
+    good = {"practise": [{"lessonId": "l1", "topic": 1, "tryIt": "predict what print(1) shows", "task": 2}]}
+    errors = storyplan.check_practise(good, practice, covered)
+    assert errors == ["l1 section 2: no practise card; add a practise entry naming its Try It"]
+    bad = {"practise": [{"lessonId": "l1", "topic": 1, "tryIt": "", "task": 3},
+                        {"lessonId": "l1", "topic": 2, "tryIt": "fill the blank", "task": None}]}
+    text = "\n".join(storyplan.check_practise(bad, practice, covered))
+    assert "tryIt is empty" in text and "task 3" in text and "has no Try It" in text and "starter has tasks 1-2" in text
+
+
+def test_practise_card_names_the_starter_file_and_task(tmp_path):
+    practice = storyplan.lesson_practice(practice_course(tmp_path))
+    plan = {"practise": [{"lessonId": "l1", "topic": 1, "tryIt": "predict what print(1) shows", "task": 2}]}
+    assert storyplan.practise_cards(plan, practice) == {
+        ("l1", 1): {"tryIt": "Try It: predict what print(1) shows", "pack": "Pack: L01-practice-starter.ipynb, Task 2"}}
+
+
+def test_timeline_ends_each_topic_with_its_card_and_the_clip_keeps_it():
+    plan = {"intro": {"points": ["a"]}, "recap": {"points": ["b"]},
+            "scenes": [{"kind": "vector", "lessonId": "l1", "topic": 1, "title": "One"},
+                       {"kind": "vector", "lessonId": "l1", "topic": 1, "title": "One"},
+                       {"kind": "vector", "lessonId": "l1", "topic": 2, "title": "Two"}]}
+    clips = {k: {"dur": 2.0, "words": []} for k in ("intro", "s1", "s2", "s3", "recap")}
+    cards = {("l1", 1): {"tryIt": "Try It: x", "pack": None}}
+    tl = timeline.build(plan, clips, cards)
+    cardsegs = [s for s in tl["segments"] if s["kind"] == "practise"]
+    assert len(cardsegs) == 1 and cardsegs[0]["scene"] == 2 and cardsegs[0]["card"]["tryIt"] == "Try It: x"
+    scene2 = next(s for s in tl["segments"] if s["kind"] == "scene" and s["scene"] == 2)
+    scene3 = next(s for s in tl["segments"] if s["kind"] == "scene" and s["scene"] == 3)
+    assert cardsegs[0]["start"] == scene2["end"] and scene3["start"] == cardsegs[0]["end"]
+    assert cardsegs[0]["end"] - cardsegs[0]["start"] == timeline.CARD
+    topic1 = next(c for c in build_video.topic_clips(plan, tl, {}, {}) if c["topic"] == 1)
+    assert topic1["end"] == cardsegs[0]["end"]
+
+
+def test_stage_draws_the_practise_card():
+    plan = {"intro": {"title": "T", "points": ["a"]}, "recap": {"points": ["b"]},
+            "scenes": [{"kind": "vector", "lessonId": "l1", "topic": 1, "title": "One", "keyIdea": "k"}]}
+    clips = {k: {"dur": 2.0, "words": []} for k in ("intro", "s1", "recap")}
+    tl = timeline.build(plan, clips, {("l1", 1): {"tryIt": "Try It: x", "pack": "Pack: L01-practice-starter.ipynb, Task 1"}})
+    page = stage.build_stage(plan, tl, ["<svg></svg>"], "")
+    assert "Now practise" in page and "Pack: L01-practice-starter.ipynb, Task 1" in page

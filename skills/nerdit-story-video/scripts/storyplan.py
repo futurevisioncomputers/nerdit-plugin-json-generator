@@ -107,6 +107,71 @@ def lesson_parts(course_path: Path) -> dict:
     return out
 
 
+TRYIT = re.compile(r'class="nerdit-(?:predict|fillblank|tryit)\b')
+MAX_TRYIT = 60   # chars of the card's "Try It:" line
+
+
+def lesson_practice(course_path: Path) -> dict:
+    """{lessonId: {"tryits": {topic: count}, "starter": name or None, "tasks": n}} for the
+    "Now practise" card: each section's Try It blocks, and the chapter's starter (the notebook
+    first) with its number of practice tasks (practice files plan §5b)."""
+    from practice_files import practice_tasks, read_spec
+    out = {}
+    for lesson in course_lessons(course_path):
+        content = lesson.get("content") or ""
+        tryits = {}
+        for n in lessonparts.numbered_topics(content):
+            found = lessonparts.section_html(content, n)
+            tryits[n] = len(TRYIT.findall(found[1])) if found else 0
+        try:
+            spec = read_spec(content) or {}
+        except ValueError:
+            spec = {}
+        starters = [f["name"] for f in spec.get("files", []) if "practice" in (f.get("from") or {})]
+        starters.sort(key=lambda name: not name.endswith(".ipynb"))
+        out[lesson.get("id", "")] = {"tryits": tryits, "starter": starters[0] if starters else None,
+                                     "tasks": len(practice_tasks(content)) if starters else 0}
+    return out
+
+
+def check_practise(plan: dict, practice: dict, covered: set) -> list[str]:
+    """Every topic clip ends with a "Now practise" card naming a Try It its section has and,
+    when the chapter has a starter, a task that exists in it."""
+    errors = []
+    entries = {(e.get("lessonId"), e.get("topic")): e for e in plan.get("practise") or []}
+    for lid, topic in sorted(covered, key=lambda k: (str(k[0]), k[1] if isinstance(k[1], int) else 0)):
+        info = practice.get(lid)
+        if info is None:
+            continue
+        entry = entries.get((lid, topic))
+        if entry is None:
+            errors.append(f"{lid} section {topic}: no practise card; add a practise entry naming its Try It")
+            continue
+        tag = f"practise {lid} section {topic}"
+        _limit(tag, "tryIt", entry.get("tryIt"), MAX_TRYIT, errors)
+        if not info["tryits"].get(topic):
+            errors.append(f"{tag}: the section has no Try It for the card to name")
+        task = entry.get("task")
+        if info["starter"]:
+            if not isinstance(task, int) or isinstance(task, bool) or not 1 <= task <= info["tasks"]:
+                errors.append(f"{tag}: task {task} — the starter has tasks 1-{info['tasks']}; name the one this "
+                              "clip leads to")
+        elif task is not None:
+            errors.append(f"{tag}: task {task}, but the chapter has no practice starter")
+    return errors
+
+
+def practise_cards(plan: dict, practice: dict) -> dict:
+    """{(lessonId, topic): {"tryIt", "pack"}}: the card text, the file name taken from the spec."""
+    cards = {}
+    for e in plan.get("practise") or []:
+        info = practice.get(e.get("lessonId")) or {}
+        pack = (f"Pack: {info['starter']}, Task {e['task']}"
+                if info.get("starter") and isinstance(e.get("task"), int) else None)
+        cards[(e.get("lessonId"), e.get("topic"))] = {"tryIt": f"Try It: {e.get('tryIt', '')}", "pack": pack}
+    return cards
+
+
 def lesson_figures(course_path: Path, images_dir: Path | None = None) -> dict:
     """Every SVG figure in the lessons (and the illustrator's diagrams), by figure id."""
     figures = {}
@@ -188,6 +253,8 @@ def scaffold(images_dir: Path, course_path: Path) -> Path:
             "intro": {"title": title, "points": [], "narration": ""},
             "scenes": scenes,
             "skipTopics": [],
+            "practise": [{"lessonId": lid, "topic": topic, "tryIt": "", "task": None}
+                         for lid, sections in parts.items() for topic in sections],
             "recap": {"points": [], "narration": ""},
             "availableFigures": figures}
     out = images_dir / "video" / "plan.json"
@@ -313,7 +380,8 @@ def check_coverage(plan: dict, parts: dict) -> list[str]:
 
 
 def check_plan(plan: dict, video_dir: Path, figures: dict | None = None, texts: dict | None = None,
-               topics: dict | None = None, parts: dict | None = None) -> list[str]:
+               topics: dict | None = None, parts: dict | None = None,
+               practice: dict | None = None) -> list[str]:
     errors = []
     if plan.get("version") != 3:
         return ["plan.version must be 3; delete plan.json and scaffold again"]
@@ -411,6 +479,10 @@ def check_plan(plan: dict, video_dir: Path, figures: dict | None = None, texts: 
     errors += check_topics(scenes, topics)
     if parts is not None:
         errors += check_coverage(plan, parts)
+    if practice is not None:
+        skipped = {(k.get("lessonId"), k.get("topic")) for k in plan.get("skipTopics") or []}
+        covered = {(s.get("lessonId"), s.get("topic")) for s in scenes} - skipped
+        errors += check_practise(plan, practice, covered)
     if "quiz" in json.dumps(plan.get("intro") or {}) + json.dumps(plan.get("recap") or {}):
         errors.append("intro/recap: the video has no quizzes")
     for tag, lid, text in narrated_parts(plan):
@@ -440,7 +512,8 @@ def main(argv=None) -> int:
     figures = lesson_figures(course, a.images_dir) if course else None
     topics = lesson_topics(course) if course else None
     parts = lesson_parts(course) if course else None
-    errors = check_plan(plan, a.images_dir / "video", figures, texts, topics, parts)
+    practice = lesson_practice(course) if course else None
+    errors = check_plan(plan, a.images_dir / "video", figures, texts, topics, parts, practice)
     for e in errors:
         print("ERROR", e)
     print("plan OK" if not errors else f"{len(errors)} problem(s)")
