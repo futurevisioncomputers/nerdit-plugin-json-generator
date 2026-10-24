@@ -446,6 +446,16 @@ check fails with WinError 267 when the unzipped chapter folder path passes 260 c
 limit), so it now needs a short `--workdir` on Windows, and the pack README could tell learners to unzip near the
 top of a drive. Still to do for phase 4: the remaining lessons and the capstone, then this run again in full.
 
+**Final review (24 Oct 2026):** one fresh reviewer over all three branches: no Critical, four Important, all fixed
+with tests (`nerdit` 3ab0612, `nerdit-admin` d6102ce, plugin 9591102):
+1. `certificateAccess` is a cache of the entitlement: a refusal deletes it, and triggers drop it on a revoke (all
+   the learner's documents), on a paid certificate order leaving `paid`, and when a free certificate gets a price.
+2. A revoked career program certificate locks the program's courses.
+3. A re-imported file under the same name replaces the old one (`current` flag; downloads read the current one).
+4. Windows paths: chapter folders ≤ 32 characters, pack paths ≤ 120 (checked), README advice, short learner workdir.
+Also fixed: signing out clears the practice files cache (shared institute PCs). Deferred minors are listed in the
+executor ledger. New functions to deploy with phase 3: `lockPracticeFilesOnOrderChange`, `lockPracticeFilesOnPriceChange`.
+
 ## 13. Cost (Google)
 
 - **Storage:** about 12 GB for 500 courses with packs, about ₹25 a month.
