@@ -392,8 +392,9 @@ def build_pack(chapters: list[dict], course_short: str, version: int, world: dic
     return result
 
 
-def mark_course(chapters: list[dict], result: dict, date: str) -> list[str]:
-    """Every chapter's HTML with its boxes; the first chapter with files also carries the pack box."""
+def mark_course(chapters: list[dict], result: dict, date: str, python: str | None = None) -> list[str]:
+    """Every chapter's HTML with its boxes; the first chapter with files also carries the pack box.
+    `python` is the version check_files.py --as-learner passed on; without it each spec's own is shown."""
     by_lesson: dict[str, list[dict]] = {}
     for f in result['files']:
         by_lesson.setdefault(f['lessonId'], []).append(f)
@@ -406,8 +407,8 @@ def mark_course(chapters: list[dict], result: dict, date: str) -> list[str]:
         if not files:
             out.append(chapter['html'])
             continue
-        python = (read_spec(chapter['html']) or {}).get('python', '3.12')
-        out.append(mark_lesson(chapter['html'], files, files[0]['folder'], chapter['id'], python, pack))
+        shown = python or (read_spec(chapter['html']) or {}).get('python', '3.12')
+        out.append(mark_lesson(chapter['html'], files, files[0]['folder'], chapter['id'], shown, pack))
         pack = None
     return out
 
@@ -421,6 +422,7 @@ def main():
     ap.add_argument('--requirements', help='course-<chapter>_requirements.txt')
     ap.add_argument('--workdir', help='folder that file sources are read from')
     ap.add_argument('--out-dir', required=True)
+    ap.add_argument('--python', help='the version check_files.py --as-learner passed on (shown in every box)')
     args = ap.parse_args()
     try:
         course = json.loads(Path(args.course).read_text(encoding='utf-8'))
@@ -430,7 +432,7 @@ def main():
         reqs = Path(args.requirements).read_text(encoding='utf-8') if args.requirements else ''
         result = build_pack(chapters, args.course_short, args.version, world, reqs, Path(args.out_dir),
                             Path(args.workdir) if args.workdir else None)
-        for lesson, html in zip(lessons, mark_course(chapters, result, date.today().strftime('%d %b %Y'))):
+        for lesson, html in zip(lessons, mark_course(chapters, result, date.today().strftime('%d %b %Y'), args.python)):
             lesson['content'] = html
         marked = Path(args.out_dir) / Path(args.course).name
         marked.write_text(json.dumps(course, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')

@@ -289,6 +289,8 @@ def test_mark_course_boxes_every_chapter_with_files(tmp_path):
     assert 'nerdit-course-pack' not in htmls[1] and 'folder <code>L02-timeouts-and-retries</code>' in htmls[1]
     assert htmls[2] == ch[2]['html']
     assert '2 chapter folders' in htmls[0] and 'Python 3.14' in htmls[1]
+    checked = pf.mark_course(ch, result, date='24 Oct 2026', python='3.12')
+    assert 'Python 3.14' not in checked[0] + checked[1] and 'Python 3.12' in checked[1]
 
 
 def test_build_pack_rejects_name_clash_with_image(tmp_path):
