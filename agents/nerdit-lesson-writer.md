@@ -56,6 +56,12 @@ Before writing anything:
   `verify_course.py --contract v10` fails any wider figure.
 - Read `${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/references/voice.md` — the
   banned-phrase list `check_prose.py` enforces, and how a lesson should sound.
+- **Code and data courses:** read CORE.md §6e (practice files) and
+  `${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/references/deprecated.md`. Declare the
+  chapter's files in one `nerdit-files-spec` block; never write a download link or files box.
+  Give every practice task a Python answer. Code runs on Python 3.12 with no deprecated API:
+  `check_modern_code.py` fails the lesson on one. **Capstone chapter** (`focus: "project"`):
+  follow CORE.md §8b; its data comes from the course world only.
 - Do **not** read the css files in full. Grep `css8.css` / `css9-simple.css` for specific class names only when `CORE.md` leaves exact markup unclear
 
 If the orchestrator attached a sample `course-[chaptername]_output.json`, read it too for field ordering and tone reference.

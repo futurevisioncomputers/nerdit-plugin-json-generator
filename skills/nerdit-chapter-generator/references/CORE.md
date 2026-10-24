@@ -562,6 +562,57 @@ the solution in the repo". A learner who has to leave the page to find out wheth
 were right does not find out — and an exercise with no feedback teaches nothing at all.
 Every answer goes inside a `<details>` on the same page.
 
+### 6e. Practice files (code and data courses)
+
+Certificate holders download one **course practice pack**: a zip with one folder per
+chapter (its data, a starter, the full solutions) and the capstone. The page stays
+complete without it: every answer still sits in its `<details>`. The download adds; it
+never replaces.
+
+**You declare the files; the plugin builds them.** Write one block after the overview's
+first paragraph. `practice_files.py` builds every file, the pack and the boxes from it.
+Never write a download link or a files box by hand.
+
+```html
+<script type="application/json" class="nerdit-files-spec">
+{"python": "3.12",
+ "files": [
+  {"name": "L02-S1-enquiry-messages.csv", "sections": [1], "about": "4 enquiry messages",
+   "from": {"world": "enquiry_messages", "rows": ["M1", "M2"], "columns": ["message_id", "message"]}},
+  {"name": "L02-S2-provider-replies.json", "sections": [2], "from": {"json": {"M2": [503, 200]}}},
+  {"name": "L02-S3-requests.csv", "sections": [3], "from": {"table": "Neha's requests: capacity 3"}},
+  {"name": "L02-S4-requests.sql", "sections": [4], "from": {"sql": "tryit-seed-1"}},
+  {"name": "L02-practice-starter.ipynb", "sections": ["practice"], "from": {"practice": "starters"}},
+  {"name": "L02-solutions.py", "sections": "all", "from": {"solutions": "all"}}
+ ]}
+</script>
+```
+
+| Source | Builds |
+|---|---|
+| `world` | rows and columns of a course-world entity, as CSV (`rows` by first-column id) |
+| `json` | the value as `.json` (2-space indent) or `.jsonl` (one object per line) |
+| `table` | the lesson table whose `<caption>` or `<figcaption>` reads exactly this text, as CSV |
+| `sql` | the seed `<script type="text/plain" id="…">`, byte for byte, under a header comment |
+| `practice` | a starter: one heading per `nerdit-task`, no answers |
+| `solutions` | every Python run line in page order under its section heading, then every task answer |
+| `file` | a file from the workdir (a full app), never outside it |
+
+- **Names trace to the page:** `L<nn>-S<section>-<what>.<ext>` for a section's data,
+  `L<nn>-practice-starter`, `L<nn>-solutions`, `L<nn>-full-app.py`. `<nn>` is the chapter's
+  position. Lower case, digits, hyphens; at most 60 characters; unique in the course, images
+  included. Formats: `.csv .json .jsonl .sql .py .ipynb .txt .md`.
+- **`sections` must name a numbered `<h2>`** (`1 — …`): the plugin puts "📎 This section uses"
+  under that heading. Use `"practice"` or `"all"` for the starter and the solutions.
+- **Data comes from the course world** (or the lesson's own seed or table). Never type data
+  into a `json` source that the world already holds.
+- **Page code is the download code.** Code runs on Python 3.12 (the website) and is checked on
+  3.14; the pack says which one passed. No feature newer than 3.12, no deprecated API
+  (`references/deprecated.md`, checked by `check_modern_code.py`).
+- **Every task has a Python answer** in its `nerdit-solution`, so the solutions file is
+  complete. Files open by name, as on the page: the downloaded `.py` finds its folder itself.
+- Size: at most 50 MiB per file and per pack while course sizes are measured.
+
 ---
 
 ## 7. VISUALS — DECISION TABLE + BANNED LIST
@@ -818,6 +869,27 @@ them.
 
 For a Quantitative or Conversational preset the solution's result is a
 `<div class="nerdit-answer">` instead of a `<pre>`. Order tasks easy → medium → challenge.
+
+---
+
+## 8b. CAPSTONE CHAPTER (`focus: "project"`, last chapter of a code course)
+
+One problem statement, one complete project that uses every earlier chapter. It is
+practice, not a certificate requirement. Free learners can read it and build it from the page.
+
+- **Data: the course world only.** Every file in the project's `data/` is built from the
+  course world, at full size. No other dataset, no real learner records.
+- **Page order:** the problem and what the finished app does; an architecture figure; one
+  section per milestone (goal, what to build, the short key code, the tests that prove it);
+  "Run the whole thing"; extension ideas. Each milestone section names the chapter it uses.
+- **Explain first,** as in every lesson: each milestone opens with what it builds and why,
+  then the code. Shown code keeps the 15-line limit; the full code is in the pack.
+- **The pack folder** holds `README.md`, `data/`, `starter/` (the skeleton with a TODO per
+  milestone: it imports and runs, its tests fail), `tests/` (pytest, one file per milestone)
+  and `solution/` (every test passes). A fake provider or local stand-in lets it run offline
+  with no API key.
+- How much code may go beyond what the course taught is not fixed yet; mark any such block
+  `# Beyond the course: <what and why>` so it can be counted later.
 
 ---
 

@@ -85,3 +85,6 @@ if (typeof window.nerditLoadFormula !== "function") {
 > **Every formula you document must actually evaluate to the output you claim.** The
 > engine is the source of truth — if a worked example says the answer is `301300`, running
 > that formula in the widget must produce `301300`. Verify before shipping the lesson.
+
+**Practice files** (CORE.md §6e): an Excel lesson's data downloads as CSV (`world` or `table`
+source), which opens in Excel. `.xlsx` is not built for now.

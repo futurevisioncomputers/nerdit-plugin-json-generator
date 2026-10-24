@@ -120,3 +120,17 @@ def test_screen_docs_state_every_limit():
         assert limit in section, limit
     style = (ROOT / "skills" / "nerdit-lesson-illustrator" / "references" / "style.md").read_text(encoding="utf-8")
     assert "① to ⑤" in style.split("```screen-style", 1)[1].split("```", 1)[0]
+
+
+def test_practice_files_rules_and_their_checkers_ship_together():
+    core = (HERE.parent / "references" / "CORE.md").read_text(encoding="utf-8")
+    writer = (ROOT / "agents" / "nerdit-lesson-writer.md").read_text(encoding="utf-8")
+    qa = (ROOT / "agents" / "nerdit-qa-validator.md").read_text(encoding="utf-8")
+    assert "### 6e. Practice files" in core and "## 8b. CAPSTONE CHAPTER" in core
+    assert "nerdit-files-spec" in core and "deprecated.md" in core and "course world only" in core
+    assert "references/deprecated.md" in writer and "§8b" in writer and "§6e" in qa
+    for name in ("practice_files.py", "check_modern_code.py"):
+        assert name in core + writer + qa and (HERE / name).exists()
+    # Every source the rules name is one practice_files.py builds.
+    for source in ("world", "json", "table", "sql", "practice", "solutions", "file"):
+        assert f"| `{source}` |" in core and f"'{source}'" in (HERE / "practice_files.py").read_text(encoding="utf-8")

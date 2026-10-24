@@ -34,6 +34,10 @@ fallback. Write a query of more than one clause on several lines (`FROM`, `WHERE
 `ORDER BY` each starting a line); a long one-line query is laid out that way
 automatically, but the written layout is what the plugin's own previews show.
 
+**The seed is also a download** (CORE.md §6e): a `{"sql": "<seed id>"}` source in the files
+spec ships it byte for byte as `L<nn>-S<n>-<tables>.sql` for the learner's own SQLite. So a
+seed must run in SQLite on its own, with no statement the browser engine alone accepts.
+
 ## Layout
 
 The input half of a run line wraps instead of scrolling, so a long line breaks in the middle of

@@ -108,6 +108,12 @@ no real logos, and mistakes confined to data work rather than allegations about 
 - **Refreshed lessons** (a `_before` copy exists): every sentence still matches what the shown
   code and figures now show. A trim must not leave prose describing code it removed, and a
   removed text map must not leave a sentence without its referent
+- **Practice files** (a `nerdit-files-spec` block, CORE.md §6e): do not judge names, sizes,
+  links or deprecated code: `practice_files.py` and `check_modern_code.py` enforce them. Judge
+  that each file's `about` is true, that `sections` point at the sections that use the file,
+  and that every practice task has a Python answer the solutions file can carry
+- **Capstone** (`focus: "project"`, CORE.md §8b): one problem statement; one section per
+  milestone, each naming the chapter it uses; data from the course world only
 - **Concept manifest** (if `<workdir>` given): `<id>.concepts.json` exists per lesson,
   `teaches` has 5–20 entries, and its `uses` honestly reflect the lesson
 

@@ -70,6 +70,9 @@ learner the same file for Excel or Jupyter.
   use a variable an earlier one made.
 - **A run line prints what it shows.** Write `print(df.head())`, never a bare `df.head()`:
   the runner does not display a last expression, so the shown output must come from `print`.
+- **Shown code is download code** (CORE.md §6e): Python 3.12 features only, nothing in
+  `references/deprecated.md`. With a files box in the lesson, the runner skips its own Download
+  link: the pack carries the file.
 - **Seed every random call** in shown code: `random_state=7`, `np.random.default_rng(7)`,
   `random.seed(7)`. An unseeded example shows numbers no learner can reproduce.
 - **Data comes from the dataset block.** Never type in a list of more than 8 rows.
