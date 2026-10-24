@@ -49,6 +49,7 @@ def test_good_names(name):
     ('L02-S1-' + 'a' * 60 + '.csv', '60'),
     ('L02-S1-x.exe', 'extension'),
     ('L02-S1-x.xlsm', 'extension'),
+    ('L02-S1-x.xlsx', 'extension'),
 ])
 def test_bad_names(name, why):
     assert any(why in p for p in pf.name_problems(name, 2))

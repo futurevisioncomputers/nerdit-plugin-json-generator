@@ -32,7 +32,7 @@ from check_python_outputs import _code, _first, _in_order, _is_python  # noqa: E
 from verify_course import parse, text_of  # noqa: E402
 
 SPEC = re.compile(r'<script\b[^>]*\bclass="[^"]*\bnerdit-files-spec\b[^"]*"[^>]*>(.*?)</script>', re.S | re.I)
-EXTENSIONS = {'csv', 'xlsx', 'json', 'jsonl', 'sql', 'py', 'ipynb', 'txt', 'md'}
+EXTENSIONS = {'csv', 'json', 'jsonl', 'sql', 'py', 'ipynb', 'txt', 'md'}  # .xlsx dropped for now (2026-10-24)
 MAX_NAME = 60
 # Measuring phase (owner, 2026-10-24): 50 MiB to see what real courses weigh; to be lowered later.
 FILE_LIMIT = 50 * 1024 * 1024

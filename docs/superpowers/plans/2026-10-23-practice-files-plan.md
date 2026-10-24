@@ -24,7 +24,7 @@ Claude GitHub App to have access to both repos.
 | 3 | Size | **Measuring phase (2026-10-24): pack and single file at most 50 MiB**, to see what real courses weigh; the target stays 10 MiB pack / 5 MiB file and is tightened once sizes are known. Samples and the separate data pack wait until then |
 | 12 | HTTP client | **New AI API courses teach `httpx2`** (`import httpx2`), Pydantic's drop-in continuation of `httpx`; existing courses switch when they are regenerated |
 | 11 | Admin upload | **One course bundle zip** from the plugin: the output JSON, all images and practice files, and the video list; the admin imports that one file (§10) |
-| 4 | Formats | **CSV, Excel, JSON, SQL, Python, notebooks** |
+| 4 | Formats | **CSV, JSON, SQL, Python, notebooks**. Excel (`.xlsx`) dropped for now (2026-10-24): CSV opens in Excel |
 | 5 | Solutions | **Full code to download**; the page keeps short code with explanations |
 | 6 | Where file details live | **Lesson HTML only** (like images); no course-JSON schema change |
 | 7 | Python | The website runner **stays on Pyodide 0.26.2 (Python 3.12)**: the Pyodide upgrade is dropped for now (2026-10-24). Downloads use **the same code as the page, written for 3.12**: a course's pack is marked **Python 3.14** when every file runs on 3.14 with no change, otherwise **Python 3.12**; **3.15** only for lessons about its new features; **no deprecated code** |
@@ -43,7 +43,7 @@ Claude GitHub App to have access to both repos.
 | Today | Gap |
 |---|---|
 | Python lessons with a world recipe build CSVs in the browser and add `Download enquiries.csv` after the first Try It (Plan C). | Only Python with a recipe, only CSV, inside a runner; no course-wide download. |
-| SQL seeds in `<script type="text/plain">`; Excel grids in `data-grid`. | No `.sql` or `.xlsx` for the learner's own SQLite, MySQL or Excel. |
+| SQL seeds in `<script type="text/plain">`; Excel grids in `data-grid`. | No `.sql` for the learner's own SQLite or MySQL (Excel lessons use the CSV; `.xlsx` dropped for now). |
 | Code shown in blocks of at most 15 lines. | No complete program to run at home. |
 | File names from the entity (`enquiries.csv`). | Not traceable to a chapter; two chapters can clash. |
 | Website Python 3.12 (Pyodide 0.26.2). | Kept for now (§4); deprecated APIs unchecked. |
@@ -126,7 +126,6 @@ business names with the owners' recorded permission (`business.realName`); cast 
 | Format | Made from | Rules |
 |---|---|---|
 | `.csv` | world entity slice, lesson table, or dataset recipe | UTF-8, header row, RFC 4180 quoting |
-| `.xlsx` | the same rows | one sheet per table, named after it; bold header; no macros (`.xlsm` refused); formulas only in Excel lessons and only ones `nerdit-excel-engine.js` computes |
 | `.json` / `.jsonl` | payloads or records the lesson shows | 2-space indent; `.jsonl` one object per line |
 | `.sql` | the lesson's seed script, byte for byte | runs in SQLite; a header comment names chapter, section and tables |
 | `.py` | starters, solutions, full app, capstone | runs as is on the pinned Python; sections in page order, a one-line comment each |
@@ -370,12 +369,12 @@ building-production-ready-ai-apis-bundle-v1.zip
 
 Details:
 
-- [ ] The bundle's `media/` folder follows these rules. Allowed: `.csv .xlsx .json .jsonl .sql .py .ipynb .txt .md .zip`;
-      refused: `.xlsm .exe .html .js` and anything else. At most 5 MiB per file and 10 MiB for a
-      `*-practice-pack-v<n>.zip` or `*-data-pack-v<n>.zip`.
+- [ ] The bundle's `media/` folder follows these rules. Allowed: `.csv .json .jsonl .sql .py .ipynb .txt .md .zip`;
+      refused: `.xlsx .xlsm .exe .html .js` and anything else (`.xlsx` dropped for now). Size limits as decision 3 (50 MiB while measuring; target 5 MiB per file and 10 MiB for a
+      `*-practice-pack-v<n>.zip` or `*-data-pack-v<n>.zip`).
 - [ ] Matching as for images: by file name across nested folders; a missing or duplicate name blocks preparation;
       extra files enter the course library; a new pack version replaces the old one.
-- [ ] Validation: extension vs content (zip signature for xlsx/zip, UTF-8 text, JSON and notebook JSON parse).
+- [ ] Validation: extension vs content (zip signature for zip, UTF-8 text, JSON and notebook JSON parse).
 - [ ] **Private storage:** `courses/<courseId>/files/<sha256 8 chars>/<original name>`, `Content-Type` by extension,
       `Content-Disposition: attachment; filename="<original name>"`; no public download tokens. The HTML keeps the
       relative `files/<name>` link and `data-nerdit-file`; the learner site resolves it.
