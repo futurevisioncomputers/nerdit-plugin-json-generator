@@ -12,6 +12,12 @@ description: >
 
 # NERDIT Story Video
 
+**Any model** (Claude, OpenAI/Codex or another agent) can run this skill: it is these steps plus
+Python scripts. Do the steps in order; `scripts/…` paths are relative to this skill's folder.
+Run every command shown and read its output: a non-zero exit means stop and fix what it prints,
+never skip it. The scripts build the video; your job is the plan's words, written to the rules
+below. Never put an API key in a plan, a file or a message.
+
 Scripts live in `scripts/` next to this file. `<images>` is the `images/` folder next to the
 course JSON (the video lives in `<images>/video/`). Python needs `imageio-ffmpeg`, `edge-tts`
 (fallback voice) and `playwright` (Chromium; an existing Playwright Chromium build is used if

@@ -16,6 +16,12 @@ description: >
 
 # NERDIT Lesson Illustrator
 
+**Any model** (Claude, OpenAI/Codex or another agent) can run this skill: it is these steps plus
+Python scripts. Do the steps in order; `scripts/…` paths are relative to this skill's folder.
+Run every command shown and read its output: a non-zero exit means stop and fix what it prints,
+never skip it. Never invent a file name, class or field; copy them from this file and
+`references/style.md`.
+
 All scripts live in `scripts/` next to this file. Run them with `python <script>` from any folder,
 passing absolute paths. `<images>` is the `images/` folder next to the course JSON.
 

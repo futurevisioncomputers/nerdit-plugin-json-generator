@@ -134,3 +134,15 @@ def test_practice_files_rules_and_their_checkers_ship_together():
     # Every source the rules name is one practice_files.py builds.
     for source in ("world", "json", "table", "sql", "practice", "solutions", "file"):
         assert f"| `{source}` |" in core and f"'{source}'" in (HERE / "practice_files.py").read_text(encoding="utf-8")
+
+
+def test_every_skill_says_how_any_model_runs_it():
+    # The plugin also runs on OpenAI/Codex models: each skill must say so plainly.
+    for skill in sorted((ROOT / "skills").glob("*/SKILL.md")):
+        text = skill.read_text(encoding="utf-8")
+        assert "Any model" in text or "Running on any model" in text, skill.parent.name
+    main = (HERE.parent / "SKILL.md").read_text(encoding="utf-8")
+    assert "${CLAUDE_PLUGIN_ROOT}`** means the plugin's root folder" in main and "## Step 5c" in main
+    for name in ("check_modern_code.py", "check_quiz.py", "check_offline_outputs.py", "practice_files.py",
+                 "check_files.py"):
+        assert f"scripts/{name}" in main

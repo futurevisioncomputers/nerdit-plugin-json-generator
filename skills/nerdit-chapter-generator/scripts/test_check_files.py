@@ -128,3 +128,32 @@ def test_size_limits(tmp_path, monkeypatch):
     out = build(tmp_path)
     monkeypatch.setattr(pf, 'PACK_LIMIT', 10)
     assert any('pack limit' in p for p in cf.static_problems(out))
+
+
+def test_skill_step_5c_commands_run_end_to_end(tmp_path):
+    """SKILL.md Step 5c, command by command, as any model would type it."""
+    import subprocess
+    from pathlib import Path
+    here = Path(cf.__file__).resolve().parent
+    course = {'lessons': [{'id': 'fees-01', 'title': 'Reading Fees', 'content': page()}]}
+    (tmp_path / 'course-fees_output.json').write_text(json.dumps(course), encoding='utf-8')
+    (tmp_path / 'world_data.json').write_text(json.dumps(WORLD), encoding='utf-8')
+    (tmp_path / 'course-fees_requirements.txt').write_text('', encoding='utf-8')
+    pack = tmp_path / 'pack'
+
+    def step2(*extra):
+        return subprocess.run([sys.executable, str(here / 'practice_files.py'), '--course',
+                               str(tmp_path / 'course-fees_output.json'), '--world', str(tmp_path / 'world_data.json'),
+                               '--course-short', 'fees', '--version', '1', '--requirements',
+                               str(tmp_path / 'course-fees_requirements.txt'), '--workdir', str(tmp_path),
+                               '--out-dir', str(pack), *extra], capture_output=True, text=True, encoding='utf-8')
+    built = step2()
+    assert built.returncode == 0, built.stderr
+    marked = pack / 'course-fees_output.json'
+    check = subprocess.run([sys.executable, str(here / 'check_files.py'), '--out-dir', str(pack), '--course',
+                            str(marked), '--as-learner', '--pythons', sys.executable],
+                           capture_output=True, text=True, encoding='utf-8')
+    assert check.returncode == 0, check.stdout + check.stderr
+    version = check.stdout.split('Learner run passed on Python ')[1].split()[0]
+    assert step2('--python', version).returncode == 0
+    assert f'Python {version}' in json.loads(marked.read_text(encoding='utf-8'))['lessons'][0]['content']

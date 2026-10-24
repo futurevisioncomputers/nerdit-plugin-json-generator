@@ -14,6 +14,25 @@ description: >
 
 # NERDIT Chapter Content Generator
 
+## Running on any model (Claude, OpenAI/Codex or another agent)
+
+This skill is plain instructions plus Python scripts; any model that can read files, write
+files and run shell commands can follow it. Read each step in order and do exactly what it says.
+
+- **`${CLAUDE_PLUGIN_ROOT}`** means the plugin's root folder: the folder that holds `skills/`
+  and `agents/`. If your tool does not set this variable, write that folder's path in its place.
+- **Subagents.** When a step says to spawn `nerdit-lesson-writer` or `nerdit-qa-validator` and
+  your tool cannot start subagents, do that agent's job yourself: read
+  `${CLAUDE_PLUGIN_ROOT}/agents/<name>.md` in full and follow it exactly, one lesson at a time.
+- **Scripts decide; never guess their result.** Run every command shown, read its output, and
+  act on its exit code: `0` = pass, go on; `1` = the content is wrong, fix what the lines name;
+  `2` = the environment is missing something (an engine, a Python version, a file), fix the
+  environment and run again. Never treat `2` as a pass and never skip a check.
+- **Python:** run the scripts with Python 3.12 or newer. Some checks also need the Pyodide
+  engine (`npm ci` in `tools/pyodide/`) or Python 3.14 / 3.12 installed: they say so with exit 2.
+- **Copy, do not invent.** Markup, class names, file names and JSON fields come from
+  `references/CORE.md` and the agent files. When unsure, re-read the rule instead of guessing.
+
 ## Course world (optional; required when a course declares one)
 
 When `course-<chapter>_world.json` accompanies the input, resolve it with
@@ -468,7 +487,24 @@ Then the voice check, which fails on any phrase in `references/voice.md`:
 
     python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/check_prose.py" --course <workdir>/course-<chaptername>_output.json
 
-`WARN` lines from both scripts are advice: fix them when cheap, never loop on them.
+Then three more checks for code courses, each blocking like the ones above:
+
+    python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/check_modern_code.py" --course <workdir>/course-<chaptername>_output.json
+    python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/check_quiz.py" --course <workdir>/course-<chaptername>_output.json
+    python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/check_offline_outputs.py" --course <workdir>/course-<chaptername>_output.json --requirements <course-<chaptername>_requirements.txt> --workdir <workdir>/offline
+
+- `check_modern_code.py` exit 1: shown code uses an API in `references/deprecated.md`. Add
+  `--new-course` for a course created after 2026-10-23 (it then also requires `httpx2`).
+- `check_quiz.py` exit 1: a quiz marks an option that is not what its snippet computes. Pass
+  the `FAIL` line into the regeneration; the correct option is the one it names.
+- `check_offline_outputs.py`: only for lessons with `data-run="offline"` examples. Exit 1 =
+  a library is not pinned in the requirements, or an output differs (fix the shown output to
+  what the line reports). Exit 2 = Python 3.14 and 3.12 are both missing, or pip had no network.
+
+`check_python_outputs.py` also runs every answer now (practice solutions, predict blocks,
+fill-ins): an `answer` failure is regenerated like any mismatch.
+
+`WARN` lines from these scripts are advice: fix them when cheap, never loop on them.
 
 ### Regeneration budget (applies to 4b, 4c and 5)
 
@@ -547,6 +583,39 @@ so the owner gets the course and its image prompts together:
 
 Skip this step when `visual_briefs.py` reports 0 briefs. The illustrator's `apply` step
 converts, checks and inserts the images once they are saved into `<workdir>/images/incoming/`.
+
+## Step 5c — Practice pack (code and data courses; deterministic scripts)
+
+Run this only when at least one lesson has a `nerdit-files-spec` block (CORE.md §6e). Do the
+steps in this order. `<short>` is a short course slug such as `ai-apis`; `<n>` is the pack
+version (1 for a new course, +1 whenever any file changes).
+
+1. Generate the world rows the files are cut from:
+
+       python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/make_world_data.py" --world <course-<chaptername>_world.json> --out-dir <workdir>/world
+
+2. Build the pack, the single files, the manifest and the marked course JSON:
+
+       python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/practice_files.py" --course <workdir>/course-<chaptername>_output.json --world <workdir>/world/world_data.json --course-short <short> --version <n> --requirements <course-<chaptername>_requirements.txt> --workdir <workdir> --out-dir <workdir>/pack
+
+   It writes `<workdir>/pack/<short>-practice-pack-v<n>.zip`, `<workdir>/pack/files/`,
+   `<workdir>/pack/files.manifest.json` and `<workdir>/pack/course-<chaptername>_output.json`
+   (the course with its files boxes). Exit 2 lists every broken name, source or size: fix the
+   lesson's spec (regenerate the lesson with those lines), then run this step again.
+
+3. Check the pack as a learner would use it:
+
+       python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/check_files.py" --out-dir <workdir>/pack --course <workdir>/pack/course-<chaptername>_output.json --as-learner --pythons 3.14,3.12
+
+   The last line names the Python it passed on (`Learner run passed on Python 3.14`). Exit 1 =
+   a file fails: the line names the file and the error; fix the lesson code it came from and
+   start again at step 2. Exit 2 = neither Python is installed: install one, never skip.
+
+4. Run step 2 again with `--python <the version step 3 printed>` added, so every box shows the
+   version the pack really passed on. Without it the boxes say Python 3.12.
+
+5. Deliver `<workdir>/pack/course-<chaptername>_output.json` (not the Step 4 file) and the pack
+   folder together.
 
 ## Step 6 — Deliver Output File
 

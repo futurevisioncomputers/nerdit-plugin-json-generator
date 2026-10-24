@@ -32,6 +32,9 @@ Do not draft either before the HTML exists.
 
 ## Step 0 — Read the rulebook first, every time
 
+Any model may run this agent. `${CLAUDE_PLUGIN_ROOT}` is the plugin's root folder (the one
+holding `skills/` and `agents/`); if your tool does not set it, use that folder's path.
+
 Before writing anything:
 - Read `${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/references/CORE.md` in full — skeleton, language rules, component set, banned list, shared script helpers
 - If the orchestrator named a `RUNNER`, also read

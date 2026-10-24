@@ -13,6 +13,12 @@ description: >
 
 # NERDIT Video Prompts (Veo)
 
+**Any model** (Claude, OpenAI/Codex or another agent) can run this skill: it is these steps plus
+Python scripts. Do the steps in order; `scripts/…` paths are relative to this skill's folder.
+Run every command shown and read its output: a non-zero exit means stop and fix what it prints,
+never skip it. Write the shot lists to the rules below; never invent names or values the
+course does not have.
+
 Scripts live in `scripts/` next to this file. `<dir>` is a new folder next to the course JSON,
 e.g. `<course folder>/video-prompts`. Needs the `nerdit-story-video` and `nerdit-chapter-generator`
 skills beside this one (it reuses their section reader and Title Case), and Playwright Chromium
