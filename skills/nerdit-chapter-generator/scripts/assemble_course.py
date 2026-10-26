@@ -120,6 +120,24 @@ def load_quiz(html_dir, lesson_id):
     return data
 
 
+def course_duration(lesson_durations):
+    """The lessons' total in the site's format: the same rule as the shared formatDuration and
+    parseDurationToSeconds (nerdit/shared/src/utils/durationEstimator.ts), so the plugin, the
+    admin and the site agree. "35m" + "1h 5m" -> "1h 40m"; "30m" + "1h 30m" -> "2h"."""
+    minutes = 0
+    for d in lesson_durations:
+        h, m = re.search(r"(\d+)\s*h", d or "", re.I), re.search(r"(\d+)\s*m", d or "", re.I)
+        if h or m:
+            minutes += int(h.group(1)) * 60 if h else 0
+            minutes += int(m.group(1)) if m else 0
+        elif (d or "").strip().isdigit():
+            minutes += int(d.strip())
+    hours, rest = divmod(minutes, 60)
+    if hours and rest:
+        return f"{hours}h {rest}m"
+    return f"{hours}h" if hours else f"{rest}m"
+
+
 def build_course(chapter, input_lessons, meta, html_dir, now_ms=None):
     now_ms = now_ms if now_ms is not None else int(time.time() * 1000)
     session = batch = now_ms
@@ -161,6 +179,7 @@ def build_course(chapter, input_lessons, meta, html_dir, now_ms=None):
     course["prerequisiteLessons"] = None
     course["assessment"] = {"questions": assessment_qs, "passingScore": 70, "examQuestionCount": 20}
     course["finalAssignment"] = None
+    course["duration"] = course_duration([lesson["duration"] for lesson in lessons])
     course["lessons"] = lessons
     course["lessonIds"] = lesson_ids
     return course

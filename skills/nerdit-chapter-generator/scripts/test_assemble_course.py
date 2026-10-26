@@ -6,7 +6,7 @@ import sys
 import pytest
 
 from assemble_course import (
-    build_course, detect_assets, estimate_duration, doc_size_report, load_quiz,
+    build_course, course_duration, detect_assets, estimate_duration, doc_size_report, load_quiz,
     MAX_DOC_BYTES,
 )
 
@@ -54,7 +54,7 @@ def test_build_course_minimal(tmp_path):
              "lessonQuestions": [_q("lq")] * 3, "assessmentQuestions": [_q("aq")] * 3}]
     c = build_course("demo", inp, meta, str(tmp_path), now_ms=1700000000000)
     assert c["id"] == "course-demo-1700000000000"
-    assert c["hasExam"] is True and c["certificatePrice"] == 999 and c["duration"] == "0h 0m"
+    assert c["hasExam"] is True and c["certificatePrice"] == 999 and c["duration"] == "8m"
     assert c["createdAt"] == c["updatedAt"]
     assert list(c.keys())[:3] == ["id", "title", "description"]  # field order preserved
     assert len(c["lessons"]) == 1 and c["lessons"][0]["content"].startswith("<div")
@@ -270,3 +270,12 @@ def test_cli_still_accepts_meta_flag(tmp_path):
     assert r.returncode == 0, r.stderr
     out = json.loads((tmp_path / "out.json").read_text(encoding="utf-8"))
     assert out["lessons"][0]["questions"][0]["text"] == "m"
+
+
+# The course duration is the lessons' total, in the site's format (shared formatDuration:
+# "1h 40m", "2h", "35m"), so an imported course never shows "0h 0m".
+def test_course_duration_is_the_lessons_total():
+    assert course_duration(["35m", "1h 5m", ""]) == "1h 40m"
+    assert course_duration(["30m", "1h 30m"]) == "2h"
+    assert course_duration(["8m"]) == "8m"
+    assert course_duration([]) == "0m"

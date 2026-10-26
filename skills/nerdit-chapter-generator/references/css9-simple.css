@@ -1742,7 +1742,8 @@
 .nerdit-wrapper .nerdit-spot, .nerdit-wrapper tr.nerdit-spot td { background: var(--blue-bg); }
 .nerdit-wrapper td.nerdit-spot, .nerdit-wrapper tr.nerdit-spot td:first-child { border-left: 3px solid var(--blue); }
 .nerdit-wrapper svg .nerdit-spot { fill: var(--blue-bg); stroke: var(--blue); }
-.nerdit-wrapper .nerdit-data-note { font-size: .78rem; color: var(--tx-m); font-style: italic; margin: .3rem 0 1rem; }
+/* The synthetic-data note stays in the HTML for the plugin's world check but is not shown to learners (owner, 2026-10-26). */
+.nerdit-wrapper .nerdit-data-note { display: none; }
 /* Keep the bin colour while making the tracked record distinct in unit tiles. */
 .nerdit-wrapper .nerdit-tile.nerdit-spot { outline: 2px solid var(--blue); outline-offset: 2px; }
 /* The base flow-text rule overrides SVG fill attributes; keep the active stage readable. */

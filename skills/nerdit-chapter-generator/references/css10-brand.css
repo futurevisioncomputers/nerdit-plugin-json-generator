@@ -120,3 +120,6 @@
   --app-canva-bar: #FFFFFF;  --app-canva-bar-ink: #0E1318;  --app-canva-accent: #8B3DFF;  --app-canva-accent-ink: #FFFFFF;
   --app-canva-surface: #FFFFFF;  --app-canva-soft: #F2F3F5;  --app-canva-ink: #0E1318;
 }
+
+/* The synthetic-data note stays in the HTML for the plugin's world check but is not shown to learners (owner, 2026-10-26). */
+.nerdit-wrapper .nerdit-data-note { display: none; }

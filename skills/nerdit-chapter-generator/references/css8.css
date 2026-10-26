@@ -3400,3 +3400,6 @@ pre[data-lang="js"]::before     { background:#f7df1e; color:#000; }
   .nerdit-hbar-chart  { break-inside: avoid; }
   .nerdit-donut { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* The synthetic-data note stays in the HTML for the plugin's world check but is not shown to learners (owner, 2026-10-26). */
+.nerdit-wrapper .nerdit-data-note { display: none; }
