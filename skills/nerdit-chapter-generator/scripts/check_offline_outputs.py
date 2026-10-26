@@ -149,6 +149,7 @@ def _run_lesson(vpy: Path, lesson: dict, workdir: Path) -> list[str]:
 
 
 def check_course(course: Path, requirements: str, pythons: list[str], workdir: Path) -> dict:
+    workdir = Path(workdir).resolve()   # the driver runs with cwd=<lesson folder>, so paths must be absolute
     lessons = [ls for ls in json.loads(Path(course).read_text(encoding='utf-8'))['lessons']
                if offline_blocks(ls.get('content', ''))]
     report = {'python': None, 'examples': sum(len(offline_blocks(ls['content'])) for ls in lessons),

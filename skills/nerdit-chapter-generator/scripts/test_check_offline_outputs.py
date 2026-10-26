@@ -1,3 +1,4 @@
+from pathlib import Path
 import json
 import sys
 
@@ -39,6 +40,15 @@ def test_matching_offline_outputs_pass_in_a_real_venv(tmp_path):
     if other:
         r311 = co.check_course(c, requirements="", pythons=[other], workdir=tmp_path / "w311")
         assert r311["python"] == "3.11", r311
+
+
+# --workdir given as a relative path: the driver runs with cwd set to the lesson folder, so a
+# driver path built from a relative workdir pointed nowhere and every lesson failed to run.
+def test_a_relative_workdir_runs(tmp_path, monkeypatch):
+    c = course(tmp_path, run_line("print(3)", "3", offline=True))
+    monkeypatch.chdir(tmp_path)
+    report = co.check_course(c, requirements="", pythons=[sys.executable], workdir=Path("w"))
+    assert report["problems"] == [], report
 
 
 def test_changed_output_shown_error_and_warning(tmp_path):
