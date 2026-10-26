@@ -48,9 +48,34 @@ def test_a_thin_concept_section_warns():
     thin = "<section><h2>Records</h2><p>A <strong>record</strong> is one stored item.</p></section>"
     _, warns = check_lesson(lesson(thin), PATS)
     assert any("section 1 has 6 words of explanation" in w for w in warns)
-    full = "<section><h2>Records</h2><p>A <strong>record</strong> is one item.</p>" + "<p>Rows hold data.</p>" * 110
-    _, warns = check_lesson(lesson(full + "</section>"), PATS)
-    assert not any("words of explanation" in w for w in warns)
+    full = "<section><h2>Records</h2><p>A <strong>record</strong> is one item.</p>" + "<p>Rows hold data.</p>" * 50
+    fails, warns = check_lesson(lesson(full + "</section>"), PATS)
+    assert not any("words of explanation" in w for w in warns + fails)
+
+
+# Owner, 2026-10-26: lessons read too long. A concept section explains in 120-220 words;
+# over 220 warns, over 300 fails, so the writer cuts instead of padding.
+def test_a_long_concept_section_warns_then_fails():
+    def section(reps):
+        return lesson("<section><h2>Records</h2><p>A <strong>record</strong> is one item.</p>"
+                      + "<p>Rows hold data.</p>" * reps + "</section>")
+    fails, warns = check_lesson(section(80), PATS)
+    assert any("section 1 has 245 words of explanation; cut to 220" in w for w in warns) and not fails
+    fails, _ = check_lesson(section(110), PATS)
+    assert any("section 1 has 335 words of explanation; at most 300" in f for f in fails)
+
+
+# Code first: a section with a run block shows it after at most 3 paragraphs.
+def test_code_comes_after_at_most_three_paragraphs():
+    run = '<div class="nerdit-run"><div class="nerdit-in"><pre data-lang="python"><code>print(1)</code></pre></div></div>'
+    def section(paras):
+        return lesson("<section><h2>Records</h2><p>A <strong>record</strong> is one item.</p>"
+                      + "<p>Rows hold data.</p>" * (paras - 1) + run + "</section>")
+    fails, _ = check_lesson(section(3), PATS)
+    assert not any("before its first code" in f for f in fails)
+    fails, _ = check_lesson(section(4), PATS)
+    assert any("section 1 has 4 paragraphs before its first code block; show the code by paragraph 3" in f
+               for f in fails)
 
 
 def test_at_most_three_key_terms_per_section_and_labels_do_not_count():

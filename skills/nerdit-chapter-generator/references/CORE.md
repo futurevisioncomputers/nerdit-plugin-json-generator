@@ -22,15 +22,17 @@ and injects the fragment into an inner-HTML region.
 1. **One idea per section.** Each `<h2>` section teaches exactly one concept. Never two.
 2. **3–5 concepts per lesson.** Bigger topic = the orchestrator splits it into more lessons.
    Never cram.
-3. **Explain, then show.** Open each concept with the idea itself: what it is, the problem it
-   solves, how it works and when to use it. Then apply it to the course world's case study,
-   then the code with its output. Explain in short, plain sentences; a learner should
-   understand the idea before the first example, not decode it from the example.
+3. **Name the idea, then show the code early.** Open each concept with the idea in 2–3
+   sentences: what it is and the problem it solves. Then the code with its output, by the
+   section's third paragraph, then a code walk that explains its new lines. A learner sees
+   the idea at work instead of reading about it for a screen first (owner, 2026-10-26).
 4. **Every code block shows its output.** No exceptions. A learner must be able to verify
    understanding without running anything.
 5. **Simple language, full explanation.** Sentences ≤ 20 words. Paragraphs ≤ 4 sentences.
-   Grade 7–8 vocabulary. Second person ("You use `WHERE` to filter rows."). Short sentences,
-   but enough of them: each concept section has 300–450 words of prose.
+   Grade 7–8 vocabulary. Second person ("You use `WHERE` to filter rows."). Each concept
+   section has 120–220 words of prose (`check_prose.py` warns over 220, fails over 300). Say
+   each idea once: not again in the reading steps and the Try It. Name the case company,
+   person and starting records once per course; install and run steps once per lesson.
 6. **Visuals must teach.** A diagram appears only when it explains structure, flow, or
    overlap. Decoration is banned (see §7).
 7. **Practice inside the lesson.** Every concept ends with a small "Try It" task. The
@@ -67,15 +69,15 @@ and injects the fragment into an inner-HTML region.
 
   <section>                                      ← CONCEPT 1
     <h2>1 — Concept Name</h2>
-    [explain: 3–5 sentences — what the idea is and the problem it solves; its key word in <strong> in this first paragraph (a one-sentence question may come before it)]
-    [how it works: a mapping or figure (§7) + 2–4 sentences on the mechanism]
-    [read the figure: 2–4 numbered steps whose numbers ① ② ③ match markers in the figure]
-    [when to use it: 2–3 sentences — when you need it, when you don't, the trade-off]
-    [analogy line — optional, 1 sentence]
-    [case study: the same idea on the course world's records (§5), using only the rows this concept needs]
+    [explain: 2–3 sentences — what the idea is and the problem it solves; its key word in <strong> in this first paragraph (a one-sentence question may come before it)]
+    [case: one sentence — which of the course world's records (§5) this example uses]
+    [worked example: run line(s), by the section's 3rd paragraph — 1–2 sentences each: what to notice]
+    [code walk: <ol class="nerdit-codewalk">, 2–4 steps; each <li> starts with one whole code line in <code>, copied exactly, then what it does]
+    [how it works: a mapping or figure (§7) only when the code alone cannot show the structure, + its ① ② ③ reading steps]
+    [when to use it: 1 sentence or a tip — when you need it, when you don't]
     [syntax box — if the concept has syntax]
-    [worked example: run line(s) — 2–3 sentences each: what the code does, what to notice, why the output follows]
     [ONE callout max — only if there is a real gotcha]
+    [Go deeper — optional <details class="nerdit-deeper"><summary>Go deeper</summary>…</details> for standards and production notes]
     [Try It block — practises this concept, not a neighbouring one]
   </section>
 

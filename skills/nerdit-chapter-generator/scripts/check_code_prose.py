@@ -75,10 +75,14 @@ def check_lesson(content: str) -> list[str]:
     corpus = _squash(' '.join(text_of(n) for n in tree.all
                               if n.tag in ('pre', 'textarea') or (n.tag == 'script' and n.attrs.get('type') == 'text/plain')))
     fails, section, outputs = [], 'opening', {}
-    sections = []
+    sections, lines, walks = [], {}, []
     for node in tree.all:
         if node.tag == 'h2':
             section = _squash(text_of(node))
+        elif node.tag == 'pre' and not _skipped(node.parent):
+            lines.setdefault(section, set()).update(_squash(ln) for ln in text_of(node).splitlines() if ln.strip())
+        elif node.tag == 'ol' and 'nerdit-codewalk' in node.classes:
+            walks.append((section, node))
         elif 'nerdit-out' in node.classes or 'nerdit-answer' in node.classes:
             outputs[section] = outputs.get(section, '') + ' ' + text_of(node)
         elif node.tag in ('p', 'li') and not _skipped(node) and not _has_prose_parent(node):
@@ -97,6 +101,12 @@ def check_lesson(content: str) -> list[str]:
             value = number.replace(',', '').rstrip('.')
             if not re.search(rf'(?<![\d.]){re.escape(value)}(?!\d)', shown):
                 fails.append(f'{section}: the prose says the code gives {number}, but its shown output does not')
+    for section, walk in walks:  # each step quotes one whole line of its section's code
+        for step in (c for c in walk.children if c.tag == 'li'):
+            quoted = next((c for c in step.children if c.tag == 'code'), None)
+            token = _squash(text_of(quoted)) if quoted is not None else ''
+            if token not in lines.get(section, set()):
+                fails.append(f"{section}: code walk step `{token}` is not a whole line of this section's code")
     return fails
 
 

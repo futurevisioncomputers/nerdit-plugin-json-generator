@@ -103,14 +103,27 @@ The rulebook is authoritative; these are the spine (violating any = rejected by 
 - **No tick lists.** There is no "what you will learn" opener and no "what you learned"
   recap. The numbered section headings carry the contents while the learner reads, and
   the cheatsheet table carries it afterwards. Emitting either is rejected.
-- **One concept per section, explained first.** Explain (3–5 sentences: what it is, the
-  problem it solves, its `<strong>` key word in the first paragraph) → how it works (mapping or
-  figure + 2–4 sentences, numbered reading steps) → when to use it and when not (2–3
-  sentences) → case study on the course world's records → syntax box if syntax exists →
-  worked **run line(s)** → ≤1 callout → one Try It block. Never open a section with a story.
-- **Teaching sequence (CORE.md §2):** explain → how it works → when to use it → case study →
-  worked example → practice, using only the rows the concept needs. 300–450 words of prose
-  per concept section.
+- **One concept per section, short and code first** (owner, 2026-10-26: lessons read too long).
+  Explain in 2–3 sentences (what it is, the problem it solves, its `<strong>` key word in the
+  first paragraph) → one sentence of case setup on the course world's records → the worked
+  **run line** → a **code walk** for its key lines → when to use it and when not, in one
+  sentence or a tip → ≤1 callout → one Try It block. A section with a run line shows it by its
+  third paragraph (`check_prose.py` fails a fourth paragraph before the code). Never open a
+  section with a story.
+- **Teaching sequence (CORE.md §2):** explain → code → code walk → when to use it → practice,
+  using only the rows the concept needs. **120–220 words of prose per concept section**;
+  over 220 warns and over 300 fails. Cut instead of padding: one idea is said once, not again
+  in the reading steps and the Try It. Advanced asides (standards, production setup) go in a
+  `<details class="nerdit-deeper"><summary>Go deeper</summary>…</details>`.
+- **Code walk, not code paragraphs.** Right after a run line, explain its new lines as
+  `<ol class="nerdit-codewalk"><li><code>exact line</code> what it does.</li>…</ol>`, 2–4 steps.
+  Each step's `<code>` is one whole line of that section's code, copied exactly
+  (`check_code_prose.py` fails anything else). Never put markers inside the code: the runners
+  execute it. Explain a line once; when it returns later, say "from section 1" instead.
+- **Course setup once.** Name the case company, the person and the starting records once,
+  in the first lesson or its overview; later lessons refer back in one clause. Say how to
+  install or run the code once per lesson, not once per section. Reuse one app object or
+  one set of records per lesson rather than rebuilding them with a paragraph per section.
 - **Figures come from the lesson's data.** Every label, key, name, date and amount in a figure
   appears in the section or its seed. Number the parts and write matching ① ② ③ reading steps.
 - **Headings match code; practice matches the concept** (CORE.md §2 teaching rules, §4c).

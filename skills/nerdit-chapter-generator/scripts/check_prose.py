@@ -27,7 +27,10 @@ MAX_WORDS = 20
 MAX_SENTENCES = 4
 MAX_DASHES = 1
 MAX_NEW_TERMS = 3        # key terms (<strong>) one concept section may introduce
-MIN_SECTION_WORDS = 300  # prose a concept section needs to explain what, how, when and the case
+MIN_SECTION_WORDS = 120  # prose a concept section needs: what it is, how the code shows it, the case
+MAX_SECTION_WORDS = 220  # above this warns: cut, do not pad (owner, 2026-10-26: lessons read too long)
+FAIL_SECTION_WORDS = 300 # above this fails
+MAX_PARAS_BEFORE_CODE = 3  # a section with a run block shows its code by its third paragraph
 
 
 def banned_patterns(path: Path = VOICE) -> list[tuple[str, re.Pattern]]:
@@ -98,6 +101,17 @@ def _first_paragraph(sec: Node) -> Node | None:
     return paras[0] if paras else None
 
 
+def _paragraphs_before_code(sec: Node) -> int | None:
+    """Prose paragraphs before the section's first run block, or None when it has no run block."""
+    count = 0
+    for n in _in_order(sec):
+        if "nerdit-run" in n.classes:
+            return count
+        if n.tag == "p" and not _inside(n, SKIP):
+            count += 1
+    return None
+
+
 def check_lesson(content: str, patterns) -> tuple[list[str], list[str]]:
     """(failures, warnings) for one lesson's HTML."""
     tree = parse(content)
@@ -135,8 +149,18 @@ def check_lesson(content: str, patterns) -> tuple[list[str], list[str]]:
         words = sum(len(prose(n).split()) for n in _in_order(sec)
                     if n.tag in ("p", "li") and not _inside(n, SKIP))
         if words < MIN_SECTION_WORDS:
-            warns.append(f"section {n_sec} has {words} words of explanation; aim for {MIN_SECTION_WORDS}-450: "
-                         "what it is, how it works, when to use it, then the case study")
+            warns.append(f"section {n_sec} has {words} words of explanation; aim for "
+                         f"{MIN_SECTION_WORDS}-{MAX_SECTION_WORDS}: what it is, the code, then the case")
+        elif words > FAIL_SECTION_WORDS:
+            fails.append(f"section {n_sec} has {words} words of explanation; at most {FAIL_SECTION_WORDS} "
+                         f"(aim for {MIN_SECTION_WORDS}-{MAX_SECTION_WORDS}): show the code earlier and "
+                         "explain its lines in a code walk instead of paragraphs")
+        elif words > MAX_SECTION_WORDS:
+            warns.append(f"section {n_sec} has {words} words of explanation; cut to {MAX_SECTION_WORDS}")
+        before = _paragraphs_before_code(sec)
+        if before is not None and before > MAX_PARAS_BEFORE_CODE:
+            fails.append(f"section {n_sec} has {before} paragraphs before its first code block; show the code "
+                         f"by paragraph {MAX_PARAS_BEFORE_CODE}, then explain it")
     if len(openers) >= 3 and len(set(openers)) == 1:
         warns.append(f'every concept section opens with the same words ("{openers[0]}"); vary the openings')
 

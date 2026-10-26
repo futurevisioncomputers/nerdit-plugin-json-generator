@@ -335,6 +335,85 @@
   border-top: 0;
 }
 
+/* Code walk: explains a run block line by line, right after it. Each step quotes one whole line
+   in <code> (check_code_prose.py checks it is on the page); markers never go inside the code,
+   because the runners execute the code text. */
+.nerdit-codewalk {
+  list-style: none;
+  counter-reset: walk;
+  margin: .4rem 0 1.4rem !important;
+  padding: .6rem .9rem !important;
+  background: var(--bg-soft);
+  border: 1px solid var(--bd);
+  border-radius: var(--r);
+}
+
+.nerdit-codewalk::before {
+  content: "What each line does";
+  display: block;
+  margin-bottom: .2rem;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--nb);
+}
+
+.nerdit-codewalk li {
+  counter-increment: walk;
+  position: relative;
+  margin: 0;
+  padding: .45rem 0 .45rem 2rem;
+  font-size: 14.5px;
+  line-height: 1.5;
+  border-top: 1px dashed var(--bd);
+}
+
+.nerdit-codewalk li:first-child {
+  border-top: 0;
+}
+
+.nerdit-codewalk li::before {
+  content: counter(walk);
+  position: absolute;
+  left: 0;
+  top: .5rem;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  background: var(--nb);
+  color: var(--white);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4rem;
+  text-align: center;
+}
+
+.nerdit-codewalk li > code:first-child {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  overflow-x: auto;
+  margin-bottom: .2rem;
+  font-family: var(--font-code);
+  white-space: pre;
+}
+
+/* Go deeper: optional standards and production notes, closed by default so beginners can skip. */
+.nerdit-wrapper .nerdit-deeper {
+  margin: .6rem 0 1.2rem;
+  padding: .5rem .9rem;
+  border: 1px dashed var(--bd);
+  border-radius: var(--r);
+}
+
+.nerdit-wrapper .nerdit-deeper > summary {
+  cursor: pointer;
+  font-size: .88rem;
+  font-weight: 700;
+  color: var(--nb);
+}
+
 /* Comparison boxes: two columns only when the lesson column has room for both (css8 switched on
    the window width, so a narrow lesson beside a sidebar overflowed), and long code scrolls
    inside its box instead of widening the grid. */

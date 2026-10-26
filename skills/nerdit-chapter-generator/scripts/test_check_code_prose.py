@@ -50,3 +50,18 @@ def test_cli(tmp_path):
     path = tmp_path / 'c.json'
     path.write_text(json.dumps(course), encoding='utf-8')
     assert cp.main(['--course', str(path)]) == 1
+
+
+# A code walk explains a run block line by line. Each step quotes one whole line of that
+# section's code, so the walk can never describe code the learner cannot see.
+def test_a_code_walk_quotes_whole_lines_of_its_sections_code():
+    code = 'app = Flask(__name__)\n@app.get("/products/1")\ndef product():\n    return {"id": 1}'
+    walk = ('<ol class="nerdit-codewalk"><li><code>@app.get("/products/1")</code> registers the function.</li>'
+            '<li><code>return {"id": 1}</code> becomes the JSON body.</li></ol>')
+    html = section('1 — Routes', '<p>A route.</p>', code, '200') .replace('</section>', walk + '</section>')
+    assert cp.check_lesson(html) == []
+    bad = html.replace('<code>return {"id": 1}</code>', '<code>return {"id": 2}</code>')
+    fails = cp.check_lesson(bad)
+    assert any('code walk' in f and 'return {"id": 2}' in f and '1 — Routes' in f for f in fails), fails
+    part = html.replace('<code>@app.get("/products/1")</code>', '<code>@app.get</code>')
+    assert any('code walk' in f and '`@app.get`' in f for f in cp.check_lesson(part))
