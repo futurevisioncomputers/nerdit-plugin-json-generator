@@ -520,3 +520,14 @@ def test_stage_draws_the_practise_card():
     tl = timeline.build(plan, clips, {("l1", 1): {"tryIt": "Try It: x", "pack": "Pack: L01-practice-starter.ipynb, Task 1"}})
     page = stage.build_stage(plan, tl, ["<svg></svg>"], "")
     assert "Now practise" in page and "Pack: L01-practice-starter.ipynb, Task 1" in page
+
+
+# ffmpeg reads concat-list entries relative to the list file, so a relative --images-dir made
+# images/video/parts/parts/v00.mp4 and the build failed. The list holds absolute paths.
+def test_concat_listing_holds_absolute_paths(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    parts_dir = Path("images/video/parts")
+    parts_dir.mkdir(parents=True)
+    listing = render.concat_listing([str(parts_dir / "v00.mp4"), str(parts_dir / "v01.mp4")], parts_dir)
+    lines = listing.read_text(encoding="utf-8").splitlines()
+    assert lines == [f"file '{(tmp_path / parts_dir / n).as_posix()}'" for n in ("v00.mp4", "v01.mp4")]

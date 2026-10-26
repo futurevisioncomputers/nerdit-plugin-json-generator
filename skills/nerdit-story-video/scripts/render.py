@@ -65,6 +65,14 @@ def render_part(job: tuple) -> str:
     return out
 
 
+def concat_listing(parts: list[str], parts_dir: Path) -> Path:
+    """The ffmpeg concat list. ffmpeg reads each entry relative to the list file, so the entries
+    are absolute: a relative --images-dir would otherwise point at parts/parts/v00.mp4."""
+    listing = parts_dir / "video-list.txt"
+    listing.write_text("".join(f"file '{Path(p).resolve().as_posix()}'\n" for p in parts), encoding="utf-8")
+    return listing
+
+
 def render(html: Path, duration: float, fps: int, workers: int, out: Path, ff: str, runner=subprocess.run) -> Path:
     exe = chromium()
     total = math.ceil(duration * fps)
@@ -74,8 +82,7 @@ def render(html: Path, duration: float, fps: int, workers: int, out: Path, ff: s
             for n, (a, b) in enumerate(frame_ranges(total, workers))]
     with ProcessPoolExecutor(max_workers=len(jobs)) as pool:
         parts = list(pool.map(render_part, jobs))
-    listing = parts_dir / "video-list.txt"
-    listing.write_text("".join(f"file '{Path(p).as_posix()}'\n" for p in parts), encoding="utf-8")
+    listing = concat_listing(parts, parts_dir)
     runner([ff, "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(listing), "-c", "copy",
             str(out)], check=True)
     return out

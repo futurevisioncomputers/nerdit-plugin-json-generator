@@ -142,6 +142,7 @@ def scene_svgs(plan: dict, vid: Path, figures: dict, parts: dict | None = None) 
 
 
 def build(images_dir: Path, workers: int = 3, music: Path | None = None) -> Path:
+    images_dir = Path(images_dir).resolve()
     import imageio_ffmpeg
     ff = imageio_ffmpeg.get_ffmpeg_exe()
     vid = images_dir / "video"
