@@ -88,6 +88,15 @@ def test_check_capstone_passes_a_good_project(tmp_path):
     assert report['milestones'] == ['M1', 'M2', 'final']
 
 
+# --dir given as a relative path: pytest runs with cwd set to the project, so a test path
+# built from a relative root pointed nowhere and every milestone failed with exit 4.
+def test_check_capstone_accepts_a_relative_dir(tmp_path, monkeypatch):
+    out = written(tmp_path, project(tmp_path))
+    monkeypatch.chdir(tmp_path)
+    report = cc.check(out.relative_to(tmp_path), python=sys.executable)
+    assert report['problems'] == [], report
+
+
 def test_milestone_test_passing_on_the_starter_fails(tmp_path):
     lazy = {'test_m1_load.py': TEST_M1, 'test_m2_total.py': 'def test_nothing():\n    assert True\n',
             'test_final_report.py': TEST_FINAL}

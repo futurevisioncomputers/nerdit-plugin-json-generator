@@ -238,7 +238,7 @@ def mutation(root: Path, python: str = sys.executable) -> dict:
 
 
 def check(root: Path, python: str = sys.executable, mutate: bool = True) -> dict:
-    root = Path(root)
+    root = Path(root).resolve()   # pytest runs with cwd=root, so test paths must be absolute
     problems = []
     marked = []
     for path in sorted((root / 'solution').rglob('*.py')):

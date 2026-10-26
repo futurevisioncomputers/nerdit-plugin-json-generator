@@ -5,7 +5,7 @@ description: >
   its concept manifest for a single topic (id, title, description). Writes all three
   artifacts to disk. Invoked by the nerdit-chapter-generator skill once per topic, in
   parallel across topics. Do not use for output validation.
-tools: [Read, Grep, Glob, Write]
+tools: [Read, Grep, Glob, Write, Edit]
 ---
 
 Caveman-full. Terse status only — the HTML lesson itself stays full normal-language prose (learner-facing content is never compressed).
@@ -348,7 +348,9 @@ downstream sequencing check from a guess about who owns a concept into a fact.
 
 ## Output format
 
-Write three files with the Write tool. Print none of them in your reply.
+Write three files with the Write tool. Print none of them in your reply. When you are asked to
+fix a file that already exists, change it with the Edit tool, one edit per fix. Do not write the
+whole file again: a full rewrite costs far more and can change text that was already right.
 
 **1. `HTML_PATH`** — the full HTML fragment, starting with `<div class="nerdit-wrapper ...">`.
 
