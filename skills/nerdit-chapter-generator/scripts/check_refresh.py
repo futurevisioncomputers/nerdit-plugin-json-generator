@@ -2,7 +2,7 @@
 """Guard a refresh: only what the chosen modes allow may change (writer refresh mode).
 
     python check_refresh.py --before-dir <dir> --after-dir <dir> --id <lesson-id>
-                            --modes figures[,sql-layout][,trim]
+                            --modes figures[,sql-layout][,trim][,concise]
 
 Compares <id>.html, <id>.quiz.json and <id>.concepts.json between the two folders.
   figures    - figures, their reading steps, visual blocks, screen and scene specs and bare images
@@ -10,7 +10,10 @@ Compares <id>.html, <id>.quiz.json and <id>.concepts.json between the two folder
   sql-layout - code may change in whitespace only
   trim       - code, outputs, seeds, run-line headings and their leads may change; it may move
                tables and rows into the seed, never a view, trigger or computed table
-Prose, the quiz and the concept manifest (except its `visuals` list) never change.
+  concise    - prose and run-line leads may change (shorter text, code walks, Go deeper boxes);
+               every code block, output and seed stays exactly as it was (owner, 2026-10-26)
+Without 'concise', prose never changes. The quiz and the concept manifest (except its `visuals`
+list) never change.
 Exit 0 = only allowed changes, 1 = something else changed, 2 = bad mode or missing file. Stdlib only.
 """
 from __future__ import annotations
@@ -23,7 +26,7 @@ from pathlib import Path
 
 from verify_course import Node, descends_from, parse, text_of
 
-MODES = {"figures", "sql-layout", "trim"}
+MODES = {"figures", "sql-layout", "trim", "concise"}
 CIRCLED = "①②③④⑤⑥⑦⑧⑨⑩"
 PUNCT = set("(),;=<>|+-*/")
 KEYS = ("prose", "figures", "maps", "code", "outputs", "seeds", "runheads")
@@ -179,7 +182,8 @@ def compare(before: dict, after: dict, modes: set[str]) -> list[str]:
         now = b[i][:70] if i < len(b) else "(nothing)"
         problems.append(f"{key} item {i + 1} changed ({why}): was {was!r}, now {now!r}")
 
-    diff("prose", "prose never changes in a refresh")
+    if "concise" not in modes:
+        diff("prose", "prose never changes in a refresh without 'concise'")
     if "figures" in modes:
         added = [m for m in after["maps"] if m not in before["maps"]]
         if added:
@@ -188,7 +192,7 @@ def compare(before: dict, after: dict, modes: set[str]) -> list[str]:
         diff("figures", "needs the 'figures' mode")
         diff("maps", "needs the 'figures' mode")
     if "trim" not in modes:
-        for key in ("outputs", "seeds", "runheads"):
+        for key in ("outputs", "seeds") if "concise" in modes else ("outputs", "seeds", "runheads"):
             diff(key, "needs the 'trim' mode")
         if "sql-layout" in modes:
             a = [sql_key(c) for c in before["code"]]
@@ -229,7 +233,7 @@ def main() -> int:
     ap.add_argument("--before-dir", required=True)
     ap.add_argument("--after-dir", required=True)
     ap.add_argument("--id", required=True)
-    ap.add_argument("--modes", required=True, help="comma list of figures, sql-layout, trim")
+    ap.add_argument("--modes", required=True, help="comma list of figures, sql-layout, trim, concise")
     args = ap.parse_args()
     modes = {m.strip() for m in args.modes.split(",") if m.strip()}
     try:

@@ -272,7 +272,7 @@ Do not alter existing course records to match a new sample world.
 ## Refresh mode (optional — improving a finished lesson)
 
 If the orchestrator passes `SOURCE_PATH` **and** `REFRESH` (a list from `figures`, `sql-layout`,
-`trim`), you are not rewriting the lesson. Copy `SOURCE_PATH` and change only what `REFRESH` names:
+`trim`, `concise`), you are not rewriting the lesson. Copy `SOURCE_PATH` and change only what `REFRESH` names:
 
 - `figures` — redraw figures that break figures.md R10–R13 or have a better template, with their
   captions and reading steps. Remove a text map (`nerdit-map`) a figure now covers; never keep
@@ -294,8 +294,16 @@ If the orchestrator passes `SOURCE_PATH` **and** `REFRESH` (a list from `figures
   keep it and accept the density warning. Every shown output must still be exactly what SQLite returns. A
   run-line heading and its one-sentence lead may change to match. The lead names only what the
   shown code does, and does not say "view" or "helper" before the course has taught views.
+- `concise` — shorten the prose to this file's section rules: 120–220 words per concept section,
+  the run line by the section's third paragraph, a code walk (`ol.nerdit-codewalk`) after each
+  run line, each idea said once, the course setup said once, standards and production asides
+  moved into a Go deeper box. Move the run line up instead of rewriting it. Every fact, number
+  and name you keep must already be in the source; drop sentences, never invent new ones. Every
+  code block, output and seed stays character for character; run-line leads and Try It
+  prompts may be shortened. Keep the Try It answers true to the unchanged code. Use Edit on the
+  copied file, one edit per change.
 
-Everything else stays exactly as it is: headings, prose, Try It prompts, the cheat sheet, the
+Everything else stays exactly as it is: headings, prose (unless `concise`), Try It prompts, the cheat sheet, the
 quiz file and the concept manifest (except its `visuals` list). `check_refresh.py` compares your
 files with the originals and rejects any other change. Write the quiz and concept files back
 unchanged.

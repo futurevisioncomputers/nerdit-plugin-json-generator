@@ -185,11 +185,13 @@ For a brand-new course (no old JSON), skip this section and start at Step 1.
 
 ## Refreshing a finished course (optional — refresh mode)
 
-To improve finished lessons without rewriting them (new figures, SQL layout, less code):
+To improve finished lessons without rewriting them (new figures, SQL layout, less code, or
+shorter prose with code walks — `concise`, which never changes code, outputs or seeds):
 
 1. Copy each lesson's three files into `<workdir>/_before/`.
 2. Run one `nerdit-lesson-writer` at a time with `SOURCE_PATH = <workdir>/_before/<id>.html`,
-   `REFRESH = figures[,sql-layout][,trim]` and the usual `HTML_PATH`, `QUIZ_PATH` and `CONCEPTS_PATH`.
+   `REFRESH = figures[,sql-layout][,trim][,concise]` and the usual `HTML_PATH`, `QUIZ_PATH` and
+   `CONCEPTS_PATH`. Pass the same list to `gate_lesson.py --modes`.
 3. Draw the lesson's screens (figures.md §16), then gate it:
 
        python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/render_screens.py" --dir <workdir> --id <id>

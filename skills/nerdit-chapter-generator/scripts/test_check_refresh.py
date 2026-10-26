@@ -180,3 +180,18 @@ def test_figures_mode_may_add_a_scene_spec():
     after = BASE.replace("<p>Spaces hide inside text.</p>", "<p>Spaces hide inside text.</p>" + scene)
     assert compare(p(BASE), p(after), {"figures"}) == []
     assert compare(p(BASE), p(after), {"trim"})
+
+
+# Owner, 2026-10-26: lessons read too long. 'concise' shortens the prose and run-line leads and
+# adds code walks, while every code block, output and seed stays exactly as it was.
+def test_concise_mode_changes_prose_but_never_code_outputs_or_seeds():
+    walk = ('<ol class="nerdit-codewalk"><li><code>SELECT TRIM(customer),amount FROM staged;</code> '
+            'trims each name.</li></ol>')
+    after = (BASE.replace("Spaces hide inside text.", "Spaces hide.")
+                 .replace("<p>TRIM cleans each name.</p>", "<p>Notice the names.</p>")
+                 .replace("</div></div><script", "</div></div>" + walk + "<script"))
+    assert compare(p(BASE), p(after), {"concise"}) == []
+    code = after.replace("FROM staged;</code></pre>", "FROM staged LIMIT 1;</code></pre>")
+    assert any(x.startswith("code") for x in compare(p(BASE), p(code), {"concise"}))
+    out = after.replace("| Aarav | 10 |", "| Aarav | 11 |")
+    assert any(x.startswith("outputs") for x in compare(p(BASE), p(out), {"concise"}))
