@@ -47,8 +47,13 @@ present). Keys, in the user's environment only, never in a plan or a message:
      row or column out loud as it lights up, following the page's reading steps.
    - **code** scenes show the section's own code (`code: 1` = its first) typed line by line,
      then the output the lesson prints. `highlight: ["line:3"]` marks the line the narration
-     explains. Read the key line and the output aloud: "print(enquiry["branch"]) Citylight
-     देता है".
+     explains; the scaffold pre-fills it from the page's code walk (`ol.nerdit-codewalk`), so
+     the clip explains the same lines the page does. Explain code the way the page's code walk
+     does: read each highlighted line in backticks, then say what it does, then read the output:
+     "`@app.get("/products/1")` registers the function for GET requests. The output is 200."
+     Code in backticks is spoken as a teacher reads it (`pronounce.py`: "at app dot get slash
+     products slash one"; quotes and brackets silent, `==` "is equal to"); the screen keeps the
+     real code. Never spell symbols out yourself.
    - Every key term the section bolds is spoken in its clip; each clip has at least 3 scenes and
      180 words. A section that needs no video goes in `skipTopics` with a `reason`.
    - **Explain with visuals, not people.** Most scenes are `vector`: an animated SVG you write
@@ -72,16 +77,20 @@ present). Keys, in the user's environment only, never in a plan or a message:
      Use B-roll to open a topic, never to explain it.
    - Characters and quizzes are not used in the video.
    - **narration**: 2–6 short sentences (at most 550 characters) for a first-time learner, professional instructor tone,
-     not storytelling: the concept first, then the course example. Hinglish the way a good Indian
-     teacher speaks it: correct Hindi grammar and Hindi verbs (खड़ी होकर, शुरू होने के बाद,
-     check करें), English for technical terms and key nouns. Never force an English verb into
-     Hindi grammar ("stand करके"). At least 30% English words. Only the lesson's facts; any
-     number spoken must appear in that lesson. Say each `terms` entry out loud (1–3 per scene).
+     not storytelling: the concept first, then the course example. The plan's `language` sets
+     the style (owner, 2026-10-26): **`en-IN` (default)** is natural Indian English, the way a
+     friendly Indian instructor talks in class: short spoken sentences, contractions ("you'll",
+     "it's"), "so", "now", "notice", at most a few Hindi words; at least 80% English words.
+     **`hi`** is Hinglish the way a good Indian teacher speaks it: correct Hindi grammar and
+     Hindi verbs (खड़ी होकर, शुरू होने के बाद, check करें), English for technical terms and key
+     nouns, never an English verb forced into Hindi grammar ("stand करके"); at least 30% English
+     words. Only the lesson's facts; any number spoken must appear in that lesson. Say each
+     `terms` entry out loud (1–3 per scene).
    - **keyIdea** (≤ 90 chars, English) is the on-screen takeaway; there are no captions.
    - **focus** (optional, up to 4, not on B-roll): `{x, y, zoom, at}` with x, y 0–1 across the
      box, zoom 1–2.5, `at` a spoken word. End with `zoom: 1` to show the whole.
    - **myth** on 1–3 scenes where the misconception is the lesson: `wrong`, `right` (≤ 80 chars)
-     and a Hinglish `narration` saying both.
+     and a `narration` saying both, in the plan's language.
    - **intro** `points` (2–4) and `narration`; **recap** `points` (3–5) and `narration`.
 - **practise** (one entry per topic, scaffolded): every topic clip ends with a 4-second
   "Now practise" card, so the learner reads, watches, then practises the same idea at once.
@@ -95,8 +104,9 @@ present). Keys, in the user's environment only, never in a plan or a message:
 ## 2. Voice and B-roll
 
 - `python scripts/voice.py --images-dir <images>`: Google Chirp 3 HD, `voice.name` default
-  `hi-IN-Chirp3-HD-Aoede`, `voice.rate` 1.0. `python scripts/voice.py --list-voices hi-IN` lists
-  the alternatives; try two or three and keep the one the owner prefers.
+  `en-IN-Chirp3-HD-Aoede` (a `hi` plan uses `hi-IN-Chirp3-HD-Aoede`), `voice.rate` 1.0.
+  `python scripts/voice.py --list-voices en-IN` lists the alternatives; try two or three and
+  keep the one the owner prefers.
   Google and edge voices speak code words respelled from `scripts/pronunciation.json` (JSON →
   Jason, dict → dictionary, json.dumps → Jason dot dumps; snake_case, dotted names, camelCase and
   acronyms are handled by `scripts/pronounce.py`). Only the audio changes; the screen keeps the real

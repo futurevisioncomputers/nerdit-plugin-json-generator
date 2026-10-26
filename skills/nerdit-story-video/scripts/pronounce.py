@@ -10,6 +10,10 @@ Words come from pronunciation.json next to this file. A word not listed there is
     PRICES        -> a longer one with a vowel is read as a word
 Every number is said in English words, so a Hindi voice never reads digits in Hindi:
     2,000 -> two thousand · 2.0 -> two point zero · 30% -> thirty percent · M12 -> M twelve
+Code the narration writes in backticks is read the way a teacher says it, never symbol by symbol:
+    `@app.get("/products/1")` -> at app dot get slash products slash one
+    `response.json["name"]`   -> response dot Jason, name
+    `if pid == 2:`            -> if pid is equal to two
 """
 import json, re
 from functools import lru_cache
@@ -91,7 +95,24 @@ def name(token: str, lex: dict) -> str:
     return word(token, lex)
 
 
+CODE_SPAN = re.compile(r"`([^`]+)`")
+# Operators said as words; every other symbol is dropped (quotes, brackets, colons, commas).
+CODE_WORDS = (("==", " is equal to "), ("!=", " is not equal to "), (">=", " at least "), ("<=", " at most "),
+              ("->", " returns "), ("=", " equals "), ("@", " at "), ("/", " slash "), ("+", " plus "))
+
+
+def code_speech(code: str) -> str:
+    """One code span as a teacher reads it aloud: operators as words, other symbols silent."""
+    for sym, said in CODE_WORDS:
+        code = code.replace(sym, said)
+    code = code.replace("[", " INDEXSTEP ")                 # an index reads as a pause: json, name
+    code = re.sub(r"[\"'(){}<>:;,\]]", " ", code)
+    code = " ".join(code.split()).replace(" INDEXSTEP ", ", ").replace("INDEXSTEP", "")
+    return code.strip(" ,")
+
+
 def spoken(text: str, lex: dict | None = None) -> str:
     """The narration as the voice should say it."""
     lex = lexicon() if lex is None else lex
+    text = CODE_SPAN.sub(lambda m: code_speech(m.group(1)), text)
     return NUMBER.sub(number, TOKEN.sub(lambda m: name(m.group(0), lex), text))

@@ -27,7 +27,8 @@ def test_section_parts_come_from_the_page():
     assert p["heading"] == "an observation becomes a record"
     assert p["tables"] == [{"title": "Six enquiries", "head": ["enquiry_id", "branch"],
                             "rows": [["E1", "Citylight"], ["E2", "Pal"]], "spot": [1]}]
-    assert p["runs"] == [{"code": 'e = {"branch": "Pal"}\nprint(e["branch"])', "output": "Pal", "outLabel": "Python shows"}]
+    assert p["runs"] == [{"code": 'e = {"branch": "Pal"}\nprint(e["branch"])', "output": "Pal", "outLabel": "Python shows",
+                          "walk": [], "notes": []}]
     assert p["terms"] == ["record", "column"]            # "Tip:" is a label, not a term
     assert lessonparts.numbered_topics(SECTION) == [1, 2]
     assert lessonparts.section_parts(SECTION, 9) is None
@@ -106,3 +107,27 @@ def test_table_and_code_scenes_must_point_at_the_page(tmp_path):
     assert storyplan.part_of(good, parts)["output"] == "Pal"
     assert storyplan.part_of({**good, "code": 2}, parts) is None
     assert storyplan.part_of({"kind": "table", "lessonId": "l1", "topic": 2, "table": 1}, parts) is None
+
+
+# The page's code walk names the lines that matter, so a code scene starts with those lines
+# highlighted; a "Go deeper" box is optional reading and never enters the video.
+WALKED = SECTION.replace('<p>after</p>', '<ol class="nerdit-codewalk"><li><code>print(e["branch"])</code> '
+                         'prints the branch.</li></ol><p>after</p><details class="nerdit-deeper"><summary>Go deeper'
+                         '</summary><p>A <strong>hash map</strong> stores keys.</p></details>')
+
+
+def test_code_walk_lines_become_the_run_highlight_and_go_deeper_is_left_out():
+    p = lessonparts.section_parts(WALKED, 1)
+    assert p["runs"][0]["walk"] == ["line:2"]
+    assert p["runs"][0]["notes"] == ['print(e["branch"]) prints the branch.']
+    assert "hash map" not in p["terms"]
+    assert lessonparts.section_parts(SECTION, 1)["runs"][0]["walk"] == []
+
+
+def test_scaffold_highlights_the_lines_the_page_walks_through(tmp_path):
+    path = tmp_path / "course.json"
+    path.write_text(json.dumps({"title": "C", "lessons": [{"id": "l1", "title": "L1", "content": WALKED}]}),
+                    encoding="utf-8")
+    plan = json.loads(storyplan.scaffold(tmp_path / "images", path).read_text(encoding="utf-8"))
+    code = next(s for s in plan["scenes"] if s["kind"] == "code")
+    assert code["highlight"] == ["line:2"]

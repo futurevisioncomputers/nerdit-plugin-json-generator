@@ -32,6 +32,7 @@ def make_course(tmp_path: Path, n=5) -> Path:
 def filled_plan(tmp_path: Path) -> tuple[dict, Path, Path]:
     images, course = tmp_path / "images", make_course(tmp_path)
     plan = json.loads(storyplan.scaffold(images, course).read_text(encoding="utf-8"))
+    plan["language"] = "hi"   # this fixture's narration is Hinglish
     plan["intro"].update(points=["one", "two"], narration="Hello, इस video का intro.")
     plan["recap"].update(points=["a", "b", "c"], narration="Summary: data एक recorded observation है.")
     for s in plan["scenes"]:
@@ -170,7 +171,7 @@ def test_google_engine_uses_the_key_from_the_environment(tmp_path, monkeypatch):
     voice.run(images, None, None, None, runner=runner, google=google)
     path, body, key = bodies[0]
     assert (path, key) == ("text:synthesize", "k123")
-    assert body["voice"] == {"languageCode": "hi-IN", "name": "hi-IN-Chirp3-HD-Aoede"}
+    assert body["voice"] == {"languageCode": "en-IN", "name": "en-IN-Chirp3-HD-Aoede"}
     assert body["audioConfig"]["audioEncoding"] == "LINEAR16" and body["input"]["text"] == "Hello, इस video का intro."
     words = json.loads((images / "video" / "audio" / "intro.words.json").read_text(encoding="utf-8"))
     assert [w["w"] for w in words] == ["Hello", "इस", "video", "का", "intro"]
@@ -531,3 +532,33 @@ def test_concat_listing_holds_absolute_paths(tmp_path, monkeypatch):
     listing = render.concat_listing([str(parts_dir / "v00.mp4"), str(parts_dir / "v01.mp4")], parts_dir)
     lines = listing.read_text(encoding="utf-8").splitlines()
     assert lines == [f"file '{(tmp_path / parts_dir / n).as_posix()}'" for n in ("v00.mp4", "v01.mp4")]
+
+
+# Owner, 2026-10-26: videos in mostly English with a natural Indian-English voice. A plan's
+# language sets its English floor: "hi" (Hinglish) 30%, "en-IN" (mostly English) 80%.
+def test_english_floor_follows_the_plan_language(tmp_path):
+    plan, images, course = filled_plan(tmp_path)
+    plan["scenes"][0]["narration"] = "यह data है, हर row एक learner की record दिखाती है।"
+    plan["language"] = "hi"
+    assert not any("English words" in e for e in check(plan, images, course))
+    plan["language"] = "en-IN"
+    assert any("at least 80%" in e for e in check(plan, images, course))
+
+
+def test_new_plans_are_mostly_english_with_the_google_indian_english_voice(tmp_path):
+    images, course = tmp_path / "images", make_course(tmp_path)
+    plan = json.loads(storyplan.scaffold(images, course).read_text(encoding="utf-8"))
+    assert plan["language"] == "en-IN"
+    assert plan["voice"] == {"engine": "google", "name": "en-IN-Chirp3-HD-Aoede", "rate": 1.0}
+
+
+# Code in backticks is read the way a teacher says it; the screen keeps the real code.
+def test_code_in_backticks_is_spoken_like_a_teacher_reads_it():
+    say = pronounce.spoken
+    assert say('`@app.get("/products/1")` registers it.') == "at app dot get slash products slash one registers it."
+    assert say('`response.json["name"]` gives Notebook.') == "response dot Jason, name gives Notebook."
+    assert say("`products.get(product_id)` looks it up.") == "products dot get product I D looks it up."
+    assert say("`if pid == 2:` then") == "if pid is equal to two then"
+    assert say('`name = request.args.get("name", "")`') == "name equals request dot args dot get name"
+    assert say("`return {\"id\": 1}`") == "return I D one"
+    assert say('`"/products/<int:pid>"`') == "slash products slash integer pid"

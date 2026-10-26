@@ -5,6 +5,8 @@ A `table` scene redraws one of the section's tables and a `code` scene one of it
 from the lesson HTML, so the clip shows exactly what the learner just read on the page.
 
     section_parts(content, topic) -> {"heading", "tables", "runs", "terms"} or None
+        each run: {"code", "output", "outLabel", "walk": the page's code-walk lines as ["line:N"],
+        "notes": the walk's steps as text}; a "Go deeper" box is left out
     table_svg(table, highlight)    highlight: ["row:E2", "col:branch"] in the order they are spoken
     code_svg(run, highlight)       highlight: ["line:2"]
 """
@@ -20,6 +22,9 @@ RUN_START = re.compile(r'<div class="nerdit-run"')
 NEXT_BLOCK = re.compile(r'<div class="nerdit-(?:run|predict|tryit|compare|figure|fillblank|cheatsheet)\b|<h[23]\b|<p\b')
 PART = re.compile(r'<div class="nerdit-(in|out)"[^>]*>\s*(?:<span class="nerdit-tag">(.*?)</span>)?.*?<code[^>]*>(.*?)</code>', re.S)
 STRONG = re.compile(r"<strong>(.*?)</strong>", re.S)
+WALK = re.compile(r'<ol class="nerdit-codewalk"[^>]*>(.*?)</ol>', re.S)
+WALK_STEP = re.compile(r"<li\b[^>]*>\s*<code>(.*?)</code>(.*?)</li>", re.S)
+DEEPER = re.compile(r'<details class="nerdit-deeper"[^>]*>.*?</details>', re.S)
 VTITLE = re.compile(r'class="nerdit-vtitle"[^>]*>(.*?)<', re.S)
 EMOJI = re.compile("[\U0001F000-\U0001FAFF☀-➿️]")
 
@@ -75,8 +80,17 @@ def runs(markup: str) -> list[dict]:
         for kind, tag, code in PART.findall(block):
             parts.setdefault(kind, (text(tag or ""), code_text(code)))
         if "in" in parts:
-            out.append({"code": parts["in"][1], "output": parts.get("out", ("", ""))[1],
-                        "outLabel": parts.get("out", ("Output", ""))[0] or "Output"})
+            code = parts["in"][1]
+            lines = [ln.strip() for ln in code.split("\n")]
+            walk, notes = [], []
+            found = WALK.search(block)
+            for quoted, rest in WALK_STEP.findall(found.group(1) if found else ""):
+                line = code_text(quoted).strip()
+                notes.append(text(f"{html.escape(line)} {rest}"))
+                if line in lines:
+                    walk.append(f"line:{lines.index(line) + 1}")
+            out.append({"code": code, "output": parts.get("out", ("", ""))[1],
+                        "outLabel": parts.get("out", ("Output", ""))[0] or "Output", "walk": walk, "notes": notes})
     return out
 
 
@@ -95,6 +109,7 @@ def section_parts(content: str, topic: int) -> dict | None:
     if not found:
         return None
     heading, markup = found
+    markup = DEEPER.sub("", markup)   # optional reading; never in the video
     return {"heading": heading, "tables": tables(markup), "runs": runs(markup), "terms": terms(markup)}
 
 

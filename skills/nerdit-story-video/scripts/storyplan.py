@@ -51,6 +51,11 @@ NUMBER = re.compile(r"\d+(?:[.,]\d+)?")
 LATIN = re.compile(r"[A-Za-z]")
 DEVANAGARI = re.compile(r"[ऀ-ॿ]")
 MIN_ENGLISH = 0.3   # Hinglish: natural Hindi grammar and verbs, English technical terms and key nouns
+# English floor by plan language. Owner, 2026-10-26: "en-IN" (mostly English, an Indian-English
+# voice, a few Hindi words at most) is the default; "hi" keeps the Hinglish rule.
+ENGLISH_FLOOR = {"hi": MIN_ENGLISH, "en-IN": 0.8}
+DEFAULT_LANGUAGE = "en-IN"
+DEFAULT_VOICE = {"engine": "google", "name": "en-IN-Chirp3-HD-Aoede", "rate": 1.0}
 FIGURE = re.compile(r'<div[^>]*data-nerdit-img="([^"]+)"[^>]*>\s*(<svg\b.*?</svg>)', re.S)
 ARIA = re.compile(r'aria-label="([^"]*)"')
 SVG_TEXT = re.compile(r"<text\b[^>]*>(.*?)</text>", re.S)
@@ -63,7 +68,6 @@ TOPIC_HEADING = re.compile(r"<h2[^>]*>\s*(\d+)\s*[—–-]\s*(.*?)</h2>", re.S)
 EMOJI = re.compile("[\U0001F000-\U0001FAFF\u2600-\u27BF\uFE0F]")
 # A topic clip plays on its own, so its first scene cannot lean on another clip.
 BACK_REFERENCE = re.compile(r"पिछले|पहले देखा|जैसा हमने देखा|ऊपर देखा|\b(?:earlier|previous(?:ly)?|as we saw|last part)\b", re.I)
-DEFAULT_VOICE = {"engine": "google", "name": "hi-IN-Chirp3-HD-Aoede", "rate": 1.0}
 
 
 def load_json(path: Path):
@@ -244,11 +248,11 @@ def scaffold(images_dir: Path, course_path: Path) -> Path:
             scenes.append(scene("vector", lid, topic, part["heading"], vector=f"{lid}-t{topic}-concept.svg"))
             for n, _ in enumerate(part["tables"][:MAX_PART_SCENES], 1):
                 scenes.append(scene("table", lid, topic, part["heading"], table=n, highlight=[]))
-            for n, _ in enumerate(part["runs"][:MAX_PART_SCENES], 1):
-                scenes.append(scene("code", lid, topic, part["heading"], code=n, highlight=[]))
+            for n, run in enumerate(part["runs"][:MAX_PART_SCENES], 1):   # the page's code-walk lines
+                scenes.append(scene("code", lid, topic, part["heading"], code=n, highlight=list(run.get("walk", []))))
     figures = [{"id": fid, "lessonId": f["lessonId"], "label": f["label"]}
                for fid, f in lesson_figures(course_path, images_dir).items()]
-    plan = {"version": 3, "course": title, "source": str(Path(course_path).resolve()), "language": "hi",
+    plan = {"version": 3, "course": title, "source": str(Path(course_path).resolve()), "language": DEFAULT_LANGUAGE,
             "voice": dict(DEFAULT_VOICE),
             "intro": {"title": title, "points": [], "narration": ""},
             "scenes": scenes,
@@ -284,7 +288,7 @@ def english_share(text: str) -> float:
     return latin / (latin + hindi) if latin + hindi else 0.0
 
 
-def _check_text(tag: str, text: str, errors: list) -> bool:
+def _check_text(tag: str, text: str, errors: list, floor: float = MIN_ENGLISH) -> bool:
     text = (text or "").strip()
     if not text:
         errors.append(f"{tag}: narration is empty")
@@ -294,9 +298,9 @@ def _check_text(tag: str, text: str, errors: list) -> bool:
         errors.append(f"{tag}: narration too long ({len(sentences)} sentences, {len(text)} chars); "
                       f"keep to {MAX_SENTENCES} sentences and {MAX_CHARS} chars")
     share = english_share(text)
-    if share < MIN_ENGLISH:
+    if share < floor:
         errors.append(f"{tag}: narration is {share:.0%} English words; say the technical terms and key nouns "
-                      f"in English (at least {MIN_ENGLISH:.0%})")
+                      f"in English (at least {floor:.0%})")
     return True
 
 
@@ -485,8 +489,9 @@ def check_plan(plan: dict, video_dir: Path, figures: dict | None = None, texts: 
         errors += check_practise(plan, practice, covered)
     if "quiz" in json.dumps(plan.get("intro") or {}) + json.dumps(plan.get("recap") or {}):
         errors.append("intro/recap: the video has no quizzes")
+    floor = ENGLISH_FLOOR.get(plan.get("language") or "hi", MIN_ENGLISH)
     for tag, lid, text in narrated_parts(plan):
-        if not _check_text(tag, text, errors) or texts is None:
+        if not _check_text(tag, text, errors, floor) or texts is None:
             continue
         source = texts.get(lid, "") if lid else all_text
         for num in NUMBER.findall(text):
