@@ -8,6 +8,8 @@ Words come from pronunciation.json next to this file. A word not listed there is
     HTTPException -> camelCase split into words, then each word
     HTTP, SSE     -> an unlisted ALL-CAPS word of up to 3 letters, or with no vowel, is spelled letter by letter;
     PRICES        -> a longer one with a vowel is read as a word
+Every number is said in English words, so a Hindi voice never reads digits in Hindi:
+    2,000 -> two thousand · 2.0 -> two point zero · 30% -> thirty percent · M12 -> M twelve
 """
 import json, re
 from functools import lru_cache
@@ -17,6 +19,12 @@ LEXICON = Path(__file__).with_name("pronunciation.json")
 # A Latin-script name, optionally dotted (json.dumps, main.py) and called (print()); "steps." stays a word.
 TOKEN = re.compile(r"[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)*(?:\(\))?")
 CAMEL = re.compile(r"[A-Z]+(?=[A-Z][a-z])|[A-Z]?[a-z]+|[A-Z]+|\d+")
+# A number on its own: 2000, 2,000, 1,23,456, 2.0, 30%. Not part of a name (M12 is split in word()).
+NUMBER = re.compile(r"(?<![\w.])(\d{1,3}(?:,\d{2,3})+|\d+)(\.\d+)?(%?)(?![\w])")
+ONES = ("zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen "
+        "sixteen seventeen eighteen nineteen").split()
+TENS = "_ _ twenty thirty forty fifty sixty seventy eighty ninety".split()
+SCALES = ((10 ** 12, "trillion"), (10 ** 9, "billion"), (10 ** 6, "million"), (1000, "thousand"))
 
 
 @lru_cache(maxsize=None)
@@ -25,10 +33,35 @@ def lexicon(path: Path = LEXICON) -> dict:
     return {k: v for k, v in data.items() if not k.startswith("_")}
 
 
+def cardinal(n: int) -> str:
+    """English words for a whole number: 1980 -> one thousand nine hundred eighty."""
+    if n < 20:
+        return ONES[n]
+    if n < 100:
+        return TENS[n // 10] + ("-" + ONES[n % 10] if n % 10 else "")
+    if n < 1000:
+        return ONES[n // 100] + " hundred" + (" " + cardinal(n % 100) if n % 100 else "")
+    for size, label in SCALES:
+        if n >= size:
+            return cardinal(n // size) + " " + label + (" " + cardinal(n % size) if n % size else "")
+    return str(n)
+
+
+def number(m: re.Match) -> str:
+    whole, frac, pct = m.group(1), m.group(2), m.group(3)
+    out = cardinal(int(whole.replace(",", "")))
+    if frac:
+        out += " point " + " ".join(ONES[int(d)] for d in frac[1:])
+    return out + (" percent" if pct else "")
+
+
 def word(w: str, lex: dict) -> str:
     """One name without dots or underscores."""
     if w in lex:
         return lex[w]
+    split = re.fullmatch(r"([A-Za-z]+)(\d+)", w)                   # M12 -> M twelve
+    if split:
+        return word(split.group(1), lex) + " " + cardinal(int(split.group(2)))
     if w.lower() in lex:                                            # Json, Dict: the lowercase entry
         return lex[w.lower()]
     if re.search(r"[a-z][A-Z]|[A-Z]{2}[a-z]", w):                  # camelCase / PascalCase
@@ -61,4 +94,4 @@ def name(token: str, lex: dict) -> str:
 def spoken(text: str, lex: dict | None = None) -> str:
     """The narration as the voice should say it."""
     lex = lexicon() if lex is None else lex
-    return TOKEN.sub(lambda m: name(m.group(0), lex), text)
+    return NUMBER.sub(number, TOKEN.sub(lambda m: name(m.group(0), lex), text))

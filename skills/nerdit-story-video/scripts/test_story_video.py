@@ -220,7 +220,18 @@ def test_spoken_respells_code_words():
     assert say("HTTPException, LLM_API_KEY, CONNECT_TIMEOUT") == "H T T P Exception, L L M A P I key, connect timeout"
     assert say("SSE, PRICES, DONE, Kabir, A loop repeats steps.") == "S S E, prices, done, Kabir, A loop repeats steps."
     assert say("httpx2 AsyncClient") == "H T T P X two a-sync Client"
-    assert say("इस video में 12 rows हैं।") == "इस video में 12 rows हैं।"
+    assert say("इस video में 12 rows हैं।") == "इस video में twelve rows हैं।"
+
+
+# A Hindi voice reads digits in Hindi ("बारह"); the owner wants every number said in English.
+def test_spoken_says_every_number_in_english():
+    say = pronounce.spoken
+    assert say("2000 messages, 2,000 rows, 1980 drafts") ==         "two thousand messages, two thousand rows, one thousand nine hundred eighty drafts"
+    assert say("connect timeout 2.0 s, read 10.0 s, 0.5 s") ==         "connect timeout two point zero s, read ten point zero s, zero point five s"
+    assert say("429, 502 और 504 errors") == "four hundred twenty-nine, five hundred two और five hundred four errors"
+    assert say("M7 पर 14.0 s, M12 को 3.0 s") == "M seven पर fourteen point zero s, M twelve को three point zero s"
+    assert say("30% English, 1,23,456 rows") == "thirty percent English, one hundred twenty-three thousand four hundred fifty-six rows"
+    assert say("0 errors, 100 calls, 1000000 tokens") == "zero errors, one hundred calls, one million tokens"
 
 
 def test_key_term_found_when_spoken_respelled():
