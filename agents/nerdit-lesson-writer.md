@@ -5,7 +5,7 @@ description: >
   its concept manifest for a single topic (id, title, description). Writes all three
   artifacts to disk. Invoked by the nerdit-chapter-generator skill once per topic, in
   parallel across topics. Do not use for output validation.
-tools: [Read, Grep, Glob, Write, Edit]
+tools: [Read, Grep, Glob, Write, Edit, Bash]
 ---
 
 Caveman-full. Terse status only — the HTML lesson itself stays full normal-language prose (learner-facing content is never compressed).
@@ -417,6 +417,13 @@ every question id so one session/batch pair covers the whole file.
   "uses": ["number", "text"]
 }
 ```
+
+**Gate before you return.** When the prompt has a `GATE:` line, run that command (Bash) after
+writing all three files. It runs every lesson check, plus this lesson's offline examples and its
+practice answers in real Python (`--run-dir`). Fix each failure it prints in the files and run it
+again until it prints `PASS`, at most 4 runs. A failure you cannot fix: one line after the path
+lines naming it. Fixing now costs a few lines; a failure found after you return means re-reading
+everything later. Use Bash only for the gate.
 
 Then return exactly these three lines, nothing else:
 

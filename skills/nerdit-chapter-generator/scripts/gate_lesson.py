@@ -38,6 +38,9 @@ from check_refresh import check as check_refresh  # noqa: E402
 from check_screens import check_lesson as check_screens  # noqa: E402
 from check_sql_outputs import check_lesson as check_sql  # noqa: E402
 from check_world import check_lesson as check_world, svg_label_failures  # noqa: E402
+from check_offline_outputs import is_capstone  # noqa: E402
+from lesson_runs import ensure_venv, lesson_runs  # noqa: E402
+from practice_files import build_file  # noqa: E402
 from make_world_data import generate, load_world  # noqa: E402
 from svgcheck import check_svg  # noqa: E402
 from verify_course import Report, verify_density, verify_schema, verify_structure  # noqa: E402
@@ -47,7 +50,8 @@ SVG_RE = re.compile(r"<svg\b.*?</svg>", re.S | re.I)
 
 def gate(input_path: Path, lesson_dir: Path, lid: str, contract: str = "v11",
          before_dir: Path | None = None, modes=(), world_path: Path | None = None,
-         new_course: bool = False) -> tuple[list[str], list[str]]:
+         new_course: bool = False, run_dir: Path | None = None, requirements: str | None = None,
+         pythons: tuple[str, ...] = ("3.14", "3.12"), capstone: Path | None = None) -> tuple[list[str], list[str]]:
     lessons = json.loads(Path(input_path).read_text(encoding="utf-8"))
     one = [s for s in lessons if s.get("id") == lid]
     if not one:
@@ -69,9 +73,11 @@ def gate(input_path: Path, lesson_dir: Path, lid: str, contract: str = "v11",
     warns += [f"verify: {w}" for w in rep.warnings]
 
     html = course["lessons"][0]["content"]
+    world = rows = None
     if world_path is not None:
         world = load_world(Path(world_path))
-        wf, ww = check_world(html, world, generate(world))
+        rows = generate(world)
+        wf, ww = check_world(html, world, rows)
         fails += [f"world: {f}" for f in wf]
         warns += [f"world: {w}" for w in ww]
         # Topic first, case study second: world names only after the section's case study heading.
@@ -120,6 +126,31 @@ def gate(input_path: Path, lesson_dir: Path, lid: str, contract: str = "v11",
         if "name" in entry:
             fails += [f"files: {p}" for p in name_problems(entry["name"], position)]
 
+    if run_dir is not None and requirements is not None:
+        # Offline examples and practice answers in real Python now, while the writer still has the
+        # lesson in hand, instead of a cold resume after the course-level checks (lesson_runs.py).
+        vpy, err = ensure_venv(Path(run_dir), requirements, list(pythons))
+        if err:
+            fails.append(f"run: {err}")
+        else:
+            data_dir = Path(run_dir) / "files" / lid
+            data_dir.mkdir(parents=True, exist_ok=True)
+            files = []
+            chapter = {"position": position, "title": one[0].get("title", ""), "html": html}
+            for entry in (spec or {}).get("files", []):
+                if "name" not in entry or {"practice", "solutions"} & set(entry.get("from", {})):
+                    continue
+                try:
+                    (data_dir / entry["name"]).write_bytes(build_file(entry, rows, Path(lesson_dir), chapter))
+                    files.append(data_dir / entry["name"])
+                except (OSError, ValueError, KeyError) as exc:
+                    fails.append(f"run: {entry['name']}: {exc}")
+            project = Path(capstone) / "solution" if capstone and is_capstone(html) else None
+            r_fails, r_warns = lesson_runs({"id": lid, "title": one[0].get("title", ""), "content": html},
+                                           position, vpy, Path(run_dir), files, project)
+            fails += [f"run: {f}" for f in r_fails]
+            warns += [f"run: {w}" for w in r_warns]
+
     for n, svg in enumerate(SVG_RE.findall(html), 1):
         fails += [f"svg {n}: {e}" for e in check_svg(svg, [], 0)]
     s_fails, s_warns = check_screens(html)
@@ -153,6 +184,11 @@ def main() -> int:
     ap.add_argument("--before-dir")
     ap.add_argument("--world", help="check seed and figure records against the course world")
     ap.add_argument("--modes", default="", help="comma list for the refresh guard")
+    ap.add_argument("--run-dir", help="<workdir>/gate-run: run offline examples and practice answers in real "
+                                      "Python (one cached venv per course); needs --requirements")
+    ap.add_argument("--requirements", help="the course requirements file, for --run-dir")
+    ap.add_argument("--pythons", default="3.14,3.12")
+    ap.add_argument("--capstone", help="the capstone project folder: its solution/ modules are importable")
     ap.add_argument("--new-course", action="store_true",
                     help="a course made after 2026-10-23: also require httpx2 (references/deprecated.md)")
     args = ap.parse_args()
@@ -160,7 +196,11 @@ def main() -> int:
     try:
         fails, warns = gate(Path(args.input), Path(args.dir), args.id, args.contract,
                             Path(args.before_dir) if args.before_dir else None, modes,
-                            Path(args.world) if args.world else None, args.new_course)
+                            Path(args.world) if args.world else None, args.new_course,
+                            Path(args.run_dir) if args.run_dir else None,
+                            Path(args.requirements).read_text(encoding="utf-8") if args.requirements else
+                            ("" if args.run_dir else None),
+                            tuple(args.pythons.split(",")), Path(args.capstone) if args.capstone else None)
     except (OSError, KeyError, ValueError) as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return 2

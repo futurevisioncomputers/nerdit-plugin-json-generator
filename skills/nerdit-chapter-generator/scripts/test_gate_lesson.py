@@ -187,3 +187,26 @@ def test_gate_fails_a_python_answer_with_no_output(tmp_path, monkeypatch):
     inp, d = setup(tmp_path)
     fails, _ = gate(inp, d, "c-01")
     assert "python: practice task 1: shows no output" in fails
+
+
+# --run-dir: offline examples and practice answers run in real Python inside the gate.
+OFFLINE_RUN = PY_RUN.replace('<div class="nerdit-run">', '<div class="nerdit-run" data-run="offline">')
+TASK = ('<div class="nerdit-task">Task 1: count again.<details class="nerdit-solution"><summary>Solution</summary>'
+        '<pre data-lang="python"><code>print(client)</code></pre></details></div>')
+
+
+def test_gate_runs_offline_examples_and_practice_answers_with_a_run_dir(tmp_path):
+    import sys
+    html = LESSON.replace(SQL_RUN, OFFLINE_RUN).replace("</section></div>", TASK + "</section></div>")
+    inp, d = setup(tmp_path, html)
+    assert not [f for f in gate(inp, d, "c-01")[0] if f.startswith("run:")]            # off by default
+    py = f"{sys.version_info.major}.{sys.version_info.minor}"
+    fails = [f for f in gate(inp, d, "c-01", run_dir=tmp_path / "gate-run", requirements="", pythons=(py,))[0]
+             if f.startswith("run:")]
+    assert fails == ["run: practice answers: run after every example on the page, in page order, they stop "
+                     "with \"NameError: name 'client' is not defined\"; make each answer build what it needs"]
+    (d / "c-01.html").write_text(html.replace("print(client)", "print(2 + 3)").replace("<code>4</code>", "<code>5</code>"),
+                                 encoding="utf-8")
+    fails = [f for f in gate(inp, d, "c-01", run_dir=tmp_path / "gate-run", requirements="", pythons=(py,))[0]
+             if f.startswith("run:")]
+    assert len(fails) == 1 and "example 1" in fails[0] and "Python prints '4'" in fails[0]

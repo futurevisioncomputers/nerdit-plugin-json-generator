@@ -91,6 +91,19 @@ mentions of NERDIT LMS chapter/lesson generation. Output:
 - per lesson in the workdir, the two intermediates the assembler consumes: `<id>.html` (embedded
   as that lesson's `content`) and `<id>.quiz.json` (its 6 questions)
 
+## Generate a course within your usage limit
+
+- **One fresh session per course, orchestrator on Sonnet** (`/clear`, then `/model sonnet`). The
+  gates and checkers decide quality, not the orchestrating model; a long Opus session re-reads its
+  whole history on every step.
+- **Rule pack.** Writers read `rules_pack.py`'s one file for the course preset instead of CORE.md
+  and figures.md in full, and only the figure templates they draw.
+- **Writers gate themselves.** Each writer runs `gate_lesson.py --run-dir` (offline examples and
+  practice answers in real Python) and fixes failures before it returns, so it is rarely resumed.
+- **Writers in groups of 3–4.** A limit hit mid-course stops one group; the next session resumes
+  from the files on disk.
+- **Video in its own session**, after the course is approved: its plan writes every narration.
+
 ## Convert an old course to v9
 
 To rebuild an existing `*_output.json` (an old v8 course) in the v9 style, run the converter,

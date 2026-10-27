@@ -285,12 +285,25 @@ the same way `title` is used to inform content, but it does not appear in the as
 ### 2b. Delegate the lesson to `nerdit-lesson-writer`
 
 Do not generate the HTML lesson yourself. Spawn the `nerdit-lesson-writer` agent for this
-lesson (in parallel with the other lessons' agents — see Multi-Agent Architecture above),
+lesson (in groups of 3–4 in parallel — see the batching note below),
 passing it: `id`, `title`, `description`, chapter name, whether this is a multi-lesson chapter,
 `RUNNER` (the value resolved in Step 1), `FOCUS` (the lesson's `focus`, default `hands-on`), `PRIOR_TOPICS` + `UPCOMING_TOPICS` (the curriculum
 context — see below), `HTML_PATH = <workdir>/<id>.html`,
 `QUIZ_PATH = <workdir>/<id>.quiz.json`,
-`CONCEPTS_PATH = <workdir>/<id>.concepts.json`, and `RULES = <the pack path>`.
+`CONCEPTS_PATH = <workdir>/<id>.concepts.json`, `RULES = <the pack path>`, and the lesson's
+`GATE` command:
+
+    python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/gate_lesson.py" --input <input.json> --dir <workdir> --id <id> [--world <world.json>] [--new-course] --run-dir <workdir>/gate-run --requirements <course requirements.txt> [--capstone <workdir>/capstone]
+
+The writer runs it before returning and fixes what it prints, while the lesson is still in hand;
+`--run-dir` also runs the lesson's offline examples and practice answers in real Python (one
+venv per course, cached in `gate-run/venv`). Omit `--run-dir`/`--requirements` for a course with
+no Python. You still run the gate yourself after it returns; a writer that reports PASS is rarely
+resumed.
+
+**Spawn writers in groups of 3–4, not all at once.** Each finished group frees its context; a
+usage limit that hits mid-course then stops at most one group, and the next session resumes from
+the files already on disk instead of re-reading every running writer.
 
 **Rule pack (saves tokens on every writer):** before spawning, run once per course
 `python scripts/rules_pack.py --preset <preset> --out <workdir>`, and once more with `--project`
