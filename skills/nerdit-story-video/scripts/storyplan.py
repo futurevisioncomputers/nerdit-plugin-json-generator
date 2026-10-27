@@ -38,7 +38,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "nerdit-chapter-gen
 from titlecase import title_case  # noqa: E402  (the same Title Case as the lesson headings)
 
 KINDS = ("vector", "diagram", "broll", "table", "code")
-MIN_SCENES, MAX_SCENES = 4, 60
+MIN_SCENES = 4
+MAX_TOPIC_SCENES = 8   # one topic clip; a whole course is many clips, so the plan itself has no cap
 MIN_TOPIC_SCENES, MIN_TOPIC_WORDS = 3, 180   # about a minute and a half of narration per topic clip
 MAX_PART_SCENES = 2                          # tables / code runs the scaffold takes per section
 MAX_SENTENCES, MAX_CHARS = 6, 550
@@ -368,6 +369,8 @@ def check_coverage(plan: dict, parts: dict) -> list[str]:
             if steps < MIN_TOPIC_SCENES:
                 errors.append(f"{tag}: {len(scenes)} scene(s); explain it in at least {MIN_TOPIC_SCENES} steps "
                               "(concept, the page's table or code, the mistake or takeaway; a myth counts as one)")
+            if len(scenes) > MAX_TOPIC_SCENES:
+                errors.append(f"{tag}: {len(scenes)} scenes; one clip uses at most {MAX_TOPIC_SCENES}")
             if len(words.split()) < MIN_TOPIC_WORDS:
                 errors.append(f"{tag}: {len(words.split())} words of narration; give at least {MIN_TOPIC_WORDS} "
                               "(about a minute and a half) so the clip explains what the page explains")
@@ -390,8 +393,8 @@ def check_plan(plan: dict, video_dir: Path, figures: dict | None = None, texts: 
     if plan.get("version") != 3:
         return ["plan.version must be 3; delete plan.json and scaffold again"]
     scenes = plan.get("scenes") or []
-    if not MIN_SCENES <= len(scenes) <= MAX_SCENES:
-        errors.append(f"plan has {len(scenes)} scenes; use {MIN_SCENES}-{MAX_SCENES}")
+    if len(scenes) < MIN_SCENES:
+        errors.append(f"plan has {len(scenes)} scenes; use at least {MIN_SCENES}")
     engine = (plan.get("voice") or {}).get("engine")
     if engine not in ("google", "edge", "clone"):
         errors.append(f"voice.engine must be 'google', 'edge' or 'clone', not {engine!r}")

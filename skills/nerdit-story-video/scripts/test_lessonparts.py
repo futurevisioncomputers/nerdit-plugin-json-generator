@@ -47,6 +47,18 @@ def test_table_and_code_draw_as_animated_svg_with_highlights():
     assert lessonparts.highlight_problems("code", p["runs"][0], ["line:3"]) == ["highlight 'line:3': the code has 2 lines"]
 
 
+def test_a_long_code_line_wraps_inside_the_box_and_its_highlight_covers_every_row():
+    item = ", ".join(f'{{"enquiry_id": "E{i}", "branch": "Pal"}}' for i in range(4))
+    run = {"code": f"x = 1\nenquiries = [{item}]\nprint(len(enquiries))", "output": "4", "outLabel": "Python shows"}
+    c = lessonparts.code_svg(run, ["line:2"])
+    rows = re.findall(r'font-size="([\d.]+)" font-family="Consolas[^>]*>([^<]*)</text>', c)
+    rows = [(fs, text.replace("&quot;", '"')) for fs, text in rows]
+    assert all(len(text) * float(fs) * 0.6 <= lessonparts.W - 80 + 1 for fs, text in rows)   # +1: font size rounding
+    shown = "".join(text.strip() for _, text in rows)
+    assert "".join(item.split()) in "".join(shown.split())
+    assert c.count('fill-opacity=".3"') >= 2                        # the wrapped line is marked on each row
+
+
 def test_a_long_cell_wraps_and_widens_its_column():
     table = {"title": "", "head": ["message_id", "intent", "message"], "spot": [],
              "rows": [["M2", "fees", "Is there an instalment option for Computer Basics?"]]}

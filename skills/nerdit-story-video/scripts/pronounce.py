@@ -97,7 +97,7 @@ def name(token: str, lex: dict) -> str:
 
 CODE_SPAN = re.compile(r"`([^`]+)`")
 # Operators said as words; every other symbol is dropped (quotes, brackets, colons, commas).
-CODE_WORDS = (("==", " is equal to "), ("!=", " is not equal to "), (">=", " at least "), ("<=", " at most "),
+CODE_WORDS = (("==", " is equal to "), ("!=", " is not equal to "), (">=", " is at least "), ("<=", " is at most "),
               ("->", " returns "), ("=", " equals "), ("@", " at "), ("/", " slash "), ("+", " plus "))
 
 
@@ -105,6 +105,11 @@ def code_speech(code: str) -> str:
     """One code span as a teacher reads it aloud: operators as words, other symbols silent."""
     for sym, said in CODE_WORDS:
         code = code.replace(sym, said)
+    # A comparison has spaces round it; a route's <name> never does, so its brackets stay silent.
+    code = re.sub(r"\s<\s", " is less than ", code)
+    code = re.sub(r"\s>\s", " is greater than ", code)
+    code = re.sub(r"\s\*\s", " times ", code)              # arithmetic only: COUNT(*) and *args stay silent
+    code = re.sub(r"\s-\s", " minus ", code)
     code = code.replace("[", " INDEXSTEP ")                 # an index reads as a pause: json, name
     code = re.sub(r"[\"'(){}<>:;,\]]", " ", code)
     code = " ".join(code.split()).replace(" INDEXSTEP ", ", ").replace("INDEXSTEP", "")

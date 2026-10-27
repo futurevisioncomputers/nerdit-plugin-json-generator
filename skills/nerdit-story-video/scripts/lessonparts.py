@@ -210,10 +210,24 @@ def table_svg(table: dict, highlight: list[str] | None = None) -> str:
     return "".join(out) + "</svg>"
 
 
+def _wrap_code(line: str, width: int) -> list[str]:
+    """A code line too long for the box on several rows, broken after a comma or space;
+    later rows are indented 4 past the line's own indent."""
+    rows, indent = [], " " * (len(line) - len(line.lstrip()) + 4)
+    while len(line) > width:
+        cut = max(line.rfind(", ", 0, width - 1) + 2, line.rfind(" ", 0, width) + 1)
+        cut = cut if cut > len(indent) + 1 else width
+        rows.append(line[:cut].rstrip())
+        line = indent + line[cut:].lstrip()
+    return rows + [line]
+
+
 def code_svg(run: dict, highlight: list[str] | None = None) -> str:
     """The code typed in line by line, each highlighted line marked, then the lesson's output."""
-    lines = run["code"].split("\n")[:MAX_LINES]
-    outs = [l for l in run["output"].split("\n")][:6] if run["output"] else []
+    width = int((W - 80) / (11 * 0.6))                       # characters that fit at the smallest font
+    numbered = [(i, row) for i, l in enumerate(run["code"].split("\n")[:MAX_LINES], 1) for row in _wrap_code(l, width)]
+    lines = [row for _, row in numbered]
+    outs = [r for l in run["output"].split("\n") for r in _wrap_code(l, width)][:6] if run["output"] else []
     longest = max([len(l) for l in lines + outs] or [10])
     fs = _fit(longest, W - 80, 19, ratio=0.6)
     lh = fs * 1.45
@@ -229,10 +243,10 @@ def code_svg(run: dict, highlight: list[str] | None = None) -> str:
            f'<text x="40" y="{y + 30 * scale:.1f}" font-size="{15 * scale:.1f}" font-weight="700" fill="var(--nb-soft)">YOU TYPE</text></g>']
     d = 0.2
     marked = {int(h.split(":")[1]) for h in highlight or [] if h.startswith("line:") and h.split(":")[1].isdigit()}
-    for i, line in enumerate(lines, 1):
+    for i, (source, line) in enumerate(numbered, 1):
         d += 0.45
         ly = y + 44 * scale + lh * i
-        if i in marked:
+        if source in marked:
             out.append(f'<rect class="na-show" style="--d:{d + 0.3:.2f}s" x="30" y="{ly - lh * .78:.1f}" width="{W - 60}" '
                        f'height="{lh:.1f}" rx="6" fill="var(--nb-vivid)" fill-opacity=".3"/>')
         out.append(f'<text class="na-show" style="--d:{d:.2f}s" x="40" y="{ly:.1f}" font-size="{fs:.1f}" {mono} '

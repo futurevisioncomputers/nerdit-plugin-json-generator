@@ -101,6 +101,18 @@ def test_broll_is_kept_to_a_minority(tmp_path):
     assert any("are B-roll" in e for e in check(plan, images, course))
 
 
+# A whole course is many topic clips: the cap is per clip, not per plan.
+def test_scene_cap_is_per_topic_clip_not_per_plan(tmp_path):
+    plan, images, course = filled_plan(tmp_path)
+    plan["scenes"] = plan["scenes"] + [dict(plan["scenes"][0]) for _ in range(61)]
+    assert not any(e.startswith("plan has") for e in check(plan, images, course))
+    part = {"heading": "Routes", "tables": [], "runs": [], "terms": []}
+    clip = [{"lessonId": "l1", "topic": 1, "kind": "vector", "narration": "word " * 30}] * 9
+    errors = storyplan.check_coverage({"scenes": clip}, {"l1": {1: part}})
+    assert errors == ["l1 section 1 (Routes): 9 scenes; one clip uses at most 8"], errors
+    assert storyplan.check_coverage({"scenes": clip[:8]}, {"l1": {1: part}}) == []
+
+
 def test_check_catches_bad_scenes(tmp_path):
     plan, images, course = filled_plan(tmp_path)
     s = plan["scenes"]
@@ -562,3 +574,8 @@ def test_code_in_backticks_is_spoken_like_a_teacher_reads_it():
     assert say('`name = request.args.get("name", "")`') == "name equals request dot args dot get name"
     assert say("`return {\"id\": 1}`") == "return I D one"
     assert say('`"/products/<int:pid>"`') == "slash products slash integer pid"
+    # A comparison has spaces round it; a route's <name> never does.
+    assert say("`if body[field] < 0:`") == "if body, field is less than zero"
+    assert say("`page > 1`") == "page is greater than one"
+    assert say("`1 <= page <= maximum`") == "one is at most page is at most maximum"
+    assert say("`(page - 1) * per_page`") == "page minus one times per page"
