@@ -36,7 +36,10 @@ Any model may run this agent. `${CLAUDE_PLUGIN_ROOT}` is the plugin's root folde
 holding `skills/` and `agents/`); if your tool does not set it, use that folder's path.
 
 Before writing anything:
-- Read `${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/references/CORE.md` in full — skeleton, language rules, component set, banned list, shared script helpers
+- Read the rule pack named on your prompt's `RULES:` line in full — CORE.md and figures.md's
+  rules cut to this course's preset (section numbers unchanged, so "CORE.md §7" is §7 there):
+  skeleton, language rules, component set, banned list, shared script helpers. With no `RULES:`
+  line, read `${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/references/CORE.md` in full.
 - If the orchestrator named a `RUNNER`, also read
   `${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/references/runners/<RUNNER>.md` — that
   is the only runner this lesson may use. Do not read the other runner fragments. If this
@@ -50,8 +53,10 @@ Before writing anything:
   browser cannot load goes in `<div class="nerdit-run" data-run="offline">`, with output from a
   real machine and no Try It. `check_python_outputs.py` runs every example, so never invent
   an output: if you cannot work it out exactly, keep the example smaller.
-- Read `${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/references/figures.md` — the figure
-  templates. **Every concept section gets one main visual** (CORE.md §7). Pick it from
+- Figures: the pack holds figures.md's rules and an index of its templates, one file each; read
+  only the template files you draw (with no pack, read
+  `${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/references/figures.md`). **Every concept
+  section gets one main visual** (CORE.md §7). Pick it from
   CORE.md's Visual Map, then copy that template's markup and swap the labels. Do not improvise an
   SVG when a template fits, and never write a hex colour — `verify_course.py` fails the build on one.
   **Phone width (figures.md rule 9):** templates 1–9 are drawn 640 wide; restack the parts
@@ -112,6 +117,11 @@ The rulebook is authoritative; these are the spine (violating any = rejected by 
   sentence or a tip → ≤1 callout → one Try It block. A section with a run line shows it by its
   third paragraph (`check_prose.py` fails a fourth paragraph before the code). Never open a
   section with a story.
+- **Topic first, case study second (CORE.md §2, world courses):** each concept section teaches
+  the topic and its terms in general words, then `<h3 class="nerdit-casehead">🌟 Case Study: …</h3>`,
+  then the world's data and the worked example. No world name (business, owner, cast, branch)
+  before that heading, in prose, code or figures. Lesson 1 adds the `nerdit-case-intro` card
+  after the meta pills. `check_case.py` (in the gate) fails the lesson otherwise.
 - **Teaching sequence (CORE.md §2):** explain → code → code walk → when to use it → practice,
   using only the rows the concept needs. **120–220 words of prose per concept section**;
   over 220 warns and over 300 fails. Cut instead of padding: one idea is said once, not again

@@ -39,7 +39,8 @@ When `course-<chapter>_world.json` accompanies the input, resolve it with
 `scripts/make_world_data.py --world <world.json> --out-dir <workdir>` and pass
 `--world <world.json>` to `scripts/check_input.py --strict`, `scripts/gate_lesson.py`
 and `scripts/verify_course.py --contract v11`. Run `scripts/check_world.py --world
-<world.json> --course <output.json>` before QA. Follow `references/worlds/README.md`.
+<world.json> --course <output.json>` and `scripts/check_case.py --world <world.json> --course
+<output.json>` (topic first, case study second, CORE.md §2) before QA. Follow `references/worlds/README.md`.
 Without a world file, existing course behavior is unchanged.
 
 Every writer receives WORLD_PATH, WORLD_DATA_PATH and its LESSON_STAGE, along with
@@ -288,8 +289,14 @@ lesson (in parallel with the other lessons' agents — see Multi-Agent Architect
 passing it: `id`, `title`, `description`, chapter name, whether this is a multi-lesson chapter,
 `RUNNER` (the value resolved in Step 1), `FOCUS` (the lesson's `focus`, default `hands-on`), `PRIOR_TOPICS` + `UPCOMING_TOPICS` (the curriculum
 context — see below), `HTML_PATH = <workdir>/<id>.html`,
-`QUIZ_PATH = <workdir>/<id>.quiz.json`, and
-`CONCEPTS_PATH = <workdir>/<id>.concepts.json`.
+`QUIZ_PATH = <workdir>/<id>.quiz.json`,
+`CONCEPTS_PATH = <workdir>/<id>.concepts.json`, and `RULES = <the pack path>`.
+
+**Rule pack (saves tokens on every writer):** before spawning, run once per course
+`python scripts/rules_pack.py --preset <preset> --out <workdir>`, and once more with `--project`
+when the course has a capstone. It prints the pack path. Each writer reads that one file instead
+of CORE.md and figures.md in full (about 36% fewer characters for a code course) and opens only
+the figure templates it draws. Give the capstone lesson the `-project` pack.
 
 The writer returns three path lines (`FILE:`, `QUIZ:`, `CONCEPTS:`). Read none of the files
 back into your context: the assembler consumes the first two in Step 4, and
