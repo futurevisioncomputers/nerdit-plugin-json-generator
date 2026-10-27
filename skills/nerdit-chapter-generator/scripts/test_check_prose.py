@@ -111,3 +111,16 @@ def test_a_line_break_ends_a_legend_line():
     _, warns = check_lesson(html, [])
     assert not any("over 20 words" in w for w in warns)
     assert not any("more than 4 sentences" in w for w in warns)
+
+
+# The case study heading starts a new count: three paragraphs of topic, then the case study's code.
+def test_code_count_restarts_at_the_case_study_heading():
+    run = '<div class="nerdit-run"><div class="nerdit-in"><pre data-lang="python"><code>print(1)</code></pre></div></div>'
+    head = '<h3 class="nerdit-casehead">🌟 Case Study: One Record</h3>'
+    def section(case_paras):
+        return lesson("<section><h2>Records</h2><p>A <strong>record</strong> is one item.</p>"
+                      + "<p>Rows hold data.</p>" * 2 + head + "<p>The data.</p>" * case_paras + run + "</section>")
+    fails, _ = check_lesson(section(2), PATS)
+    assert not any("before its first code" in f for f in fails)
+    fails, _ = check_lesson(section(4), PATS)
+    assert any("section 1 has 4 paragraphs before its first code block" in f for f in fails)

@@ -102,11 +102,14 @@ def _first_paragraph(sec: Node) -> Node | None:
 
 
 def _paragraphs_before_code(sec: Node) -> int | None:
-    """Prose paragraphs before the section's first run block, or None when it has no run block."""
+    """Prose paragraphs before the section's first run block, or None when it has no run block.
+    The case study heading starts a new count: the topic's explanation is not the case's lead-in."""
     count = 0
     for n in _in_order(sec):
         if "nerdit-run" in n.classes:
             return count
+        if "nerdit-casehead" in n.classes:
+            count = 0
         if n.tag == "p" and not _inside(n, SKIP):
             count += 1
     return None
