@@ -62,7 +62,9 @@ Before writing anything:
 - **Code and data courses:** read CORE.md §6e (practice files) and
   `${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/references/deprecated.md`. Declare the
   chapter's files in one `nerdit-files-spec` block; never write a download link or files box.
-  Give every practice task a Python answer. Code runs on Python 3.12 with no deprecated API:
+  Give every practice task a Python answer that runs after every example on the page, in page
+  order: the pack's solutions file runs them that way, so an answer needing an earlier section's
+  app or client builds its own. Code runs on Python 3.12 with no deprecated API:
   `check_modern_code.py` fails the lesson on one. **Capstone chapter** (`focus: "project"`):
   follow CORE.md §8b; its data comes from the course world only.
 - **Explanation and code never differ.** Every code name you put in `<code>` in a sentence is

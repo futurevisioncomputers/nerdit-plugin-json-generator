@@ -902,7 +902,11 @@ practice, not a certificate requirement. Free learners can read it and build it 
   ```
 
   The starter gets `# TODO M2: add up the fees` and `raise NotImplementedError(...)` there.
-  Code reads data through `Path(__file__).resolve().parents[1] / "data"`. A fake provider or
+  Code reads data through `Path(__file__).resolve().parents[1] / "data"`. The page's examples may
+  import the project's modules and open its data files by bare name: the chapter's solutions file
+  runs with `solution/` importable and `data/` as its folder. Every script finishes on its own
+  (`check_files.py --as-learner` runs each one): one that starts a server starts it only when the
+  settings it needs are set, and otherwise prints how to start it. A fake provider or
   local stand-in lets it run offline with no API key. Pin `pytest` in the course requirements.
 - **Declare it in the chapter's files spec:** one `{"capstone": "capstone", "about": "…"}`
   entry, plus a `world` source for each data file (they land in `data/`).

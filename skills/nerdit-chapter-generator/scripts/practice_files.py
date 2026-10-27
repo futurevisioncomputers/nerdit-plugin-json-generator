@@ -149,8 +149,16 @@ def page_examples(html: str) -> list[tuple[str, str]]:
 PY_PRELUDE = ('import os\nfrom pathlib import Path\n\n'
               'HERE = Path(__file__).resolve().parent\n'
               "os.chdir(HERE.parent if HERE.name == 'solutions' else HERE)  # this chapter's files\n")
+# In the capstone chapter the page's examples import the project's modules and read its data/ files.
+PROJECT_PY_PRELUDE = ('import os\nimport sys\nfrom pathlib import Path\n\n'
+                      'HERE = Path(__file__).resolve().parent\n'
+                      "CHAPTER = HERE.parent if HERE.name == 'solutions' else HERE\n"
+                      "sys.path.insert(0, str(CHAPTER / 'solution'))  # the project's modules\n"
+                      "os.chdir(CHAPTER / 'data')  # the project's data files\n")
 # Notebooks open in their own folder; the solutions notebook steps up to the chapter folder once.
 NB_PRELUDE = "import os\nif os.path.basename(os.getcwd()) == 'solutions':\n    os.chdir('..')  # this chapter's files\n"
+PROJECT_NB_PRELUDE = NB_PRELUDE + ("import sys\nsys.path.insert(0, os.path.abspath('solution'))  # the project's modules\n"
+                                   "os.chdir('data')  # the project's data files\n")
 
 
 def _comment(text: str) -> str:
@@ -184,7 +192,7 @@ def _practice_file(name: str, chapter: dict, solutions: bool) -> bytes:
     if name.endswith('.ipynb'):
         cells = [('markdown', f'# {intro}')]
         if solutions:
-            cells.append(('code', NB_PRELUDE))
+            cells.append(('code', PROJECT_NB_PRELUDE if chapter.get('project') else NB_PRELUDE))
         for kind, item in parts:
             if kind == 'code':
                 cells.append(('code', item))
@@ -192,7 +200,7 @@ def _practice_file(name: str, chapter: dict, solutions: bool) -> bytes:
                 cells.append(('markdown', f'**{item["task"]}**'))
                 cells.append(('code', (item['solution'] or '') if solutions else ''))
         return _notebook(cells)
-    blocks = [_comment(intro) + '\n' + PY_PRELUDE]
+    blocks = [_comment(intro) + '\n' + (PROJECT_PY_PRELUDE if chapter.get('project') else PY_PRELUDE)]
     for kind, item in parts:
         if kind == 'code':
             blocks.append(item)
@@ -405,7 +413,8 @@ def build_pack(chapters: list[dict], course_short: str, version: int, world: dic
         folders.append((folder, spec['files']))
         for entry in files:
             built.append((chapter, folder, entry,
-                          build_file(entry, world, workdir, {**chapter, 'position': position}), bool(capstones)))
+                          build_file(entry, world, workdir, {**chapter, 'position': position,
+                                                               'project': bool(capstones)}), bool(capstones)))
         for entry in capstones:
             try:
                 trees.append((folder, _capstone_tree(entry, workdir)))

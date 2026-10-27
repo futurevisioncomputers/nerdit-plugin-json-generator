@@ -493,7 +493,11 @@ Then three more checks for code courses, each blocking like the ones above:
 
     python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/check_modern_code.py" --course <workdir>/course-<chaptername>_output.json
     python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/check_quiz.py" --course <workdir>/course-<chaptername>_output.json
-    python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/check_offline_outputs.py" --course <workdir>/course-<chaptername>_output.json --requirements <course-<chaptername>_requirements.txt> --workdir <workdir>/offline
+    python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/check_offline_outputs.py" --course <workdir>/course-<chaptername>_output.json --requirements <course-<chaptername>_requirements.txt> --workdir <workdir>/offline [--files-dir <pack out-dir>/files] [--capstone <workdir>/capstone]
+
+  When chapters read practice files, build the pack first (`practice_files.py`) and pass
+  `--files-dir`, so each chapter's data files sit beside its examples; pass `--capstone` when the
+  capstone page imports the project's own modules from `solution/`.
 
 - `check_modern_code.py` exit 1: shown code uses an API in `references/deprecated.md`. Add
   `--new-course` for a course created after 2026-10-23 (it then also requires `httpx2`).

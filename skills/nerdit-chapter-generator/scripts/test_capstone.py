@@ -152,6 +152,35 @@ def test_pack_carries_the_capstone_and_its_world_data(tmp_path):
     assert not any('starter/' in r or 'tests/' in r for r in learner['ran']), learner['ran']
 
 
+def test_capstone_solutions_file_finds_the_project_modules_and_data(tmp_path):
+    """The page's examples import the project's own modules and read its data/ files by name."""
+    import zipfile
+    import check_files as cf
+    import practice_files as pf
+    src = project(tmp_path)
+    (src / 'data' / 'L05-fees.csv').unlink()
+    (src / 'solution' / 'report.py').write_text(SOLUTION.replace('L05-fees.csv', 'L01-fees.csv'), encoding='utf-8')
+    spec = {'python': '3.12', 'files': [
+        {'name': 'L01-fees.csv', 'sections': [1], 'from': {'world': 'enquiries', 'columns': ['fee']}},
+        {'name': 'L01-solutions.py', 'sections': 'all', 'from': {'solutions': 'all'}},
+        {'capstone': 'capstone', 'about': 'The fee report, end to end'},
+    ]}
+    run = ('<div class="nerdit-run" data-run="offline"><div class="nerdit-in"><pre data-lang="python"><code>'
+           'from report import total\nwith open("L01-fees.csv") as f:\n    print(len(f.readlines()))\n'
+           'print(total([1, 2]))</code></pre></div><div class="nerdit-out"><pre><code>4\n3</code></pre></div></div>')
+    html = ('<h2>Overview</h2><script type="application/json" class="nerdit-files-spec">'
+            f'{json.dumps(spec)}</script><h2>1 — Milestone 1</h2>{run}')
+    chapters = [{'id': 'cap-01', 'title': 'Capstone: The Fee Report', 'html': html}]
+    world = {'enquiries': [{'enquiry_id': 'E1', 'fee': 9000}, {'enquiry_id': 'E2', 'fee': 4000},
+                           {'enquiry_id': 'E3', 'fee': 2500}]}
+    result = pf.build_pack(chapters, course_short='fees', version=1, world=world, requirements='pytest\n',
+                           out_dir=tmp_path / 'out', workdir=tmp_path)
+    with zipfile.ZipFile(tmp_path / 'out' / result['pack']) as z:
+        assert 'fees-practice-pack-v1/L01-capstone-the-fee-report/solutions/L01-solutions.py' in z.namelist()
+    learner = cf.run_as_learner(tmp_path / 'out', pythons=[sys.executable], workdir=tmp_path / 'learner')
+    assert learner['problems'] == [], learner['problems']
+
+
 def test_new_libraries_must_be_pinned_and_explained(tmp_path):
     out = written(tmp_path, project(tmp_path, solution='import matplotlib.pyplot as plt\nfrom PIL import Image\n'
                                     + SOLUTION))

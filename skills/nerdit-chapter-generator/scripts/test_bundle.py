@@ -50,6 +50,16 @@ def test_bundle_has_the_plan_layout_and_no_video_files(tmp_path):
     assert cb.check(path) == ([], [])
 
 
+def test_placed_video_course_keeps_the_plain_course_name(tmp_path):
+    course, pack, images = workdir(tmp_path)
+    placed = pack / 'course-fees_output.with-images.with-video.json'
+    placed.write_bytes(course.read_bytes())
+    path = mb.make_bundle(placed, pack, images, out_dir=tmp_path / 'out', slug='fees', version=1)
+    with zipfile.ZipFile(path) as z:
+        assert 'course-fees_output.json' in z.namelist()
+    assert cb.check(path) == ([], [])
+
+
 def test_missing_media_for_a_link_fails_at_build(tmp_path):
     course, pack, images = workdir(tmp_path)
     (images / 'upload' / 'fees-01-img1.webp').unlink()

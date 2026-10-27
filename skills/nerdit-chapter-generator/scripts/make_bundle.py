@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import re
 import sys
 import zipfile
 
@@ -39,7 +40,9 @@ def _clips(path: Path) -> bytes:
 def make_bundle(course_path: Path, pack: Path, images: Path | None, out_dir: Path, slug: str, version: int) -> Path:
     course_path, pack = Path(course_path), Path(pack)
     course = json.loads(course_path.read_text(encoding='utf-8'))
-    members: dict[str, bytes] = {course_path.name: course_path.read_bytes()}
+    # A placed course (….with-images.with-video.json) goes in under its plain name.
+    name = re.sub(r'(\.with-[a-z]+)+\.json$', '.json', course_path.name)
+    members: dict[str, bytes] = {name: course_path.read_bytes()}
     upload = Path(images) / 'upload' if images else None
     if upload and upload.is_dir():
         for p in sorted(upload.iterdir()):
