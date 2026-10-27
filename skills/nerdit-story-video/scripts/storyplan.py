@@ -52,11 +52,11 @@ NUMBER = re.compile(r"\d+(?:[.,]\d+)?")
 LATIN = re.compile(r"[A-Za-z]")
 DEVANAGARI = re.compile(r"[ऀ-ॿ]")
 MIN_ENGLISH = 0.3   # Hinglish: natural Hindi grammar and verbs, English technical terms and key nouns
-# English floor by plan language. Owner, 2026-10-26: "en-IN" (mostly English, an Indian-English
-# voice, a few Hindi words at most) is the default; "hi" keeps the Hinglish rule.
+# English floor by plan language. Owner, 2026-10-27: "hi" (Hinglish, the Hindi Chirp 3 HD voice)
+# is the default; "en-IN" (mostly English, an Indian-English voice) stays available.
 ENGLISH_FLOOR = {"hi": MIN_ENGLISH, "en-IN": 0.8}
-DEFAULT_LANGUAGE = "en-IN"
-DEFAULT_VOICE = {"engine": "google", "name": "en-IN-Chirp3-HD-Aoede", "rate": 1.0}
+DEFAULT_LANGUAGE = "hi"
+DEFAULT_VOICE = {"engine": "google", "name": "hi-IN-Chirp3-HD-Aoede", "rate": 1.0}
 FIGURE = re.compile(r'<div[^>]*data-nerdit-img="([^"]+)"[^>]*>\s*(<svg\b.*?</svg>)', re.S)
 ARIA = re.compile(r'aria-label="([^"]*)"')
 SVG_TEXT = re.compile(r"<text\b[^>]*>(.*?)</text>", re.S)

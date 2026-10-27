@@ -79,13 +79,13 @@ present). Keys, in the user's environment only, never in a plan or a message:
    - Characters and quizzes are not used in the video.
    - **narration**: 2–6 short sentences (at most 550 characters) for a first-time learner, professional instructor tone,
      not storytelling: the concept first, then the course example. The plan's `language` sets
-     the style (owner, 2026-10-26): **`en-IN` (default)** is natural Indian English, the way a
-     friendly Indian instructor talks in class: short spoken sentences, contractions ("you'll",
-     "it's"), "so", "now", "notice", at most a few Hindi words; at least 80% English words.
-     **`hi`** is Hinglish the way a good Indian teacher speaks it: correct Hindi grammar and
+     the style (owner, 2026-10-27): **`hi` (default)** is Hinglish the way a good Indian teacher speaks it: correct Hindi grammar and
      Hindi verbs (खड़ी होकर, शुरू होने के बाद, check करें), English for technical terms and key
      nouns, never an English verb forced into Hindi grammar ("stand करके"); at least 30% English
-     words. Only the lesson's facts; any number spoken must appear in that lesson. Say each
+     words; Hindi words in Devanagari so the Hindi voice says them right. **`en-IN`** (on request)
+     is natural Indian English, the way a friendly Indian instructor talks in class: short spoken
+     sentences, contractions ("you'll", "it's"), "so", "now", "notice", at most a few Hindi words;
+     at least 80% English words. Only the lesson's facts; any number spoken must appear in that lesson. Say each
      `terms` entry out loud (1–3 per scene).
    - **keyIdea** (≤ 90 chars, English) is the on-screen takeaway; there are no captions.
    - **focus** (optional, up to 4, not on B-roll): `{x, y, zoom, at}` with x, y 0–1 across the
@@ -105,8 +105,8 @@ present). Keys, in the user's environment only, never in a plan or a message:
 ## 2. Voice and B-roll
 
 - `python scripts/voice.py --images-dir <images>`: Google Chirp 3 HD, `voice.name` default
-  `en-IN-Chirp3-HD-Aoede` (a `hi` plan uses `hi-IN-Chirp3-HD-Aoede`), `voice.rate` 1.0.
-  `python scripts/voice.py --list-voices en-IN` lists the alternatives; try two or three and
+  `hi-IN-Chirp3-HD-Aoede` (an `en-IN` plan uses `en-IN-Chirp3-HD-Aoede`), `voice.rate` 1.0.
+  `python scripts/voice.py --list-voices hi-IN` lists the alternatives; try two or three and
   keep the one the owner prefers.
   Google and edge voices speak code words respelled from `scripts/pronunciation.json` (JSON →
   Jason, dict → dictionary, json.dumps → Jason dot dumps; snake_case, dotted names, camelCase and

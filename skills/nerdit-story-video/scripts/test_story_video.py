@@ -183,7 +183,7 @@ def test_google_engine_uses_the_key_from_the_environment(tmp_path, monkeypatch):
     voice.run(images, None, None, None, runner=runner, google=google)
     path, body, key = bodies[0]
     assert (path, key) == ("text:synthesize", "k123")
-    assert body["voice"] == {"languageCode": "en-IN", "name": "en-IN-Chirp3-HD-Aoede"}
+    assert body["voice"] == {"languageCode": "hi-IN", "name": "hi-IN-Chirp3-HD-Aoede"}
     assert body["audioConfig"]["audioEncoding"] == "LINEAR16" and body["input"]["text"] == "Hello, इस video का intro."
     words = json.loads((images / "video" / "audio" / "intro.words.json").read_text(encoding="utf-8"))
     assert [w["w"] for w in words] == ["Hello", "इस", "video", "का", "intro"]
@@ -557,11 +557,11 @@ def test_english_floor_follows_the_plan_language(tmp_path):
     assert any("at least 80%" in e for e in check(plan, images, course))
 
 
-def test_new_plans_are_mostly_english_with_the_google_indian_english_voice(tmp_path):
+def test_new_plans_are_hinglish_with_the_google_hindi_voice(tmp_path):
     images, course = tmp_path / "images", make_course(tmp_path)
     plan = json.loads(storyplan.scaffold(images, course).read_text(encoding="utf-8"))
-    assert plan["language"] == "en-IN"
-    assert plan["voice"] == {"engine": "google", "name": "en-IN-Chirp3-HD-Aoede", "rate": 1.0}
+    assert plan["language"] == "hi"
+    assert plan["voice"] == {"engine": "google", "name": "hi-IN-Chirp3-HD-Aoede", "rate": 1.0}
 
 
 # Code in backticks is read the way a teacher says it; the screen keeps the real code.
