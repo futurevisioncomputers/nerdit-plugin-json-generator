@@ -51,7 +51,8 @@ SVG_RE = re.compile(r"<svg\b.*?</svg>", re.S | re.I)
 def gate(input_path: Path, lesson_dir: Path, lid: str, contract: str = "v11",
          before_dir: Path | None = None, modes=(), world_path: Path | None = None,
          new_course: bool = False, run_dir: Path | None = None, requirements: str | None = None,
-         pythons: tuple[str, ...] = ("3.14", "3.12"), capstone: Path | None = None) -> tuple[list[str], list[str]]:
+         pythons: tuple[str, ...] = ("3.14", "3.12"), capstone: Path | None = None,
+         video: bool = False) -> tuple[list[str], list[str]]:
     lessons = json.loads(Path(input_path).read_text(encoding="utf-8"))
     one = [s for s in lessons if s.get("id") == lid]
     if not one:
@@ -176,7 +177,22 @@ def gate(input_path: Path, lesson_dir: Path, lid: str, contract: str = "v11",
 
     if before_dir is not None:
         fails += [f"refresh: {p}" for p in check_refresh(Path(before_dir), Path(lesson_dir), lid, set(modes))]
+    if video:   # the lesson's own part of the story-video plan (written by its writer)
+        raw_html = (Path(lesson_dir) / f"{lid}.html").read_text(encoding="utf-8")   # the bytes the writer hashed
+        fails += [f"video: {p}" for p in video_problems(Path(lesson_dir), lid, one[0].get("title", ""), raw_html)]
     return fails, warns
+
+
+def video_problems(lesson_dir: Path, lid: str, title: str, html: str) -> list[str]:
+    part = lesson_dir / f"{lid}.video.json"
+    if not part.is_file():
+        return [f"{part.name} missing; write the lesson's video part after its gate passes"]
+    story = Path(__file__).resolve().parents[2] / "nerdit-story-video" / "scripts"
+    if str(story) not in sys.path:
+        sys.path.insert(0, str(story))
+    from storyplan import lesson_video_problems
+    return lesson_video_problems(json.loads(part.read_text(encoding="utf-8")), html, lid, title,
+                                 lesson_dir / "video-vectors")
 
 
 def main() -> int:
@@ -194,6 +210,7 @@ def main() -> int:
     ap.add_argument("--requirements", help="the course requirements file, for --run-dir")
     ap.add_argument("--pythons", default="3.14,3.12")
     ap.add_argument("--capstone", help="the capstone project folder: its solution/ modules are importable")
+    ap.add_argument("--video", action="store_true", help="also check the lesson's <id>.video.json part")
     ap.add_argument("--new-course", action="store_true",
                     help="a course made after 2026-10-23: also require httpx2 (references/deprecated.md)")
     args = ap.parse_args()
@@ -205,7 +222,8 @@ def main() -> int:
                             Path(args.run_dir) if args.run_dir else None,
                             Path(args.requirements).read_text(encoding="utf-8") if args.requirements else
                             ("" if args.run_dir else None),
-                            tuple(args.pythons.split(",")), Path(args.capstone) if args.capstone else None)
+                            tuple(args.pythons.split(",")), Path(args.capstone) if args.capstone else None,
+                            args.video)
     except (OSError, KeyError, ValueError) as e:
         print(f"ERROR: {e}", file=sys.stderr)
         return 2

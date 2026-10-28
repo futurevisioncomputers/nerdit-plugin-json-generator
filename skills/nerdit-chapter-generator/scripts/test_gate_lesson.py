@@ -231,3 +231,26 @@ def test_gate_runs_the_program_rules(tmp_path):
     inp, d = setup(tmp_path, big)
     fails, _ = gate(inp, d, "c-01")
     assert any("verify:" in f and "80" in f for f in fails)
+
+
+def _video_part(d, html=LESSON):
+    import hashlib
+    part = {"lessonId": "c-01", "htmlSha256": hashlib.sha256(html.encode("utf-8")).hexdigest(), "language": "hi",
+            "scenes": [], "practise": [], "skipTopics": [{"topic": 1, "reason": "the query is shown on the page"}]}
+    (d / "c-01.video.json").write_text(json.dumps(part), encoding="utf-8")
+
+
+def test_gate_with_video_needs_the_lessons_video_part(tmp_path):
+    inp, d = setup(tmp_path)
+    fails, _ = gate(inp, d, "c-01", video=True)
+    assert any(f.startswith("video:") and "c-01.video.json" in f for f in fails)
+
+
+def test_gate_with_video_accepts_a_valid_part_and_ignores_it_without_the_flag(tmp_path):
+    inp, d = setup(tmp_path)
+    _video_part(d)
+    fails, _ = gate(inp, d, "c-01", video=True)
+    assert not any(f.startswith("video:") for f in fails), fails
+    (d / "c-01.video.json").unlink()
+    fails, _ = gate(inp, d, "c-01")
+    assert not any(f.startswith("video:") for f in fails)
