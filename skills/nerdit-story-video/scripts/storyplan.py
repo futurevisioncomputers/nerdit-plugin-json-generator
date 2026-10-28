@@ -29,7 +29,7 @@ Each scene has a key-idea panel, key terms that pop in when spoken, optional cam
 points, and an optional misconception check (myth). Narration is Hinglish, written from the
 lesson text; the check refuses invented numbers in narration and in drawn vectors.
 """
-import argparse, html, json, re, sys
+import argparse, hashlib, html, json, re, shutil, sys
 from pathlib import Path
 
 import lessonparts
@@ -503,12 +503,60 @@ def check_plan(plan: dict, video_dir: Path, figures: dict | None = None, texts: 
     return errors
 
 
+COURSE_ONLY = ("plan has ", "intro", "recap", "intro/recap")   # errors a single lesson cannot cause
+
+
+def html_sha256(html_text: str) -> str:
+    return hashlib.sha256(html_text.encode("utf-8")).hexdigest()
+
+
+def lesson_video_problems(video: dict, html_text: str, lesson_id: str, title: str, vectors_dir: Path) -> list[str]:
+    """One lesson's video part (<id>.video.json, written by the lesson writer) checked as check_plan
+    would check it inside the course plan, minus what only the whole course decides."""
+    import tempfile
+    errors = []
+    if video.get("htmlSha256") != html_sha256(html_text):
+        errors.append(f"{lesson_id}: the lesson changed after its video part was written; rewrite it")
+    with tempfile.TemporaryDirectory() as tmp:
+        course = Path(tmp) / "course.json"
+        course.write_text(json.dumps({"title": title, "lessons": [{"id": lesson_id, "title": title,
+                                                                   "content": html_text}]}), encoding="utf-8")
+        (Path(tmp) / "video" / "vectors").mkdir(parents=True)
+        for svg in Path(vectors_dir).glob(f"{lesson_id}-*.svg"):
+            shutil.copy(svg, Path(tmp) / "video" / "vectors" / svg.name)
+        plan = {"version": 3, "course": title, "language": video.get("language") or DEFAULT_LANGUAGE,
+                "voice": dict(DEFAULT_VOICE), "intro": {"title": title, "points": ["a", "b"], "narration": ""},
+                "scenes": video.get("scenes") or [],
+                "skipTopics": [dict(k, lessonId=lesson_id) for k in video.get("skipTopics") or []],
+                "practise": [dict(p, lessonId=lesson_id) for p in video.get("practise") or []],
+                "recap": {"points": ["a", "b", "c"], "narration": ""}, "availableFigures": []}
+        found = check_plan(plan, Path(tmp) / "video", lesson_figures(course, Path(tmp)), lesson_texts(course),
+                           lesson_topics(course), lesson_parts(course), lesson_practice(course))
+    errors += [e for e in found if not e.startswith(COURSE_ONLY)]
+    return errors
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("command", choices=["scaffold", "check"])
-    ap.add_argument("--images-dir", required=True, type=Path)
+    ap.add_argument("command", choices=["scaffold", "check", "check-lesson", "merge"])
+    ap.add_argument("--images-dir", type=Path)
     ap.add_argument("--course", type=Path, help="course JSON (scaffold; check defaults to plan.source)")
+    ap.add_argument("--video", type=Path, help="check-lesson: the lesson's <id>.video.json")
+    ap.add_argument("--html", type=Path, help="check-lesson: the lesson's <id>.html")
+    ap.add_argument("--lesson-id", help="check-lesson: the lesson id")
+    ap.add_argument("--title", default="", help="check-lesson: the lesson title")
+    ap.add_argument("--vectors", type=Path, help="check-lesson: folder of the lesson's vector SVGs")
+    ap.add_argument("--lessons-dir", type=Path, help="merge: the workdir holding every <id>.video.json")
     a = ap.parse_args(argv)
+    if a.command == "check-lesson":
+        errors = lesson_video_problems(load_json(a.video), a.html.read_text(encoding="utf-8"), a.lesson_id,
+                                       a.title, a.vectors)
+        for e in errors:
+            print("ERROR", e)
+        print("lesson video part OK" if not errors else f"{len(errors)} problem(s)")
+        return 1 if errors else 0
+    if a.images_dir is None:
+        raise SystemExit(f"{a.command} needs --images-dir")
     if a.command == "scaffold":
         if not a.course:
             raise SystemExit("scaffold needs --course")

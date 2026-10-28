@@ -579,3 +579,84 @@ def test_code_in_backticks_is_spoken_like_a_teacher_reads_it():
     assert say("`page > 1`") == "page is greater than one"
     assert say("`1 <= page <= maximum`") == "one is at most page is at most maximum"
     assert say("`(page - 1) * per_page`") == "page minus one times per page"
+
+
+# ---- lesson parts written by the lesson writer (video plan in the writer, 2026-10-28) ----
+import hashlib  # noqa: E402
+
+LESSON_HTML = ('<h1>Counts</h1><section><h2>1 — Counts</h2><p>An Enquiry leads to a Demo; 12 learners.</p>'
+               '<div class="nerdit-tryit">Try It</div></section>'
+               '<section><h2>2 — Rates</h2><p>A rate is a count per week; 4 rows.</p>'
+               '<div class="nerdit-tryit">Try It</div></section>')
+NARR = ("ये data का पहला scene है, और यहाँ Enquiry से Demo तक का पूरा flow देखें. "
+        "हर step एक record बनाता है, और count हमेशा उसी data से आता है. "
+        "हर week की count अलग होती है, और model उसी pattern को ध्यान से पढ़ता है. "
+        "Rate का मतलब है एक fixed time में कितने events होते हैं, जैसे एक week में admissions. "
+        "Count कभी negative नहीं होता, इसलिए हम एक simple straight line पर भरोसा नहीं करते. "
+        "Data जैसा है, model को उसी shape को follow करना चाहिए, तभी answer सही आता है.")
+
+
+def lesson_part(topics=(1, 2), html=LESSON_HTML):
+    scenes = []
+    for t in topics:
+        for k in range(1, 4):
+            scenes.append({"kind": "vector", "lessonId": "c-01", "topic": t, "title": f"{t} — part",
+                           "vector": f"c-01-t{t}-v{k}.svg", "narration": NARR, "keyIdea": "Counts come from data.",
+                           "terms": ["data"], "focus": [], "myth": None})
+    return {"lessonId": "c-01", "htmlSha256": hashlib.sha256(html.encode("utf-8")).hexdigest(), "language": "hi",
+            "scenes": scenes, "practise": [{"topic": t, "tryIt": "count one week", "task": None} for t in topics],
+            "skipTopics": []}
+
+
+def vectors(tmp_path, part):
+    d = tmp_path / "video-vectors"
+    d.mkdir(exist_ok=True)
+    for s in part["scenes"]:
+        (d / s["vector"]).write_text(VEC, encoding="utf-8")
+    return d
+
+
+def lesson_check(tmp_path, part, html=LESSON_HTML):
+    return storyplan.lesson_video_problems(part, html, "c-01", "Counts", vectors(tmp_path, part))
+
+
+def test_a_good_lesson_video_part_passes(tmp_path):
+    assert lesson_check(tmp_path, lesson_part()) == []
+
+
+def test_a_topic_the_lesson_does_not_have_fails(tmp_path):
+    part = lesson_part()
+    part["scenes"][0]["topic"] = 3
+    assert any("3" in e for e in lesson_check(tmp_path, part))
+
+
+def test_a_number_not_in_the_lesson_fails(tmp_path):
+    part = lesson_part()
+    part["scenes"][0]["narration"] = NARR + " कुल 9999 rows हैं."
+    assert any("9999" in e for e in lesson_check(tmp_path, part))
+
+
+def test_a_stale_html_hash_fails(tmp_path):
+    part = lesson_part()
+    part["htmlSha256"] = "0" * 64
+    assert any("rewrite it" in e for e in lesson_check(tmp_path, part))
+
+
+def test_skip_topic_without_try_it_passes(tmp_path):
+    html = LESSON_HTML.replace('<div class="nerdit-tryit">Try It</div></section><section><h2>2', '</section><section><h2>2')
+    part = lesson_part(topics=(2,), html=html)
+    part["skipTopics"] = [{"topic": 1, "reason": "the overview needs no clip"}]
+    assert lesson_check(tmp_path, part, html) == []
+
+
+def test_check_lesson_cli_exit_codes(tmp_path):
+    part = lesson_part()
+    vecs = vectors(tmp_path, part)
+    (tmp_path / "c-01.html").write_text(LESSON_HTML, encoding="utf-8")
+    (tmp_path / "c-01.video.json").write_text(json.dumps(part, ensure_ascii=False), encoding="utf-8")
+    args = ["check-lesson", "--video", str(tmp_path / "c-01.video.json"), "--html", str(tmp_path / "c-01.html"),
+            "--lesson-id", "c-01", "--title", "Counts", "--vectors", str(vecs)]
+    assert storyplan.main(args) == 0
+    part["htmlSha256"] = "0" * 64
+    (tmp_path / "c-01.video.json").write_text(json.dumps(part, ensure_ascii=False), encoding="utf-8")
+    assert storyplan.main(args) == 1
