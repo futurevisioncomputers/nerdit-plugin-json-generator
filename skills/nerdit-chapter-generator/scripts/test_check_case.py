@@ -53,13 +53,32 @@ def test_a_name_inside_a_word_is_not_a_world_name():
     assert cc.case_problems(page(ok), NAMES, first=False) == []
 
 
-def test_every_concept_section_needs_exactly_one_case_study_heading():
-    none = '<section><h2>1 — Routes</h2><p>A <strong>route</strong>.</p></section>'
+PLAIN = '<section><h2>1 — Routes</h2><p>A <strong>route</strong> connects a URL to a function.</p></section>'
+
+
+def test_a_section_may_skip_its_case_study_but_never_has_two():
     two = section(2, "<p>x</p>", '<h3 class="nerdit-casehead">🌟 Case Study: Again</h3>')
-    assert cc.case_problems(page(none, two), NAMES, first=False) == [
-        'section 1 has no case study; after the explanation add <h3 class="nerdit-casehead">🌟 Case Study: …</h3> '
-        "and put the course world's data and example after it",
+    assert cc.case_problems(page(PLAIN, two), NAMES, first=False) == [
         "section 2 has 2 case study headings; use one"]
+    assert cc.case_problems(page(PLAIN, GOOD.replace("1 — ", "2 — ")), NAMES, first=False) == []
+
+
+def test_a_lesson_needs_at_least_one_case_study():
+    assert cc.case_problems(page(PLAIN), NAMES, first=False) == [
+        'the lesson has no case study; give at least one section a <h3 class="nerdit-casehead">🌟 Case Study: …</h3> '
+        "where the course world adds a decision or real numbers"]
+
+
+def test_a_world_name_in_a_section_without_a_case_study_fails():
+    named = PLAIN.replace("a function.", "a function, as Neha does.")
+    assert any('names "Neha"' in p for p in cc.case_problems(page(named, GOOD.replace("1 — ", "2 — ")), NAMES,
+                                                                first=False))
+
+
+def test_a_case_study_in_every_section_warns():
+    three = page(*(GOOD.replace("1 — ", f"{n} — ") for n in (1, 2, 3)))
+    assert any("decision or real numbers" in w for w in cc.case_warnings(three))
+    assert cc.case_warnings(page(PLAIN, GOOD.replace("1 — ", "2 — "), GOOD.replace("1 — ", "3 — "))) == []
 
 
 def test_the_first_lesson_meets_the_case_study_before_its_first_section():

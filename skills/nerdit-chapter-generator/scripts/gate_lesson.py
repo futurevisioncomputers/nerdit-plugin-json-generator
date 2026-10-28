@@ -26,7 +26,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent.parent / "nerdit-lesson-illustrator" / "scripts"))
 
 from assemble_course import build_course  # noqa: E402
-from check_case import case_problems, world_names  # noqa: E402
+from check_case import case_problems, case_warnings, world_names  # noqa: E402
 from check_code_prose import check_lesson as check_code_prose, walk_problems  # noqa: E402
 from check_modern_code import lesson_code, scan as scan_modern  # noqa: E402
 from check_prose import banned_patterns, check_lesson as check_voice  # noqa: E402
@@ -85,6 +85,7 @@ def gate(input_path: Path, lesson_dir: Path, lid: str, contract: str = "v11",
         first = next(i for i, s in enumerate(lessons) if s.get("id") == lid) == 0
         if before_dir is None:
             fails += [f"case: {p}" for p in case_problems(html, world_names(world), first)]
+            warns += [f"case: {w}" for w in case_warnings(html)]
     else:
         # No world: a diagram must still not draw a number the lesson never states.
         fails += [f"labels: {f}" for f in svg_label_failures(html, {})]

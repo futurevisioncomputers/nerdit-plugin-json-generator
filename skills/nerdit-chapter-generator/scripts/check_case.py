@@ -9,9 +9,11 @@ terms, then opens its case study with <h3 class="nerdit-casehead">🌟 Case Stud
 course world's names and data appear only after that heading. The first lesson introduces the
 world once, before section 1, in <div class="nerdit-info-box nerdit-case-intro">.
 
+Case studies are used where they teach (owner, 2026-10-28): a section may have none.
 Fails: a world name (the business, its short name, the owner, a cast member, a branch) before a
-section's case study heading, in prose, code or a figure; a concept section with no case study
-heading or with two; a first lesson without the card naming the business and a cast member.
+section's case study heading, or in a section without one, in prose, code or a figure; a section
+with two case study headings; a lesson with none; a first lesson without the card naming the
+business and a cast member. Warns (case_warnings): a case study in every one of 3+ sections.
 Cheat sheet and practice sections are not concept sections. Exit 0 = pass, 1 = a problem,
 2 = unreadable file. Stdlib only.
 """
@@ -80,8 +82,7 @@ def case_problems(html: str, names: list[str], first: bool) -> list[str]:
         return []
     tree = parse(html)
     problems = []
-    sections = [n for n in tree.all if n.tag == "section"
-                and not any(d.classes & NOT_CONCEPT for d in walk(n)) and not n.classes & NOT_CONCEPT]
+    sections = concept_sections(tree)
     if first:
         intro = next((n for n in tree.all if INTRO in n.classes), None)
         text = _text(intro.content) if intro is not None else ""
@@ -89,11 +90,15 @@ def case_problems(html: str, names: list[str], first: bool) -> list[str]:
             problems.append('the first lesson needs a "Meet the case study" card (<div class="nerdit-info-box '
                             f'{INTRO}">) before section 1: who {names[0]} is, the people in its story, '
                             "and the data the course uses")
+    total = 0
     for n_sec, sec in enumerate(sections, 1):
         heads = [n for n in walk(sec) if CASEHEAD in n.classes]
-        if not heads:
-            problems.append(f'section {n_sec} has no case study; after the explanation add <h3 class="{CASEHEAD}">'
-                            "🌟 Case Study: …</h3> and put the course world's data and example after it")
+        total += len(heads)
+        if not heads:   # a section may teach without the course world (owner, 2026-10-28)
+            name = _named(_text(sec.content), names)
+            if name:
+                problems.append(f'section {n_sec} names "{name}" before its case study; explain the idea in '
+                                f'general terms, or add <h3 class="{CASEHEAD}"> before the course world')
             continue
         if len(heads) > 1:
             problems.append(f"section {n_sec} has {len(heads)} case study headings; use one")
@@ -102,7 +107,24 @@ def case_problems(html: str, names: list[str], first: bool) -> list[str]:
         if name:
             problems.append(f'section {n_sec} names "{name}" before its case study; explain the idea in general '
                             f'terms, then put the course world after <h3 class="{CASEHEAD}">')
+    if sections and not total:
+        problems.append(f'the lesson has no case study; give at least one section a <h3 class="{CASEHEAD}">'
+                        "🌟 Case Study: …</h3> where the course world adds a decision or real numbers")
     return problems
+
+
+def concept_sections(tree) -> list:
+    return [n for n in tree.all if n.tag == "section"
+            and not any(d.classes & NOT_CONCEPT for d in walk(n)) and not n.classes & NOT_CONCEPT]
+
+
+def case_warnings(html: str) -> list[str]:
+    """A case study in every concept section (3 or more): keep only those that teach (owner, 2026-10-28)."""
+    sections = concept_sections(parse(html))
+    if len(sections) >= 3 and all(any(CASEHEAD in n.classes for n in walk(sec)) for sec in sections):
+        return [f"every one of the {len(sections)} concept sections has a case study; keep the ones that add a "
+                "decision or real numbers, and teach the rest with a plain worked example"]
+    return []
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -121,6 +143,8 @@ def main(argv: list[str] | None = None) -> int:
         for p in case_problems(lesson.get("content", ""), names, first=i == 0):
             print(f"FAIL {lesson['id']}: {p}")
             bad += 1
+        for w in case_warnings(lesson.get("content", "")):
+            print(f"WARN {lesson['id']}: {w}")
     print(f"case study: {len(lessons)} lesson(s), {bad} problem(s)")
     return 1 if bad else 0
 
