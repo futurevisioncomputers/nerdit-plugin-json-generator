@@ -27,7 +27,7 @@ sys.path.insert(0, str(HERE.parent.parent / "nerdit-lesson-illustrator" / "scrip
 
 from assemble_course import build_course  # noqa: E402
 from check_case import case_problems, world_names  # noqa: E402
-from check_code_prose import check_lesson as check_code_prose  # noqa: E402
+from check_code_prose import check_lesson as check_code_prose, walk_problems  # noqa: E402
 from check_modern_code import lesson_code, scan as scan_modern  # noqa: E402
 from check_prose import banned_patterns, check_lesson as check_voice  # noqa: E402
 from check_quiz import check_questions as check_quiz  # noqa: E402
@@ -43,7 +43,7 @@ from lesson_runs import ensure_venv, lesson_runs  # noqa: E402
 from practice_files import build_file  # noqa: E402
 from make_world_data import generate, load_world  # noqa: E402
 from svgcheck import check_svg  # noqa: E402
-from verify_course import Report, verify_density, verify_schema, verify_structure  # noqa: E402
+from verify_course import Report, verify_density, verify_programs, verify_schema, verify_structure  # noqa: E402
 
 SVG_RE = re.compile(r"<svg\b.*?</svg>", re.S | re.I)
 
@@ -69,6 +69,7 @@ def gate(input_path: Path, lesson_dir: Path, lid: str, contract: str = "v11",
     verify_structure(rep, course, contract)
     if contract == "v11":
         verify_density(rep, course, one)
+        verify_programs(rep, course, one, new_course or bool({"programs"} & set(modes)))
     fails += [f"verify: {f}" for f in rep.failures]
     warns += [f"verify: {w}" for w in rep.warnings]
 
@@ -108,6 +109,9 @@ def gate(input_path: Path, lesson_dir: Path, lid: str, contract: str = "v11",
         fails += [f"modern: block {i} line {h['line']}: {h['found']} -> write {h['instead']}"
                   for h in scan_modern(code, new_course)]
     fails += [f"prose-code: {p}" for p in check_code_prose(html)]
+    w_fails, w_warns = walk_problems(html, new_course or bool({"programs"} & set(modes)))
+    fails += [f"walk: {p}" for p in w_fails]
+    warns += [f"walk: {p}" for p in w_warns]
     labelled = [(f"question {i}", qn) for i, qn in enumerate(course["lessons"][0].get("questions", []), 1)]
     labelled += [(f"assessment {i}", qn) for i, qn in enumerate(course["assessment"]["questions"], 1)]
     try:

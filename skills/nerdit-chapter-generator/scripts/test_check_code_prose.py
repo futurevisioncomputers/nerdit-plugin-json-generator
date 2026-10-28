@@ -65,3 +65,41 @@ def test_a_code_walk_quotes_whole_lines_of_its_sections_code():
     assert any('code walk' in f and 'return {"id": 2}' in f and '1 — Routes' in f for f in fails), fails
     part = html.replace('<code>@app.get("/products/1")</code>', '<code>@app.get</code>')
     assert any('code walk' in f and '`@app.get`' in f for f in cp.check_lesson(part))
+
+
+from test_check_python_outputs import program_line  # noqa: E402
+
+PROGRAM = "\n".join(f"x{i} = {i}" for i in range(1, 13))   # 12 code lines
+
+
+def walk(*starts, full=True):
+    cls = "nerdit-codewalk nerdit-walk-full" if full else "nerdit-codewalk"
+    return f'<ol class="{cls}">' + "".join(f"<li><code>{s}</code> does a step.</li>" for s in starts) + "</ol>"
+
+
+def page(*parts):
+    return '<div class="nerdit-wrapper nerdit-simple"><section><h2>1 — App</h2>' + "".join(parts) + "</section></div>"
+
+
+def test_a_program_needs_a_full_walk():
+    html = page(program_line(PROGRAM, None, offline=False))
+    fails, warns = cp.walk_problems(html, new_course=True)
+    assert len(fails) == 1 and warns == []
+    fails, warns = cp.walk_problems(html, new_course=False)
+    assert fails == [] and len(warns) == 1
+
+
+def test_walk_steps_cover_every_line_in_order():
+    ok = page(program_line(PROGRAM, None, offline=False), walk("x1 = 1", "x5 = 5", "x9 = 9"))
+    assert cp.walk_problems(ok, new_course=True) == ([], [])
+    long = page(program_line(PROGRAM, None, offline=False), walk("x1 = 1", "x10 = 10"))
+    fails, _ = cp.walk_problems(long, new_course=True)
+    assert any("8" in f for f in fails)
+    late = page(program_line(PROGRAM, None, offline=False), walk("x3 = 3", "x9 = 9"))
+    assert cp.walk_problems(late, new_course=True)[0]
+
+
+def test_indentation_does_not_break_a_walk_match():
+    code = "def add(a, b):\n    return a + b"
+    html = page(program_line(code, None, offline=False), walk("def add(a, b):", "return a + b"))
+    assert cp.walk_problems(html, new_course=True) == ([], [])

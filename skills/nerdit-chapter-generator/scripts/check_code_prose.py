@@ -25,7 +25,7 @@ from pathlib import Path
 import re
 import sys
 
-from verify_course import parse, text_of
+from verify_course import parse, text_of, walk
 
 CODE_SHAPED = re.compile(r'[().=\[\]_]')
 SAID_PRINTED = re.compile(r'\b(?:prints?|shows?|returns?|gives?|outputs?|displays?)\s+`?(-?\d[\d,]*(?:\.\d+)?)', re.I)
@@ -110,6 +110,47 @@ def check_lesson(content: str) -> list[str]:
     return fails
 
 
+WALK_STEP_LINES = 8   # CORE.md §4: one step of a program's walk explains at most 8 code lines
+
+
+def walk_problems(content: str, new_course: bool = False) -> tuple[list[str], list[str]]:
+    """(failures, warnings): every program is followed by <ol class="nerdit-codewalk nerdit-walk-full">
+    whose steps quote program lines in order, start at its first code line and cover at most
+    WALK_STEP_LINES code lines each. Blank and comment lines do not count. A problem is a failure
+    for a new course and a warning for a delivered one."""
+    problems = []
+    for prog in (n for n in parse(content).all if 'nerdit-program' in n.classes):
+        name = prog.attrs.get('data-file') or 'program'
+        half = next((n for n in walk(prog) if 'nerdit-in' in n.classes), None)   # the code, not the output
+        pre = next((n for n in walk(half) if n.tag == 'pre'), None) if half is not None else None
+        lines = [_squash(ln) for ln in (text_of(pre) if pre is not None else '').splitlines()]
+        lines = [ln for ln in lines if ln and not ln.startswith('#')]
+        sibs = prog.parent.children if prog.parent is not None else []
+        after = sibs[sibs.index(prog) + 1:] if prog in sibs else []
+        ol = next((n for n in after if n.tag == 'ol'), None)
+        if ol is None or 'nerdit-walk-full' not in ol.classes:
+            problems.append(f'{name}: no full code walk (<ol class="nerdit-codewalk nerdit-walk-full">) '
+                            'after it; explain every line')
+            continue
+        starts, at = [], 0
+        for step in (c for c in ol.children if c.tag == 'li'):
+            quoted = next((c for c in step.children if c.tag == 'code'), None)
+            token = _squash(text_of(quoted)) if quoted is not None else ''
+            if token not in lines[at:]:
+                problems.append(f'{name}: walk step `{token}` is not the next program line in order')
+                continue
+            at = lines.index(token, at)
+            starts.append(at)
+            at += 1
+        if not starts or starts[0] != 0:
+            problems.append(f'{name}: the walk must start at its first line `{lines[0] if lines else ""}`')
+        for a, b in zip(starts, starts[1:] + [len(lines)]):
+            if b - a > WALK_STEP_LINES:
+                problems.append(f'{name}: the walk step at `{lines[a]}` covers {b - a} lines; '
+                                f'at most {WALK_STEP_LINES} per step')
+    return (problems, []) if new_course else ([], problems)
+
+
 def _codes(node):
     for child in node.children:
         if child.tag == 'code':
@@ -121,6 +162,7 @@ def _codes(node):
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--course', required=True)
+    ap.add_argument('--new-course', action='store_true', help='a program without a full walk fails')
     args = ap.parse_args(argv)
     try:
         lessons = json.loads(Path(args.course).read_text(encoding='utf-8'))['lessons']
@@ -132,6 +174,12 @@ def main(argv: list[str] | None = None) -> int:
         for line in check_lesson(lesson.get('content', '')):
             total += 1
             print(f'FAIL {lesson["id"]}: {line}')
+        w_fails, w_warns = walk_problems(lesson.get('content', ''), args.new_course)
+        for line in w_fails:
+            total += 1
+            print(f'FAIL {lesson["id"]}: {line}')
+        for line in w_warns:
+            print(f'WARN {lesson["id"]}: {line}')
     print(f'CODE-PROSE: {total} disagreement(s)')
     return 1 if total else 0
 

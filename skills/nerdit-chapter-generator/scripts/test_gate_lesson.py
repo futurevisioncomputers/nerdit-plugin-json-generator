@@ -210,3 +210,24 @@ def test_gate_runs_offline_examples_and_practice_answers_with_a_run_dir(tmp_path
     fails = [f for f in gate(inp, d, "c-01", run_dir=tmp_path / "gate-run", requirements="", pythons=(py,))[0]
              if f.startswith("run:")]
     assert len(fails) == 1 and "example 1" in fails[0] and "Python prints '4'" in fails[0]
+
+
+def _with_program(walk=""):
+    from test_check_python_outputs import program_line
+    prog = program_line("x1 = 1\nx2 = 2", None, "", file="tiny.py") + walk
+    return LESSON.replace("</section></div>", prog + "</section></div>")
+
+
+def test_gate_fails_a_program_without_a_full_walk_for_a_new_course(tmp_path):
+    inp, d = setup(tmp_path, _with_program())
+    fails, warns = gate(inp, d, "c-01", new_course=True)
+    assert any(f.startswith("walk:") for f in fails)
+    fails, warns = gate(inp, d, "c-01")
+    assert not any(f.startswith("walk:") for f in fails) and any(w.startswith("walk:") for w in warns)
+
+
+def test_gate_runs_the_program_rules(tmp_path):
+    big = _with_program().replace("x1 = 1\nx2 = 2", "\n".join(f"x{i} = {i}" for i in range(81)))
+    inp, d = setup(tmp_path, big)
+    fails, _ = gate(inp, d, "c-01")
+    assert any("verify:" in f and "80" in f for f in fails)
