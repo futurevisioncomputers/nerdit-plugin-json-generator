@@ -28,6 +28,9 @@ from check_python_outputs import python_parts
 from nerdit_world_gen import build_files
 from practice_files import _practice_file, practice_tasks
 
+# Agg's plt.show() warns that it cannot show a window; ignore only that warning under -W error.
+SHOW_OK = ['-W', 'ignore:FigureCanvasAgg is non-interactive:UserWarning']
+
 
 def ensure_venv(cache: Path, requirements: str, pythons: list[str]) -> tuple[Path | None, str | None]:
     """The course's venv: made on the first call, reused while the requirements are unchanged."""
@@ -77,9 +80,10 @@ def lesson_runs(lesson: dict, position: int, vpy: Path | None, workdir: Path,
     chapter = {"position": position, "title": lesson.get("title", ""), "html": html}
     script = folder / f"L{position:02d}-solutions.py"
     script.write_bytes(_practice_file(script.name, chapter, solutions=True))
-    env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
+    # Agg: plt.show() on a desktop backend opens a window and blocks until the timeout.
+    env = {**os.environ, "PYTHONIOENCODING": "utf-8", "MPLBACKEND": "Agg"}
     try:
-        proc = subprocess.run([str(vpy), "-W", "error", script.name], cwd=folder, capture_output=True, text=True,
+        proc = subprocess.run([str(vpy), "-W", "error", *SHOW_OK, script.name], cwd=folder, capture_output=True, text=True,
                               encoding="utf-8", errors="replace", timeout=TIMEOUT, env=env)
     except subprocess.TimeoutExpired:
         return fails + [f"practice answers: still running after {TIMEOUT} s (a server started? only start one "

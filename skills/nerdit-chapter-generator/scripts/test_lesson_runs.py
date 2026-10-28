@@ -45,6 +45,18 @@ def test_a_lesson_whose_examples_and_answers_run_passes(tmp_path, vpy):
     assert lr.lesson_runs(ls, 2, vpy, tmp_path) == ([], [])
 
 
+def test_answers_run_with_a_headless_matplotlib_backend(tmp_path, vpy):
+    # plt.show() on a desktop backend opens a window and blocks until the run times out.
+    check = "import os\nprint(os.environ.get('MPLBACKEND'))"
+    ls = lesson(run(check, "Agg"), task(1, "assert os.environ['MPLBACKEND'] == 'Agg'"))
+    assert lr.lesson_runs(ls, 2, vpy, tmp_path) == ([], [])
+    # Agg's plt.show() warns; -W error must not turn that one warning into a failure.
+    show = "import warnings\nwarnings.warn('FigureCanvasAgg is non-interactive, and thus cannot be shown')"
+    assert lr.lesson_runs(lesson(task(1, show)), 2, vpy, tmp_path) == ([], [])
+    fails, _ = lr.lesson_runs(lesson(task(1, "import warnings\nwarnings.warn('other')")), 2, vpy, tmp_path)
+    assert fails
+
+
 def test_a_wrong_offline_output_fails(tmp_path, vpy):
     fails, _ = lr.lesson_runs(lesson(run("print(3)", "4")), 2, vpy, tmp_path)
     assert fails and "example 1" in fails[0] and "Python prints '3'" in fails[0]

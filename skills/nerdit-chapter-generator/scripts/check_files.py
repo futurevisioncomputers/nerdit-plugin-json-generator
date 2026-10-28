@@ -37,6 +37,9 @@ import zipfile
 
 import practice_files as pf
 
+# Agg's plt.show() warns that it cannot show a window; ignore only that warning under -W error.
+SHOW_OK = ['-W', 'ignore:FigureCanvasAgg is non-interactive:UserWarning']
+
 TIMEOUT = 120
 LINK = re.compile(r'href="files/([^"]+)"')
 
@@ -166,11 +169,11 @@ def _run_with(pack_root: Path, python: str, venv_dir: Path, requirements: str) -
         if inst.returncode != 0:
             return [f'requirements.txt: pip install failed ({_last_line(inst)})'], []
     problems, ran = [], []
-    env = {**os.environ, 'PYTHONIOENCODING': 'utf-8'}
+    env = {**os.environ, 'PYTHONIOENCODING': 'utf-8', 'MPLBACKEND': 'Agg'}  # plt.show() must not block
 
     def run(label: str, args: list[str], cwd: Path):
         try:
-            proc = subprocess.run([str(vpy), '-W', 'error'] + args, cwd=cwd, capture_output=True, text=True,
+            proc = subprocess.run([str(vpy), '-W', 'error', *SHOW_OK] + args, cwd=cwd, capture_output=True, text=True,
                                   encoding='utf-8', errors='replace', timeout=TIMEOUT, env=env)
         except subprocess.TimeoutExpired:
             problems.append(f'{label}: still running after {TIMEOUT} s')

@@ -37,6 +37,9 @@ import types
 from capstone import milestones
 from check_python_outputs import python_parts
 
+# Agg's plt.show() warns that it cannot show a window; ignore only that warning under -W error.
+SHOW_OK = ['-W', 'ignore:FigureCanvasAgg is non-interactive:UserWarning']
+
 TIMEOUT = 300
 MIN_COVERAGE = 80   # % of the solution's executable lines the tests must run
 MIN_KILLED = 80     # % of a milestone's planted bugs its tests must catch
@@ -67,9 +70,9 @@ json.dump({"rc": int(rc), "hits": [[os.path.normcase(os.path.realpath(f)), n] fo
 def _pytest(python: str, root: Path, code_dir: str | Path, test: Path | list) -> int:
     tests = [str(t) for t in (test if isinstance(test, list) else [test])]
     env = {**os.environ, 'PYTHONPATH': str(Path(root) / code_dir), 'PYTHONDONTWRITEBYTECODE': '1',
-           'PYTEST_DISABLE_PLUGIN_AUTOLOAD': '1'}
+           'PYTEST_DISABLE_PLUGIN_AUTOLOAD': '1', 'MPLBACKEND': 'Agg'}
     try:
-        return subprocess.run([python, '-m', 'pytest', '-q', '-W', 'error', '-p', 'no:cacheprovider', *tests],
+        return subprocess.run([python, '-m', 'pytest', '-q', '-W', 'error', *SHOW_OK, '-p', 'no:cacheprovider', *tests],
                               cwd=root, env=env, capture_output=True, timeout=TIMEOUT).returncode
     except subprocess.TimeoutExpired:
         return -1
@@ -116,7 +119,7 @@ def coverage(root: Path, python: str = sys.executable) -> tuple[int, list[str]]:
         runner, result = Path(tmp) / 'cover.py', Path(tmp) / 'hits.json'
         runner.write_text(COVERAGE_RUNNER, encoding='utf-8')
         env = {**os.environ, 'PYTHONPATH': str(solution), 'PYTHONDONTWRITEBYTECODE': '1',
-               'PYTEST_DISABLE_PLUGIN_AUTOLOAD': '1'}
+               'PYTEST_DISABLE_PLUGIN_AUTOLOAD': '1', 'MPLBACKEND': 'Agg'}
         tests = [str(p) for p in sorted((root / 'tests').glob('test_*.py'))]
         subprocess.run([python, str(runner), str(solution), str(result), *tests], cwd=root, env=env,
                        capture_output=True, timeout=TIMEOUT)
@@ -254,9 +257,10 @@ def check(root: Path, python: str = sys.executable, mutate: bool = True) -> dict
                  if mid != 'final' and mid not in ids]
     if 'final' not in tests:
         problems.append('final: no tests (tests/test_final_*.py)')
-    env = {**os.environ, 'PYTHONPATH': str(root / 'starter'), 'PYTHONDONTWRITEBYTECODE': '1'}
+    env = {**os.environ, 'PYTHONPATH': str(root / 'starter'), 'PYTHONDONTWRITEBYTECODE': '1',
+           'MPLBACKEND': 'Agg'}
     for path in sorted((root / 'starter').glob('*.py')):
-        imp = subprocess.run([python, '-W', 'error', '-c', f'import {path.stem}'], cwd=root, env=env,
+        imp = subprocess.run([python, '-W', 'error', *SHOW_OK, '-c', f'import {path.stem}'], cwd=root, env=env,
                              capture_output=True, text=True)
         if imp.returncode != 0:
             last = [ln for ln in imp.stderr.splitlines() if ln.strip()]

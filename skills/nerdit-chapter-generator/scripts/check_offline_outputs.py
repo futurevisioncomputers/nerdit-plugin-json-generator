@@ -34,11 +34,16 @@ import sys
 from check_files import _last_line, _version, resolve_python
 from check_python_outputs import _short, build_files, normalise, python_parts
 
+# Agg's plt.show() warns that it cannot show a window; ignore only that warning under -W error.
+SHOW_OK = ['-W', 'ignore:FigureCanvasAgg is non-interactive:UserWarning']
+
 TIMEOUT = 300
 # Import name -> the package a learner installs, where they differ.
 PACKAGES = {'sklearn': 'scikit-learn', 'cv2': 'opencv-python', 'PIL': 'pillow', 'yaml': 'pyyaml',
             'bs4': 'beautifulsoup4', 'dotenv': 'python-dotenv', 'google': 'google-genai',
             'jwt': 'pyjwt', 'dateutil': 'python-dateutil', 'multipart': 'python-multipart'}
+# Slimmer distributions that ship the same import: pinning any one of them counts.
+ALSO_PROVIDED_BY = {'interpret': ('interpret-core',)}
 # One stdout for every example, like a script: a logging handler made in one example keeps
 # sys.stdout, so what it prints later lands in the later example's output.
 DRIVER = '''import io, json, sys
@@ -107,7 +112,8 @@ def unpinned(codes: list[str], requirements: str, local: frozenset = frozenset()
                 continue
             package = PACKAGES.get(mod, mod)
             label = package if package == mod else f'{package} (import {mod})'
-            if _norm(package) not in pinned and label not in missing:
+            names = (package,) + ALSO_PROVIDED_BY.get(mod, ())
+            if not any(_norm(n) in pinned for n in names) and label not in missing:
                 missing.append(label)
     return missing
 
@@ -159,12 +165,13 @@ def _run_lesson(vpy: Path, lesson: dict, workdir: Path, files: list[Path] = (),
         shutil.copy(path, folder / path.name)
     (folder / '_blocks.json').write_text(json.dumps([r['code'] for _, r in numbered]), encoding='utf-8')
     (workdir / '_driver.py').write_text(DRIVER, encoding='utf-8')
-    env = {**os.environ, 'PYTHONIOENCODING': 'utf-8'}
+    # Agg: plt.show() on a desktop backend opens a window and blocks until the timeout.
+    env = {**os.environ, 'PYTHONIOENCODING': 'utf-8', 'MPLBACKEND': 'Agg'}
     if pythonpath is not None:
         env['PYTHONPATH'] = str(Path(pythonpath).resolve())
     lid = lesson['id']
     try:
-        proc = subprocess.run([str(vpy), '-W', 'error', str(workdir / '_driver.py'), '_blocks.json', '_results.json'],
+        proc = subprocess.run([str(vpy), '-W', 'error', *SHOW_OK, str(workdir / '_driver.py'), '_blocks.json', '_results.json'],
                               cwd=folder, capture_output=True, text=True, encoding='utf-8', errors='replace',
                               timeout=TIMEOUT, env=env)
     except subprocess.TimeoutExpired:

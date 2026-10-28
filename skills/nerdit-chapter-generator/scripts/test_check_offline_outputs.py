@@ -17,6 +17,13 @@ def test_unpinned_libraries_are_named():
     assert co.unpinned([code], reqs) == ["scikit-learn (import sklearn)"]
 
 
+def test_a_module_shipped_by_a_slimmer_distribution_counts_as_pinned():
+    code = "from interpret.glassbox import ExplainableBoostingRegressor"
+    assert co.unpinned([code], "interpret-core==0.7.8\n") == []
+    assert co.unpinned([code], "interpret==0.7.8\n") == []
+    assert co.unpinned([code], "numpy==2.0\n") == ["interpret"]
+
+
 def test_requirement_names_normalise():
     assert co.pinned_names("Scikit_Learn==1.7\npydantic[email]>=2\n-e ./x\n") == {"scikit-learn", "pydantic"}
 
@@ -25,6 +32,13 @@ def course(tmp_path, *parts):
     path = tmp_path / "course.json"
     path.write_text(json.dumps({"lessons": [{"id": "api-02", "content": lesson(*parts)}]}), encoding="utf-8")
     return path
+
+
+def test_offline_examples_run_with_a_headless_matplotlib_backend(tmp_path):
+    # plt.show() on a desktop backend opens a window and blocks until the run times out.
+    c = course(tmp_path, run_line("import os\nprint(os.environ.get('MPLBACKEND'))", "Agg", offline=True))
+    report = co.check_course(c, requirements="", pythons=[sys.executable], workdir=tmp_path / "w")
+    assert report["problems"] == [], report
 
 
 def test_matching_offline_outputs_pass_in_a_real_venv(tmp_path):
