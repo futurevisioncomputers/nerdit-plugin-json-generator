@@ -215,3 +215,20 @@ def test_readability_mode_allows_prose_and_highlights_but_not_code():
     assert compare(p(BASE), p(bolded), {"readability"}) == []
     changed = bolded.replace("amount FROM", "amount, 1 FROM")
     assert compare(p(BASE), p(changed), {"readability"})
+
+
+def test_video_only_mode_allows_no_lesson_change():
+    assert compare(p(BASE), p(BASE), {"video-only"}) == []
+    bolded = BASE.replace("Spaces hide inside text.", "Spaces <b>hide inside text</b>.")
+    assert compare(p(BASE), p(bolded), {"video-only"})
+    added = BASE.replace("</section></div>", PROGRAM + "</section></div>")
+    assert compare(p(BASE), p(added), {"video-only"})
+
+
+def test_video_only_is_a_known_mode_that_keeps_every_file(tmp_path):
+    before, after = tmp_path / "b", tmp_path / "a"
+    _files(before)
+    _files(after)
+    assert check(before, after, "x", {"video-only"}) == []
+    _files(after, quiz='{"lessonQuestions": [1], "assessmentQuestions": []}')
+    assert check(before, after, "x", {"video-only"})

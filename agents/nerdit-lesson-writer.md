@@ -284,7 +284,7 @@ Do not alter existing course records to match a new sample world.
 ## Refresh mode (optional — improving a finished lesson)
 
 If the orchestrator passes `SOURCE_PATH` **and** `REFRESH` (a list from `figures`, `sql-layout`,
-`trim`, `concise`, `programs`, `readability`), you are not rewriting the lesson. Copy `SOURCE_PATH` and change only what `REFRESH` names:
+`trim`, `concise`, `programs`, `readability`, `video-only`), you are not rewriting the lesson. Copy `SOURCE_PATH` and change only what `REFRESH` names:
 
 - `figures` — redraw figures that break figures.md R10–R13 or have a better template, with their
   captions and reading steps. Remove a text map (`nerdit-map`) a figure now covers; never keep
@@ -320,6 +320,8 @@ If the orchestrator passes `SOURCE_PATH` **and** `REFRESH` (a list from `figures
   lesson whose examples build on each other, add "The whole script" at the end of the last
   concept section. Existing run lines, outputs and seeds stay character for character. Gate with
   `--modes programs` so the walk and program rules are strict.
+- `video-only` — change nothing in the lesson's three files; only write its video part
+  (`VIDEO_PATH`, below) for a lesson that was delivered without one.
 - `readability` — apply CORE.md's case-study and highlight rules to the prose: keep a case study
   only where the course world adds a decision or real numbers (turn the others into plain worked
   examples with no world names), and add `<b>` scan highlights, 1–2 per explanation paragraph.

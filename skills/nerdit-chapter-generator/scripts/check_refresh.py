@@ -26,7 +26,7 @@ from pathlib import Path
 
 from verify_course import Node, descends_from, parse, text_of
 
-MODES = {"figures", "sql-layout", "trim", "concise", "programs", "readability"}
+MODES = {"figures", "sql-layout", "trim", "concise", "programs", "readability", "video-only"}  # video-only: nothing in the lesson changes
 CIRCLED = "①②③④⑤⑥⑦⑧⑨⑩"
 PUNCT = set("(),;=<>|+-*/")
 KEYS = ("prose", "figures", "maps", "code", "outputs", "seeds", "runheads", "programs")
