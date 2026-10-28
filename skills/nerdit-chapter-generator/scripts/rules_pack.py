@@ -26,6 +26,7 @@ from pathlib import Path
 REFS = Path(__file__).resolve().parent.parent / "references"
 CORE = REFS / "CORE.md"
 FIGURES = REFS / "figures.md"
+STORY_SKILL = Path(__file__).resolve().parents[2] / "nerdit-story-video" / "SKILL.md"
 PRESETS = ("code", "spreadsheet", "visual", "quantitative", "conversational")
 HEADING = re.compile(r"^(#{1,6}) ")
 TAG = re.compile(r"^<!--\s*pack:\s*([a-z ,-]+?)\s*-->\s*$")
@@ -83,7 +84,16 @@ def split_figures(text: str) -> tuple[str, list[tuple[str, str]]]:
     return "\n".join(rules).rstrip() + "\n", templates
 
 
-def build(workdir: Path, preset: str, project: bool, core: str | None = None, figures: str | None = None) -> Path:
+def video_rules(skill: str | None = None) -> str:
+    """The story-video scene rules a lesson writer needs for its lesson's video part: SKILL.md §1
+    between the video-pack markers (voice, build and placement stay with the video skill)."""
+    skill = STORY_SKILL.read_text(encoding="utf-8") if skill is None else skill
+    start, end = skill.index("<!-- video-pack:start -->"), skill.index("<!-- video-pack:end -->")
+    return skill[start + len("<!-- video-pack:start -->"):end].strip("\n")
+
+
+def build(workdir: Path, preset: str, project: bool, core: str | None = None, figures: str | None = None,
+          video: bool = False) -> Path:
     if preset not in PRESETS:
         raise ValueError(f"unknown preset {preset!r}; one of {', '.join(PRESETS)}")
     core = CORE.read_text(encoding="utf-8") if core is None else core
@@ -101,7 +111,11 @@ def build(workdir: Path, preset: str, project: bool, core: str | None = None, fi
             + "\n## Figure templates — read only the one you draw\n\n"
               "`figures.md §N` means the template file below. Copy its markup and swap the labels.\n\n"
             + index + "\n")
-    path = folder / f"rules-{preset}{'-project' if project else ''}.md"
+    if video:
+        text += ("\n## Video part (only when VIDEO_PATH is given)\n\n"
+                 "From nerdit-story-video SKILL.md §1. Write it after the lesson's gate passes.\n\n"
+                 + video_rules() + "\n")
+    path = folder / f"rules-{preset}{'-project' if project else ''}{'-video' if video else ''}.md"
     path.write_text(text, encoding="utf-8")
     return path
 
@@ -111,9 +125,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--preset", required=True)
     ap.add_argument("--project", action="store_true", help="the capstone chapter: keep CORE.md §8b")
     ap.add_argument("--out", required=True, help="the course work folder")
+    ap.add_argument("--video", action="store_true", help="add the story-video scene rules for VIDEO_PATH")
     args = ap.parse_args(argv)
     try:
-        path = build(Path(args.out), args.preset, args.project)
+        path = build(Path(args.out), args.preset, args.project, video=args.video)
     except (OSError, ValueError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2

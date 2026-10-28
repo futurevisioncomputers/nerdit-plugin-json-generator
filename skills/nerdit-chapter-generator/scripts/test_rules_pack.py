@@ -106,3 +106,12 @@ def test_the_real_rules_shrink_for_a_python_course(tmp_path):
         assert heading in text
     assert "### 6d. Try It on a non-code preset" not in text and "## 8b. CAPSTONE" not in text
     assert not re.search(r"<!-- pack:", text)
+
+
+def test_video_flag_appends_only_the_scene_rules(tmp_path):
+    path = rp.build(tmp_path, "code", False, video=True)
+    assert path.name == "rules-code-video.md"
+    text = path.read_text(encoding="utf-8")
+    assert "One topic per clip" in text and "practise" in text
+    assert "Voice and B-roll" not in text and "## Video part (only when VIDEO_PATH is given)" in text
+    assert "One topic per clip" not in rp.build(tmp_path, "code", False).read_text(encoding="utf-8")

@@ -31,6 +31,7 @@ present). Keys, in the user's environment only, never in a plan or a message:
    scene, then a `table` scene for each of the section's tables and a `code` scene for each of
    its worked examples (up to 2 each), all titled with the section heading; plus
    `availableFigures`, every SVG figure in the lessons by id and label.
+<!-- video-pack:start -->
 2. Read each section, then write its clip so it **mirrors the page** (4–7 scenes, 90–180 s):
    - **One topic per clip.** Every scene names `topic`: the number of the lesson section it
      explains (the `2 — …` heading). The build cuts one clip per topic and places it at the end
@@ -100,6 +101,7 @@ present). Keys, in the user's environment only, never in a plan or a message:
   otherwise leave it `null`. The script writes the file name from the lesson's files spec
   (`Pack: L02-practice-starter.ipynb, Task 1`); never type it. `check` fails a topic without an
   entry, a section with no Try It, or a task the starter does not have.
+<!-- video-pack:end -->
 3. `python scripts/storyplan.py check --images-dir <images>`. Fix every error and run again.
 
 ## 2. Voice and B-roll
