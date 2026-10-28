@@ -58,11 +58,19 @@ blocks = json.load(open(sys.argv[1], encoding="utf-8"))
 scope = {"__name__": "__main__"}
 results = []
 proxy = Out()
-for code in blocks:
+for block in blocks:
     out, error = io.StringIO(), None
     proxy.buf, sys.stdout = out, proxy
     try:
-        exec(compile(code, "<example>", "exec"), scope)
+        if block["program"]:
+            # A program is imported, never run as __main__, so its guard (app.run()) stays off;
+            # its check snippet then runs against it and prints what the page shows.
+            module = {"__name__": block["program"].rsplit(".", 1)[0]}
+            exec(compile(block["code"], block["program"], "exec"), module)
+            if block["check"]:
+                exec(compile(block["check"], "<check>", "exec"), module)
+        else:
+            exec(compile(block["code"], "<example>", "exec"), scope)
     except BaseException as exc:  # SystemExit and warnings-as-errors included
         error = f"{type(exc).__name__}: {exc}"
     results.append({"stdout": out.getvalue(), "error": error})
@@ -163,7 +171,11 @@ def _run_lesson(vpy: Path, lesson: dict, workdir: Path, files: list[Path] = (),
         (folder / name).write_text(text, encoding='utf-8', newline='')
     for path in files:
         shutil.copy(path, folder / path.name)
-    (folder / '_blocks.json').write_text(json.dumps([r['code'] for _, r in numbered]), encoding='utf-8')
+    for _, r in numbered:
+        if r['program']:
+            (folder / r['program']).write_text(r['code'], encoding='utf-8')
+    blocks = [{'code': r['code'], 'program': r['program'], 'check': r['check']} for _, r in numbered]
+    (folder / '_blocks.json').write_text(json.dumps(blocks), encoding='utf-8')
     (workdir / '_driver.py').write_text(DRIVER, encoding='utf-8')
     # Agg: plt.show() on a desktop backend opens a window and blocks until the timeout.
     env = {**os.environ, 'PYTHONIOENCODING': 'utf-8', 'MPLBACKEND': 'Agg'}

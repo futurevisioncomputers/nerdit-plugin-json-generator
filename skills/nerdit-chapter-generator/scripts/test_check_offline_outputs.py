@@ -3,7 +3,7 @@ import json
 import sys
 
 import check_offline_outputs as co
-from test_check_python_outputs import lesson, run_line
+from test_check_python_outputs import lesson, program_line, run_line
 
 
 def test_offline_blocks_are_only_the_offline_run_lines():
@@ -32,6 +32,28 @@ def course(tmp_path, *parts):
     path = tmp_path / "course.json"
     path.write_text(json.dumps({"lessons": [{"id": "api-02", "content": lesson(*parts)}]}), encoding="utf-8")
     return path
+
+
+ADD = 'def add(a, b):\n    return a + b\nif __name__ == "__main__":\n    print("server")'
+
+
+def test_a_program_is_imported_and_its_check_prints_the_output(tmp_path):
+    c = course(tmp_path, program_line(ADD, "print(add(2, 3))", "5", file="adder.py"))
+    report = co.check_course(c, requirements="", pythons=[sys.executable], workdir=tmp_path / "w")
+    assert report["problems"] == [], report
+
+
+def test_a_program_guard_never_runs(tmp_path):
+    c = course(tmp_path, program_line(ADD, "print(add(2, 3))", "server\n5", file="adder.py"))
+    report = co.check_course(c, requirements="", pythons=[sys.executable], workdir=tmp_path / "w")
+    assert len(report["problems"]) == 1 and "api-02" in report["problems"][0]
+
+
+def test_a_check_that_starts_a_server_times_out_clearly(tmp_path, monkeypatch):
+    monkeypatch.setattr(co, "TIMEOUT", 3)
+    c = course(tmp_path, program_line(ADD, "import time\ntime.sleep(10**6)", "", file="adder.py"))
+    report = co.check_course(c, requirements="", pythons=[sys.executable], workdir=tmp_path / "w")
+    assert any("still running" in p for p in report["problems"]), report
 
 
 def test_offline_examples_run_with_a_headless_matplotlib_backend(tmp_path):
