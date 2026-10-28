@@ -21,6 +21,15 @@ def test_regex_entry_and_whole_words():
     assert fails == []
 
 
+def test_robust_is_filler_except_as_a_statistics_term():
+    fails, _ = check_lesson(lesson("<p>This gives a robust pipeline.</p>"), PATS)
+    assert any("robust" in f for f in fails)
+    for term in ("robust regression", "Robust Regression", "robust regressors", "robust linear model",
+                 "robust standard errors", "robust loss", "robust estimators", "robust fitting"):
+        fails, _ = check_lesson(lesson(f"<p>Arjun tries {term} on the ad weeks.</p>"), PATS)
+        assert fails == [], term
+
+
 def test_long_sentence_fails_and_long_paragraph_warns():
     long = "You " + "really " * 20 + "need this."
     fails, _ = check_lesson(lesson(f"<p>{long}</p>"), PATS)

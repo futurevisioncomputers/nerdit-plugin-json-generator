@@ -32,7 +32,7 @@ crucial
 seamless
 seamlessly
 leverage
-robust
+re:\brobust\b(?!\s+(?:regressions?|regressors?|linear\s+models?|standard\s+errors?|loss|estimat\w*|fit\w*))
 utilize
 let's dive in
 dive into
