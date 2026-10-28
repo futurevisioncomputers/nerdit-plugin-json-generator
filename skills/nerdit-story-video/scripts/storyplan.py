@@ -230,6 +230,20 @@ def check_vector(svg: str, source: str) -> list[str]:
 def scaffold(images_dir: Path, course_path: Path) -> Path:
     """One clip per numbered section, pre-filled from the page: a concept vector, then the
     section's own tables and code runs. The writer adds narration, key ideas and the vectors."""
+    return _write_plan(images_dir, scaffold_plan(images_dir, course_path))
+
+
+def _write_plan(images_dir: Path, plan: dict) -> Path:
+    out = images_dir / "video" / "plan.json"
+    (out.parent / "vectors").mkdir(parents=True, exist_ok=True)
+    if out.exists():
+        raise SystemExit(f"{out} already exists; edit it or delete it first")
+    out.write_text(json.dumps(plan, ensure_ascii=False, indent=2), encoding="utf-8")
+    return out
+
+
+def scaffold_plan(images_dir: Path, course_path: Path) -> dict:
+    """The scaffolded v3 plan, not yet written."""
     lessons = course_lessons(course_path)
     data = load_json(course_path)
     title = data.get("title") or data.get("course", {}).get("title", "")
@@ -262,12 +276,52 @@ def scaffold(images_dir: Path, course_path: Path) -> Path:
                          for lid, sections in parts.items() for topic in sections],
             "recap": {"points": [], "narration": ""},
             "availableFigures": figures}
+    return plan
+
+
+def merge(images_dir: Path, course_path: Path, lessons_dir: Path) -> Path:
+    """plan.json from the lessons' own video parts (<id>.video.json, written by each lesson writer):
+    the scaffold, with every lesson's scenes, Try It cards and skipped topics replaced by its part,
+    and its vectors copied from <lessons_dir>/video-vectors. Intro and recap stay for the skill to
+    write. Nothing is written when a part is missing, stale (its lesson HTML changed since) or
+    reuses another lesson's vector name. The hash is of <lessons_dir>/<id>.html, the bytes the
+    writer hashed: the assembler normalises the HTML it puts in the course JSON."""
     out = images_dir / "video" / "plan.json"
-    (out.parent / "vectors").mkdir(parents=True, exist_ok=True)
     if out.exists():
         raise SystemExit(f"{out} already exists; edit it or delete it first")
-    out.write_text(json.dumps(plan, ensure_ascii=False, indent=2), encoding="utf-8")
-    return out
+    plan = scaffold_plan(images_dir, course_path)
+    lessons_dir, errors, scenes, skips, vectors, owner = Path(lessons_dir), [], [], [], [], {}
+    cards = {(c["lessonId"], c["topic"]): c for c in plan["practise"]}
+    for lesson in course_lessons(course_path):
+        lid = lesson.get("id", "")
+        path = lessons_dir / f"{lid}.video.json"
+        if not path.is_file():
+            errors.append(f"{lid}: no {path.name}; its writer did not write the lesson's video part")
+            continue
+        part = load_json(path)
+        html_file = lessons_dir / f"{lid}.html"
+        if not html_file.is_file() or part.get("htmlSha256") != html_sha256(html_file.read_text(encoding="utf-8")):
+            errors.append(f"{lid}: the lesson changed after its video part was written; rewrite it")
+        for s in part.get("scenes") or []:
+            name = s.get("vector")
+            if name:
+                if name in owner and owner[name] != lid:
+                    errors.append(f"{lid}: vector {name} is also used by {owner[name]}; names are unique per course")
+                owner[name] = lid
+                vectors.append(lessons_dir / "video-vectors" / name)
+        scenes += part.get("scenes") or []
+        skips += [dict(k, lessonId=lid) for k in part.get("skipTopics") or []]
+        for card in part.get("practise") or []:
+            if (lid, card.get("topic")) in cards:
+                cards[(lid, card["topic"])].update(tryIt=card.get("tryIt", ""), task=card.get("task"))
+    if errors:
+        raise SystemExit("\n".join(errors))
+    plan.update(scenes=scenes, skipTopics=skips)
+    path = _write_plan(images_dir, plan)
+    for svg in vectors:
+        if svg.is_file():
+            shutil.copy(svg, path.parent / "vectors" / svg.name)
+    return path
 
 
 def narrated_parts(plan: dict):
@@ -557,6 +611,11 @@ def main(argv=None) -> int:
         return 1 if errors else 0
     if a.images_dir is None:
         raise SystemExit(f"{a.command} needs --images-dir")
+    if a.command == "merge":
+        if not (a.course and a.lessons_dir):
+            raise SystemExit("merge needs --course and --lessons-dir")
+        print(f"wrote {merge(a.images_dir, a.course, a.lessons_dir)}")
+        return 0
     if a.command == "scaffold":
         if not a.course:
             raise SystemExit("scaffold needs --course")

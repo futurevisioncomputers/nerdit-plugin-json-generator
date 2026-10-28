@@ -596,14 +596,14 @@ NARR = ("ये data का पहला scene है, और यहाँ Enqui
         "Data जैसा है, model को उसी shape को follow करना चाहिए, तभी answer सही आता है.")
 
 
-def lesson_part(topics=(1, 2), html=LESSON_HTML):
+def lesson_part(topics=(1, 2), html=LESSON_HTML, lid="c-01"):
     scenes = []
     for t in topics:
         for k in range(1, 4):
-            scenes.append({"kind": "vector", "lessonId": "c-01", "topic": t, "title": f"{t} — part",
-                           "vector": f"c-01-t{t}-v{k}.svg", "narration": NARR, "keyIdea": "Counts come from data.",
+            scenes.append({"kind": "vector", "lessonId": lid, "topic": t, "title": f"{t} — part",
+                           "vector": f"{lid}-t{t}-v{k}.svg", "narration": NARR, "keyIdea": "Counts come from data.",
                            "terms": ["data"], "focus": [], "myth": None})
-    return {"lessonId": "c-01", "htmlSha256": hashlib.sha256(html.encode("utf-8")).hexdigest(), "language": "hi",
+    return {"lessonId": lid, "htmlSha256": hashlib.sha256(html.encode("utf-8")).hexdigest(), "language": "hi",
             "scenes": scenes, "practise": [{"topic": t, "tryIt": "count one week", "task": None} for t in topics],
             "skipTopics": []}
 
@@ -660,3 +660,61 @@ def test_check_lesson_cli_exit_codes(tmp_path):
     part["htmlSha256"] = "0" * 64
     (tmp_path / "c-01.video.json").write_text(json.dumps(part, ensure_ascii=False), encoding="utf-8")
     assert storyplan.main(args) == 1
+
+
+def merge_setup(tmp_path, lids=("c-01", "c-02")):
+    work = tmp_path / "work"
+    work.mkdir()
+    lessons = []
+    for lid in lids:
+        part = lesson_part(lid=lid)
+        (work / f"{lid}.html").write_text(LESSON_HTML, encoding="utf-8")
+        (work / f"{lid}.video.json").write_text(json.dumps(part, ensure_ascii=False), encoding="utf-8")
+        vectors(work, part)
+        lessons.append({"id": lid, "title": "Counts", "content": LESSON_HTML})
+    course = tmp_path / "course.json"
+    course.write_text(json.dumps({"title": "C", "lessons": lessons}), encoding="utf-8")
+    return tmp_path / "images", course, work
+
+
+def test_merge_fills_every_lesson_from_its_part(tmp_path):
+    images, course, work = merge_setup(tmp_path)
+    plan = json.loads(storyplan.merge(images, course, work).read_text(encoding="utf-8"))
+    want = lesson_part(lid="c-01")["scenes"] + lesson_part(lid="c-02")["scenes"]
+    assert plan["scenes"] == want
+    assert (images / "video" / "vectors" / "c-02-t2-v3.svg").is_file()
+    errors = storyplan.check_plan(plan, images / "video", storyplan.lesson_figures(course, images),
+                                  storyplan.lesson_texts(course), storyplan.lesson_topics(course),
+                                  storyplan.lesson_parts(course), storyplan.lesson_practice(course))
+    assert errors and all(e.startswith(("intro", "recap")) for e in errors), errors
+
+
+def test_merge_fails_on_a_missing_part(tmp_path):
+    images, course, work = merge_setup(tmp_path)
+    (work / "c-02.video.json").unlink()
+    with pytest.raises(SystemExit, match="c-02"):
+        storyplan.merge(images, course, work)
+
+
+def test_merge_fails_on_a_stale_part(tmp_path):
+    images, course, work = merge_setup(tmp_path)
+    (work / "c-01.html").write_text(LESSON_HTML + "<p>edited</p>", encoding="utf-8")
+    with pytest.raises(SystemExit, match="rewrite it"):
+        storyplan.merge(images, course, work)
+    assert not (images / "video" / "plan.json").exists()
+
+
+def test_merge_fails_on_duplicate_vector_names(tmp_path):
+    images, course, work = merge_setup(tmp_path)
+    part = json.loads((work / "c-02.video.json").read_text(encoding="utf-8"))
+    part["scenes"][0]["vector"] = "c-01-t1-v1.svg"
+    (work / "c-02.video.json").write_text(json.dumps(part, ensure_ascii=False), encoding="utf-8")
+    with pytest.raises(SystemExit, match="c-01-t1-v1.svg"):
+        storyplan.merge(images, course, work)
+
+
+def test_merge_refuses_to_overwrite_an_existing_plan(tmp_path):
+    images, course, work = merge_setup(tmp_path)
+    storyplan.merge(images, course, work)
+    with pytest.raises(SystemExit, match="already exists"):
+        storyplan.merge(images, course, work)
