@@ -26,6 +26,12 @@ present). Keys, in the user's environment only, never in a plan or a message:
 
 ## 1. Plan
 
+**Lessons written with a video part.** When the chapter generator's workdir holds a
+`<id>.video.json` for every lesson, run `python scripts/storyplan.py merge --images-dir <images>
+--course <course.json> --lessons-dir <workdir>` instead of steps 1–2: the scenes, Try It cards
+and vectors come from the writers. Write only `intro` and `recap`, then go to step 3. A missing or
+stale part fails the merge: rewrite that lesson's part, never fill the gap by hand.
+
 1. `python scripts/storyplan.py scaffold --images-dir <images> --course <course.json>` writes
    `<images>/video/plan.json` (version 3): for every numbered lesson section, a `vector` concept
    scene, then a `table` scene for each of the section's tables and a `code` scene for each of

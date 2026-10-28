@@ -444,6 +444,16 @@ QUIZ: <QUIZ_PATH>
 CONCEPTS: <CONCEPTS_PATH>
 ```
 
+**Video part (only when the orchestrator passes `VIDEO_PATH`).** After the lesson's gate passes,
+and never before, write this lesson's part of the story-video plan while the lesson is still in
+hand: `VIDEO_PATH` (`<workdir>/<id>.video.json`) holding `{"lessonId", "htmlSha256", "language":
+"hi", "scenes": [...], "practise": [{"topic", "tryIt", "task"}], "skipTopics": [{"topic",
+"reason"}]}`, and each vector SVG in `<workdir>/video-vectors/` named `<id>-t<topic>-<name>.svg`.
+Follow the "Video part" section of your rule pack (the story-video scene rules). `htmlSha256` is
+the SHA-256 of your final `<id>.html` bytes: compute it with Bash after the lesson is final, and
+rewrite the video part whenever you change the lesson. Run the GATE command with `--video` and
+fix what it prints, then add a fourth line `VIDEO: <VIDEO_PATH>` to the three above.
+
 No preamble, no explanation, no HTML echo, no JSON echo, no markdown fences. All three files
 written to disk still obey every rule above. The one exception to "nothing else": if a
 `VIOLATIONS` term was genuinely unavoidable, one line saying so after the path lines.

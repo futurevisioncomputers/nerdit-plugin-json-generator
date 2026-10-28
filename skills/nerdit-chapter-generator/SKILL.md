@@ -255,7 +255,10 @@ One page with every lesson, the site's styles and the site's code colours. Open 
    "SQL SELECT"). Keep the list — it becomes `--allow` in Step 4b. Without it, lesson 1 is
    checked against an empty world and legitimate prerequisite vocabulary reads as a forward
    reference. If the user has no answer, use an empty allowlist and say so.
-7. If the file cannot be found or parsed, notify the user and stop.
+7. Ask once whether the course gets a story video (default yes for code courses). If yes, each
+   writer also writes its lesson's video part (Step 2b), which saves the video skill re-reading
+   every lesson later.
+8. If the file cannot be found or parsed, notify the user and stop.
 
 ---
 
@@ -310,6 +313,13 @@ the files already on disk instead of re-reading every running writer.
 when the course has a capstone. It prints the pack path. Each writer reads that one file instead
 of CORE.md and figures.md in full (about 36% fewer characters for a code course) and opens only
 the figure templates it draws. Give the capstone lesson the `-project` pack.
+
+**Video part (when the course gets a video, Step 1.7):** build the packs with `--video` too, pass
+each writer `VIDEO_PATH = <workdir>/<id>.video.json` and add `--video` to its GATE command. The
+writer returns a fourth line `VIDEO:`. After assembly, run
+`python ../nerdit-story-video/scripts/storyplan.py merge --images-dir <images> --course <course.json>
+--lessons-dir <workdir>`: it builds `plan.json` from every lesson's part and fails on a missing or
+stale one (regenerate that lesson's writer). The video skill then writes only the intro and recap.
 
 The writer returns three path lines (`FILE:`, `QUIZ:`, `CONCEPTS:`). Read none of the files
 back into your context: the assembler consumes the first two in Step 4, and

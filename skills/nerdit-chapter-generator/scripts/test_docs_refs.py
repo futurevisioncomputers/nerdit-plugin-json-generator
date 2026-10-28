@@ -8,9 +8,11 @@ ROOT = HERE.parents[2]
 
 def test_skill_md_names_only_scripts_that_exist():
     skill = (HERE.parent / "SKILL.md").read_text(encoding="utf-8")
-    names = set(re.findall(r"(?<!illustrator/)scripts/([a-z_]+\.py)", skill))
+    names = set(re.findall(r"(?<!illustrator/)(?<!story-video/)scripts/([a-z_]+\.py)", skill))
     assert {"gate_lesson.py", "build_preview.py", "check_prose.py", "check_refresh.py"} <= names
     assert [n for n in names if not (HERE / n).exists()] == []
+    story = set(re.findall(r"nerdit-story-video/scripts/([a-z_]+\.py)", skill))
+    assert [n for n in story if not (HERE.parents[1] / "nerdit-story-video" / "scripts" / n).exists()] == []
 
 
 def test_writer_knows_refresh_mode_and_voice():
