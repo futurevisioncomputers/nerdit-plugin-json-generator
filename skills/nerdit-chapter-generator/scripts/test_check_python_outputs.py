@@ -42,6 +42,28 @@ def lesson(*parts: str) -> str:
     return '<div class="nerdit-wrapper nerdit-simple">' + "".join(parts) + "</div>"
 
 
+def program_line(code: str, check: str | None, shown: str = "", file: str | None = "form_app.py",
+                 offline: bool = True) -> str:
+    """A program run line (CORE.md §4): one whole file, an optional check snippet, its output."""
+    attrs = (' data-run="offline"' if offline else "") + (f' data-file="{file}"' if file else "")
+    snippet = f'<script type="text/plain" class="nerdit-check">{check}</script>' if check is not None else ""
+    return (f'<div class="nerdit-run nerdit-program"{attrs}><div class="nerdit-in">'
+            f'<span class="nerdit-tag">You type</span><pre data-lang="python"><code>{code}</code></pre></div>'
+            f'{snippet}<div class="nerdit-out"><span class="nerdit-tag">Python shows</span>'
+            f'<pre><code>{shown}</code></pre></div></div>')
+
+
+def test_program_run_lines_carry_file_and_check():
+    html = lesson(run_line("print(1)", "1"),
+                  program_line("from flask import Flask\napp = Flask(__name__)",
+                               'client = app.test_client()\nprint(client.post("/").status_code)', "200"))
+    runs = python_parts(html)["runs"]
+    assert runs[0]["program"] is None and runs[0]["check"] is None
+    assert runs[1]["program"] == "form_app.py"
+    assert runs[1]["check"].startswith("client = app.test_client()")
+    assert runs[1]["offline"] is True
+
+
 READ = "import pandas as pd\ndf = pd.read_csv(&quot;orders.csv&quot;)\nprint(df.shape)"
 
 

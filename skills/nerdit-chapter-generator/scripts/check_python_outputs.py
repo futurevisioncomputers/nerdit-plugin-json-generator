@@ -147,8 +147,12 @@ def python_parts(content: str) -> dict:
                 continue
             out = _first(node, lambda n: "nerdit-out" in n.classes)
             shown_pre = out and _first(out, lambda n: n.tag == "pre")
+            program = "nerdit-program" in node.classes   # one whole file (CORE.md §4)
+            check = program and _first(node, lambda n: n.tag == "script" and "nerdit-check" in n.classes)
             runs.append({"code": _code(pre), "shown": _code(shown_pre) if shown_pre is not None else None,
-                         "offline": node.attrs.get("data-run") == "offline"})
+                         "offline": node.attrs.get("data-run") == "offline",
+                         "program": node.attrs.get("data-file") if program else None,
+                         "check": "".join(c for c in check.content if isinstance(c, str)) if check else None})
         elif "nerdit-tryit" in node.classes:
             calls = " ".join(n.attrs.get("onclick", "") for n in _in_order(node) if n.tag == "button")
             if not _is_python(node) and "nerditRunPython" not in calls and PLOT_RUNNER not in calls:
