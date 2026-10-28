@@ -527,7 +527,75 @@ def verify_dataset(rep: Report, lid: str, tree: Tree) -> None:
 
 
 def shown_code_blocks(tree: Tree) -> list[str]:
-    return [text_of(n).strip("\n") for n in tree.all if n.tag == "pre" and descends_from(n, "nerdit-in")]
+    """Shown run-line code, programs excluded: a program has its own caps (verify_programs)."""
+    return [text_of(n).strip("\n") for n in tree.all if n.tag == "pre" and descends_from(n, "nerdit-in")
+            and not descends_from(n, "nerdit-program")]
+
+
+PROGRAM_LINES = 80        # CORE.md §4: one whole file (spec 2026-10-28)
+PROGRAMS_PER_LESSON = 2
+FAKE_RUNTIME = ("test_request_context", "MultiDict", '"csrf": False', "'csrf': False")
+CELL_RUNS = 3             # run lines that need earlier code before a lesson needs its whole script
+ENTRY = 'if __name__ == "__main__":'
+
+
+def needs_earlier(code: str) -> bool:
+    """True when the code loads a name it neither imports, assigns, defines nor binds."""
+    import ast
+    import builtins
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return False
+    bound = set(dir(builtins))
+    for n in ast.walk(tree):
+        if isinstance(n, (ast.Import, ast.ImportFrom)):
+            bound |= {(a.asname or a.name).split(".")[0] for a in n.names}
+        elif isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+            bound.add(n.name)
+        elif isinstance(n, ast.Name) and not isinstance(n.ctx, ast.Load):
+            bound.add(n.id)
+        elif isinstance(n, ast.arg):
+            bound.add(n.arg)
+    return any(isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load) and n.id not in bound
+               for n in ast.walk(tree))
+
+
+def verify_programs(rep: Report, out: dict, inp: list, new_course: bool = False) -> None:
+    """CORE.md §4 programs: one whole file, at most 80 lines and 2 per lesson; a checked program has
+    its entry point and runs offline. Fake runtimes outside a program and cell-only code lessons
+    without their whole script are flagged (FAIL for a new course, WARN for a delivered one)."""
+    from check_python_outputs import python_parts   # lazy: check_python_outputs imports this module
+    meta = {s.get("id"): s for s in inp}
+    for lesson in out.get("lessons", []):
+        lid = lesson.get("id", "?")
+        runs = python_parts(lesson.get("content", ""))["runs"]
+        programs = [r for r in runs if r["program"] is not None or r["check"] is not None]
+        rep.check(len(programs) <= PROGRAMS_PER_LESSON,
+                  f"{lid}: {len(programs)} programs; keep to {PROGRAMS_PER_LESSON} programs per lesson")
+        for i, r in enumerate(programs, 1):
+            code = r["code"]
+            rep.check(bool(r["program"]), f'{lid}: program {i} has no data-file="<name>.py"')
+            n = len(code.strip("\n").splitlines())
+            rep.check(n <= PROGRAM_LINES, f"{lid}: program {i} is {n} lines (max {PROGRAM_LINES})")
+            if r["check"] is not None:
+                rep.check(ENTRY in code, f"{lid}: program {i} has a check but no {ENTRY} entry point")
+                rep.check(r["offline"], f'{lid}: program {i} has a check, so it runs offline (data-run="offline")')
+            rep.warn("render_template(" not in code, f"{lid}: program {i} uses render_template(); a lesson "
+                                                     "program is one file: use render_template_string")
+        for i, r in enumerate(runs, 1):
+            if r in programs:
+                continue
+            for fake in FAKE_RUNTIME:
+                rep.warn(fake not in r["code"], f"{lid}: example {i} fakes the runtime with {fake}; "
+                                                "show the real program (CORE.md §4)")
+        s = meta.get(lid, {})
+        code_lesson = s.get("runner") in ("python", "plot") and str(s.get("focus") or "hands-on") != "concept"
+        cells = sum(needs_earlier(r["code"]) for r in runs if r not in programs)
+        if code_lesson and cells >= CELL_RUNS and not programs:
+            msg = (f"{lid}: {cells} examples need code from earlier examples; add the whole script as a "
+                   "program at the end of the lesson (CORE.md §4)")
+            (rep.check if new_course else rep.warn)(False, msg)
 
 
 def verify_density(rep: Report, out: dict, inp: list):
@@ -610,6 +678,7 @@ def main() -> int:
     verify_structure(rep, out, args.contract)
     if args.contract == "v11":
         verify_density(rep, out, inp)
+        verify_programs(rep, out, inp, args.new_course)
         verify_code_accuracy(rep, out, args.new_course)
         if args.world:
             # Lazy import keeps the standalone DOM helpers usable by check_world.py.
