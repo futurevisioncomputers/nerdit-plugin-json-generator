@@ -82,6 +82,14 @@ learner the same file for Excel or Jupyter.
   checker before planning, never memory:
   `check_python_outputs.py --probe numpy,pandas,sklearn,seaborn`.
 
+## Programs
+
+A section whose idea only works inside a running program shows the whole file as a program run
+line (`nerdit-run nerdit-program`, `data-file`, optional `nerdit-check` snippet) with a full walk;
+a data lesson whose examples build on each other ends with "The whole script". The markup, caps
+and the one-file rule are in CORE.md §4 Programs. A program with a check runs offline: the
+checker imports it (not as `__main__`), runs the check, and compares what it prints.
+
 ## The checker
 
 `scripts/check_python_outputs.py` runs every Python example on the website's own engine

@@ -195,3 +195,23 @@ def test_concise_mode_changes_prose_but_never_code_outputs_or_seeds():
     assert any(x.startswith("code") for x in compare(p(BASE), p(code), {"concise"}))
     out = after.replace("| Aarav | 10 |", "| Aarav | 11 |")
     assert any(x.startswith("outputs") for x in compare(p(BASE), p(out), {"concise"}))
+
+
+PROGRAM = ('<div class="nerdit-run nerdit-program" data-file="clean.py"><div class="nerdit-in"><pre data-lang="python">'
+           '<code>print(1)</code></pre></div><div class="nerdit-out"><pre><code>1</code></pre></div></div>'
+           '<ol class="nerdit-codewalk nerdit-walk-full"><li><code>print(1)</code> prints one.</li></ol>')
+
+
+def test_programs_mode_allows_an_added_program_and_its_walk_only():
+    added = BASE.replace("</section></div>", PROGRAM + "</section></div>")
+    assert compare(p(BASE), p(added), {"programs"}) == []
+    assert compare(p(BASE), p(added), set())
+    changed = added.replace("SELECT TRIM(customer),amount", "SELECT customer,amount")
+    assert any("code" in x for x in compare(p(BASE), p(changed), {"programs"}))
+
+
+def test_readability_mode_allows_prose_and_highlights_but_not_code():
+    bolded = BASE.replace("Spaces hide inside text.", "Spaces <b>hide inside text</b>, so trim them.")
+    assert compare(p(BASE), p(bolded), {"readability"}) == []
+    changed = bolded.replace("amount FROM", "amount, 1 FROM")
+    assert compare(p(BASE), p(changed), {"readability"})

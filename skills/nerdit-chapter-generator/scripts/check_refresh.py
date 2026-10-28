@@ -26,10 +26,10 @@ from pathlib import Path
 
 from verify_course import Node, descends_from, parse, text_of
 
-MODES = {"figures", "sql-layout", "trim", "concise"}
+MODES = {"figures", "sql-layout", "trim", "concise", "programs", "readability"}
 CIRCLED = "①②③④⑤⑥⑦⑧⑨⑩"
 PUNCT = set("(),;=<>|+-*/")
-KEYS = ("prose", "figures", "maps", "code", "outputs", "seeds", "runheads")
+KEYS = ("prose", "figures", "maps", "code", "outputs", "seeds", "runheads", "programs")
 SEEDED = re.compile(r"\bCREATE\s+(?:TEMP(?:ORARY)?\s+)?(VIEW|TRIGGER)\s+(?:IF\s+NOT\s+EXISTS\s+)?(\w+)", re.I)
 # Seed statements that compute rows instead of listing them.
 COMPUTED = (
@@ -81,7 +81,9 @@ def parts(html: str) -> dict[str, list[str]]:
                     out["prose"].append(_ws(item))
                 continue
             cls = item.classes
-            if "nerdit-figure" in cls or "data-nerdit-img" in item.attrs or _visual_slot(item):
+            if "nerdit-program" in cls or "nerdit-walk-full" in cls:   # a whole program and its full walk
+                out["programs"].append(dump(item))
+            elif "nerdit-figure" in cls or "data-nerdit-img" in item.attrs or _visual_slot(item):
                 out["figures"].append(dump(item))
             elif prev is not None and "nerdit-figure" in prev.classes and _reading_steps(item):
                 out["figures"].append(dump(item))
@@ -182,8 +184,10 @@ def compare(before: dict, after: dict, modes: set[str]) -> list[str]:
         now = b[i][:70] if i < len(b) else "(nothing)"
         problems.append(f"{key} item {i + 1} changed ({why}): was {was!r}, now {now!r}")
 
-    if "concise" not in modes:
-        diff("prose", "prose never changes in a refresh without 'concise'")
+    if not {"concise", "readability"} & modes:
+        diff("prose", "prose never changes in a refresh without 'concise' or 'readability'")
+    if "programs" not in modes:
+        diff("programs", "needs the 'programs' mode")
     if "figures" in modes:
         added = [m for m in after["maps"] if m not in before["maps"]]
         if added:

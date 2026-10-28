@@ -79,11 +79,13 @@ and injects the fragment into an inner-HTML region.
     [a tiny general example — optional run line with neutral names (`/hello`, `items`), never the world's]
     [when to use it: 1 sentence or a tip — when you need it, when you don't]
     [syntax box — if the concept has syntax]
-    <h3 class="nerdit-casehead">🌟 Case Study: <what the example does></h3>
+    [plain worked example — when the section needs no case study: neutral names or the lesson's dataset file, no story]
+    <h3 class="nerdit-casehead">🌟 Case Study: <what the example does></h3>   ← OPTIONAL: only where the world teaches (below)
     ── the case study: the course world, as an example of the topic ──
     [the data first: the records or table this example uses, and which columns matter here]
     [worked example: run line(s), within 3 paragraphs of the case heading — 1–2 sentences each: what to notice]
     [code walk: <ol class="nerdit-codewalk">, 2–4 steps; each <li> starts with one whole code line in <code>, copied exactly, then what it does]
+    [program — when the idea only works inside a running program: the whole file + a full walk (§4 Programs)]
     [ONE callout max — only if there is a real gotcha]
     [Go deeper — optional <details class="nerdit-deeper"><summary>Go deeper</summary>…</details> for standards and production notes]
     [Try It block — practises this concept, not a neighbouring one]
@@ -105,9 +107,16 @@ and injects the fragment into an inner-HTML region.
 **Topic first, case study second** (owner, 2026-10-27; `check_case.py` and the gate fail it, in
 courses with a world). Learners lost track of who the institute and its people are when the story
 ran through the explanation. So each concept section teaches the topic in general terms first,
-then opens its case study with `<h3 class="nerdit-casehead">🌟 Case Study: …</h3>`. Before that
+then, if it has one (below), opens its case study with `<h3 class="nerdit-casehead">🌟 Case Study: …</h3>`. Before that
 heading no course-world name appears (the business, its short name, the owner, a cast member, a
 branch) in prose, code or a figure. After it, the data comes first, then the worked example.
+
+**Case studies only where they teach** (owner, 2026-10-28; `check_case.py`). A section may have
+no case study. Use one when the course world adds something the general example cannot: a real
+decision, real numbers to read, a mistake in the data, or the payoff of the idea. Never use one
+just to wrap a code example. A lesson has at least one case study and at most one per section;
+`check_case.py` warns when every one of 3+ sections has one. A section without one teaches with
+a plain worked example and names no course-world name at all.
 
 The first lesson introduces the world once, after the meta pills:
 
@@ -336,7 +345,42 @@ Rules:
   a section teaches. In a `trim` refresh, setup means tables and listed rows only: no view,
   trigger or computed table (`check_refresh.py` enforces this).
   Shown code per lesson: at most 40 lines for `concept`, 100 for `hands-on`
-  (`verify_course.py` v11 warns).
+  (`verify_course.py` v11 warns). Programs (below) are outside both caps.
+- **Programs: show the real thing** (owner, 2026-10-28; `verify_course.py`, `check_code_prose.py`,
+  `check_offline_outputs.py`, `practice_files.py`). When a section's idea only works inside a
+  running program (web routes, forms, templates, request handling, a CLI, classes that work
+  together), show the whole file the learner would write: imports, setup, every function and the
+  `if __name__ == "__main__":` entry point. Faking the runtime in a fragment
+  (`test_request_context`, `MultiDict`, `meta={"csrf": False}`) is the sign a program is needed;
+  `verify_course.py` warns on it. A lesson program is **one file**, templates inline with
+  `render_template_string`; separate `templates/` files belong to the capstone. At most 80 lines,
+  at most 2 programs per lesson.
+
+  ```html
+  <div class="nerdit-run nerdit-program" data-run="offline" data-file="form_app.py">
+    <div class="nerdit-in"><span class="nerdit-tag">You type</span>
+      <pre data-lang="python"><code>…the whole file…</code></pre></div>
+    <script type="text/plain" class="nerdit-check">client = app.test_client()
+  print(client.post("/", data={"name": ""}).status_code)</script>
+    <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>200</code></pre></div>
+  </div>
+  <ol class="nerdit-codewalk nerdit-walk-full">
+    <li><code>from flask import Flask, render_template_string, request</code> brings in …</li>
+    …one step per line or per short run of lines (at most 8) that does one job, in order…
+  </ol>
+  ```
+
+  A program that starts a server has a `nerdit-check` snippet and runs offline: checkers import
+  it (never as `__main__`, so `app.run()` stays off), run the snippet, and compare what it prints
+  with the shown output. What the page looks like in the browser is a screen spec (figures.md §16).
+  The **full walk** follows the program: every line, in order, a step covering at most 8 lines;
+  it may say "Section 2 explained this" instead of re-explaining. The program ships as
+  `data-file` in the chapter's pack folder, beside the dataset files it reads.
+- **The whole script** (data lessons). Run lines may build on each other like notebook cells, but
+  a code lesson whose examples need earlier code ends its last concept section with "The whole
+  script": one program holding the lesson's examples in page order as one runnable file, data
+  loading included, with a full walk grouped by section. `verify_course.py --new-course` fails a
+  code lesson with 3+ such cells and no program.
 - **Colour is never the only signal.** The tags stay, because a learner who cannot
   distinguish the clay and green edges still needs to know which half is which.
 
@@ -1034,6 +1078,11 @@ Chart.js (rare in v9): reuse the v8 `withChart` lazy-load pattern inside this sa
   of them; `check_prose.py` warns under 300.
 - **At most 3 key terms per concept section.** A fourth new term gets its own section or waits
   for a later lesson. Bold labels ending in a colon ("Fix:") are not terms.
+- **Scan highlights** (owner, 2026-10-28; `check_prose.py`). In each explanation paragraph of 25+
+  words, bold the 2–5 words that carry its point with `<b>`, so a learner can skim and revise:
+  "A log link <b>keeps every prediction positive</b>." 1–2 per paragraph, never more than 3, never
+  a whole sentence (at most 8 words), at most 20% of the paragraph. `<b>` is a highlight and never
+  a key term; `<strong>` stays the term being defined. Not in code walks, tables or figures.
 - **Plain words.** Never a word from the `plain` block of `references/voice.md`; use the simpler
   word it names ("bounded" → "limited").
 - Second person, active voice: "You use `ORDER BY` to sort results."

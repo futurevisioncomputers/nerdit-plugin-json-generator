@@ -2,7 +2,7 @@
 """One-lesson gate: every check a lesson must pass before it joins its course.
 
     python gate_lesson.py --input <course_input.json> --dir <lesson dir> --id <lesson-id>
-                          [--contract v11] [--before-dir <dir> --modes figures,sql-layout]
+                          [--contract v11] [--before-dir <dir> --modes figures,sql-layout,programs,readability]
 
 Builds a one-lesson course from <dir>/<id>.html, .quiz.json and .concepts.json, then runs:
 verify_course (schema, structure, density) -> check_world (with --world; without one, its SVG
