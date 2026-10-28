@@ -5,6 +5,8 @@
 - any hard word in the `plain` block below (it names the simpler word to use)
 - sentences over 20 words
 - a concept section with more than 3 key terms (`<strong>`)
+- 4 or more scan highlights (`<b>`) in one paragraph, a highlight over 8 words, or highlights
+  covering over 20% of a paragraph's words
 - a concept section that opens with a story or example: explain the idea first, with its key
   word in the first paragraph (or the second, after a one-sentence question), then the case study
 
@@ -13,12 +15,15 @@ and gets **warnings** for:
 - a concept section with under 300 words of explanation
 - more than one em dash in a paragraph
 - concept sections that all open with the same two words
+- fewer than half of the explanation paragraphs of 25+ words carrying a `<b>` highlight
 
 Code, tables and figures are not prose and are never checked.
 
 Why: these phrases and that rhythm make a lesson read as machine-written. A learner trusts a
 teacher who talks plainly.
 
+- Bold the 2-5 words that carry each paragraph's point with `<b>`, so a learner can skim and
+  revise (owner, 2026-10-28). `<b>` is a highlight; `<strong>` is a key term being defined.
 - Contractions are welcome: "you'll", "it's", "don't".
 - Open sections in different ways: a question, the problem stated plainly, a surprising number.
   Never a story first; the story is the case study that follows the explanation.

@@ -1849,3 +1849,11 @@
 .nerdit-wrapper .nerdit-files th { text-align: left; font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; color: var(--tx-m); padding: .4rem .5rem; border-bottom: 1px solid var(--bd); }
 .nerdit-wrapper .nerdit-files td { padding: .4rem .5rem; border-bottom: 1px solid var(--bd-soft); vertical-align: top; color: var(--tx); }
 .nerdit-wrapper .nerdit-file-use { font-size: .88rem; color: var(--tx-s); background: var(--blue-bg); border-left: 3px solid var(--blue); border-radius: 0 6px 6px 0; padding: .4rem .7rem; margin: .4rem 0 .9rem; }
+
+/* Scan highlights (owner, 2026-10-28): <b> marks the 2-5 words that carry a paragraph's point,
+   for skimming and revision. <strong> stays the key term being defined. */
+.nerdit-simple p b {
+  font-weight: 700;
+  color: var(--tx-b);
+  background: linear-gradient(transparent 62%, var(--bd-soft) 62%);
+}

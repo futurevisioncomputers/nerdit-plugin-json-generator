@@ -133,3 +133,42 @@ def test_code_count_restarts_at_the_case_study_heading():
     assert not any("before its first code" in f for f in fails)
     fails, _ = check_lesson(section(4), PATS)
     assert any("section 1 has 4 paragraphs before its first code block" in f for f in fails)
+
+
+WORDS30 = ("A log link keeps every prediction above zero so counts stay real and the model fits the data you have "
+           "for each branch and each week in the course records")
+
+
+def _p(text):
+    return f"<p>{text}.</p>"
+
+
+def test_too_many_or_too_long_highlights_fail():
+    four = _p("A <b>log</b> link <b>keeps</b> every <b>prediction</b> above <b>zero</b> for all rows")
+    assert any("3" in f and "highlight" in f for f in check_lesson(lesson(four), PATS)[0])
+    long = _p("Remember that <b>a log link keeps every prediction above zero always</b> in a count model here")
+    assert any("8 words" in f for f in check_lesson(lesson(long), PATS)[0])
+    dense = _p("<b>Log links keep</b> counts <b>above zero always</b> and fits stay good for every single row here today")
+    assert any("20%" in f for f in check_lesson(lesson(dense), PATS)[0])
+
+
+def test_long_paragraphs_should_carry_highlights():
+    bare = "".join(_p(WORDS30) for _ in range(4))
+    assert any("highlight" in w for w in check_lesson(lesson(bare), PATS)[1])
+    some = _p(WORDS30.replace("keeps every prediction above zero", "<b>keeps every prediction above zero</b>"))
+    half = some * 2 + _p(WORDS30) * 2
+    assert not any("highlight" in w for w in check_lesson(lesson(half), PATS)[1])
+
+
+def test_highlights_outside_prose_are_not_counted():
+    many = "<b>a</b> <b>b</b> <b>c</b> <b>d</b>"
+    for wrap in (f'<ol class="nerdit-codewalk"><li>{many}</li></ol>', f"<table><tr><td>{many}</td></tr></table>",
+                 f'<div class="nerdit-figure"><p class="nerdit-figure-caption">{many}.</p></div>'):
+        assert not any("highlight" in f for f in check_lesson(lesson(wrap), PATS)[0]), wrap
+
+
+def test_highlights_are_not_key_terms():
+    sec = ('<section><h2>1 — Links</h2><p>A <strong>link</strong> maps a <strong>mean</strong> to a '
+           '<strong>score</strong>. It <b>keeps counts positive</b>, <b>reads as a ratio</b> and '
+           '<b>fits fast</b>.</p></section>')
+    assert not any("key terms" in f for f in check_lesson(lesson(sec), PATS)[0])

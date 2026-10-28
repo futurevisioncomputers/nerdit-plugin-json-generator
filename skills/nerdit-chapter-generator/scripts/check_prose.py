@@ -30,6 +30,10 @@ MAX_NEW_TERMS = 3        # key terms (<strong>) one concept section may introduc
 MIN_SECTION_WORDS = 120  # prose a concept section needs: what it is, how the code shows it, the case
 MAX_SECTION_WORDS = 220  # above this warns: cut, do not pad (owner, 2026-10-26: lessons read too long)
 FAIL_SECTION_WORDS = 300 # above this fails
+MAX_HIGHLIGHTS = 3       # <b> scan highlights in one paragraph (owner, 2026-10-28)
+MAX_HIGHLIGHT_WORDS = 8  # a highlight is a phrase, never a sentence
+MAX_HIGHLIGHT_SHARE = 0.20
+HIGHLIGHT_MIN_WORDS = 25  # explanation paragraphs this long should carry a highlight
 MAX_PARAS_BEFORE_CODE = 3  # a section with a run block shows its code by its third paragraph
 
 
@@ -140,6 +144,9 @@ def check_lesson(content: str, patterns) -> tuple[list[str], list[str]]:
         warns.append(f"{long_p} paragraph(s) with more than {MAX_SENTENCES} sentences")
     if dashy:
         warns.append(f"{dashy} paragraph(s) with more than {MAX_DASHES} em dash")
+    h_fails, h_warns = _highlights(tree)
+    fails += h_fails
+    warns += h_warns
 
     openers = []
     for n_sec, sec in enumerate([n for n in tree.all if n.tag == "section"], 1):
@@ -176,6 +183,35 @@ def check_lesson(content: str, patterns) -> tuple[list[str], list[str]]:
         m = re.search(r"(?<!\w)" + re.escape(word) + r"(?!\w)", text, re.I)
         if m:
             fails.append(f'"{m.group(0)}" is hard for a beginner; say "{simpler}" (references/voice.md plain words)')
+    return fails, warns
+
+
+def _highlights(tree) -> tuple[list[str], list[str]]:
+    """<b> marks the words that carry a paragraph's point, for skimming and revision (CORE.md §10).
+    Only explanation paragraphs count: not code walks, tables or figures."""
+    fails, long_paras, marked = [], 0, 0
+    in_figure = lambda n: any("nerdit-figure" in a.classes for a in _ancestors(n))  # noqa: E731
+    for para in (n for n in tree.all if n.tag == "p" and not _inside(n, SKIP) and not in_figure(n)):
+        words = len(prose(para).replace(BR, " ").split())
+        bolds = [prose(b) for b in _in_order(para) if b.tag == "b"]
+        if words >= HIGHLIGHT_MIN_WORDS:
+            long_paras += 1
+            marked += bool(bolds)
+        if not bolds:
+            continue
+        head = prose(para)[:50]
+        if len(bolds) > MAX_HIGHLIGHTS:
+            fails.append(f'{len(bolds)} highlights (<b>) in one paragraph; keep to {MAX_HIGHLIGHTS}: "{head}"')
+        for b in bolds:
+            if len(b.split()) > MAX_HIGHLIGHT_WORDS:
+                fails.append(f'highlight "{b[:50]}" is over {MAX_HIGHLIGHT_WORDS} words; bold the phrase, not the sentence')
+        share = sum(len(b.split()) for b in bolds) / max(words, 1)
+        if share > MAX_HIGHLIGHT_SHARE:
+            fails.append(f'highlights cover {share:.0%} of a paragraph (max 20%): "{head}"')
+    warns = []
+    if long_paras and marked * 2 < long_paras:
+        warns.append(f"{marked} of {long_paras} explanation paragraphs have a highlight; bold the 2-5 words "
+                     "that carry each point with <b> for skimming")
     return fails, warns
 
 

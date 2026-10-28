@@ -68,3 +68,9 @@ FILES_CLASSES = ["nerdit-files", "nerdit-course-pack", "nerdit-files-head", "ner
 def test_css9_defines_every_practice_files_class():
     css = CSS9.read_text(encoding="utf-8")
     assert [c for c in FILES_CLASSES if not re.search(rf"\.{c}(?![\w-])", css)] == []
+
+
+def test_css9_styles_scan_highlights_with_tokens():
+    css = CSS9.read_text(encoding="utf-8")
+    rule = css.split(".nerdit-simple p b", 1)[1].split("}", 1)[0]
+    assert "font-weight" in rule and "var(--" in rule and not re.search(r"#[0-9a-fA-F]{3,8}\b", rule)
