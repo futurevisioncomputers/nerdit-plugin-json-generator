@@ -27,8 +27,8 @@ import zipfile
 CORE = Path(__file__).resolve().parent.parent / 'references' / 'nerdit_world_gen.py'
 if str(CORE.parent) not in sys.path:
     sys.path.append(str(CORE.parent))
-from nerdit_world_gen import to_csv  # noqa: E402
-from check_python_outputs import _code, _first, _in_order, _is_python  # noqa: E402
+from nerdit_world_gen import build_files, to_csv  # noqa: E402
+from check_python_outputs import _code, _first, _in_order, _is_python, python_parts  # noqa: E402
 from verify_course import parse, text_of  # noqa: E402
 
 SPEC = re.compile(r'<script\b[^>]*\bclass="[^"]*\bnerdit-files-spec\b[^"]*"[^>]*>(.*?)</script>', re.S | re.I)
@@ -137,7 +137,7 @@ def page_examples(html: str) -> list[tuple[str, str]]:
     for node in parse(html).all:
         if node.tag == 'h2':
             heading = _squash(text_of(node))
-        elif 'nerdit-run' in node.classes:
+        elif 'nerdit-run' in node.classes and 'nerdit-program' not in node.classes:  # programs ship as files
             half = _first(node, lambda n: 'nerdit-in' in n.classes)
             pre = half and _first(half, lambda n: n.tag == 'pre' and _is_python(n))
             if pre is not None:
@@ -299,9 +299,8 @@ def mark_lesson(html: str, files: list[dict], folder: str, lesson_id: str, pytho
     """The lesson with its files box (and, for the first chapter, the pack box) after its files spec, and a
     "This section uses" line under each numbered section heading. Re-running replaces what an earlier run added."""
     html = OLD_USES.sub('', OLD_BOXES.sub('', html))
-    spec = SPEC.search(html)
-    if spec is None:
-        raise ValueError(f'{lesson_id}: no nerdit-files-spec block to place the files box after')
+    spec = SPEC.search(html) or re.search(r'</h1>', html, re.I)   # a program-only chapter has no spec
+    at = spec.end() if spec else 0
     py = f'<span class="nerdit-files-py">Python {escape(python)}</span>'
     parts = [BOX_START]
     if pack:
@@ -325,7 +324,7 @@ def mark_lesson(html: str, files: list[dict], folder: str, lesson_id: str, pytho
         "<thead><tr><th>File</th><th>What's inside</th><th>Used in</th></tr></thead>"
         f'<tbody>{rows}</tbody></table></details></div>')
     parts.append(BOX_END)
-    html = html[:spec.end()] + ''.join(parts) + html[spec.end():]
+    html = html[:at] + ''.join(parts) + html[at:]
 
     headings = {}
     for m in H2.finditer(html):
@@ -373,7 +372,10 @@ DATA_SOURCES = {'world', 'json', 'table', 'sql'}
 
 def _arcname(entry: dict, project: bool = False) -> str:
     """Solutions sit in a solutions/ subfolder, so the starter is what a learner opens first.
-    In the capstone chapter, data files sit in data/ beside starter/ and solution/."""
+    In the capstone chapter, data files sit in data/ beside starter/ and solution/.
+    A program and the dataset files it reads keep the names the code uses (entry['arc'])."""
+    if 'arc' in entry:
+        return entry['arc']
     if project and DATA_SOURCES & set(entry['from']):
         return 'data/' + entry['name']
     return ('solutions/' if '-solutions.' in entry['name'] else '') + entry['name']
@@ -390,6 +392,38 @@ def _capstone_tree(entry: dict, workdir: Path | None) -> dict[str, bytes]:
     return build_tree(src)
 
 
+def program_files(html: str) -> list[tuple[str, str]]:
+    """(data-file, code) for every program run line, in page order (CORE.md §4)."""
+    return [(r['program'], r['code']) for r in python_parts(html)['runs'] if r['program']]
+
+
+def _program_entries(chapter: dict, position: int, taken: set[str]) -> tuple[list[tuple[dict, bytes]], list[str]]:
+    """Each program, plus the lesson's dataset files it reads, as pack entries under their own names in the
+    chapter folder. `taken` holds the names the chapter's files spec already puts there."""
+    programs = program_files(chapter['html'])
+    if not programs:
+        return [], []
+    tag, lid = f'L{position:02d}-', chapter['id']
+    out, problems, here = [], [], set(taken)
+    for name, code in programs:
+        if name in here:
+            problems.append(f'{lid}: program {name}: name already used in its chapter folder')
+        here.add(name)
+        out.append(({'name': name if name.startswith(tag) else tag + name, 'arc': name, 'sections': 'all',
+                     'about': 'the whole program from this chapter', 'from': {'program': lid}},
+                    code.encode('utf-8')))
+    recipe = python_parts(chapter['html'])['dataset']
+    for name, text in (build_files(recipe) if recipe else {}).items():
+        if name in here:
+            if name in {n for n, _ in programs}:
+                problems.append(f'{lid}: program {name}: clashes with the dataset file {name}')
+            continue
+        here.add(name)
+        out.append(({'name': tag + name, 'arc': name, 'sections': 'all', 'about': 'data the program reads',
+                     'from': {'dataset': lid}}, text.encode('utf-8')))
+    return out, problems
+
+
 def build_pack(chapters: list[dict], course_short: str, version: int, world: dict | None, requirements: str,
                out_dir: Path, workdir: Path | None = None, image_names: set[str] = frozenset()) -> dict:
     """Build every declared file, the pack zip and the manifest. Raises ValueError on any rule break."""
@@ -397,12 +431,15 @@ def build_pack(chapters: list[dict], course_short: str, version: int, world: dic
     pack = f'{course_short}-practice-pack-v{version}'
     seen, problems, folders, built, trees = set(image_names), [], [], [], []
     for position, chapter in enumerate(chapters, 1):
-        spec = read_spec(chapter['html'])
-        if not spec or not spec.get('files'):
+        spec = read_spec(chapter['html']) or {}
+        spec_files = spec.get('files') or []
+        programs, p_problems = _program_entries(chapter, position, {e['name'] for e in spec_files if 'name' in e})
+        problems += p_problems
+        if not spec_files and not programs:
             continue
         folder = chapter_folder(position, chapter['title'])
-        files = [e for e in spec['files'] if 'capstone' not in e]
-        capstones = [e for e in spec['files'] if 'capstone' in e]
+        files = [e for e in spec_files if 'capstone' not in e]
+        capstones = [e for e in spec_files if 'capstone' in e]
         if len(capstones) > 1:
             problems.append(f'{chapter["id"]}: one capstone entry per chapter')
         for entry in files:
@@ -410,7 +447,12 @@ def build_pack(chapters: list[dict], course_short: str, version: int, world: dic
             if entry['name'] in seen:
                 problems.append(f'{entry["name"]}: name used twice in the course (images included)')
             seen.add(entry['name'])
-        folders.append((folder, spec['files']))
+        folders.append((folder, spec_files + [e for e, _ in programs]))
+        for entry, data in programs:
+            if entry['name'] in seen:
+                problems.append(f'{entry["name"]}: name used twice in the course (images included)')
+            seen.add(entry['name'])
+            built.append((chapter, folder, entry, data, bool(capstones)))
         for entry in files:
             built.append((chapter, folder, entry,
                           build_file(entry, world, workdir, {**chapter, 'position': position,

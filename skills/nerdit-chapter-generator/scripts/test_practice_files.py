@@ -335,3 +335,56 @@ def test_build_pack_enforces_file_and_pack_limits(tmp_path, monkeypatch):
     with pytest.raises(ValueError, match='pack limit'):
         pf.build_pack(chapters(), course_short='ai-apis', version=1, world=WORLD, requirements='',
                       out_dir=tmp_path)
+
+
+from test_check_python_outputs import dataset as ds_block, program_line, run_line  # noqa: E402
+
+APP_CODE = 'from flask import Flask\napp = Flask(__name__)\nif __name__ == "__main__":\n    app.run()'
+
+
+def _pack(tmp_path, *chapters_):
+    return pf.build_pack(list(chapters_), course_short='t', version=1, world=WORLD, requirements='',
+                         out_dir=tmp_path)
+
+
+def _names(tmp_path):
+    with zipfile.ZipFile(tmp_path / 't-practice-pack-v1.zip') as z:
+        return {n: z.read(n) for n in z.namelist()}
+
+
+def test_programs_go_in_the_chapter_folder_without_a_spec(tmp_path):
+    html = '<h1>Forms</h1>' + program_line(APP_CODE, 'print(1)', '1', file='form_app.py')
+    _pack(tmp_path, {'id': 'forms-01', 'title': 'Forms', 'html': html})
+    files = _names(tmp_path)
+    assert files['t-practice-pack-v1/L01-forms/form_app.py'].decode() == APP_CODE
+
+
+def test_a_program_name_that_clashes_fails(tmp_path):
+    two = program_line(APP_CODE, None, file='app.py') + program_line(APP_CODE, None, file='app.py')
+    with pytest.raises(ValueError, match='app.py'):
+        _pack(tmp_path, {'id': 'a-01', 'title': 'A', 'html': two})
+    data = ds_block() + program_line("print(1)", None, file='orders.csv', offline=False)
+    with pytest.raises(ValueError, match='orders.csv'):
+        _pack(tmp_path / 'b', {'id': 'b-01', 'title': 'B', 'html': data})
+
+
+def test_a_whole_script_runs_beside_its_dataset(tmp_path):
+    script = 'import pandas as pd\nprint(pd.read_csv("orders.csv").shape)'
+    html = ds_block() + run_line(script, '') + program_line(script, None, file='L01-script.py', offline=False)
+    _pack(tmp_path, {'id': 'd-01', 'title': 'Data', 'html': html})
+    files = _names(tmp_path)
+    assert 't-practice-pack-v1/L01-data/L01-script.py' in files
+    assert 't-practice-pack-v1/L01-data/orders.csv' in files
+
+
+def test_solutions_skip_programs():
+    html = run_line('print(1)', '1') + program_line(APP_CODE, None, file='app.py')
+    assert [code for _, code in pf.page_examples(html)] == ['print(1)']
+
+
+def test_a_chapter_without_a_spec_gets_a_files_box_for_its_program(tmp_path):
+    html = '<h1>Forms</h1>' + program_line(APP_CODE, None, file='form_app.py')
+    ch = [{'id': 'forms-01', 'title': 'Forms', 'html': html}]
+    result = _pack(tmp_path, *ch)
+    marked = pf.mark_course(ch, result, '2026-10-28', '3.14')[0]
+    assert 'data-nerdit-files="forms-01"' in marked and 'form_app.py' in marked
