@@ -121,7 +121,8 @@ def walk_problems(content: str, new_course: bool = False) -> tuple[list[str], li
     problems = []
     for prog in (n for n in parse(content).all if 'nerdit-program' in n.classes):
         name = prog.attrs.get('data-file') or 'program'
-        half = next((n for n in walk(prog) if 'nerdit-in' in n.classes), None)   # the code, not the output
+        # The Python file, not the output and not a companion template or stylesheet (nerdit-file).
+        half = next((n for n in walk(prog) if 'nerdit-in' in n.classes and 'nerdit-file' not in n.classes), None)
         pre = next((n for n in walk(half) if n.tag == 'pre'), None) if half is not None else None
         lines = [_squash(ln) for ln in (text_of(pre) if pre is not None else '').splitlines()]
         lines = [ln for ln in lines if ln and not ln.startswith('#')]

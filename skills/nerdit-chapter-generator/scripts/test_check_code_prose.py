@@ -103,3 +103,9 @@ def test_indentation_does_not_break_a_walk_match():
     code = "def add(a, b):\n    return a + b"
     html = page(program_line(code, None, offline=False), walk("def add(a, b):", "return a + b"))
     assert cp.walk_problems(html, new_course=True) == ([], [])
+
+
+def test_the_walk_follows_the_python_file_not_its_companion_files():
+    files = (("templates/a.html", "&lt;p&gt;one&lt;/p&gt;", "html"), ("static/s.css", "p {}", "css"))
+    ok = page(program_line(PROGRAM, None, offline=False, files=files), walk("x1 = 1", "x5 = 5", "x9 = 9"))
+    assert cp.walk_problems(ok, new_course=True) == ([], [])
