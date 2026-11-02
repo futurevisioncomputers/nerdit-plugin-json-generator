@@ -97,13 +97,19 @@ def _shown_in(node: Node) -> str | None:
     return _code(pre) if pre is not None else None
 
 
+def _python_run_pre(node: Node) -> Node | None:
+    """The Python <pre> a run line executes, or None (a shell or SQL run line, or no code)."""
+    half = _first(node, lambda n: "nerdit-in" in n.classes and "nerdit-file" not in n.classes)
+    return half and _first(half, lambda n: n.tag == "pre" and _is_python(n))
+
+
 def _answers(tree) -> list[dict]:
     """Practice solutions, predict blocks and Python fill-ins, in page order.
     `after` = how many run lines come before the answer on the page."""
     answers, runs_before = [], 0
     for node in tree.all:
         if "nerdit-run" in node.classes:
-            runs_before += 1
+            runs_before += _python_run_pre(node) is not None   # count only what python_parts runs
         elif "nerdit-solution" in node.classes and not _first(node, lambda n: "nerdit-run" in n.classes):
             pre = _first(node, lambda n: n.tag == "pre" and _is_python(n))
             if pre is not None:
@@ -141,8 +147,7 @@ def python_parts(content: str) -> dict:
     runs, tryits = [], []
     for node in tree.all:
         if "nerdit-run" in node.classes:
-            half = _first(node, lambda n: "nerdit-in" in n.classes and "nerdit-file" not in n.classes)
-            pre = half and _first(half, lambda n: n.tag == "pre" and _is_python(n))
+            pre = _python_run_pre(node)
             if pre is None:
                 continue
             out = _first(node, lambda n: "nerdit-out" in n.classes)

@@ -324,3 +324,11 @@ def test_answers_must_show_their_output_strictly():
     assert r["answer_fail"] == [], r  # a chart answer is checked by drawing its figure
     r = check_lesson(lesson(task("Task 1: Draw it.", "x = 1")))
     assert "shows no output" in r["answer_fail"][0]
+
+
+def test_a_shell_run_line_does_not_shift_where_answers_run():
+    html = lesson(run_line("pip install flask", "Successfully installed flask", lang="bash"),
+                  run_line("x = 2", ""), predict("print(x * 5)", "10"))
+    parts = python_parts(html)
+    assert len(parts["runs"]) == 1
+    assert parts["answers"][0]["after"] == 1      # after the one Python run line, not 2
