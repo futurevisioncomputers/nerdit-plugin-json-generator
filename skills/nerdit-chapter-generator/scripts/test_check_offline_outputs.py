@@ -155,3 +155,11 @@ def test_a_program_reads_its_companion_files(tmp_path):
                                       files=(("templates/hi.html", "&lt;h1&gt;Hi&lt;/h1&gt;", "html"),)))
     report = co.check_course(c, requirements="", pythons=[sys.executable], workdir=tmp_path / "w")
     assert report["problems"] == [], report
+
+
+def test_a_program_imports_its_companion_modules(tmp_path):
+    main = 'from shop.views import greet\nif __name__ == "__main__":\n    print(greet())'
+    files = (("shop/__init__.py", "", "python"), ("shop/views.py", 'def greet():\n    return "hi"', "python"))
+    c = course(tmp_path, program_line(main, "print(greet())", "hi", file="run.py", files=files))
+    report = co.check_course(c, requirements="", pythons=[sys.executable], workdir=tmp_path / "w")
+    assert report["problems"] == [], report

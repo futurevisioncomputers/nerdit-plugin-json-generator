@@ -46,7 +46,8 @@ PACKAGES = {'sklearn': 'scikit-learn', 'cv2': 'opencv-python', 'PIL': 'pillow', 
 ALSO_PROVIDED_BY = {'interpret': ('interpret-core',)}
 # One stdout for every example, like a script: a logging handler made in one example keeps
 # sys.stdout, so what it prints later lands in the later example's output.
-DRIVER = '''import io, json, sys
+DRIVER = '''import io, json, os, sys
+sys.path.insert(0, os.getcwd())   # a program imports its companion modules, as `python run.py` would
 class Out:
     def __init__(self):
         self.buf = io.StringIO()
@@ -227,6 +228,9 @@ def check_course(course: Path, requirements: str, pythons: list[str], workdir: P
     project = {ls['id'] for _, ls in lessons if is_capstone(ls['content'])}
     for _, ls in lessons:
         mine = local if ls['id'] in project else frozenset()
+        # A program's companion modules (shop/views.py, helpers.py) are the lesson's own code.
+        mine |= {p.split('/')[0].removesuffix('.py') for r in python_parts(ls['content'])['runs']
+                 for p, _ in r['files'] if p.endswith('.py')}
         report['problems'] += [f'{ls["id"]}: {m} is used but not pinned in the course requirements'
                                for m in unpinned([b['code'] for b in offline_blocks(ls['content'])], requirements, mine)]
     if report['problems'] or not lessons:

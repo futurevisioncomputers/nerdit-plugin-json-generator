@@ -190,6 +190,8 @@ def _run_with(pack_root: Path, python: str, venv_dir: Path, requirements: str) -
         rel = path.relative_to(pack_root).as_posix()
         if path.suffix == '.py' and _capstone_starter_or_test(path, pack_root):
             continue  # check_capstone.py runs these: the starter is meant to fail its tests
+        if path.suffix == '.py' and (path.parent / '__init__.py').is_file():
+            continue  # a package module: its program imports it (relative imports fail run alone)
         if path.suffix == '.py' and _starts_server(path.read_text(encoding='utf-8', errors='replace')):
             # `python app.py` would serve until stopped: import it as a module instead, guard off.
             run(f'{rel} (imported in its own folder)',

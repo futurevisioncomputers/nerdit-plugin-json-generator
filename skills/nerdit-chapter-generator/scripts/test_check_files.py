@@ -202,3 +202,16 @@ def test_a_server_program_is_imported_not_started(tmp_path, monkeypatch):
     problems, ran = cf._run_with(root, sys.executable, tmp_path / 'venv', '')
     assert problems == [], problems
     assert any('server.py' in r and 'imported' in r for r in ran)
+
+
+def test_package_modules_are_imported_by_their_program_not_run_alone(tmp_path):
+    root = tmp_path / 'pack'
+    (root / 'L01-a' / 'shop').mkdir(parents=True)
+    (root / 'L01-a' / 'shop' / '__init__.py').write_text('', encoding='utf-8')
+    (root / 'L01-a' / 'shop' / 'views.py').write_text('from . import helpers\n', encoding='utf-8')
+    (root / 'L01-a' / 'shop' / 'helpers.py').write_text('X = 1\n', encoding='utf-8')
+    (root / 'L01-a' / 'run.py').write_text('import shop.views\nprint("ok")\n', encoding='utf-8')
+    (root / 'requirements.txt').write_text('', encoding='utf-8')
+    problems, ran = cf._run_with(root, sys.executable, tmp_path / 'venv', '')
+    assert problems == [], problems
+    assert not any('views.py' in r for r in ran)
