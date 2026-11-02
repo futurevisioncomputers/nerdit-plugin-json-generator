@@ -38,7 +38,7 @@ CODE_SCRIPT = re.compile(r'<script\b(?![^>]*type="text/plain")[^>]*>.*?</script>
 NUMBER = re.compile(r'(?<![A-Za-z\d.,])(\d[\d,]*(?:\.\d+)?)\s*(million|thousand|lakh|crore|Cr|M|K|k|L)?(?![A-Za-z])')
 SCALE = {'M': 1e6, 'million': 1e6, 'K': 1e3, 'k': 1e3, 'thousand': 1e3, 'L': 1e5, 'lakh': 1e5,
          'Cr': 1e7, 'crore': 1e7}
-SEED = re.compile(r'<script\b[^>]*type="text/plain"[^>]*>(.*?)</script>', re.S | re.I)
+SEED = re.compile(r'<script\b(?![^>]*nerdit-check)[^>]*type="text/plain"[^>]*>(.*?)</script>', re.S | re.I)
 # A label part: the text between separators such as · , : → /, without step markers.
 PART = re.compile(r'\s*[·,:;—–→/|]\s*')
 
@@ -136,6 +136,12 @@ def practice_data_failures(content: str, data: dict) -> list[str]:
     return fails
 
 
+def _seeds(tree):
+    """SQL seed scripts only: a program's nerdit-check snippet is Python (CORE.md par.4)."""
+    return [n for n in tree.all if n.tag == 'script' and n.attrs.get('type') == 'text/plain'
+            and 'nerdit-check' not in (n.attrs.get('class') or '')]
+
+
 def check_lesson(content: str, world: dict, data: dict) -> tuple[list[str], list[str]]:
     tree = parse(content)
     fails, warns = [], []
@@ -152,7 +158,7 @@ def check_lesson(content: str, world: dict, data: dict) -> tuple[list[str], list
             for column, value in row.items():
                 domains.setdefault((entity, column), set()).add(_value(value))
     allowed = {}
-    seed_text = '\n'.join(text_of(n) for n in tree.all if n.tag == 'script' and n.attrs.get('type') == 'text/plain')
+    seed_text = '\n'.join(text_of(n) for n in _seeds(tree))
     for match in DEFECT.finditer(seed_text):
         entity, row, column, value = match.groups()
         try:
@@ -173,7 +179,7 @@ def check_lesson(content: str, world: dict, data: dict) -> tuple[list[str], list
             fails.append(f'{where}: {entity} row {row} {column}={value!r} is outside world data and has no matching defect')
 
     # Execute only seed scripts, never displayed examples, in a restricted memory DB.
-    for index, seed in enumerate((n for n in tree.all if n.tag == 'script' and n.attrs.get('type') == 'text/plain'), 1):
+    for index, seed in enumerate(_seeds(tree), 1):
         db = sqlite3.connect(':memory:')
         db.setlimit(sqlite3.SQLITE_LIMIT_LENGTH, 1_000_000)
         db.setlimit(sqlite3.SQLITE_LIMIT_SQL_LENGTH, 1_000_000)

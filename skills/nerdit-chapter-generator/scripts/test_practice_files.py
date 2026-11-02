@@ -388,3 +388,23 @@ def test_a_chapter_without_a_spec_gets_a_files_box_for_its_program(tmp_path):
     result = _pack(tmp_path, *ch)
     marked = pf.mark_course(ch, result, '2026-10-28', '3.14')[0]
     assert 'data-nerdit-files="forms-01"' in marked and 'form_app.py' in marked
+
+
+TEMPLATE_APP = ('from flask import Flask, render_template\napp = Flask(__name__)\n'
+                'if __name__ == "__main__":\n    app.run()')
+
+
+def test_companion_files_ship_in_the_zip_beside_the_program_only(tmp_path):
+    html = '<h1>Templates</h1>' + program_line(TEMPLATE_APP, None, file='hello.py',
+                                               files=(('templates/hello.html', '&lt;h1&gt;Hi&lt;/h1&gt;', 'html'),))
+    result = _pack(tmp_path, {'id': 't-01', 'title': 'Templates', 'html': html})
+    files = _names(tmp_path)
+    assert files['t-practice-pack-v1/L01-templates/templates/hello.html'].decode() == '<h1>Hi</h1>'
+    assert [f['name'] for f in result['files']] == ['L01-hello.py']   # the site imports .py, not .html
+    assert not (tmp_path / 'files' / 'L01-templates-hello.html').exists()
+
+
+def test_a_companion_that_escapes_its_folder_fails(tmp_path):
+    html = program_line(TEMPLATE_APP, None, file='hello.py', files=(('../x.html', 'x', 'html'),))
+    with pytest.raises(ValueError, match='x.html'):
+        _pack(tmp_path, {'id': 't-01', 'title': 'T', 'html': html})

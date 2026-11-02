@@ -191,3 +191,9 @@ def test_files_spec_world_sources_must_exist_in_the_world():
     errors, _ = check_lesson(lesson(body=files_spec(bad_entity, bad_row, bad_col, typed)), w, data)
     text = '\n'.join(errors)
     assert 'refunds' in text and 'O999' in text and 'colour' in text and 'L01-S2-x.json: 9 rows typed in' in text
+
+
+def test_a_program_check_snippet_is_not_run_as_an_sql_seed():
+    check = ('<script type="text/plain" class="nerdit-check">client = app.test_client()\n'
+             'print(client.get("/").status_code)</script>')
+    assert check_lesson(lesson('', check), world(), generate(world()))[0] == []

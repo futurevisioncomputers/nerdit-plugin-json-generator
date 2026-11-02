@@ -85,3 +85,29 @@ def test_capstone_answers_are_left_to_check_capstone(tmp_path, vpy):
     ls = lesson(spec, task(1, "import missing_module"))
     fails, warns = lr.lesson_runs(ls, 11, vpy, tmp_path)
     assert fails == [] and warns == ["practice answers: the capstone's are run by check_capstone.py"]
+
+
+def test_parallel_gates_build_the_venv_once(tmp_path, monkeypatch):
+    import threading
+    import time
+    calls = []
+
+    def fake_venv(exe, venv, requirements):
+        calls.append(venv)
+        time.sleep(0.3)                     # long enough for the other gate to arrive mid-build
+        vpy = venv / ("Scripts/python.exe" if lr.os.name == "nt" else "bin/python")
+        vpy.parent.mkdir(parents=True, exist_ok=True)
+        vpy.write_text("", encoding="utf-8")
+        return vpy, None
+
+    monkeypatch.setattr(lr, "_venv", fake_venv)
+    monkeypatch.setattr(lr, "resolve_python", lambda spec: sys.executable)
+    results = []
+    threads = [threading.Thread(target=lambda: results.append(lr.ensure_venv(tmp_path, "flask", [PY])))
+               for _ in range(3)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert len(calls) == 1 and all(err is None for _, err in results)
+    assert not (tmp_path / "venv.lock").exists()

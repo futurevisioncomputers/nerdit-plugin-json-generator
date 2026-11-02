@@ -147,3 +147,11 @@ def test_cli_exit_codes(tmp_path):
     c = course(tmp_path, run_line("print(2)", "2", offline=True))
     assert co.main(["--course", str(c), "--pythons", sys.executable, "--workdir", str(tmp_path / "w")]) == 0
     assert co.main(["--course", str(c), "--pythons", "3.97", "--workdir", str(tmp_path / "w")]) == 2
+
+
+def test_a_program_reads_its_companion_files(tmp_path):
+    reader = 'def page():\n    return open("templates/hi.html", encoding="utf-8").read()'
+    c = course(tmp_path, program_line(reader, "print(page())", "&lt;h1&gt;Hi&lt;/h1&gt;", file="hi.py",
+                                      files=(("templates/hi.html", "&lt;h1&gt;Hi&lt;/h1&gt;", "html"),)))
+    report = co.check_course(c, requirements="", pythons=[sys.executable], workdir=tmp_path / "w")
+    assert report["problems"] == [], report

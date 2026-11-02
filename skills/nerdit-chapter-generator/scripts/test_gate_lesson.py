@@ -254,3 +254,22 @@ def test_gate_with_video_accepts_a_valid_part_and_ignores_it_without_the_flag(tm
     (d / "c-01.video.json").unlink()
     fails, _ = gate(inp, d, "c-01")
     assert not any(f.startswith("video:") for f in fails)
+
+
+def test_gate_counts_setup_shown_in_an_earlier_lesson_on_disk(tmp_path):
+    from test_check_python_outputs import program_line
+    server = 'from flask import Flask\napp = Flask(__name__)\nif __name__ == "__main__":\n    app.run()'
+    html = LESSON.replace("</section></div>", program_line(server, None, file="hi.py", offline=False)
+                          + '<div class="nerdit-terminal"><span class="nerdit-cmd">python hi.py</span></div>'
+                          + "</section></div>")
+    inp, d = setup(tmp_path, html)
+    lessons = json.loads(inp.read_text(encoding="utf-8"))
+    fails, _ = gate(inp, d, "c-01", new_course=True)
+    assert any("pip install" in f for f in fails)
+    setup_page = LESSON.replace("</section></div>", '<div class="nerdit-terminal"><span class="nerdit-cmd">'
+                                "pip install flask</span></div></section></div>")
+    (d / "c-00.html").write_text(setup_page, encoding="utf-8")
+    inp.write_text(json.dumps([{"id": "c-00", "title": "Setup", "description": "Install it."}] + lessons),
+                   encoding="utf-8")
+    fails, _ = gate(inp, d, "c-01", new_course=True)
+    assert not any("pip install" in f for f in fails)

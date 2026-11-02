@@ -397,6 +397,14 @@ def program_files(html: str) -> list[tuple[str, str]]:
     return [(r['program'], r['code']) for r in python_parts(html)['runs'] if r['program']]
 
 
+SAFE_COMPANION = re.compile(r'[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*')
+
+
+def companion_files(html: str) -> list[tuple[str, str, str]]:
+    """(program, path, text) for every companion file (templates/, static/), in page order."""
+    return [(r['program'], p, t) for r in python_parts(html)['runs'] if r['program'] for p, t in r['files']]
+
+
 def _program_entries(chapter: dict, position: int, taken: set[str]) -> tuple[list[tuple[dict, bytes]], list[str]]:
     """Each program, plus the lesson's dataset files it reads, as pack entries under their own names in the
     chapter folder. `taken` holds the names the chapter's files spec already puts there."""
@@ -412,6 +420,16 @@ def _program_entries(chapter: dict, position: int, taken: set[str]) -> tuple[lis
         out.append(({'name': name if name.startswith(tag) else tag + name, 'arc': name, 'sections': 'all',
                      'about': 'the whole program from this chapter', 'from': {'program': lid}},
                     code.encode('utf-8')))
+    # Companions ride in the zip only: the site's file box takes .py, not .html or .css.
+    for program, path, text in companion_files(chapter['html']):
+        if not SAFE_COMPANION.fullmatch(path) or '..' in path.split('/'):
+            problems.append(f'{lid}: program {program}: companion {path} must be a relative path')
+            continue
+        if path in here:
+            problems.append(f'{lid}: program {program}: companion {path} already used in its chapter folder')
+        here.add(path)
+        out.append(({'name': tag + path.replace('/', '-'), 'arc': path, 'sections': 'all', 'zipOnly': True,
+                     'about': f'used by {program}', 'from': {'program': lid}}, text.encode('utf-8')))
     recipe = python_parts(chapter['html'])['dataset']
     for name, text in (build_files(recipe) if recipe else {}).items():
         if name in here:
@@ -490,6 +508,8 @@ def build_pack(chapters: list[dict], course_short: str, version: int, world: dic
     (out_dir / f'{pack}.zip').write_bytes(buf.getvalue())
     manifest = []
     for chapter, folder, entry, data, _ in built:
+        if entry.get('zipOnly'):
+            continue
         (files_dir / entry['name']).write_bytes(data)
         manifest.append({'name': entry['name'], 'format': entry['name'].rpartition('.')[2], 'bytes': len(data),
                          'sha256': hashlib.sha256(data).hexdigest(), 'lessonId': chapter['id'], 'folder': folder,

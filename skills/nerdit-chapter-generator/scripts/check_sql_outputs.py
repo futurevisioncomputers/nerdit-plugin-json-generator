@@ -18,7 +18,7 @@ import re
 import sqlite3
 import sys
 
-SEED = re.compile(r'<script\b[^>]*type="text/plain"[^>]*>(.*?)</script>', re.S | re.I)
+SEED = re.compile(r'<script\b(?![^>]*nerdit-check)[^>]*type="text/plain"[^>]*>(.*?)</script>', re.S | re.I)
 EXPLAIN = re.compile(r"\bEXPLAIN\b", re.I)
 RUN_START = re.compile(r'<div\b[^>]*\bclass="[^"]*\bnerdit-run\b[^"]*"[^>]*>', re.I)
 DIV_TOKEN = re.compile(r"<div\b|</div\s*>", re.I)

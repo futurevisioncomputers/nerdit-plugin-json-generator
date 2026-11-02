@@ -36,6 +36,7 @@ import tempfile
 import zipfile
 
 import practice_files as pf
+from verify_course import _starts_server  # a program the learner starts and leaves running
 
 # Agg's plt.show() warns that it cannot show a window; ignore only that warning under -W error.
 SHOW_OK = ['-W', 'ignore:FigureCanvasAgg is non-interactive:UserWarning']
@@ -189,7 +190,11 @@ def _run_with(pack_root: Path, python: str, venv_dir: Path, requirements: str) -
         rel = path.relative_to(pack_root).as_posix()
         if path.suffix == '.py' and _capstone_starter_or_test(path, pack_root):
             continue  # check_capstone.py runs these: the starter is meant to fail its tests
-        if path.suffix == '.py':
+        if path.suffix == '.py' and _starts_server(path.read_text(encoding='utf-8', errors='replace')):
+            # `python app.py` would serve until stopped: import it as a module instead, guard off.
+            run(f'{rel} (imported in its own folder)',
+                ['-c', f'import runpy; runpy.run_path({path.name!r}, run_name="learner_check")'], path.parent)
+        elif path.suffix == '.py':
             run(f'{rel} (from the pack root)', [rel], pack_root)
             run(f'{rel} (from its own folder)', [path.name], path.parent)
         elif path.suffix == '.ipynb':

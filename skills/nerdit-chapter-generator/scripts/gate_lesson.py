@@ -43,7 +43,7 @@ from lesson_runs import ensure_venv, lesson_runs  # noqa: E402
 from practice_files import build_file  # noqa: E402
 from make_world_data import generate, load_world  # noqa: E402
 from svgcheck import check_svg  # noqa: E402
-from verify_course import Report, verify_density, verify_programs, verify_schema, verify_structure  # noqa: E402
+from verify_course import Report, _has_setup, verify_density, verify_programs, verify_schema, verify_structure  # noqa: E402
 
 SVG_RE = re.compile(r"<svg\b.*?</svg>", re.S | re.I)
 
@@ -70,7 +70,11 @@ def gate(input_path: Path, lesson_dir: Path, lid: str, contract: str = "v11",
     verify_structure(rep, course, contract)
     if contract == "v11":
         verify_density(rep, course, one)
-        verify_programs(rep, course, one, new_course or bool({"programs"} & set(modes)))
+        # The venv + pip setup lives in an earlier lesson: read the ones already on disk.
+        earlier = [s["id"] for s in lessons[:lessons.index(one[0])]]
+        seen = any(_has_setup(p.read_text(encoding="utf-8")) for p in
+                   (Path(lesson_dir) / f"{e}.html" for e in earlier) if p.is_file())
+        verify_programs(rep, course, one, new_course or bool({"programs"} & set(modes)), setup_seen=seen)
     fails += [f"verify: {f}" for f in rep.failures]
     warns += [f"verify: {w}" for w in rep.warnings]
 

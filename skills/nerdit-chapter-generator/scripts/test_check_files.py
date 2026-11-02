@@ -189,3 +189,16 @@ def test_skill_step_5c_commands_run_end_to_end(tmp_path):
     version = check.stdout.split('Learner run passed on Python ')[1].split()[0]
     assert step2('--python', version).returncode == 0
     assert f'Python {version}' in json.loads(marked.read_text(encoding='utf-8'))['lessons'][0]['content']
+
+
+def test_a_server_program_is_imported_not_started(tmp_path, monkeypatch):
+    monkeypatch.setattr(cf, 'TIMEOUT', 20)
+    server = ('import time\nREADY = True\nif __name__ == "__main__":\n'
+              '    app = None\n    time.sleep(10**6)\n    app.run()')
+    root = tmp_path / 'pack'
+    (root / 'L01-a').mkdir(parents=True)
+    (root / 'L01-a' / 'server.py').write_text(server, encoding='utf-8')
+    (root / 'requirements.txt').write_text('', encoding='utf-8')
+    problems, ran = cf._run_with(root, sys.executable, tmp_path / 'venv', '')
+    assert problems == [], problems
+    assert any('server.py' in r and 'imported' in r for r in ran)

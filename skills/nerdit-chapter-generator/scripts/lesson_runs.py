@@ -40,17 +40,53 @@ def ensure_venv(cache: Path, requirements: str, pythons: list[str]) -> tuple[Pat
     venv = cache / "venv"
     vpy = venv / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
     mark = cache / "venv.stamp"
-    if vpy.exists() and mark.is_file() and mark.read_text(encoding="utf-8") == stamp:
+
+    def ready() -> bool:
+        return vpy.exists() and mark.is_file() and mark.read_text(encoding="utf-8") == stamp
+
+    if ready():
         return vpy, None
-    for spec in pythons:
-        exe = resolve_python(spec)
-        if exe is None:
-            continue
-        made, err = _venv(exe, venv, requirements)
-        if made is not None:
-            mark.write_text(stamp, encoding="utf-8")
-        return made, err
+    # Parallel writers gate at once: one builds, the rest wait, then reuse (spec 2026-10-30).
+    with _lock(cache / "venv.lock"):
+        if ready():
+            return vpy, None
+        for spec in pythons:
+            exe = resolve_python(spec)
+            if exe is None:
+                continue
+            made, err = _venv(exe, venv, requirements)
+            if made is not None:
+                mark.write_text(stamp, encoding="utf-8")
+            return made, err
     return None, f"none of Python {', '.join(pythons)} is installed"
+
+
+LOCK_STALE = 30 * 60   # seconds: a lock older than this was left by a gate that died
+
+
+class _lock:
+    """An exclusive lock file (O_EXCL works on every OS); waits for the holder, breaks a stale one."""
+
+    def __init__(self, path: Path):
+        self.path = path
+
+    def __enter__(self):
+        import time
+        while True:
+            try:
+                os.close(os.open(self.path, os.O_CREAT | os.O_EXCL | os.O_WRONLY))
+                return self
+            except FileExistsError:
+                try:
+                    if time.time() - self.path.stat().st_mtime > LOCK_STALE:
+                        self.path.unlink(missing_ok=True)
+                        continue
+                except FileNotFoundError:
+                    continue
+                time.sleep(0.2)
+
+    def __exit__(self, *exc):
+        self.path.unlink(missing_ok=True)
 
 
 def lesson_runs(lesson: dict, position: int, vpy: Path | None, workdir: Path,

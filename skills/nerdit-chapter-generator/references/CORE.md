@@ -351,15 +351,49 @@ Rules:
   running program (web routes, forms, templates, request handling, a CLI, classes that work
   together), show the whole file the learner would write: imports, setup, every function and the
   `if __name__ == "__main__":` entry point. Faking the runtime in a fragment
-  (`test_request_context`, `MultiDict`, `meta={"csrf": False}`) is the sign a program is needed;
-  `verify_course.py` warns on it. A lesson program is **one file**, templates inline with
-  `render_template_string`; separate `templates/` files belong to the capstone. At most 80 lines,
-  at most 2 programs per lesson.
+  (`test_request_context`, `MultiDict`, `meta={"csrf": False}`, a `test_client()` fragment) is the
+  sign a program is needed; `verify_course.py` warns on it. At most 80 lines per file, at most 2
+  programs per lesson.
+- **Real folders** (owner, 2026-10-30). A program may carry **companion files**, the way the real
+  project lays them out: `templates/index.html` for `render_template`, `static/style.css` for
+  `url_for('static', …)`. Show each one in full as a `nerdit-in nerdit-file` block inside the
+  program, after the Python file, tagged with its path. Paths are relative (`templates/a.html`),
+  never `..`; two programs in one lesson never share a companion path. They ship in the practice
+  pack beside the program. A program that uses `render_template` without showing its template
+  warns. Prefer `render_template` + a companion over `render_template_string` once the course
+  has taught templates.
+- **Run it** (owner, 2026-10-30; `verify_course.py`, FAIL for a new course). A learner must be able
+  to run every program without guessing:
+  This is the default for **every code course** (Flask, FastAPI, Streamlit, scripts, data):
+  complete programs, setup once, a run-it block after each program, real folders.
+  - **Setup once, before the course's first program**: a section (usually lesson 1 or
+    2) with a `nerdit-terminal` that makes a folder, a virtual environment (`python -m venv venv`,
+    then the Windows and macOS/Linux activate lines) and installs the course libraries
+    (`pip install flask`, or `pip install -r requirements.txt` from the practice pack). Later
+    lessons say "activate your venv" in one sentence, never repeat it.
+  - **A run-it block after every program**, before the next program or `<h2>`: one sentence
+    naming the file and folder ("Save this as `hello.py`; put `hello.html` in a `templates` folder
+    next to it"), then a `nerdit-terminal` that runs it (`python hello.py`, or `uvicorn main:app
+    --reload`, `streamlit run app.py`, `flask --app hello run`, `fastapi dev main.py`) with its
+    first output lines. A script shows what it prints. A server shows `* Running on
+    http://127.0.0.1:5000`, the exact address to open, what the browser shows (one line, or a
+    screen spec, figures.md §16) and how to stop it (Ctrl+C). For a form or POST route, name what
+    to type and click.
+
+  ```html
+  <p>Save the file as <code>hello.py</code>, activate your venv and run it:</p>
+  <div class="nerdit-terminal"><span class="nerdit-prompt">$ </span><span class="nerdit-cmd">python hello.py</span>
+  <span class="nerdit-out"> * Running on http://127.0.0.1:5000</span>
+  <span class="nerdit-comment"># Press Ctrl+C to stop the server</span></div>
+  <p>Open <code>http://127.0.0.1:5000/hello/Neha</code>. The page shows <b>Hello, Neha!</b></p>
+  ```
 
   ```html
   <div class="nerdit-run nerdit-program" data-run="offline" data-file="form_app.py">
     <div class="nerdit-in"><span class="nerdit-tag">You type</span>
       <pre data-lang="python"><code>…the whole file…</code></pre></div>
+    <div class="nerdit-in nerdit-file" data-file="templates/form.html"><span class="nerdit-tag">templates/form.html</span>
+      <pre data-lang="html"><code>…the whole template (optional companion)…</code></pre></div>
     <script type="text/plain" class="nerdit-check">client = app.test_client()
   print(client.post("/", data={"name": ""}).status_code)</script>
     <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>200</code></pre></div>

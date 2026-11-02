@@ -534,9 +534,47 @@ def shown_code_blocks(tree: Tree) -> list[str]:
 
 PROGRAM_LINES = 80        # CORE.md §4: one whole file (spec 2026-10-28)
 PROGRAMS_PER_LESSON = 2
-FAKE_RUNTIME = ("test_request_context", "MultiDict", '"csrf": False', "'csrf': False")
+FAKE_RUNTIME = ("test_request_context", "MultiDict", '"csrf": False', "'csrf': False", "test_client()")
 CELL_RUNS = 3             # run lines that need earlier code before a lesson needs its whole script
 ENTRY = 'if __name__ == "__main__":'
+SERVER_CALL = re.compile(r"\b(?:app\.run|serve|run_simple)\(")   # a program the learner starts and leaves running
+SAFE_PATH = re.compile(r"[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*")
+
+
+def _starts_server(code: str) -> bool:
+    entry = code.find(ENTRY)
+    return entry >= 0 and bool(SERVER_CALL.search(code, entry))
+
+
+def _runs_file(cmd: str, name: str) -> bool:
+    """True when a terminal command runs the program `name`: python/py, uvicorn, streamlit, flask, fastapi."""
+    path = rf"(?:[\w.-]+/)*{re.escape(name)}"
+    module = re.escape(name.rsplit("/", 1)[-1].removesuffix(".py"))
+    return bool(re.search(rf"\b(?:python3?|py)\s+{path}\b|\bstreamlit\s+run\s+{path}\b"
+                          rf"|\bfastapi\s+(?:dev|run)\s+{path}\b|\buvicorn\s+{module}:\w+"
+                          rf"|\bflask\s+--app\s+{module}\b", cmd))
+
+
+def _run_it_blocks(content: str) -> list[tuple[str, bool]]:
+    """(data-file, has its run-it block) per program, in page order. The run-it block is a
+    nerdit-terminal that runs the file before the next program or <h2> (spec 2026-10-30)."""
+    tree = parse(content)
+    found, current = [], None
+    for n in tree.all:
+        if "nerdit-program" in n.classes or n.tag == "h2":
+            current = None
+            if "nerdit-program" in n.classes:
+                found.append([n.attrs.get("data-file", ""), False])
+                current = found[-1]
+        elif "nerdit-terminal" in n.classes and current is not None and current[0]:
+            if _runs_file(text_of(n), current[0]):
+                current[1] = True
+    return [(f, ok) for f, ok in found]
+
+
+def _has_setup(content: str) -> bool:
+    tree = parse(content)
+    return any("nerdit-terminal" in n.classes and "pip install" in text_of(n) for n in tree.all)
 
 
 def needs_earlier(code: str) -> bool:
@@ -561,18 +599,23 @@ def needs_earlier(code: str) -> bool:
                for n in ast.walk(tree))
 
 
-def verify_programs(rep: Report, out: dict, inp: list, new_course: bool = False) -> None:
+def verify_programs(rep: Report, out: dict, inp: list, new_course: bool = False,
+                    setup_seen: bool = False) -> None:
     """CORE.md §4 programs: one whole file, at most 80 lines and 2 per lesson; a checked program has
     its entry point and runs offline. Fake runtimes outside a program and cell-only code lessons
-    without their whole script are flagged (FAIL for a new course, WARN for a delivered one)."""
+    without their whole script are flagged (FAIL for a new course, WARN for a delivered one).
+    `setup_seen`: an earlier lesson outside `out` already shows the venv + pip install setup."""
     from check_python_outputs import python_parts   # lazy: check_python_outputs imports this module
     meta = {s.get("id"): s for s in inp}
+    strict = rep.check if new_course else rep.warn
     for lesson in out.get("lessons", []):
         lid = lesson.get("id", "?")
-        runs = python_parts(lesson.get("content", ""))["runs"]
+        content = lesson.get("content", "")
+        runs = python_parts(content)["runs"]
         programs = [r for r in runs if r["program"] is not None or r["check"] is not None]
         rep.check(len(programs) <= PROGRAMS_PER_LESSON,
                   f"{lid}: {len(programs)} programs; keep to {PROGRAMS_PER_LESSON} programs per lesson")
+        shipped: set[str] = set()
         for i, r in enumerate(programs, 1):
             code = r["code"]
             rep.check(bool(r["program"]), f'{lid}: program {i} has no data-file="<name>.py"')
@@ -581,8 +624,26 @@ def verify_programs(rep: Report, out: dict, inp: list, new_course: bool = False)
             if r["check"] is not None:
                 rep.check(ENTRY in code, f"{lid}: program {i} has a check but no {ENTRY} entry point")
                 rep.check(r["offline"], f'{lid}: program {i} has a check, so it runs offline (data-run="offline")')
-            rep.warn("render_template(" not in code, f"{lid}: program {i} uses render_template(); a lesson "
-                                                     "program is one file: use render_template_string")
+            for path, text in r["files"]:
+                rep.check(bool(SAFE_PATH.fullmatch(path)) and ".." not in path.split("/"),
+                          f'{lid}: program {i} companion "{path}" must be a relative path like templates/index.html')
+                k = len(text.strip("\n").splitlines())
+                rep.check(k <= PROGRAM_LINES, f"{lid}: program {i} companion {path} is {k} lines (max {PROGRAM_LINES})")
+                rep.check(path not in shipped, f"{lid}: program {i} companion {path} is shipped by another program "
+                                               "in this lesson; give each program its own file names")
+                shipped.add(path)
+            has_templates = any(p.startswith("templates/") for p, _ in r["files"])
+            rep.warn("render_template(" not in code or has_templates,
+                     f"{lid}: program {i} uses render_template() but shows no templates/ file; show each "
+                     "template as a companion file")
+        has_setup = _has_setup(content)
+        for name, ok in _run_it_blocks(content):
+            strict(setup_seen or has_setup,
+                   f"{lid}: program {name} comes before any lesson shows the setup "
+                   "(a nerdit-terminal with python -m venv and pip install)")
+            strict(ok, f"{lid}: program {name} needs a run-it block after it: a nerdit-terminal running it "
+                       f"(python {name}, or uvicorn/streamlit/flask --app) and what the learner then sees")
+        setup_seen = setup_seen or has_setup
         for i, r in enumerate(runs, 1):
             if r in programs:
                 continue

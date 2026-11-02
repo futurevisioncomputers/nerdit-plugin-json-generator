@@ -43,14 +43,27 @@ def lesson(*parts: str) -> str:
 
 
 def program_line(code: str, check: str | None, shown: str = "", file: str | None = "form_app.py",
-                 offline: bool = True) -> str:
-    """A program run line (CORE.md §4): one whole file, an optional check snippet, its output."""
+                 offline: bool = True, files: tuple = ()) -> str:
+    """A program run line (CORE.md §4): the main file, its companion files (path, text, lang),
+    an optional check snippet, its output."""
     attrs = (' data-run="offline"' if offline else "") + (f' data-file="{file}"' if file else "")
     snippet = f'<script type="text/plain" class="nerdit-check">{check}</script>' if check is not None else ""
+    extra = "".join(f'<div class="nerdit-in nerdit-file" data-file="{p}"><span class="nerdit-tag">{p}</span>'
+                     f'<pre data-lang="{lang}"><code>{text}</code></pre></div>' for p, text, lang in files)
     return (f'<div class="nerdit-run nerdit-program"{attrs}><div class="nerdit-in">'
             f'<span class="nerdit-tag">You type</span><pre data-lang="python"><code>{code}</code></pre></div>'
-            f'{snippet}<div class="nerdit-out"><span class="nerdit-tag">Python shows</span>'
+            f'{extra}{snippet}<div class="nerdit-out"><span class="nerdit-tag">Python shows</span>'
             f'<pre><code>{shown}</code></pre></div></div>')
+
+
+def test_a_program_carries_its_companion_files():
+    page = "&lt;h1&gt;Hi {{ name }}&lt;/h1&gt;"
+    html = lesson(program_line("from flask import Flask", None, file="hello.py",
+                               files=(("templates/hello.html", page, "html"), ("static/style.css", "h1 {}", "css"))))
+    run = python_parts(html)["runs"][0]
+    assert run["code"] == "from flask import Flask"
+    assert run["files"] == [("templates/hello.html", "<h1>Hi {{ name }}</h1>"), ("static/style.css", "h1 {}")]
+    assert python_parts(lesson(run_line("print(1)", "1")))["runs"][0]["files"] == []
 
 
 def test_program_run_lines_carry_file_and_check():

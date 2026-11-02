@@ -174,6 +174,12 @@ def _run_lesson(vpy: Path, lesson: dict, workdir: Path, files: list[Path] = (),
     for _, r in numbered:
         if r['program']:
             (folder / r['program']).write_text(r['code'], encoding='utf-8')
+            for path, text in r['files']:   # templates/, static/ beside the program (spec 2026-10-30)
+                target = (folder / path).resolve()
+                if not target.is_relative_to(folder.resolve()):
+                    return [f'{lesson["id"]}: program {r["program"]}: companion {path} is outside its folder']
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(text, encoding='utf-8')
     blocks = [{'code': r['code'], 'program': r['program'], 'check': r['check']} for _, r in numbered]
     (folder / '_blocks.json').write_text(json.dumps(blocks), encoding='utf-8')
     (workdir / '_driver.py').write_text(DRIVER, encoding='utf-8')
