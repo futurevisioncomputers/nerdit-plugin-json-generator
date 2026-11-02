@@ -154,7 +154,8 @@ def test_every_program_needs_its_run_it_block_not_only_servers():
 
 def test_other_run_commands_count():
     for cmd in ("uvicorn main:app --reload", "streamlit run main.py", "flask --app main run",
-                "fastapi dev main.py", "python3 main.py", "py main.py", "python src/main.py"):
+                "fastapi dev main.py", "python3 main.py", "py main.py", "python src/main.py",
+                "python -m pytest main.py -v", "pytest main.py"):
         run = RUN_IT.replace("python form_app.py", cmd)
         rep = course_report([SETUP, program_line(SERVER, CHECK, file="main.py"), run])
         assert rep.failures == [], (cmd, rep.failures)
@@ -170,3 +171,10 @@ def test_setup_from_an_earlier_lesson_outside_this_report_counts():
     out = {"lessons": [{"id": "x", "content": lesson(program_line(SERVER, CHECK), RUN_IT)}]}
     verify_programs(rep, out, [{"id": "x", "runner": "python"}], True, setup_seen=True)
     assert rep.failures == []
+
+
+def test_a_test_file_runs_with_plain_pytest():
+    tests = "def test_one():\n    assert 1 == 1"
+    run = RUN_IT.replace("python form_app.py", "python -m pytest -v")
+    rep = course_report([SETUP, program_line(tests, None, file="test_app.py", offline=False), run])
+    assert rep.failures == [], rep.failures

@@ -550,9 +550,11 @@ def _runs_file(cmd: str, name: str) -> bool:
     """True when a terminal command runs the program `name`: python/py, uvicorn, streamlit, flask, fastapi."""
     path = rf"(?:[\w.-]+/)*{re.escape(name)}"
     module = re.escape(name.rsplit("/", 1)[-1].removesuffix(".py"))
+    if name.rsplit("/", 1)[-1].startswith("test_") and re.search(r"\bpytest\b", cmd):
+        return True   # pytest finds test_*.py itself
     return bool(re.search(rf"\b(?:python3?|py)\s+{path}\b|\bstreamlit\s+run\s+{path}\b"
                           rf"|\bfastapi\s+(?:dev|run)\s+{path}\b|\buvicorn\s+{module}:\w+"
-                          rf"|\bflask\s+--app\s+{module}\b", cmd))
+                          rf"|\bflask\s+--app\s+{module}\b|\bpytest\b[^\n]*?\b{path}\b", cmd))
 
 
 def _run_it_blocks(content: str) -> list[tuple[str, bool]]:
