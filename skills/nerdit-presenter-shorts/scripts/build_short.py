@@ -17,6 +17,10 @@ import imageio_ffmpeg
 from playwright.sync_api import sync_playwright
 
 HERE = Path(__file__).resolve().parent
+# aspect -> frame size and how the 1080x900 presenter clip is placed at the top left:
+# 9:16 puts it across the top; 16:9 scales it to full height and keeps the middle 960 px (the face).
+LAYOUTS = {"9:16": (1080, 1920, "scale=1080:900"),
+           "16:9": (1920, 1080, "scale=1296:1080,crop=960:1080:168:0")}
 sys.path.insert(0, str(HERE.parents[1] / "nerdit-story-video" / "scripts"))
 from render import chromium   # noqa: E402  existing Playwright Chromium build
 
@@ -24,6 +28,7 @@ from render import chromium   # noqa: E402  existing Playwright Chromium build
 def main(spec_path, presenter, voice, out):
     spec = json.loads(Path(spec_path).read_text(encoding="utf-8"))
     fps, dur = spec["fps"], spec["duration"]
+    w, h, place = LAYOUTS[spec.get("aspect", "9:16")]
     page_html = (HERE / "overlay.html").read_text(encoding="utf-8").replace("/*SPEC*/null", json.dumps(spec))
     work = Path(out).with_suffix("")
     frames = work / "frames"
@@ -33,7 +38,7 @@ def main(spec_path, presenter, voice, out):
     exe = chromium()   # opens its own Playwright, so call it before ours
     with sync_playwright() as p:
         browser = p.chromium.launch(**({"executable_path": exe} if exe else {}))
-        page = browser.new_page(viewport={"width": 1080, "height": 1920})
+        page = browser.new_page(viewport={"width": w, "height": h})
         page.goto((work / "overlay.html").resolve().as_uri())
         page.wait_for_function("document.fonts.status === 'loaded'")
         for i in range(int(dur * fps)):
@@ -41,8 +46,8 @@ def main(spec_path, presenter, voice, out):
             page.screenshot(path=str(frames / f"{i:05d}.png"), omit_background=True)
         browser.close()
     ff = imageio_ffmpeg.get_ffmpeg_exe()
-    graph = (f"color=c=#0b1220:s=1080x1920:r={fps}:d={dur}[bg];"
-             f"[0:v]fps={fps},scale=1080:900[pr];[bg][pr]overlay=0:0:shortest=0[base];"
+    graph = (f"color=c=#0b1220:s={w}x{h}:r={fps}:d={dur}[bg];"
+             f"[0:v]fps={fps},{place}[pr];[bg][pr]overlay=0:0:shortest=0[base];"
              f"[base][1:v]overlay=0:0,format=yuv420p[v]")
     subprocess.run([ff, "-y", "-v", "error", "-stream_loop", "-1", "-i", str(presenter),
                     "-framerate", str(fps), "-i", str(frames / "%05d.png"), "-i", str(voice),

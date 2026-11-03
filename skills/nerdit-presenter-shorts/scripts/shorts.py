@@ -63,7 +63,7 @@ def scaffold(course: Path, lesson_id: str | None) -> dict:
             first = code.splitlines()[0] if code.strip() else ""
             available.append({"lesson": l["id"], "program": n, "lines": len(code.splitlines()),
                               "file": (FILE_COMMENT.match(first) or [None, ""])[1]})
-    return {"version": 1, "lesson": lesson_id, "language": "hi", "voice": "hi-IN-Chirp3-HD-Charon",
+    return {"version": 1, "lesson": lesson_id, "aspect": "16:9", "language": "hi", "voice": "hi-IN-Chirp3-HD-Charon",
             "lines": [], "end": {"title": "", "subtitle": ""}, "availablePrograms": available}
 
 
@@ -82,6 +82,8 @@ def check(plan: dict, course: Path, presenter: Path | None) -> list[str]:
     lessons = {l["id"]: l for l in course_lessons(course)}
     text = " ".join(html.unescape(re.sub(r"<[^>]+>", " ", l.get("content", ""))) for l in lessons.values())
     lines = plan.get("lines", [])
+    if plan.get("aspect", "9:16") not in ("9:16", "16:9"):
+        errors.append(f"aspect is 9:16 (vertical short) or 16:9 (landscape), not {plan.get('aspect')!r}")
     if not 3 <= len(lines) <= 8:
         errors.append(f"a short has 3-8 lines; this one has {len(lines)}")
     seconds = sum(len(l.get("say", "")) for l in lines) / CHARS_PER_SECOND + PAUSE * max(len(lines) - 1, 0)
@@ -136,7 +138,7 @@ def timeline(plan: dict, course: Path, durations: list[float], fps: int = 25) ->
     """The timed spec for build_short.py. A cue or cut-in starts where its `at` word falls in the
     line (by character position) and lasts until the next one or the end of the line."""
     lessons = {l["id"]: l for l in course_lessons(course)}
-    spec = {"fps": fps, "captions": [], "explore": [], "end": None}
+    spec = {"fps": fps, "aspect": plan.get("aspect", "9:16"), "captions": [], "explore": [], "end": None}
     t = 0.0
     for n, (line, dur) in enumerate(zip(plan["lines"], durations)):
         say, start, stop = line["say"], t, t + dur + (PAUSE if n < len(durations) - 1 else 0)

@@ -46,6 +46,8 @@ writes a skeleton with `availablePrograms` (every Python program in the lesson o
   - `explore`: `{"at": "<word>", "topic": "REST API", "code": {"lesson": "<id>", "program": 1, "lines": [1, 12]}}`:
     a cut-in showing that program's lines (≤ 16), copied from the course. Pick from
     `availablePrograms`; never type code.
+- **aspect**: `16:9` (landscape, the default: presenter left, captions right) or `9:16` (vertical
+  short: presenter on top).
 - **end**: `{"title": "Flask Web Development", "subtitle": "28 lessons · complete runnable programs"}`,
   shown over the last line.
 
@@ -72,7 +74,7 @@ About 3-6 minutes on a 12 GB GPU. If the agent may not run code from the LatentS
 `python scripts/shorts.py timeline --plan <plan> --course <course.json> --parts <presenter>/<name>/parts --out <presenter>/<name>/short.spec.json`
 then
 `python scripts/build_short.py <presenter>/<name>/short.spec.json <presenter>/<name>/face-voice.mp4 <presenter>/<name>/voice.wav <presenter>/<name>/short.mp4`
-(1080x1920, 25 fps). Look at one frame of each kind (caption, explore, end card) before handing
+(1920x1080 or 1080x1920 by `aspect`, 25 fps). Look at one frame of each kind (caption, explore, end card) before handing
 it over.
 
 ## Never

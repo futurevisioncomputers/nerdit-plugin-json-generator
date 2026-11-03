@@ -92,3 +92,9 @@ def test_timeline_places_events_by_word_position(course):
 def test_lipsync_uses_the_256px_model():
     cmd = lipsync.command("py", Path("f.mp4"), Path("v.wav"), Path("o.mp4"))
     assert "configs/unet/stage2.yaml" in cmd and "--enable_deepcache" in cmd
+
+
+def test_aspect_is_vertical_or_landscape_and_reaches_the_spec(course, presenter):
+    assert any("aspect" in e for e in shorts.check(plan(aspect="4:3"), course, presenter))
+    assert shorts.timeline(plan(aspect="16:9"), course, [4.0, 5.0, 3.0])["aspect"] == "16:9"
+    assert shorts.scaffold(course, None)["aspect"] == "16:9"

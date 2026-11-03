@@ -33,6 +33,17 @@
     background: linear-gradient(135deg, #12304a, #0f1b2e); border: 2px solid #2b5a7c; text-align: center; }
   #endcard .key { font-size: 96px; padding: 0; }
   #endcard .lead { font-size: 44px; margin-top: 22px; color: var(--muted); }
+  /* 16:9: presenter on the left half, captions and end card on the right, code card on the right of a cut-in */
+  body.land, html.land { width: 1920px; height: 1080px; }
+  .land #panel { top: 0; left: 960px; }
+  .land #fade { top: 0; left: 840px; width: 122px; height: 1080px;
+    background: linear-gradient(to right, rgba(11,18,32,0), var(--ink)); }
+  .land #cap { top: 380px; left: 960px; }
+  .land #badge { left: 960px; bottom: 60px; }
+  .land #explore h1 { top: 330px; left: 40px; right: auto; width: 820px; }
+  .land #topic { top: 460px; left: 20px; right: auto; width: 860px; }
+  .land .card { left: 890px; right: 60px; top: 50%; }
+  .land #endcard { left: 1030px; right: 70px; top: 330px; }
   #endcard .brand { margin-top: 34px; font: 800 52px Poppins, sans-serif; color: var(--white); letter-spacing: 6px; }
 </style></head>
 <body>
@@ -45,6 +56,8 @@
 <div id="endL" class="layer"><div id="endcard"><div class="key" id="etitle"></div><div class="lead" id="esub"></div><div class="brand">NERDIT</div></div></div>
 <script>
 const SPEC = /*SPEC*/null;
+const LAND = SPEC.aspect === '16:9';
+if (LAND) { document.documentElement.classList.add('land'); document.body.classList.add('land'); }
 const $ = id => document.getElementById(id);
 const clamp = x => Math.max(0, Math.min(1, x));
 const ease = x => 1 - Math.pow(1 - clamp(x), 3);
@@ -86,7 +99,8 @@ function renderAt(t) {
     }
     $('fname').textContent = exp[3];
     const k = ease((t - exp[0] - 0.1) / 0.45);
-    $('card').style.transform = `translateY(${(1 - k) * 160}px)`; $('card').style.opacity = k;
+    const centre = LAND ? 'translateY(-50%) ' : '';   // landscape centres the card vertically
+    $('card').style.transform = `${centre}translateY(${(1 - k) * 160}px)`; $('card').style.opacity = k;
   }
   // end card
   $('endL').style.opacity = end ? 1 : 0;
