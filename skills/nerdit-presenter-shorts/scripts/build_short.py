@@ -47,7 +47,7 @@ def main(spec_path, presenter, voice, out):
     subprocess.run([ff, "-y", "-v", "error", "-stream_loop", "-1", "-i", str(presenter),
                     "-framerate", str(fps), "-i", str(frames / "%05d.png"), "-i", str(voice),
                     "-filter_complex", graph, "-map", "[v]", "-map", "2:a", "-t", str(dur),
-                    "-c:v", "libx264", "-crf", "18", "-preset", "medium", "-c:a", "aac", "-b:a", "192k",
+                    "-c:v", "libx264", "-crf", "18", "-preset", "medium", "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-ac", "2",   # 24 kHz mono is silent in some players
                     "-movflags", "+faststart", str(out)], check=True)
     print("wrote", out)
 
