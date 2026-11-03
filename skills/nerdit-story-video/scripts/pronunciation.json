@@ -303,5 +303,6 @@
   "NUM": "num",
   "TMP": "temp",
   "ERR": "error",
-  "MSG": "message"
+  "MSG": "message",
+  "dunder": "double underscore {} double underscore"
 }
