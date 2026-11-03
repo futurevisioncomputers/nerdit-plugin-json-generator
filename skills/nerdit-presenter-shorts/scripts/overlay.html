@@ -1,0 +1,97 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;800&family=JetBrains+Mono:wght@500&display=block" rel="stylesheet">
+<style>
+  html, body { margin: 0; width: 1080px; height: 1920px; background: transparent; overflow: hidden; }
+  * { box-sizing: border-box; }
+  :root { --ink: #0b1220; --mint: #5ff0b4; --white: #f4f7fb; --muted: #9fb0c8; --card: #0f1b2e; --line: #1d2d47; }
+  .layer { position: absolute; inset: 0; opacity: 0; }
+  .grid { background-color: var(--ink);
+    background-image: linear-gradient(var(--line) 2px, transparent 2px), linear-gradient(90deg, var(--line) 2px, transparent 2px);
+    background-size: 120px 120px; }
+  #panel { top: 900px; }
+  #fade { position: absolute; left: 0; right: 0; top: 760px; height: 142px;
+    background: linear-gradient(to bottom, rgba(11,18,32,0), var(--ink)); }
+  .lead { font: 500 58px Poppins, sans-serif; color: var(--white); text-align: center; }
+  .key { font: 800 124px/1.05 Poppins, sans-serif; color: var(--mint); text-align: center;
+    text-shadow: 0 6px 30px rgba(95,240,180,.35); letter-spacing: -2px; padding: 0 40px; }
+  #cap { position: absolute; top: 1010px; left: 0; right: 0; }
+  #badge { position: absolute; bottom: 90px; left: 0; right: 0; text-align: center;
+    font: 500 34px Poppins, sans-serif; color: var(--muted); }
+  #badge b { color: var(--mint); font-weight: 700; }
+  #explore h1 { position: absolute; top: 200px; left: 0; right: 0; margin: 0; text-align: center;
+    font: 700 96px Poppins, sans-serif; color: var(--white); }
+  #topic { position: absolute; top: 330px; left: 0; right: 0; }
+  .card { position: absolute; left: 60px; right: 60px; top: 700px; background: var(--card);
+    border: 2px solid #24406a; border-radius: 28px; box-shadow: 0 0 60px rgba(95,240,180,.18); overflow: hidden; }
+  .bar { height: 70px; display: flex; align-items: center; gap: 14px; padding: 0 28px; background: #13233b; }
+  .bar i { width: 18px; height: 18px; border-radius: 50%; display: block; }
+  .bar span { margin-left: 16px; font: 500 30px 'JetBrains Mono', monospace; color: var(--muted); }
+  pre { margin: 0; padding: 30px 36px 40px; font: 500 31px/1.5 'JetBrains Mono', monospace; color: #dbe7f7; white-space: pre; }
+  .kw { color: #ff9fd0; } .str { color: #9ff0a8; } .dec { color: #ffd479; } .com { color: #6f86a8; }
+  #endcard { position: absolute; left: 70px; right: 70px; top: 1000px; padding: 54px 40px; border-radius: 32px;
+    background: linear-gradient(135deg, #12304a, #0f1b2e); border: 2px solid #2b5a7c; text-align: center; }
+  #endcard .key { font-size: 96px; padding: 0; }
+  #endcard .lead { font-size: 44px; margin-top: 22px; color: var(--muted); }
+  #endcard .brand { margin-top: 34px; font: 800 52px Poppins, sans-serif; color: var(--white); letter-spacing: 6px; }
+</style></head>
+<body>
+<div id="panel" class="layer grid"></div>
+<div id="fadeL" class="layer"><div id="fade"></div></div>
+<div id="capL" class="layer"><div id="cap"><div class="lead" id="lead"></div><div class="key" id="key"></div></div></div>
+<div id="badgeL" class="layer"><div id="badge"><b>NERDIT</b> · Flask Web Development</div></div>
+<div id="explore" class="layer grid"><h1>Explore</h1><div id="topic" class="key"></div>
+  <div class="card" id="card"><div class="bar"><i style="background:#ff6b6b"></i><i style="background:#ffd479"></i><i style="background:#5ff0b4"></i><span id="fname"></span></div><pre id="code"></pre></div></div>
+<div id="endL" class="layer"><div id="endcard"><div class="key" id="etitle"></div><div class="lead" id="esub"></div><div class="brand">NERDIT</div></div></div>
+<script>
+const SPEC = /*SPEC*/null;
+const $ = id => document.getElementById(id);
+const clamp = x => Math.max(0, Math.min(1, x));
+const ease = x => 1 - Math.pow(1 - clamp(x), 3);
+function pop(el, k) { el.style.transform = `scale(${0.7 + 0.3 * ease(k)}) translateY(${(1 - ease(k)) * 30}px)`; el.style.opacity = clamp(k * 1.5); }
+
+function hl(code) {
+  const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  return code.split('\n').map(line => {
+    const c = line.indexOf('#'); let body = line, com = '';
+    if (c >= 0 && !/["'][^"']*#/.test(line.slice(0, c + 1))) { body = line.slice(0, c); com = line.slice(c); }
+    // one pass, so a later rule never matches inside a span an earlier rule added
+    body = esc(body).replace(/("[^"]*"|'[^']*')|^(\s*@[\w.]+)|\b(from|import|def|return|class|if|for|in|with|assert|pass|and|is|not|None|True|False)\b/g,
+      (m, str, dec, kw) => `<span class="${str ? 'str' : dec ? 'dec' : 'kw'}">${m}</span>`);
+    return body + (com ? `<span class="com">${esc(com)}</span>` : '');
+  }).join('\n');
+}
+
+let lastCode = null;
+function renderAt(t) {
+  const exp = SPEC.explore.find(e => t >= e[0] && t < e[1]);
+  const end = t >= SPEC.end[0];
+  // presenter layers
+  for (const id of ['panel', 'fadeL', 'badgeL']) $(id).style.opacity = exp ? 0 : 1;
+  $('badgeL').style.opacity = exp || end ? 0 : 1;
+  const cap = !exp && !end && SPEC.captions.find(c => t >= c[0] && t < c[1]);
+  $('capL').style.opacity = cap ? 1 : 0;
+  if (cap) {
+    $('lead').textContent = cap[2]; $('key').textContent = cap[3];
+    pop($('lead'), (t - cap[0]) / 0.25); pop($('key'), (t - cap[0] - 0.12) / 0.3);
+  }
+  // explore cut-in
+  $('explore').style.opacity = exp ? 1 : 0;
+  if (exp) {
+    $('topic').textContent = exp[2]; pop($('topic'), (t - exp[0]) / 0.3);
+    if (lastCode !== exp[4]) {
+      $('code').innerHTML = hl(exp[4]); lastCode = exp[4];
+      const longest = Math.max(...exp[4].split('\n').map(l => l.length));
+      $('code').style.fontSize = Math.min(31, 885 / (0.6 * longest)) + 'px';   // mono glyph ~0.6em wide
+    }
+    $('fname').textContent = exp[3];
+    const k = ease((t - exp[0] - 0.1) / 0.45);
+    $('card').style.transform = `translateY(${(1 - k) * 160}px)`; $('card').style.opacity = k;
+  }
+  // end card
+  $('endL').style.opacity = end ? 1 : 0;
+  if (end) { $('etitle').textContent = SPEC.end[1]; $('esub').textContent = SPEC.end[2]; pop($('endcard'), (t - SPEC.end[0]) / 0.4); }
+}
+renderAt(0);
+</script>
+</body></html>
