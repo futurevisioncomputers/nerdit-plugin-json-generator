@@ -58,6 +58,8 @@ def render_part(job: tuple) -> str:
         for i in range(start, end):
             page.evaluate(f"renderAt({i / fps})")
             proc.stdin.write(page.screenshot(type="jpeg", quality=92))
+            if (i - start + 1) % (fps * 300) == 0:   # every 5 video minutes, so a long build shows progress
+                print(f"{Path(out).name}: {i - start + 1}/{end - start} frames", flush=True)
         browser.close()
     proc.stdin.close()
     if proc.wait():

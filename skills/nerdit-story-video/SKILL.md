@@ -136,6 +136,11 @@ stale part fails the merge: rewrite that lesson's part, never fill the gap by ha
 Pexels credits) to `<images>/video/`. It re-runs the plan check first. `stage.html` draws every
 frame; open it and call `renderAt(seconds)` to inspect a moment.
 
+Rendering takes about 1.5× the video's length with 3 workers (a 2-hour course took 3 hours).
+Run it in the background, with its output in a log; it prints a line per worker every 5 video
+minutes. Give the user that estimate before starting. Run the video scripts with the Python
+that has `imageio-ffmpeg` (`python -s` hides a user-site install).
+
 It also cuts **one clip per topic** (`clip-02-<lessonId>-t1.mp4`, …), an intro clip and a recap
 clip, and lists them in `clips.json` with each clip's key, place and YouTube title.
 

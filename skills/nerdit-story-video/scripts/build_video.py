@@ -167,6 +167,7 @@ def build(images_dir: Path, workers: int = 3, music: Path | None = None) -> Path
     html.write_text(stage.build_stage(plan, tl, scene_svgs(plan, vid, figures, parts), stage.lesson_css(), headings),
                     encoding="utf-8")
     narration = mix(vid / "audio", tl["audio"], tl["duration"], work / "narration.wav")
+    print(f"rendering {tl['duration'] / 60:.0f} min of video with {workers} workers", flush=True)
     silent = render.render(html, tl["duration"], FPS, workers, work / "video.mp4", ff)
     if tl["broll"]:
         with_broll = work / "video-broll.mp4"
@@ -190,6 +191,7 @@ def build(images_dir: Path, workers: int = 3, music: Path | None = None) -> Path
     for old in vid.glob("clip-*.mp4"):   # a rebuild may cut a different set of clips
         old.unlink()
     clips = topic_clips(plan, tl, titles, topics)
+    print(f"cutting {len(clips)} clips", flush=True)
     for c in clips:
         subprocess.run(cut_command(ff, final, c, vid / c["file"]), check=True)
         c["youtubeTitle"] = storyplan.title_case(f"{plan.get('course', '')}: {c['title']}")
