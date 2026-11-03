@@ -15,7 +15,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "nerdit-story-video" / "scripts"))
 from storyplan import course_lessons   # noqa: E402
-from pronounce import NUMBER, number   # noqa: E402
+from pronounce import CODE_SPAN, NUMBER, cardinal, code_speech, number   # noqa: E402
+
+
+def number_words(n: int) -> str:
+    return cardinal(n).replace("-", " ")
 
 PAUSE = 0.3                 # seconds between recorded lines (voice_short.py uses the same)
 CHARS_PER_SECOND = 14.0     # Hinglish narration speed, for the length estimate before recording
@@ -40,16 +44,24 @@ def hi_lexicon(path: Path = HI_LEXICON) -> dict:
 def respell(text: str, lex: dict) -> tuple[str, list[str]]:
     """What a Hindi voice should read: numbers as English words, then every Latin-script word
     in Devanagari, so it is said with an Indian accent (Flask -> फ्लास्क). An unlisted ALL-CAPS
-    word of up to 5 letters is spelled letter by letter (API -> ए पी आई). Returns the text and
-    the words it could not spell."""
+    word of up to 5 letters, or a single letter, is spelled letter by letter (API -> ए पी आई).
+    Code in backticks is first read the way the story video reads it (`@app.route("/")` -> at app
+    dot route slash), and names split at dots and underscores (url_map -> url map). Returns the
+    text and the words it could not spell."""
     missing = []
+    text = CODE_SPAN.sub(lambda m: code_speech(m.group(1)), text)
+    text = re.sub(r"(?<=[A-Za-z0-9])\.(?=[A-Za-z_])", " dot ", text)
+    text = re.sub(r"(?<=[A-Za-z0-9])_+|_+(?=[A-Za-z0-9])", " ", text)
 
     def word(m: re.Match) -> str:
         w = m.group(0)
         if w.lower() in lex:
             return lex[w.lower()]
-        if w.isupper() and w.isalpha() and len(w) <= 5:
-            return " ".join(LETTERS[c] for c in w)
+        if (w.isupper() or len(w) == 1 or not re.search("[aeiouAEIOU]", w)) and w.isalpha() and len(w) <= 6:
+            return " ".join(LETTERS[c] for c in w.upper())   # API, html, smtp: letter by letter
+        split = re.fullmatch(r"([A-Za-z]+)(\d+)", w)          # sqlite3, h1, week1: word, then number
+        if split:
+            return LATIN.sub(word, f"{split.group(1)} {number_words(int(split.group(2)))}")
         missing.append(w)
         return w
 
