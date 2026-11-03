@@ -58,8 +58,12 @@ fix every error and run it again.
 ## 2. Voice
 
 `python scripts/voice_short.py --plan <plan> --out-dir <presenter>/<name> --tts-python <tools>/tts-venv/Scripts/python --ref <presenter>/ref/voice_ref10.wav`
-Chirp 3 HD (`voice` in the plan, default `hi-IN-Chirp3-HD-Charon`) reads each line with the story
-video's pronunciation fixes, then Chatterbox VC turns it into the owner's voice:
+Chirp 3 HD (`voice` in the plan, default `hi-IN-Chirp3-HD-Charon`) reads each line, then
+Chatterbox VC turns it into the owner's voice. **Indian accent (owner, 2026-11-03):** a Hindi voice
+says Latin-script English with a foreign accent, so for a `hi` plan every English word is read
+from its Devanagari spelling in `scripts/pronunciation-hi.json` (Flask → फ्लास्क, REST API →
+रेस्ट ए पी आई; unlisted acronyms are spelled letter by letter). The plan and the screen keep the
+English; `check` fails on a word with no spelling: add it to the JSON. Files:
 `<name>/parts/NN.wav`, `chirp.wav`, `voice.wav`. Let the owner listen to `voice.wav` before the
 lip-sync. Chirp is billed per character (about 1 million free a month); a short is under 1,000.
 

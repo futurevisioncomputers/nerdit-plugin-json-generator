@@ -15,6 +15,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "nerdit-story-video" / "scripts"))
 from storyplan import course_lessons   # noqa: E402
+from pronounce import NUMBER, number   # noqa: E402
 
 PAUSE = 0.3                 # seconds between recorded lines (voice_short.py uses the same)
 CHARS_PER_SECOND = 14.0     # Hinglish narration speed, for the length estimate before recording
@@ -25,6 +26,34 @@ MAX_CODE_LINES = 16
 DEVANAGARI = re.compile(r"[ऀ-ॿ]")
 PROGRAM = re.compile(r'<pre data-lang="python"><code>(.*?)</code></pre>', re.S)
 FILE_COMMENT = re.compile(r"#\s*(\S+\.py)\b")
+HI_LEXICON = Path(__file__).with_name("pronunciation-hi.json")
+LATIN = re.compile(r"[A-Za-z][A-Za-z0-9]*")
+LETTERS = dict(zip("ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+                   "ए बी सी डी ई एफ जी एच आई जे के एल एम एन ओ पी क्यू आर एस टी यू वी डब्ल्यू एक्स वाई ज़ेड".split()))
+
+
+def hi_lexicon(path: Path = HI_LEXICON) -> dict:
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return {k: v for k, v in data.items() if not k.startswith("_")}
+
+
+def respell(text: str, lex: dict) -> tuple[str, list[str]]:
+    """What a Hindi voice should read: numbers as English words, then every Latin-script word
+    in Devanagari, so it is said with an Indian accent (Flask -> फ्लास्क). An unlisted ALL-CAPS
+    word of up to 5 letters is spelled letter by letter (API -> ए पी आई). Returns the text and
+    the words it could not spell."""
+    missing = []
+
+    def word(m: re.Match) -> str:
+        w = m.group(0)
+        if w.lower() in lex:
+            return lex[w.lower()]
+        if w.isupper() and w.isalpha() and len(w) <= 5:
+            return " ".join(LETTERS[c] for c in w)
+        missing.append(w)
+        return w
+
+    return LATIN.sub(word, NUMBER.sub(number, text)), missing
 
 
 def programs(lesson: dict) -> list[str]:
@@ -90,10 +119,15 @@ def check(plan: dict, course: Path, presenter: Path | None) -> list[str]:
     if lines and not MIN_SECONDS <= seconds <= MAX_SECONDS:
         errors.append(f"about {seconds:.0f}s of speech; keep a short between {MIN_SECONDS} and {MAX_SECONDS}s")
     shown = []
+    lex = hi_lexicon() if plan.get("language", "hi") == "hi" else None
     for n, line in enumerate(lines, 1):
         say = line.get("say", "")
         if not say or len(say) > MAX_SAY:
             errors.append(f"line {n}: say 1-{MAX_SAY} characters")
+        missing = respell(say, lex)[1] if lex is not None else []
+        if missing:
+            errors.append(f"line {n}: no Devanagari spelling for {', '.join(sorted(set(missing)))}; "
+                          "add each to pronunciation-hi.json so the voice says it with an Indian accent")
         if line.get("cues") and line.get("explore"):
             errors.append(f"line {n}: use cues or explore, not both")
         for cue in line.get("cues", []):
@@ -136,14 +170,18 @@ def wav_seconds(path: Path) -> float:
 
 def timeline(plan: dict, course: Path, durations: list[float], fps: int = 25) -> dict:
     """The timed spec for build_short.py. A cue or cut-in starts where its `at` word falls in the
-    line (by character position) and lasts until the next one or the end of the line."""
+    line (by character position in the text the voice read) and lasts until the next one or the
+    end of the line."""
     lessons = {l["id"]: l for l in course_lessons(course)}
+    lex = hi_lexicon() if plan.get("language", "hi") == "hi" else None
+    said = (lambda s: respell(s, lex)[0]) if lex is not None else (lambda s: s)
     spec = {"fps": fps, "aspect": plan.get("aspect", "9:16"), "captions": [], "explore": [], "end": None}
     t = 0.0
     for n, (line, dur) in enumerate(zip(plan["lines"], durations)):
         say, start, stop = line["say"], t, t + dur + (PAUSE if n < len(durations) - 1 else 0)
         events = line.get("cues") or line.get("explore") or []
-        times = [start + dur * say.index(e["at"]) / max(len(say), 1) for e in events]
+        whole = max(len(said(say)), 1)
+        times = [start + dur * len(said(say[:say.index(e["at"])])) / whole for e in events]
         if line.get("explore"):
             times[0] = start               # the cut-in covers the whole line
         for i, e in enumerate(events):

@@ -2,8 +2,9 @@
 
     python voice_short.py --plan <short.plan.json> --out-dir <dir> --tts-python <tts venv python> --ref <owner voice.wav>
 
-1. Google Chirp 3 HD (plan "voice", default hi-IN-Chirp3-HD-Charon) reads each line, respelled by
-   the story video's pronounce.py, so English terms (Flask, SQLAlchemy, REST API) are said right:
+1. Google Chirp 3 HD (plan "voice", default hi-IN-Chirp3-HD-Charon) reads each line. For a `hi`
+   plan every English word is first respelled in Devanagari (shorts.respell, pronunciation-hi.json)
+   so it is said with an Indian accent (Flask -> फ्लास्क); an `en-IN` plan uses pronounce.py:
    <out-dir>/parts/01.wav, 02.wav, ... and the joined <out-dir>/chirp.wav.
 2. convert_voice.py (Chatterbox VC, MIT, in the TTS venv) changes the timbre to the owner's voice
    from their reference recording: <out-dir>/voice.wav. Timing stays the same, so the line lengths
@@ -17,7 +18,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parents[1] / "nerdit-story-video" / "scripts"))
 from voice import google_clip, google_key   # noqa: E402
 from pronounce import spoken                # noqa: E402
-from shorts import PAUSE                    # noqa: E402
+from shorts import PAUSE, hi_lexicon, respell   # noqa: E402
 
 
 def join(parts: list[Path], out: Path) -> None:
@@ -43,10 +44,12 @@ def main(argv=None) -> int:
     name, key = plan.get("voice", "hi-IN-Chirp3-HD-Charon"), google_key()
     parts_dir = a.out_dir / "parts"
     parts_dir.mkdir(parents=True, exist_ok=True)
+    lex = hi_lexicon() if plan.get("language", "hi") == "hi" else None
     parts = []
     for n, line in enumerate(plan["lines"], 1):
         part = parts_dir / f"{n:02d}.wav"
-        google_clip(spoken(line["say"]), name, 1.0, part, key)
+        text = respell(line["say"], lex)[0] if lex is not None else spoken(line["say"])
+        google_clip(text, name, 1.0, part, key)
         parts.append(part)
     join(parts, a.out_dir / "chirp.wav")
     subprocess.run([a.tts_python, str(HERE / "convert_voice.py"), str(a.out_dir / "chirp.wav"), str(a.ref),

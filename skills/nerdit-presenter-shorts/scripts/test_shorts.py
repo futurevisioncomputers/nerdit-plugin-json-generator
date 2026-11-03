@@ -98,3 +98,17 @@ def test_aspect_is_vertical_or_landscape_and_reaches_the_spec(course, presenter)
     assert any("aspect" in e for e in shorts.check(plan(aspect="4:3"), course, presenter))
     assert shorts.timeline(plan(aspect="16:9"), course, [4.0, 5.0, 3.0])["aspect"] == "16:9"
     assert shorts.scaffold(course, None)["aspect"] == "16:9"
+
+
+def test_respell_puts_english_words_in_devanagari_for_an_indian_accent():
+    lex = shorts.hi_lexicon()
+    said, missing = shorts.respell("Flask में REST API और SQLAlchemy, 28 lessons", lex)
+    assert said == "फ्लास्क में रेस्ट ए पी आई और एस क्यू एल ऐल्केमी, ट्वेंटी-एट लेसन्स" and missing == []
+    assert shorts.respell("Kubernetes सीखें", lex)[1] == ["Kubernetes"]
+
+
+def test_check_wants_a_spelling_for_every_english_word(course, presenter):
+    p = plan()
+    p["lines"][2]["say"] += " Kubernetes भी।"
+    assert any("no Devanagari spelling for Kubernetes" in e for e in shorts.check(p, course, presenter))
+    assert shorts.check(plan(language="en-IN"), course, presenter) == []
