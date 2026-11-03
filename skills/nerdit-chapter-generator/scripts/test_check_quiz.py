@@ -72,3 +72,15 @@ def test_cli_maps_assessment_questions_to_their_lesson(tmp_path):
     path = tmp_path / 'c.json'
     path.write_text(json.dumps(course), encoding='utf-8')
     assert cq.main(['--course', str(path)]) == 1
+
+
+@engine
+def test_a_snippet_using_a_name_it_never_defines_fails_for_a_new_course():
+    html = lesson(run_line('prices = [100, 250, 400]', ''))
+    broken = q('What does `print(form["branch"])` print?', ['Vesu', 'Pal', 'None', '2'], 0)
+    fails, warns = cq.check_questions(html, [('q1', broken)], new_course=True)
+    assert any('never defines' in f for f in fails)
+    fails, warns = cq.check_questions(html, [('q1', broken)])           # delivered course: warn only
+    assert fails == [] and 'no option' in warns[0]
+    taught = q('What happens with `print(total)`?', ['0', 'None', 'NameError', '400'], 2)
+    assert cq.check_questions(html, [('q2', taught)], new_course=True) == ([], [])

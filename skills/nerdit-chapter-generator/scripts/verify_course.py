@@ -649,9 +649,9 @@ def verify_programs(rep: Report, out: dict, inp: list, new_course: bool = False,
         for i, r in enumerate(runs, 1):
             if r in programs:
                 continue
-            for fake in FAKE_RUNTIME:
-                rep.warn(fake not in r["code"], f"{lid}: example {i} fakes the runtime with {fake}; "
-                                                "show the real program (CORE.md §4)")
+            for fake in FAKE_RUNTIME:   # FAIL for a new course (owner, 2026-11-03)
+                strict(fake not in r["code"], f"{lid}: example {i} fakes the runtime with {fake}; "
+                                              "show the real program (CORE.md §4)")
         s = meta.get(lid, {})
         code_lesson = s.get("runner") in ("python", "plot") and str(s.get("focus") or "hands-on") != "concept"
         cells = sum(needs_earlier(r["code"]) for r in runs if r not in programs)

@@ -178,3 +178,11 @@ def test_a_test_file_runs_with_plain_pytest():
     run = RUN_IT.replace("python form_app.py", "python -m pytest -v")
     rep = course_report([SETUP, program_line(tests, None, file="test_app.py", offline=False), run])
     assert rep.failures == [], rep.failures
+
+
+def test_a_faked_runtime_fails_for_a_new_course_and_warns_for_a_delivered_one():
+    fake = "from werkzeug.datastructures import MultiDict\nform = MultiDict([('a', '1')])\nprint(form['a'])"
+    rep = report(run_line(fake, "1"), new_course=True)
+    assert any("MultiDict" in f for f in rep.failures)
+    rep = report(run_line(fake, "1"))
+    assert rep.failures == [] and any("MultiDict" in w for w in rep.warnings)

@@ -62,10 +62,15 @@ def _error_options(options: list[str], error: str) -> list[int]:
     return [i for i, opt in enumerate(options) if found and found.group(1) in opt] if found else []
 
 
-def _judge(label: str, question: dict, value: str, matches: list[int], fails: list, warns: list):
+def _judge(label: str, question: dict, value: str, matches: list[int], fails: list, warns: list,
+           new_course: bool = False):
     correct = question.get('correctOptionIndex')
     options = question.get('options', [])
-    if not matches:
+    if not matches and new_course and 'NameError' in value:
+        # Incomplete snippet: it leans on a name it never creates (owner, 2026-11-03).
+        fails.append(f'{label}: the snippet uses a name it never defines ({_short(value)!r}); '
+                     'define every name inside the snippet')
+    elif not matches:
         warns.append(f'{label}: no option equals what the snippet gives ({_short(value)!r})')
     elif correct not in matches:
         m = matches[0]
@@ -80,7 +85,8 @@ def _short(text: str, n: int = 60) -> str:
     return text if len(text) <= n else text[:n] + '…'
 
 
-def check_questions(content: str, labelled: list[tuple[str, dict]], timeout: int = 120) -> tuple[list, list]:
+def check_questions(content: str, labelled: list[tuple[str, dict]], timeout: int = 120,
+                    new_course: bool = False) -> tuple[list, list]:
     """(fails, warns) for one lesson's questions. Raises EngineError when Python questions need
     the engine and it is missing."""
     fails, warns = [], []
@@ -97,7 +103,7 @@ def check_questions(content: str, labelled: list[tuple[str, dict]], timeout: int
         rows, error = _run(seed, [], sql) if seed else (None, 'no seed')
         if error is None and rows and len(rows) == 2 and len(rows[1]) == 1:
             value = rows[1][0]
-            _judge(label, question, value, matching(question.get('options', []), value), fails, warns)
+            _judge(label, question, value, matching(question.get('options', []), value), fails, warns, new_course)
     if python_qs:
         parts = python_parts(content)
         files = build_files(parts['dataset']) if parts['dataset'] is not None else {}
@@ -112,9 +118,9 @@ def check_questions(content: str, labelled: list[tuple[str, dict]], timeout: int
             got = results[f'quiz{j}']
             options = question.get('options', [])
             if got['error'] is not None:
-                _judge(label, question, got['error'], _error_options(options, got['error']), fails, warns)
+                _judge(label, question, got['error'], _error_options(options, got['error']), fails, warns, new_course)
             else:
-                _judge(label, question, got['stdout'], matching(options, got['stdout'], numeric=False), fails, warns)
+                _judge(label, question, got['stdout'], matching(options, got['stdout'], numeric=False), fails, warns, new_course)
     return fails, warns
 
 
@@ -127,6 +133,7 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--course', required=True)
     ap.add_argument('--timeout', type=int, default=120)
+    ap.add_argument('--new-course', action='store_true', help='an undefined name in a snippet fails')
     args = ap.parse_args(argv)
     try:
         course = json.loads(Path(args.course).read_text(encoding='utf-8'))
@@ -138,7 +145,7 @@ def main(argv: list[str] | None = None) -> int:
             labelled = [(f'{ls["id"]} question {i}', q) for i, q in enumerate(ls.get('questions', []), 1)]
             labelled += [(f'{ls["id"]} assessment {q.get("id", i)}', q) for i, q in enumerate(assessment, 1)
                          if _lesson_for(q.get('id', ''), ids) == ls['id']]
-            fails, warns = check_questions(ls.get('content', ''), labelled, args.timeout)
+            fails, warns = check_questions(ls.get('content', ''), labelled, args.timeout, args.new_course)
             total_fails += len(fails)
             for line in fails:
                 print(f'FAIL {line}')

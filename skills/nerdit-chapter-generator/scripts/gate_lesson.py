@@ -121,7 +121,7 @@ def gate(input_path: Path, lesson_dir: Path, lid: str, contract: str = "v11",
     labelled = [(f"question {i}", qn) for i, qn in enumerate(course["lessons"][0].get("questions", []), 1)]
     labelled += [(f"assessment {i}", qn) for i, qn in enumerate(course["assessment"]["questions"], 1)]
     try:
-        q_fails, q_warns = check_quiz(html, labelled)
+        q_fails, q_warns = check_quiz(html, labelled, new_course=new_course)
         fails += [f"quiz: {f}" for f in q_fails]
         warns += [f"quiz: {w}" for w in q_warns]
     except EngineError as exc:

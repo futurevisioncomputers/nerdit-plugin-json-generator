@@ -531,7 +531,8 @@ Then three more checks for code courses, each blocking like the ones above:
 
 - `check_modern_code.py` exit 1: shown code uses an API in `references/deprecated.md`. Add
   `--new-course` for a course created after 2026-10-23 (it then also requires `httpx2`).
-- `check_quiz.py` exit 1: a quiz marks an option that is not what its snippet computes. Pass
+- `check_quiz.py` exit 1: a quiz marks an option that is not what its snippet computes. With
+  `--new-course`, a snippet that uses a name it never defines (`NameError`) also fails. Pass
   the `FAIL` line into the regeneration; the correct option is the one it names.
 - `check_offline_outputs.py`: only for lessons with `data-run="offline"` examples. Exit 1 =
   a library is not pinned in the requirements, or an output differs (fix the shown output to
