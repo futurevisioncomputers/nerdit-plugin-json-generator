@@ -87,12 +87,18 @@ def static_problems(out_dir: Path, course: Path | None = None) -> list[str]:
         problems.append(f'{zpath.name}: {zpath.stat().st_size} bytes, over the pack limit')
     with zipfile.ZipFile(zpath) as z:
         in_pack = {Path(n).name: z.read(n) for n in z.namelist() if not n.endswith('/')}
+        by_path = {n: z.read(n) for n in z.namelist() if not n.endswith('/')}
         problems += [f'{n}: {len(n)} characters, too long for Windows (at most {pf.MAX_PACK_PATH} inside the pack)'
                      for n in z.namelist() if len(n) > pf.MAX_PACK_PATH]
+    root = manifest['pack'].removesuffix('.zip')
     for row in manifest['files']:
         name = row['name']
         position = int(row['folder'][1:3]) if re.match(r'L\d{2}-', row.get('folder', '')) else 0
-        problems += pf.name_problems(name, position)
+        if 'arc' in row:   # a program or the data it reads: the code names the file, only the prefix is ours
+            if not name.startswith(f'L{position:02d}-'):
+                problems.append(f'{name}: must start with L{position:02d}- (the chapter position)')
+        else:
+            problems += pf.name_problems(name, position)
         single = out_dir / 'files' / name
         if not single.is_file():
             problems.append(f'{name}: single file missing from files/')
@@ -100,9 +106,10 @@ def static_problems(out_dir: Path, course: Path | None = None) -> list[str]:
         data = single.read_bytes()
         if hashlib.sha256(data).hexdigest() != row['sha256']:
             problems.append(f'{name}: sha256 differs from the manifest')
-        if name not in in_pack:
+        packed = by_path.get(f'{root}/{row["folder"]}/{row["arc"]}') if 'arc' in row else in_pack.get(name)
+        if packed is None:
             problems.append(f'{name}: not in the pack')
-        elif in_pack[name] != data:
+        elif packed != data:
             problems.append(f'{name}: single file differs from the pack')
         if len(data) > pf.FILE_LIMIT:
             problems.append(f'{name}: {len(data)} bytes, over the file limit')

@@ -514,7 +514,8 @@ def build_pack(chapters: list[dict], course_short: str, version: int, world: dic
         manifest.append({'name': entry['name'], 'format': entry['name'].rpartition('.')[2], 'bytes': len(data),
                          'sha256': hashlib.sha256(data).hexdigest(), 'lessonId': chapter['id'], 'folder': folder,
                          'sections': entry.get('sections', []), 'about': entry.get('about', ''),
-                         'source': entry['from'], 'packVersion': version})
+                         'source': entry['from'], 'packVersion': version,
+                         **({'arc': entry['arc']} if 'arc' in entry else {})})   # a program's real name
     result = {'pack': f'{pack}.zip', 'packBytes': buf.tell(), 'files': manifest}
     (out_dir / 'files.manifest.json').write_text(json.dumps(result, ensure_ascii=False, indent=2) + '\n',
                                                  encoding='utf-8')

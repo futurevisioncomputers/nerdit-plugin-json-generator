@@ -215,3 +215,14 @@ def test_package_modules_are_imported_by_their_program_not_run_alone(tmp_path):
     problems, ran = cf._run_with(root, sys.executable, tmp_path / 'venv', '')
     assert problems == [], problems
     assert not any('views.py' in r for r in ran)
+
+
+def test_programs_keep_their_real_names_and_pass_the_static_check(tmp_path):
+    from test_check_python_outputs import program_line
+    app = 'from flask import Flask\napp = Flask(__name__)\nif __name__ == "__main__":\n    app.run()'
+    tests = 'def test_one():\n    assert 1 == 1'
+    chapters = [{'id': 'a-01', 'title': 'Apps', 'html': '<h1>A</h1>' + program_line(app, None, file='run.py')},
+                {'id': 'b-02', 'title': 'Tests', 'html': '<h1>B</h1>' + program_line(app, None, file='run.py')
+                 + program_line(tests, None, file='test_enquiries.py', offline=False)}]
+    pf.build_pack(chapters, course_short='t', version=1, world=None, requirements='', out_dir=tmp_path)
+    assert cf.static_problems(tmp_path) == []
