@@ -297,6 +297,7 @@ def library_problems(root: Path, requirements: str) -> list[str]:
     from check_offline_outputs import PACKAGES, _imports, unpinned
     codes = [p.read_text(encoding='utf-8') for p in sorted((Path(root) / 'solution').rglob('*.py'))]
     local = {p.stem for p in (Path(root) / 'solution').rglob('*.py')}
+    local |= {p.parent.name for p in (Path(root) / 'solution').rglob('__init__.py')}   # packages too
     problems = [f'solution imports {label}, not pinned in the course requirements'
                 for label in unpinned(codes, requirements) if label.split(' (')[0] not in local]
     readme = (Path(root) / 'README.md').read_text(encoding='utf-8').lower()

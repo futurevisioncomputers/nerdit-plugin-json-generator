@@ -248,3 +248,12 @@ def test_weak_tests_let_mutants_survive_and_fail(tmp_path):
     out = written(tmp_path, project(tmp_path, solution=LOOP_SOLUTION, tests=weak))
     report = cc.mutation(out, python=sys.executable)
     assert any(p.startswith('M2:') and 'survive' in p and '0 -> 1' in p for p in report['problems']), report
+
+
+def test_a_solution_package_is_local_not_an_unpinned_library(tmp_path):
+    (tmp_path / 'solution' / 'portal').mkdir(parents=True)
+    (tmp_path / 'solution' / 'portal' / '__init__.py').write_text('def create_app():\n    return 1\n', encoding='utf-8')
+    (tmp_path / 'solution' / 'portal' / 'app.py').write_text('X = 1\n', encoding='utf-8')
+    (tmp_path / 'solution' / 'run.py').write_text('from portal import create_app\n', encoding='utf-8')
+    (tmp_path / 'README.md').write_text('# Portal\n', encoding='utf-8')
+    assert cc.library_problems(tmp_path, '') == []
