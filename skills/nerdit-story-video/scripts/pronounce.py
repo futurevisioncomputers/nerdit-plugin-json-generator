@@ -86,7 +86,7 @@ def name(token: str, lex: dict) -> str:
     if "." in token:
         return " dot ".join(name(p, lex) for p in token.split("."))
     if token.startswith("__") and token.endswith("__") and len(token) > 4:
-        return "dunder " + name(token[2:-2], lex)
+        return lex.get("dunder", "dunder") + " " + name(token[2:-2], lex)   # respelt in pronunciation.json
     if "_" in token:
         # In a CONSTANT_NAME only listed acronyms are spelled: LLM_API_KEY -> L L M A P I key
         const = token.isupper()

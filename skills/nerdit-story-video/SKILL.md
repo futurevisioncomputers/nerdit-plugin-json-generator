@@ -97,9 +97,12 @@ stale part fails the merge: rewrite that lesson's part, never fill the gap by ha
    - **keyIdea** (≤ 90 chars, English) is the on-screen takeaway; there are no captions.
    - **focus** (optional, up to 4, not on B-roll): `{x, y, zoom, at}` with x, y 0–1 across the
      box, zoom 1–2.5, `at` a spoken word. End with `zoom: 1` to show the whole.
-   - **myth** on 1–3 scenes where the misconception is the lesson: `wrong`, `right` (≤ 80 chars)
-     and a `narration` saying both, in the plan's language.
+   - **myth** on 1–3 scenes where the misconception is the lesson: `wrong`, `right` (≤ 80 chars,
+     English) and a `narration` saying both, in the plan's language.
    - **intro** `points` (2–4) and `narration`; **recap** `points` (3–5) and `narration`.
+   - **Screen text is English** (owner, 2026-11-03): titles, points, `keyIdea`, `terms`, myth lines,
+     `tryIt` and every word drawn in a vector. Hindi goes only in the narration; `check` fails
+     Devanagari anywhere on screen.
 - **practise** (one entry per topic, scaffolded): every topic clip ends with a 4-second
   "Now practise" card, so the learner reads, watches, then practises the same idea at once.
   Fill `tryIt` (≤ 60 chars) with what that section's Try It asks ("fill in `should_retry`").

@@ -718,3 +718,26 @@ def test_merge_refuses_to_overwrite_an_existing_plan(tmp_path):
     storyplan.merge(images, course, work)
     with pytest.raises(SystemExit, match="already exists"):
         storyplan.merge(images, course, work)
+
+
+# Owner, 2026-11-03: everything printed on screen is English; only the narration is Hinglish.
+def test_screen_text_must_be_english(tmp_path):
+    plan, images, course = filled_plan(tmp_path)
+    plan["intro"]["points"][0] = "Flask app object बनाना"
+    plan["recap"]["points"][0] = "Route से URL जोड़ना"
+    plan["scenes"][0]["keyIdea"] = "Route का मतलब"
+    plan["scenes"][1]["myth"] = {"wrong": "debug हमेशा on", "right": "Turn debug off", "narration": "x"}
+    errors = check(plan, images, course)
+    for needle in ("intro point", "recap point", "scene 1: keyIdea", "scene 2: myth.wrong"):
+        assert any(needle in e and "English" in e for e in errors), (needle, errors)
+
+
+def test_english_screen_text_passes(tmp_path):
+    plan, images, course = filled_plan(tmp_path)
+    assert not any("English" in e and "screen" in e for e in check(plan, images, course))
+
+
+def test_dunder_word_comes_from_the_lexicon():
+    from pronounce import spoken
+    assert spoken("`Flask(__name__)`", {}) == "Flask dunder name"
+    assert spoken("`Flask(__name__)`", {"dunder": "डंडर"}) == "Flask डंडर name"

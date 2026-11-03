@@ -440,6 +440,30 @@ def check_coverage(plan: dict, parts: dict) -> list[str]:
     return errors
 
 
+DEVANAGARI = re.compile(r"[ऀ-ॿ]")
+
+
+def screen_text_errors(plan: dict, video_dir: Path) -> list[str]:
+    """Owner, 2026-11-03: every word printed on screen is English; only the narration is Hinglish."""
+    found = []
+    intro, recap = plan.get("intro") or {}, plan.get("recap") or {}
+    found += [("intro title", intro.get("title"))] + [("intro point", p) for p in intro.get("points") or []]
+    found += [("recap point", p) for p in recap.get("points") or []]
+    for n, s in enumerate(plan.get("scenes") or [], 1):
+        found += [(f"scene {n}: title", s.get("title")), (f"scene {n}: keyIdea", s.get("keyIdea"))]
+        found += [(f"scene {n}: term", t) for t in s.get("terms") or []]
+        myth = s.get("myth") or {}
+        found += [(f"scene {n}: myth.wrong", myth.get("wrong")), (f"scene {n}: myth.right", myth.get("right"))]
+        svg = Path(video_dir) / "vectors" / str(s.get("vector") or "")
+        if s.get("kind") == "vector" and svg.is_file():
+            drawn = re.sub(r"<[^>]+>", " ", svg.read_text(encoding="utf-8"))
+            found.append((f"scene {n}: vector {s['vector']} text", drawn))
+    found += [(f"practise {e.get('lessonId')} topic {e.get('topic')}: tryIt", e.get("tryIt"))
+              for e in plan.get("practise") or []]
+    return [f"{where}: screen text must be English (Hindi only in the narration): {str(text).strip()[:60]!r}"
+            for where, text in found if text and DEVANAGARI.search(str(text))]
+
+
 def check_plan(plan: dict, video_dir: Path, figures: dict | None = None, texts: dict | None = None,
                topics: dict | None = None, parts: dict | None = None,
                practice: dict | None = None) -> list[str]:
@@ -458,6 +482,7 @@ def check_plan(plan: dict, video_dir: Path, figures: dict | None = None, texts: 
             errors.append(f"{part}: give {lo}-{hi} points, not {len(points)}")
         for p in points:
             _limit(part, "point", p, MAX_POINT, errors)
+    errors += screen_text_errors(plan, video_dir)
     brolls = sum(1 for s in scenes if s.get("kind") == "broll")
     if scenes and brolls / len(scenes) > MAX_BROLL_SHARE:
         errors.append(f"{brolls} of {len(scenes)} scenes are B-roll; keep B-roll to {MAX_BROLL_SHARE:.0%} "
