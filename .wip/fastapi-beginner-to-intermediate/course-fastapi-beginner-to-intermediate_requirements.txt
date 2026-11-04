@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+pydantic>=2
+sqlalchemy>=2
+python-multipart
+python-dotenv
+PyJWT
+pwdlib[argon2]
+pytest
+httpx

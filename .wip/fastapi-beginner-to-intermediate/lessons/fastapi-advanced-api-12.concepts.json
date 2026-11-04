@@ -1,0 +1,41 @@
+{
+  "teaches": [
+    "pagination",
+    "skip",
+    "limit",
+    "sort",
+    "filtering",
+    "exception handler",
+    "exception_handler",
+    "lifespan",
+    "asynccontextmanager",
+    "WebSocket",
+    "Server-Sent Events",
+    "text/event-stream",
+    "StaticFiles",
+    "StreamingResponse",
+    "static file",
+    "prefix",
+    "APIRouter"
+  ],
+  "uses": [
+    "FastAPI",
+    "APIRouter",
+    "JSONResponse",
+    "Request",
+    "query parameter",
+    "path parameter",
+    "async def",
+    "await",
+    "Exception",
+    "uvicorn",
+    "asyncio"
+  ],
+  "visuals": [
+    {"section": 1, "visual": "value-table", "illustration": "a six-row enquiry list split into pages"},
+    {"section": 2, "visual": "diagram", "illustration": "a yes/no branch deciding the shape of the answer"},
+    {"section": 3, "visual": "diagram", "illustration": "a timeline of startup, serving, then shutdown"},
+    {"section": 4, "visual": "diagram", "illustration": "two feature cards compared side by side"},
+    {"section": 5, "visual": "none", "illustration": null}
+  ]
+}

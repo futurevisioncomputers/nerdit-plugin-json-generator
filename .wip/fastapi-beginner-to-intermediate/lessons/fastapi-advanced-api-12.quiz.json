@@ -1,0 +1,36 @@
+{
+  "lessonQuestions": [
+    {
+      "correctOptionIndex": 0,
+      "options": ["E5, E6 and E7", "E1, E2 and E3", "E6 and E7 only", "All six enquiries"],
+      "text": "Calling GET /enquiries?skip=3&limit=3 on the six-row list in this lesson skips E1, E2 and E3. Which enquiries come back?"
+    },
+    {
+      "correctOptionIndex": 0,
+      "options": ["404, with the custom JSON error shape", "500, with FastAPI's generic error page", "200, with an empty list", "422, a validation error"],
+      "text": "A route raises EnquiryNotFoundError, and a function is registered with @app.exception_handler(EnquiryNotFoundError) for it. What does a client get for a missing id?"
+    },
+    {
+      "correctOptionIndex": 0,
+      "options": ["A WebSocket", "Server-Sent Events", "StaticFiles", "A versioned /v1 route"],
+      "text": "A live chat needs the browser and the server to send messages to each other on one open connection. Which feature fits best?"
+    }
+  ],
+  "assessmentQuestions": [
+    {
+      "correctOptionIndex": 0,
+      "options": ["Once, right after the app finishes serving requests", "Once, before the first request arrives", "Before every single request", "Only when an error happens"],
+      "text": "A lifespan function prints one line before yield and another line after yield. When does the second line print?"
+    },
+    {
+      "correctOptionIndex": 0,
+      "options": ["It serves every file in that folder directly, with no route function for each one", "It serves only .html files from that folder", "It runs a Python function for every file request", "It replaces the need for a database"],
+      "text": "What does mounting StaticFiles at a path such as /static let an API do?"
+    },
+    {
+      "correctOptionIndex": 0,
+      "options": ["Old clients and new clients can both keep working", "The API responds faster for every client", "Status codes are no longer needed", "Pydantic models are no longer needed"],
+      "text": "An enquiries API answers at both /courses and /v1/courses, returning two different shapes of data. What does keeping both routes let you do?"
+    }
+  ]
+}

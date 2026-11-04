@@ -1,0 +1,751 @@
+<div class="nerdit-wrapper nerdit-simple" style="counter-reset:practical-counter challenge-counter;">
+
+  <h1>🚀 Advanced API Development</h1>
+
+  <div class="nerdit-info-box"><strong>📘 Lesson Overview:</strong> A real API must page through long lists, fail clearly and keep working for old clients while you add features. You will add paging and sorting, a custom error handler, startup/shutdown events, two real-time channels and a versioned route.</div>
+
+  <div class="nerdit-lesson-meta">
+    <span class="nerdit-meta-pill">⏱ 20 min</span>
+    <span class="nerdit-badge advanced">Advanced</span>
+  </div>
+
+  <div class="nerdit-figure" data-visual="course-map" style="max-width:440px">
+    <svg viewBox="0 0 360 78" role="img" aria-label="Course map: this lesson is the scale stage, fourth of five: setup, build, secure, scale, ship.">
+      <rect x="4" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="36" y="35" text-anchor="middle" fill="var(--tx-m)">Setup</text>
+      <rect x="76" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="108" y="35" text-anchor="middle" fill="var(--tx-m)">Build</text>
+      <rect x="148" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="180" y="35" text-anchor="middle" fill="var(--tx-m)">Secure</text>
+      <rect x="220" y="14" width="64" height="32" rx="6" fill="var(--nb)" stroke="var(--nb)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="252" y="35" text-anchor="middle" fill="var(--white)">Scale</text>
+      <rect x="292" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="324" y="35" text-anchor="middle" fill="var(--tx-m)">Ship</text>
+      <text class="nerdit-flow-text" x="252" y="68" text-anchor="middle" fill="var(--nb)">▲ you are here</text>
+    </svg>
+    <div class="nerdit-figure-caption">You are here: making the API scale, with paging, real-time updates and versioning.</div>
+  </div>
+
+  <div class="nerdit-info-box nerdit-data-note"><strong>Data note:</strong> All enquiry records shown in this lesson are synthetic, made for teaching. Future Vision Computer Institute's name is used with permission.</div>
+
+  <div class="nerdit-demo-table">
+    <div class="nerdit-demo-table-label">Demo Data — <code>enquiries</code> (first 6 rows)</div>
+    <table>
+      <thead><tr><th>enquiry_id</th><th>branch</th><th>course</th><th>age</th></tr></thead>
+      <tbody>
+        <tr><td>E1</td><td>Citylight</td><td>Python Professional</td><td>25</td></tr>
+        <tr><td>E2</td><td>Citylight</td><td>Office &amp; GenAI</td><td>30</td></tr>
+        <tr><td>E3</td><td>Pal</td><td>Business Analytics</td><td>29</td></tr>
+        <tr><td>E5</td><td>Vesu</td><td>Excel &amp; Power BI</td><td>16</td></tr>
+        <tr><td>E6</td><td>Pal</td><td>Python Professional</td><td>18</td></tr>
+        <tr><td>E7</td><td>Vesu</td><td>Business Analytics</td><td>32</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <section>
+    <h2 data-outline="1 2">1 — Paging, Filtering and Sorting a List</h2>
+
+    <p>How do you send back a slice of a long list instead of all of it at once? <strong>Pagination</strong> limits each reply to one small page of rows.</p>
+    <p>Two query parameters work together. <code>skip</code> says how many rows to leave out, and <code>limit</code> says how many to return after that.</p>
+
+    <h3 class="nerdit-runhead">page(items, skip, limit) <span class="why">— slice first, send only a page</span></h3>
+    <p>A plain Python list shows the idea first: skip past rows, then keep a limited number.</p>
+    <div class="nerdit-run">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>names = ["Aarav", "Diya", "Kabir", "Meera", "Riya", "Vihan", "Zara", "Om"]
+
+def page(items, skip=0, limit=3):
+    return items[skip: skip + limit]
+
+print(page(names, skip=0, limit=3))
+print(page(names, skip=3, limit=3))</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>['Aarav', 'Diya', 'Kabir']
+['Meera', 'Riya', 'Vihan']</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>names = ["Aarav", "Diya", "Kabir", "Meera", "Riya", "Vihan", "Zara", "Om"]</code> is the full list, eight names long.</li>
+      <li><code>def page(items, skip=0, limit=3):</code> takes the list plus how many rows to skip and keep.</li>
+      <li><code>return items[skip: skip + limit]</code> slices out just that page.</li>
+    </ol>
+
+    <p>Use paging whenever a list can grow past a screen's worth of rows.</p>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: Paging Neha's Enquiry List</h3>
+    <p>Neha's enquiry records at Future Vision, as in lesson 1, grow by dozens each day.</p>
+
+    <h3 class="nerdit-runhead">GET /enquiries?skip&amp;limit <span class="why">— the same slice, now behind an endpoint</span></h3>
+    <p>This route reads <code>skip</code> and <code>limit</code>, then slices the same way.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import FastAPI
+
+app = FastAPI()
+
+ENQUIRIES = [
+    {"enquiry_id": "E1", "branch": "Citylight", "course": "Python Professional", "age": 25},
+    {"enquiry_id": "E2", "branch": "Citylight", "course": "Office &amp; GenAI", "age": 30},
+    {"enquiry_id": "E3", "branch": "Pal", "course": "Business Analytics", "age": 29},
+    {"enquiry_id": "E5", "branch": "Vesu", "course": "Excel &amp; Power BI", "age": 16},
+    {"enquiry_id": "E6", "branch": "Pal", "course": "Python Professional", "age": 18},
+    {"enquiry_id": "E7", "branch": "Vesu", "course": "Business Analytics", "age": 32},
+]
+
+
+@app.get("/enquiries")
+def list_enquiries(skip: int = 0, limit: int = 10):
+    return ENQUIRIES[skip: skip + limit]</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">FastAPI shows</span>
+        <p>Calling this with <code>skip=3</code> and <code>limit=3</code> skips E1, E2 and E3, then returns E5, E6 and E7.</p>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>app = FastAPI()</code> creates the application, as in lesson 1.</li>
+      <li><code>@app.get("/enquiries")</code> registers the function for GET requests to <code>/enquiries</code>.</li>
+      <li><code>def list_enquiries(skip: int = 0, limit: int = 10):</code> reads <code>skip</code> and <code>limit</code> from the query string.</li>
+      <li><code>return ENQUIRIES[skip: skip + limit]</code> slices the list the same way <code>page</code> did above.</li>
+    </ol>
+
+    <div class="nerdit-figure" data-visual="value-table" data-world-derived="offline program: skip=3, limit=3 slice of the enquiries list" style="max-width:440px">
+      <p class="nerdit-vtitle">GET /enquiries?skip=3&amp;limit=3</p>
+      <table class="nerdit-vtable">
+        <thead><tr><th>position</th><th>enquiry_id</th><th>on this page?</th></tr></thead>
+        <tbody>
+          <tr class="nerdit-row-dropped"><td>1</td><td>E1</td><td>skipped</td></tr>
+          <tr class="nerdit-row-dropped"><td>2</td><td>E2</td><td>skipped</td></tr>
+          <tr class="nerdit-row-dropped"><td>3</td><td>E3</td><td>skipped</td></tr>
+          <tr class="nerdit-row-kept"><td>4 ✓</td><td>E5</td><td>kept</td></tr>
+          <tr class="nerdit-row-kept"><td>5 ✓</td><td>E6</td><td>kept</td></tr>
+          <tr class="nerdit-row-kept"><td>6 ✓</td><td>E7</td><td>kept</td></tr>
+        </tbody>
+      </table>
+      <div class="nerdit-figure-caption"><code>skip=3</code> drops the first three rows; <code>limit=3</code> keeps only the next three.</div>
+    </div>
+
+    <h3 class="nerdit-runhead">branch &amp; sort <span class="why">— keep only what matches, in the order you choose</span></h3>
+    <p><code>branch</code> keeps only one branch; <code>sort</code> orders the result.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>@app.get("/enquiries")
+def list_enquiries(skip: int = 0, limit: int = 10, branch: str | None = None, sort: str | None = None):
+    rows = ENQUIRIES
+    if branch:
+        rows = [r for r in rows if r["branch"] == branch]
+    if sort:
+        key = sort.lstrip("-")
+        rows = sorted(rows, key=lambda r: r[key], reverse=sort.startswith("-"))
+    return rows[skip: skip + limit]</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">FastAPI shows</span>
+        <p><code>branch=Vesu</code> and <code>sort=-age</code> return Vesu's rows, oldest first: E7, then E5.</p>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>def list_enquiries(skip: int = 0, limit: int = 10, branch: str | None = None, sort: str | None = None):</code> adds branch and sort as optional parameters.</li>
+      <li><code>rows = [r for r in rows if r["branch"] == branch]</code> keeps only rows from that branch.</li>
+      <li><code>key = sort.lstrip("-")</code> drops a leading <code>-</code> so <code>-age</code> still looks up <code>age</code>.</li>
+      <li><code>rows = sorted(rows, key=lambda r: r[key], reverse=sort.startswith("-"))</code> sorts ascending, or descending when sort starts with <code>-</code>.</li>
+    </ol>
+
+    <div class="nerdit-tip"><div><strong>Tip:</strong> Cap <code>limit</code>, for example at 100, so a client can't ask for the whole table at once.</div></div>
+
+    <div class="nerdit-predict">
+      <div class="nerdit-predict-head">🤔 Try It — Predict the output</div>
+      <pre data-lang="python"><code>rows = [
+    {"name": "Riya", "branch": "Vesu"},
+    {"name": "Omkar", "branch": "Citylight"},
+    {"name": "Zara", "branch": "Vesu"},
+]
+vesu = [r for r in rows if r["branch"] == "Vesu"]
+print([r["name"] for r in vesu])</code></pre>
+      <details class="nerdit-predict-answer">
+        <summary>Show answer</summary>
+        <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>['Riya', 'Zara']</code></pre></div>
+        <p>Only the two Vesu rows pass the filter.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="3">2 — A Custom Exception Handler</h2>
+
+    <p>What happens when ten different routes all need the same error shape for a missing record? An <strong>exception handler</strong> answers this once, for every route.</p>
+    <p>You write a plain Python exception class, then register a function for it with <code>exception_handler</code>. FastAPI calls that function whenever the exception is raised, anywhere in your code.</p>
+
+    <div class="nerdit-figure" data-visual="diagram">
+      <svg viewBox="0 0 360 200" role="img" aria-label="If the enquiry id exists, the route returns that row. If it does not, raising EnquiryNotFoundError sends back a 404 JSON error instead of a crash.">
+        <path d="M180 10 L260 50 L180 90 L100 50 z" fill="var(--bg-soft)" stroke="var(--nb)" stroke-width="1.5"/>
+        <text class="nerdit-flow-text" x="180" y="46" text-anchor="middle">Enquiry</text>
+        <text class="nerdit-flow-text" x="180" y="64" text-anchor="middle">found?</text>
+        <path class="nerdit-flow-edge" d="M100 50 H40 V140" marker-end="url(#fapi12-arrow-exc)"/>
+        <path class="nerdit-flow-edge" d="M260 50 H320 V140" marker-end="url(#fapi12-arrow-exc)"/>
+        <text class="nerdit-flow-text" x="48" y="110" fill="var(--green)">yes</text>
+        <text class="nerdit-flow-text" x="282" y="110" fill="var(--orange)">no</text>
+        <rect x="4" y="144" width="140" height="42" rx="8" fill="var(--white)" stroke="var(--green)" stroke-width="1.5"/>
+        <text class="nerdit-flow-text" x="74" y="169" text-anchor="middle" fill="var(--green)">Return the row</text>
+        <rect x="216" y="144" width="140" height="42" rx="8" fill="var(--white)" stroke="var(--orange)" stroke-width="1.5"/>
+        <text class="nerdit-flow-text" x="286" y="169" text-anchor="middle" fill="var(--orange)">404 JSON error</text>
+        <defs>
+          <marker id="fapi12-arrow-exc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" fill="var(--nb-mid)"/>
+          </marker>
+        </defs>
+      </svg>
+      <div class="nerdit-figure-caption">One question decides the shape of the answer: a missing id always gets the same 404 error.</div>
+    </div>
+
+    <p>Reach for this instead of repeating <code>HTTPException</code> in every route that can hit the same error.</p>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: A Clear Error When an Enquiry Is Missing</h3>
+    <p>Neha's team often looks up one enquiry by its id, and the id can be wrong.</p>
+
+    <h3 class="nerdit-runhead">@app.exception_handler <span class="why">— one answer for every missing enquiry</span></h3>
+    <p>A custom exception class carries the missing id; the handler turns it into one JSON shape.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import Request
+from fastapi.responses import JSONResponse
+
+
+class EnquiryNotFoundError(Exception):
+    def __init__(self, enquiry_id: str):
+        self.enquiry_id = enquiry_id
+
+
+@app.exception_handler(EnquiryNotFoundError)
+async def enquiry_not_found_handler(request: Request, exc: EnquiryNotFoundError):
+    return JSONResponse(
+        status_code=404,
+        content={"error": "enquiry_not_found", "enquiry_id": exc.enquiry_id},
+    )
+
+
+@app.get("/enquiries/{enquiry_id}")
+def get_enquiry(enquiry_id: str):
+    for row in ENQUIRIES:
+        if row["enquiry_id"] == enquiry_id:
+            return row
+    raise EnquiryNotFoundError(enquiry_id)</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">FastAPI shows</span>
+        <p>Visiting <code>/enquiries/E99</code>, an id that doesn't exist, returns status 404 with <code>{'error': 'enquiry_not_found', 'enquiry_id': 'E99'}</code>. FastAPI would otherwise send a plain 500 error.</p>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>class EnquiryNotFoundError(Exception):</code> defines a plain error for one missing id.</li>
+      <li><code>@app.exception_handler(EnquiryNotFoundError)</code> registers the function below for that error, on the same app from section 1.</li>
+      <li><code>content={"error": "enquiry_not_found", "enquiry_id": exc.enquiry_id},</code> builds the one shared error shape.</li>
+      <li><code>raise EnquiryNotFoundError(enquiry_id)</code> is the only thing a route has to do.</li>
+    </ol>
+
+    <div class="nerdit-tip"><div><strong>Tip:</strong> Register one handler per exception type; FastAPI picks the most specific match when you raise it.</div></div>
+
+    <div class="nerdit-predict">
+      <div class="nerdit-predict-head">🤔 Try It — Predict the output</div>
+      <pre data-lang="python"><code>class NotFoundError(Exception):
+    def __init__(self, item_id):
+        self.item_id = item_id
+
+def handle(exc):
+    return {"error": "not_found", "id": exc.item_id}
+
+try:
+    raise NotFoundError("E99")
+except NotFoundError as exc:
+    print(handle(exc))</code></pre>
+      <details class="nerdit-predict-answer">
+        <summary>Show answer</summary>
+        <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>{'error': 'not_found', 'id': 'E99'}</code></pre></div>
+        <p><code>handle</code> reads <code>exc.item_id</code> and builds the same small dict every time.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="4">3 — Lifespan Events: Startup and Shutdown</h2>
+
+    <p>What runs once when your server starts, and once when it stops? A <strong>lifespan</strong> function wraps your whole app in one place for both.</p>
+    <p>You write it with <code>asynccontextmanager</code>: the code before <code>yield</code> runs at startup, and the code after it runs at shutdown. FastAPI runs this once, not per request.</p>
+    <p>You used asyncio.gather for several tasks together in lesson 11. A lifespan function is a different async pattern that wraps your whole app.</p>
+    <p>Use it for things like opening a database connection once, not per request.</p>
+
+    <div class="nerdit-figure" data-visual="diagram">
+      <svg viewBox="0 0 360 280" role="img" aria-label="Lifespan runs startup code once before the first request, then serves requests, then runs shutdown code once after the last.">
+        <rect class="nerdit-flow-rect" x="90" y="8" width="180" height="46"/>
+        <text class="nerdit-flow-text" x="180" y="36" text-anchor="middle">Startup (before yield)</text>
+        <path class="nerdit-flow-edge" d="M180 54 V94" marker-end="url(#fapi12-arrow-life)"/>
+        <rect class="nerdit-flow-rect" x="90" y="100" width="180" height="46"/>
+        <text class="nerdit-flow-text" x="180" y="128" text-anchor="middle">Serve requests</text>
+        <path class="nerdit-flow-edge" d="M180 146 V186" marker-end="url(#fapi12-arrow-life)"/>
+        <rect x="90" y="192" width="180" height="46" rx="10" fill="var(--white)" stroke="var(--orange)" stroke-width="1.5"/>
+        <text class="nerdit-flow-text" x="180" y="220" text-anchor="middle" fill="var(--orange)">Shutdown (after yield)</text>
+        <defs>
+          <marker id="fapi12-arrow-life" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" fill="var(--nb-mid)"/>
+          </marker>
+        </defs>
+      </svg>
+      <div class="nerdit-figure-caption">The code before <code>yield</code> runs once at startup; the code after it runs once at shutdown.</div>
+    </div>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: Opening and Closing the Enquiry Desk</h3>
+    <p>Future Vision's API should log one line when the enquiry desk opens, and one when it closes.</p>
+
+    <h3 class="nerdit-runhead">asynccontextmanager <span class="why">— one open, one close, around every request</span></h3>
+    <p>Entering this context prints the startup line; leaving it prints the shutdown line.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>import asyncio
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("Startup: enquiry desk is open")
+    yield
+    print("Shutdown: enquiry desk is closed")
+
+
+app = FastAPI(lifespan=lifespan)
+
+
+async def demo():
+    async with lifespan(app):
+        print("Serving requests...")
+
+
+asyncio.run(demo())</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>Startup: enquiry desk is open
+Serving requests...
+Shutdown: enquiry desk is closed</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>async def lifespan(app: FastAPI):</code> opens the function <code>asynccontextmanager</code> wraps.</li>
+      <li><code>print("Startup: enquiry desk is open")</code> runs once, before the <code>yield</code>.</li>
+      <li><code>yield</code> pauses here while the app serves requests.</li>
+      <li><code>print("Shutdown: enquiry desk is closed")</code> runs once, after the <code>yield</code>.</li>
+    </ol>
+
+    <p>Leave out <code>yield</code> and Python raises <code>RuntimeError</code>: a lifespan function must pause exactly once.</p>
+    <div class="nerdit-compare">
+      <div class="nerdit-compare-bad">
+        <div class="nerdit-compare-head">Missing yield</div>
+        <pre data-lang="python"><code>@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("Startup: enquiry desk is open")
+    print("Shutdown: enquiry desk is closed")</code></pre>
+      </div>
+      <div class="nerdit-compare-good">
+        <div class="nerdit-compare-head">Yields once</div>
+        <pre data-lang="python"><code>@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("Startup: enquiry desk is open")
+    yield
+    print("Shutdown: enquiry desk is closed")</code></pre>
+      </div>
+    </div>
+
+    <div class="nerdit-predict">
+      <div class="nerdit-predict-head">🤔 Try It — Predict the output</div>
+      <pre data-lang="python"><code>from contextlib import contextmanager
+
+@contextmanager
+def session():
+    print("open")
+    yield
+    print("close")
+
+with session():
+    print("working")</code></pre>
+      <details class="nerdit-predict-answer">
+        <summary>Show answer</summary>
+        <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>open
+working
+close</code></pre></div>
+        <p>The code before <code>yield</code> runs first, then the <code>with</code> block, then the code after <code>yield</code>.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="5 6 7">4 — Real-Time Updates: WebSockets and Server-Sent Events</h2>
+
+    <p>How does a server push new data to a browser on its own? A <strong>WebSocket</strong> opens one connection both sides keep using.</p>
+    <p>You accept the connection, then call <code>receive_text</code> and <code>send_text</code> as many times as you like, either way.</p>
+    <p>Use it when both sides must speak, like a live chat between a counsellor and a learner.</p>
+
+    <p><strong>Server-Sent Events</strong>, or SSE, push updates only one way: server to client, over plain HTTP.</p>
+    <p>A browser reconnects on its own if the response ends.</p>
+
+    <div class="nerdit-figure" data-visual="diagram">
+      <svg viewBox="0 0 360 300" role="img" aria-label="A WebSocket sends messages both ways over one open connection. Server-Sent Events only push messages from the server to the client over a plain HTTP response.">
+        <rect x="6" y="6" width="348" height="128" rx="10" fill="var(--bg-soft)" stroke="var(--bd)" stroke-width="1"/>
+        <rect x="6" y="150" width="348" height="128" rx="10" fill="var(--bg-soft)" stroke="var(--bd)" stroke-width="1"/>
+        <text class="nerdit-flow-text" x="180" y="30" text-anchor="middle" fill="var(--nb)">WebSocket</text>
+        <text class="nerdit-flow-text" x="180" y="174" text-anchor="middle" fill="var(--nb)">Server-Sent Events</text>
+        <line x1="20" y1="42" x2="340" y2="42" stroke="var(--bd-soft)" stroke-width="1"/>
+        <line x1="20" y1="186" x2="340" y2="186" stroke="var(--bd-soft)" stroke-width="1"/>
+        <text class="nerdit-flow-text" x="20" y="64" fill="var(--tx-m)">direction</text>
+        <text class="nerdit-flow-text" x="20" y="92" fill="var(--tx-m)">connection</text>
+        <text class="nerdit-flow-text" x="20" y="120" fill="var(--tx-m)">use when</text>
+        <text class="nerdit-flow-text" x="340" y="64" text-anchor="end" fill="var(--green)">both ways</text>
+        <text class="nerdit-flow-text" x="340" y="92" text-anchor="end" fill="var(--tx)">stays open</text>
+        <text class="nerdit-flow-text" x="340" y="120" text-anchor="end" fill="var(--tx)">chat, live cursors</text>
+        <text class="nerdit-flow-text" x="20" y="208" fill="var(--tx-m)">direction</text>
+        <text class="nerdit-flow-text" x="20" y="236" fill="var(--tx-m)">connection</text>
+        <text class="nerdit-flow-text" x="20" y="264" fill="var(--tx-m)">use when</text>
+        <text class="nerdit-flow-text" x="340" y="208" text-anchor="end" fill="var(--orange)">server to client</text>
+        <text class="nerdit-flow-text" x="340" y="236" text-anchor="end" fill="var(--tx)">plain HTTP response</text>
+        <text class="nerdit-flow-text" x="340" y="264" text-anchor="end" fill="var(--tx)">counters, notices</text>
+      </svg>
+      <div class="nerdit-figure-caption">Same three questions asked of both — the answer to "direction" is the whole difference.</div>
+    </div>
+
+    <p>Choose SSE for one-way feeds; choose a WebSocket when the client must reply too.</p>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: Neha's Live Enquiry Channel</h3>
+    <p>Neha's admissions chat widget needs two-way messages; the branch dashboard only needs one-way updates.</p>
+
+    <h3 class="nerdit-runhead">WebSocket <span class="why">— both sides keep the connection open</span></h3>
+    <p>Accepting the connection lets the route read and write as many messages as it likes.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+
+app = FastAPI()
+
+
+@app.websocket("/ws/counsellor")
+async def counsellor_chat(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            message = await websocket.receive_text()
+            await websocket.send_text(f"Neha: got your message - {message}")
+    except WebSocketDisconnect:
+        pass</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">FastAPI shows</span>
+        <p>Sending "When does the Python batch start?" gets back "Neha: got your message - When does the Python batch start?"</p>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>async def counsellor_chat(websocket: WebSocket):</code> takes the connection as a <code>WebSocket</code> parameter.</li>
+      <li><code>await websocket.accept()</code> opens the connection before any messages move.</li>
+      <li><code>message = await websocket.receive_text()</code> waits for the next message from the browser.</li>
+      <li><code>await websocket.send_text(f"Neha: got your message - {message}")</code> replies on the same connection.</li>
+    </ol>
+
+    <h3 class="nerdit-runhead">text/event-stream <span class="why">— push updates without opening a WebSocket</span></h3>
+    <p>A generator yields one event at a time; <code>StreamingResponse</code> sends each one as it is ready.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi.responses import StreamingResponse
+
+
+async def enquiry_updates():
+    for minute in range(1, 4):
+        yield f"data: {minute} new enquiry this minute\n\n"
+
+
+@app.get("/stream/enquiries")
+def stream_enquiries():
+    return StreamingResponse(enquiry_updates(), media_type="text/event-stream")</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">FastAPI shows</span>
+        <p>Opening <code>/stream/enquiries</code> receives three events in a row: "data: 1 new enquiry this minute", then 2, then 3.</p>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>async def enquiry_updates():</code> defines a generator that yields one event at a time.</li>
+      <li><code>yield f"data: {minute} new enquiry this minute\n\n"</code> sends one SSE-shaped line, blank line included.</li>
+      <li><code>return StreamingResponse(enquiry_updates(), media_type="text/event-stream")</code> streams those events as they are produced.</li>
+    </ol>
+
+    <div class="nerdit-tip"><div><strong>Tip:</strong> A real SSE feed keeps the generator open and sends new events as they happen; this example stops after three to keep the output short.</div></div>
+
+    <div class="nerdit-predict">
+      <div class="nerdit-predict-head">🤔 Try It — Predict the output</div>
+      <pre data-lang="python"><code>def enquiry_updates():
+    for minute in range(1, 4):
+        yield f"{minute} new enquiry this minute"
+
+for update in enquiry_updates():
+    print(update)</code></pre>
+      <details class="nerdit-predict-answer">
+        <summary>Show answer</summary>
+        <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>1 new enquiry this minute
+2 new enquiry this minute
+3 new enquiry this minute</code></pre></div>
+        <p>The generator yields one line per minute, and the loop prints each one as it arrives.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="8 9">5 — Static Files and API Versioning</h2>
+
+    <p>How does an API send back a file that never changes, like a PDF or an image? A <strong>static file</strong> doesn't need its own route; <code>StaticFiles</code> serves a whole folder as plain URLs.</p>
+    <p>Mount it once at a path such as <code>/static</code>, and every file there answers on its own.</p>
+
+    <p>How do you change an endpoint without breaking the app that already calls it? A version <strong>prefix</strong> like <code>/v1</code> keeps the old shape live beside the new one.</p>
+    <p>Old clients keep calling the plain path; new clients call the versioned one.</p>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: A Brochure File and a Versioned Course List</h3>
+    <p>Future Vision wants a brochure download and a <code>/v1/courses</code> list that won't break the old website.</p>
+
+    <h3 class="nerdit-runhead">APIRouter(prefix="/v1") <span class="why">— the old shape and the new one, side by side</span></h3>
+    <p>The legacy route keeps its wrapped shape; the v1 route returns the plain list.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import APIRouter, FastAPI
+
+app = FastAPI()
+
+COURSES = ["Python Professional", "Business Analytics", "Office &amp; GenAI"]
+
+
+@app.get("/courses")
+def list_courses_legacy():
+    return {"courses": COURSES, "note": "old shape, kept for old clients"}
+
+
+v1 = APIRouter(prefix="/v1")
+
+
+@v1.get("/courses")
+def list_courses_v1():
+    return COURSES
+
+
+app.include_router(v1)
+
+print(list_courses_legacy())
+print(list_courses_v1())</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>{'courses': ['Python Professional', 'Business Analytics', 'Office &amp; GenAI'], 'note': 'old shape, kept for old clients'}
+['Python Professional', 'Business Analytics', 'Office &amp; GenAI']</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>COURSES = ["Python Professional", "Business Analytics", "Office &amp; GenAI"]</code> is the shared list both routes read.</li>
+      <li><code>def list_courses_legacy():</code> returns the list wrapped in a dict, the shape old clients expect.</li>
+      <li><code>v1 = APIRouter(prefix="/v1")</code> groups new routes under <code>/v1</code>, as in lesson 7.</li>
+      <li><code>app.include_router(v1)</code> connects them to the app, same as lesson 7's routers.</li>
+    </ol>
+
+    <p>The whole file below adds a static brochure and section 4's real-time routes, all in one app. Its output is checked for real.</p>
+
+    <div class="nerdit-run nerdit-program" data-run="offline" data-file="realtime_app.py">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import APIRouter, FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
+
+app = FastAPI()
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+COURSES = ["Python Professional", "Business Analytics", "Office &amp; GenAI"]
+
+
+@app.get("/courses")
+def list_courses_legacy():
+    return {"courses": COURSES, "note": "old shape, kept for old clients"}
+
+
+v1 = APIRouter(prefix="/v1")
+
+
+@v1.get("/courses")
+def list_courses_v1():
+    return COURSES
+
+
+app.include_router(v1)
+
+
+@app.websocket("/ws/counsellor")
+async def counsellor_chat(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            message = await websocket.receive_text()
+            await websocket.send_text(f"Neha: got your message - {message}")
+    except WebSocketDisconnect:
+        pass
+
+
+async def enquiry_updates():
+    for minute in range(1, 4):
+        yield f"data: {minute} new enquiry this minute\n\n"
+
+
+@app.get("/stream/enquiries")
+def stream_enquiries():
+    return StreamingResponse(enquiry_updates(), media_type="text/event-stream")
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="127.0.0.1", port=8000)</code></pre>
+      </div>
+      <div class="nerdit-in nerdit-file" data-file="static/brochure.txt">
+        <span class="nerdit-tag">static/brochure.txt</span>
+        <pre data-lang="text"><code>Future Vision Computer Institute - course brochure
+Citylight, Vesu and Pal branches, Surat</code></pre>
+      </div>
+      <script type="text/plain" class="nerdit-check">import warnings
+warnings.filterwarnings("ignore", message=".*httpx.*")
+
+from fastapi.testclient import TestClient
+
+client = TestClient(app)
+
+r = client.get("/static/brochure.txt")
+print("GET /static/brochure.txt ->", r.status_code)
+print(r.text)
+
+legacy = client.get("/courses")
+print("GET /courses ->", legacy.json())
+
+v1_resp = client.get("/v1/courses")
+print("GET /v1/courses ->", v1_resp.json())
+
+with client.websocket_connect("/ws/counsellor") as ws:
+    ws.send_text("When does the Python batch start?")
+    reply = ws.receive_text()
+    print("WebSocket reply:", reply)
+
+stream = client.get("/stream/enquiries")
+print("GET /stream/enquiries ->", stream.status_code, stream.headers["content-type"])
+print(stream.text)</script>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>GET /static/brochure.txt -> 200
+Future Vision Computer Institute - course brochure
+Citylight, Vesu and Pal branches, Surat
+GET /courses -> {'courses': ['Python Professional', 'Business Analytics', 'Office &amp; GenAI'], 'note': 'old shape, kept for old clients'}
+GET /v1/courses -> ['Python Professional', 'Business Analytics', 'Office &amp; GenAI']
+WebSocket reply: Neha: got your message - When does the Python batch start?
+GET /stream/enquiries -> 200 text/event-stream; charset=utf-8
+data: 1 new enquiry this minute
+
+data: 2 new enquiry this minute
+
+data: 3 new enquiry this minute</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk nerdit-walk-full">
+      <li><code>from fastapi import APIRouter, FastAPI, WebSocket, WebSocketDisconnect</code> brings in the pieces this file uses.</li>
+      <li><code>app.mount("/static", StaticFiles(directory="static"), name="static")</code> serves the <code>static</code> folder at <code>/static</code>.</li>
+      <li><code>def list_courses_legacy():</code> and the router below it are from section 5's run line above.</li>
+      <li><code>app.include_router(v1)</code> connects the <code>/v1</code> routes to the app.</li>
+      <li><code>async def counsellor_chat(websocket: WebSocket):</code> is the chat route from section 4.</li>
+      <li><code>async def enquiry_updates():</code> and <code>stream_enquiries</code> are the SSE route from section 4.</li>
+      <li><code>uvicorn.run(app, host="127.0.0.1", port=8000)</code> starts the real server when you run this file directly.</li>
+    </ol>
+
+    <p>Save this file as realtime_app.py, with a <code>static</code> folder holding <code>brochure.txt</code> beside it, activate your venv from lesson 1, and run it:</p>
+    <div class="nerdit-terminal"><span class="nerdit-prompt">$ </span><span class="nerdit-cmd">uvicorn realtime_app:app --reload</span>
+<span class="nerdit-out">INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)</span>
+<span class="nerdit-comment"># Open http://127.0.0.1:8000/static/brochure.txt, or /v1/courses, in the browser</span></div>
+
+    <div class="nerdit-tip"><div><strong>Tip:</strong> Keep an old version answering until every client has moved to the new one, then remove it.</div></div>
+
+    <div class="nerdit-predict">
+      <div class="nerdit-predict-head">🤔 Try It — Predict the output</div>
+      <pre data-lang="python"><code>def get_courses_v1():
+    return ["Python Professional", "Business Analytics"]
+
+def get_courses_legacy():
+    return {"courses": get_courses_v1()}
+
+print(get_courses_legacy())
+print(get_courses_v1())</code></pre>
+      <details class="nerdit-predict-answer">
+        <summary>Show answer</summary>
+        <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>{'courses': ['Python Professional', 'Business Analytics']}
+['Python Professional', 'Business Analytics']</code></pre></div>
+        <p>The legacy version wraps the same list the v1 version returns plain.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2>📌 Quick Reference</h2>
+    <div class="nerdit-cheatsheet">
+      <table>
+        <thead><tr><th>Keyword</th><th>What it does</th><th>Tiny example</th></tr></thead>
+        <tbody>
+          <tr><td><code>skip</code>, <code>limit</code></td><td>Pages through a list</td><td><code>ENQUIRIES[skip:skip+limit]</code></td></tr>
+          <tr><td><code>sort</code></td><td>Orders or reverses the slice</td><td><code>sorted(rows, key=..., reverse=True)</code></td></tr>
+          <tr><td><code>exception_handler</code></td><td>One answer for one error type</td><td><code>@app.exception_handler(MyError)</code></td></tr>
+          <tr><td><code>lifespan</code></td><td>Code before/after <code>yield</code>, run once</td><td><code>@asynccontextmanager</code></td></tr>
+          <tr><td><code>WebSocket</code></td><td>Two-way, one open connection</td><td><code>await websocket.receive_text()</code></td></tr>
+          <tr><td><code>text/event-stream</code></td><td>One-way push over plain HTTP</td><td><code>StreamingResponse(gen(), media_type=...)</code></td></tr>
+          <tr><td><code>StaticFiles</code></td><td>Serves a folder as URLs</td><td><code>app.mount("/static", StaticFiles(...))</code></td></tr>
+          <tr><td><code>APIRouter(prefix=...)</code></td><td>Groups routes under one path</td><td><code>APIRouter(prefix="/v1")</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>🧠 Practice</h2>
+    <div class="nerdit-practical">
+      <div class="nerdit-task">Task 1: Given <code>rows = [{"name": "Zoya", "score": 88}, {"name": "Dev", "score": 95}, {"name": "Isha", "score": 71}]</code>, sort by <code>score</code> highest first, then print only the second row.
+        <details class="nerdit-solution">
+          <summary>Show solution</summary>
+          <pre data-lang="python"><code>rows = [
+    {"name": "Zoya", "score": 88},
+    {"name": "Dev", "score": 95},
+    {"name": "Isha", "score": 71},
+]
+ranked = sorted(rows, key=lambda r: r["score"], reverse=True)
+print(ranked[1:2])</code></pre>
+          <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>[{'name': 'Zoya', 'score': 88}]</code></pre></div>
+        </details>
+      </div>
+      <div class="nerdit-task">Task 2: Write a generator <code>countdown(n)</code> that yields <code>n, n-1, ..., 1</code>, then print each value it yields.
+        <details class="nerdit-solution">
+          <summary>Show solution</summary>
+          <pre data-lang="python"><code>def countdown(n):
+    for i in range(n, 0, -1):
+        yield i
+
+for value in countdown(3):
+    print(value)</code></pre>
+          <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>3
+2
+1</code></pre></div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+</div>
