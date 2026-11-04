@@ -1,0 +1,66 @@
+{
+  "lessonQuestions": [
+    {
+      "correctOptionIndex": 0,
+      "options": [
+        "The fix reaches both routes, because they call the same function",
+        "You must copy the fix into each route separately",
+        "Only /enquiries gets the fix, because it was defined first",
+        "The fix only applies after restarting uvicorn"
+      ],
+      "text": "`common_params` is used as `params: dict = Depends(common_params)` in both the /enquiries and /learners routes. What happens when you fix a bug inside `common_params`?"
+    },
+    {
+      "correctOptionIndex": 1,
+      "options": [
+        "It returns \"Adajan\" unchanged",
+        "It raises an HTTPException with status_code 400",
+        "It returns \"Citylight\", the default branch",
+        "It raises a ValueError"
+      ],
+      "text": "`check_branch = valid_branch([\"Citylight\", \"Vesu\", \"Pal\"])` wraps a function that rejects any branch not in that list. What does `check_branch(branch=\"Adajan\")` do?"
+    },
+    {
+      "correctOptionIndex": 2,
+      "options": [
+        "2, because the route also counts as one request",
+        "1, because the cleanup line never runs",
+        "0, because the finally block always runs after the route finishes",
+        "-1, because the counter underflows"
+      ],
+      "text": "`track_request` increments `ACTIVE[\"count\"]`, then yields, then decrements it in a `finally` block. After one full request runs through it, what does `ACTIVE[\"count\"]` end up as?"
+    }
+  ],
+  "assessmentQuestions": [
+    {
+      "correctOptionIndex": 3,
+      "options": [
+        "It returns \"guess\" unchanged",
+        "It returns None",
+        "It raises a TypeError, because classes cannot be called",
+        "It raises an HTTPException with status_code 401"
+      ],
+      "text": "`require_key = RequireKey(\"fvc-admin-2026\")` defines `__call__` to compare a header against the stored key. What does `require_key(x_api_key=\"guess\")` do?"
+    },
+    {
+      "correctOptionIndex": 0,
+      "options": [
+        "Call common_params before the route runs, and pass its result in",
+        "Import common_params only when the route is first hit",
+        "Run common_params after the route has already returned",
+        "Treat common_params as a type hint with no effect at run time"
+      ],
+      "text": "What does writing `Depends(common_params)` as a parameter's default value tell FastAPI to do?"
+    },
+    {
+      "correctOptionIndex": 1,
+      "options": [
+        "200, because every route answers the same way",
+        "401, because the guard in dependencies= runs with no header sent",
+        "404, because /admin/ping does not exist",
+        "422, because the request body is missing"
+      ],
+      "text": "`app = FastAPI(dependencies=[Depends(require_key)])` guards every route. A client calls `GET /admin/ping` with no `x-api-key` header. What status code comes back?"
+    }
+  ]
+}

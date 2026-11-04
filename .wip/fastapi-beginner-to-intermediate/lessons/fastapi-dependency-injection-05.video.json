@@ -1,0 +1,191 @@
+{
+  "lessonId": "fastapi-dependency-injection-05",
+  "htmlSha256": "b724393cee2db41a6b276a78e4bd65a26f6a7e135f939f2037b626c6e55ae9ae",
+  "language": "hi",
+  "scenes": [
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-dependency-injection-05",
+      "topic": 1,
+      "title": "Many Routes, One Shared Function",
+      "vector": "fastapi-dependency-injection-05-t1-concept.svg",
+      "keyIdea": "Write the setup once; every route calls the same dependency",
+      "terms": ["dependency"],
+      "focus": [],
+      "myth": null,
+      "narration": "Socho kai routes hain, aur har ek skip aur limit jaisa parameter khud se padhta hai. Jab bhi default limit badlani ho, har route mein jaake alag se badalna padega, galti hone ka poora chance. Ek dependency, ek simple function hai jise FastAPI, route chalne se pehle, khud bula leta hai. Ek dependency ek baar likho, aur wahi function har route ke kaam aata hai, bina kuch bhi dobara likhe."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-dependency-injection-05",
+      "topic": 1,
+      "title": "Depends(common_params)",
+      "code": 1,
+      "highlight": ["line:12", "line:15", "line:19"],
+      "keyIdea": "Calling common_params by hand shows exactly what FastAPI does for you",
+      "terms": [],
+      "focus": [],
+      "myth": {
+        "wrong": "common_params chalta hai sirf ek baar, poore app ke liye",
+        "right": "FastAPI use har naye request ke liye dobara call karta hai",
+        "narration": "Kuch log sochte hain ki `common_params` sirf ek baar chalta hai, poore app ke liye. Lekin asal mein FastAPI use har naye request par dobara call karta hai, jaise page function mein dekha."
+      },
+      "narration": "`common_params` function, skip aur limit ko ek dictionary mein jod deta hai, aur yehi dictionary har route ko mil jaata hai. `list_enquiries` function, apna params, Depends ke zariye, is dependency se leta hai, bina khud kuch poochhe. Jab inhe haath se call karte hain, page variable mein sirf teen enquiry rows aati hain, Neha ki list se, bina kisi real route ke chalaye. Yeh bilkul wahi kaam hai jo FastAPI khud ek asli request par karta hai."
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-dependency-injection-05",
+      "topic": 2,
+      "title": "One Dependency, Two Routes",
+      "vector": "fastapi-dependency-injection-05-t2-concept.svg",
+      "keyIdea": "The same shared setup feeds the enquiries route and the learners route",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "Ek dependency sirf ek function hai, toh kuch bhi use kisi aur jagah rok nahi sakta. Yeh shared setup function, paging ka pura kaam karta hai, bina kisi naya code likhe. Pehle, enquiries route isi function ko call karta hai, Neha ki rows ke liye, Depends ke zariye. Phir, learners route bhi isi function ko call karta hai, same tarike se, apni alag list ke saath. Dono routes ek jaisa dikhte hain, kyunki paging ka asli kaam, sirf ek jagah likha gaya hai."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-dependency-injection-05",
+      "topic": 2,
+      "title": "list_learners(params = Depends(common_params))",
+      "code": 1,
+      "highlight": ["line:8", "line:12", "line:13"],
+      "keyIdea": "The exact same dependency now feeds a second, different route",
+      "terms": [],
+      "focus": [],
+      "myth": {
+        "wrong": "Doosre route ke liye, common_params jaisa function dobara likhna padega",
+        "right": "Sirf Depends(common_params) ko doosri baar parameter mein daalo",
+        "narration": "Kuch log sochte hain ki doosre route ke liye, common_params jaisa function dobara likhna padega. Lekin asal mein, bas Depends(common_params) ko doosri baar parameter mein daalna hai, function khud kabhi copy nahi hota."
+      },
+      "narration": "`list_learners`, `common_params` ko bilkul wahi dependency ki tarah use karta hai jo `list_enquiries` ne pehle use ki thi, koi naya code likhe bina. Dono ko haath se call karne par, pehli line Citylight ke do enquiries dikhati hai, aur doosri line Vesu aur Citylight ke do learners dikhati hai. Paging ka logic, skip aur limit dono jagah same rehta hai, kyunki ek hi function dono baar chalta hai. Sirf list alag hai, enquiries ki jagah learners."
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-dependency-injection-05",
+      "topic": 3,
+      "title": "A Branch Setting, Then a Second Dependency",
+      "vector": "fastapi-dependency-injection-05-t3-concept.svg",
+      "keyIdea": "FastAPI resolves the inner dependency first, then the one built on it",
+      "terms": ["dependency factory", "sub-dependency"],
+      "focus": [],
+      "myth": null,
+      "narration": "Ek dependency factory, ek function hai jo pehle hi apni branch setting le leta hai, request se pehle. Yeh setting, check branch dependency ke andar hamesha ke liye lock ho jaati hai. Ek sub-dependency, ek dependency hai jo khud ek doosri dependency use karti hai. Yahan branch_enquiries, check_branch par depend karta hai, aur rows ko filter karta hai sirf tab jab branch sahi ho."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-dependency-injection-05",
+      "topic": 3,
+      "title": "branch_enquiries(branch = Depends(check_branch))",
+      "code": 2,
+      "highlight": ["line:3", "line:4", "line:12"],
+      "keyIdea": "branch_enquiries trusts check_branch to have already checked the name",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "`valid_branch` factory, teen asli branch naam rakhta hai: Citylight, Vesu aur Pal. `check_branch`, yehi factory ka result hai, jo real dependency ban jaata hai. `branch_enquiries`, apne andar koi check nahi karta, sirf `check_branch` par bharosa karta hai. Jab Pal branch diya jaata hai, result mein sirf Pal ki do enquiries aati hain, E3 aur E6."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-dependency-injection-05",
+      "topic": 3,
+      "title": "check_branch(branch=\"Adajan\")",
+      "code": 3,
+      "highlight": ["line:1", "line:2", "line:4"],
+      "keyIdea": "A fake branch name is stopped before branch_enquiries even runs",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "Yahan sirf branch ka naam badalta hai, Adajan, jo real branch nahi hai. `check_branch`, yeh request ko shuru mein hi rok deta hai, HTTPException ke saath, bina kisi row ko chhue. Status code 400 aata hai, aur detail message batata hai ki Adajan branch nahi hai. `branch_enquiries` ko kabhi chance nahi milta chalne ka, kyunki sub-dependency pehle hi fail ho jaati hai, aur FastAPI client ko seedha error bhej deta hai."
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-dependency-injection-05",
+      "topic": 4,
+      "title": "Setup, Route, Then Cleanup",
+      "vector": "fastapi-dependency-injection-05-t4-concept.svg",
+      "keyIdea": "yield pauses for the route, then cleanup runs after, even on an error",
+      "terms": ["yield"],
+      "focus": [],
+      "myth": null,
+      "narration": "`return` wali dependency, sirf setup karti hai aur wapas aa jaati hai. `yield` wali dependency alag hai: setup runs, phir route runs, jab tak dependency rukti hai. Route khatam hone ke baad, cleanup runs, usi function mein jahan yield tha. Finally block mein likha cleanup, tab bhi chalta hai jab route ek error de de."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-dependency-injection-05",
+      "topic": 4,
+      "title": "track_request(): setup, yield, finally",
+      "code": 2,
+      "highlight": ["line:4", "line:6", "line:8"],
+      "keyIdea": "The count goes up before the route, and back down after cleanup",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "`track_request`, ACTIVE count ko ek se badhata hai, route se pehle. Phir yeh apna current count yield karta hai, aur ruk jaata hai, route ko chalne deta hai. `enquiry_status` apna jawab bana leta hai, jab tak dependency paused rehti hai. Route ke baad, finally block count ko wapas ek se ghata deta hai, toh final count phir se zero ho jaata hai."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-dependency-injection-05",
+      "topic": 4,
+      "title": "A Failing Route, Cleanup Still Runs",
+      "code": 3,
+      "highlight": ["line:2", "line:8", "line:10"],
+      "keyIdea": "Even a route that raises an error still gets its cleanup",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "`failing_route` is baar ek ValueError raise karta hai, branch missing bol kar, bina kuch bhi return kiye. Is error ko except mein pakad lete hain, bina poore program ko crash kiye. Phir bhi, `next(gen, None)` call karte hain, taaki finally block zaroor chale, route fail hone ke baad bhi. Count phir se zero par wapas aata hai, exactly jaisa pehle successful run mein hua tha."
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-dependency-injection-05",
+      "topic": 5,
+      "title": "A Shared Key, Checked by a Class",
+      "vector": "fastapi-dependency-injection-05-t5-concept.svg",
+      "keyIdea": "One class-based dependency can guard every route on the whole app",
+      "terms": ["class-based dependency"],
+      "focus": [],
+      "myth": null,
+      "narration": "Ek function dependency, return hone ke baad sab kuch bhool jaati hai. Ek class-based dependency, ek class hai jiska apna __call__ method hota hai. Ek instance, apna shared key yaad rakh sakta hai, calls ke beech mein, jo plain function nahi kar sakta. Yeh shared key, header mein bhej kar, class checks it, aur sahi hone par poora app guarded ho jaata hai."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-dependency-injection-05",
+      "topic": 5,
+      "title": "class Multiplier: __init__ and __call__",
+      "code": 1,
+      "highlight": ["line:2", "line:5", "line:8"],
+      "keyIdea": "__init__ fixes a setting once; __call__ runs it on every call",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "`__init__` method, factor ko ek baar set karta hai, jab instance banta hai. `__call__` method, har baar chalta hai jab instance ko function ki tarah bulaya jaata hai. `double`, factor ko do par lock kar deta hai, hamesha ke liye. Jab double ko paanch ke saath bulate hain, result das aata hai, bilkul jaisa Depends(instance) karta."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-dependency-injection-05",
+      "topic": 5,
+      "title": "RequireKey: a wrong key, then the real one",
+      "code": 2,
+      "highlight": ["line:7", "line:9", "line:12"],
+      "keyIdea": "The same instance accepts a wrong key with 401 and the real one with success",
+      "terms": [],
+      "focus": [],
+      "myth": {
+        "wrong": "Yeh asli sign-in jaisa secure system hai, passwords ke saath",
+        "right": "Yeh sirf ek header ko ek stored key se compare karta hai",
+        "narration": "Kuch log sochte hain ki yeh RequireKey, asli sign-in jaisa secure system hai. Lekin asal mein, yeh sirf ek header ko ek stored key se compare karta hai, bina kisi password ya token ke."
+      },
+      "narration": "`__call__` method, x_api_key header ko padhta hai, Header se, jaise Lesson 2 mein dekha. Jab key galat hoti hai, guess bhej kar, HTTPException status code 401 ke saath aata hai. `require_key`, asli key fvc-admin-2026 ke saath instance banaya gaya hai. Sahi key dene par, wahi key wapas mil jaati hai, bina kisi error ke."
+    }
+  ],
+  "practise": [
+    {"lessonId": "fastapi-dependency-injection-05", "topic": 1, "tryIt": "fill in the Depends() blank for list_items", "task": null},
+    {"lessonId": "fastapi-dependency-injection-05", "topic": 2, "tryIt": "predict route_a() and route_b()'s output", "task": null},
+    {"lessonId": "fastapi-dependency-injection-05", "topic": 3, "tryIt": "predict outer(3)'s output", "task": null},
+    {"lessonId": "fastapi-dependency-injection-05", "topic": 4, "tryIt": "predict countdown()'s first next() output", "task": null},
+    {"lessonId": "fastapi-dependency-injection-05", "topic": 5, "tryIt": "fill in the __call__ blank for Checker", "task": null}
+  ],
+  "skipTopics": []
+}

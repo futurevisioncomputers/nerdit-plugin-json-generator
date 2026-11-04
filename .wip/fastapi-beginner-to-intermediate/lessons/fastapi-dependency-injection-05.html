@@ -1,0 +1,840 @@
+<div class="nerdit-wrapper nerdit-simple" style="counter-reset:practical-counter challenge-counter;">
+
+  <h1>🔌 Dependency Injection</h1>
+
+  <div class="nerdit-info-box"><strong>📘 Lesson Overview:</strong> What do you do when ten routes need the same check? You write one small function, hand it to FastAPI with <code>Depends</code>, and reuse it everywhere, chain one dependency onto another, clean up after <code>yield</code>, use a class as a dependency, and guard a whole router or app with <code>dependencies=</code>. You raised clear errors in Lesson 4; this lesson removes the repeated checks that led to them.</div>
+
+  <div class="nerdit-lesson-meta">
+    <span class="nerdit-meta-pill">⏱ 20 min</span>
+    <span class="nerdit-badge beginner">Beginner</span>
+  </div>
+
+  <div class="nerdit-figure" data-visual="course-map" style="max-width:440px">
+    <svg viewBox="0 0 360 78" role="img" aria-label="Course map: this lesson is the build stage, second of five: setup, build, secure, scale, ship.">
+      <rect x="4" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="36" y="35" text-anchor="middle" fill="var(--tx-m)">Setup</text>
+      <rect x="76" y="14" width="64" height="32" rx="6" fill="var(--nb)" stroke="var(--nb)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="108" y="35" text-anchor="middle" fill="var(--white)">Build</text>
+      <rect x="148" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="180" y="35" text-anchor="middle" fill="var(--tx-m)">Secure</text>
+      <rect x="220" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="252" y="35" text-anchor="middle" fill="var(--tx-m)">Scale</text>
+      <rect x="292" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="324" y="35" text-anchor="middle" fill="var(--tx-m)">Ship</text>
+      <text class="nerdit-flow-text" x="108" y="68" text-anchor="middle" fill="var(--nb)">▲ you are here</text>
+    </svg>
+    <div class="nerdit-figure-caption">You are here: build stage, sharing setup and checks across routes instead of repeating them.</div>
+  </div>
+
+  <div class="nerdit-info-box nerdit-data-note"><strong>Data note:</strong> All enquiry and learner records shown in this lesson are synthetic, made for teaching. Future Vision Computer Institute's name is used with permission.</div>
+
+  <div class="nerdit-demo-table">
+    <div class="nerdit-demo-table-label">Demo Data — <code>enquiries</code> (6 rows), as in Lesson 1</div>
+    <table>
+      <thead><tr><th>enquiry_id</th><th>name</th><th>branch</th><th>course</th><th>follow_ups</th></tr></thead>
+      <tbody>
+        <tr><td>E1</td><td>Aarav Shah</td><td>Citylight</td><td>Python Professional</td><td>1</td></tr>
+        <tr><td>E2</td><td>Priya Mehta</td><td>Citylight</td><td>Office &amp; GenAI</td><td>3</td></tr>
+        <tr class="nerdit-spot"><td>E3</td><td>Zoya Khan</td><td>Pal</td><td>Business Analytics</td><td>1</td></tr>
+        <tr><td>E5</td><td>Rohan Trivedi</td><td>Vesu</td><td>Excel &amp; Power BI</td><td>1</td></tr>
+        <tr><td>E6</td><td>Kavya Patel</td><td>Pal</td><td>Python Professional</td><td>1</td></tr>
+        <tr><td>E7</td><td>Yash Solanki</td><td>Vesu</td><td>Business Analytics</td><td>4</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <section>
+    <h2 data-outline="1 2">1 — Stop Repeating Code With Your First Dependency</h2>
+
+    <p>Picture ten routes that all read the same two settings. A <strong>dependency</strong> is a plain function FastAPI <b>calls for you before your route runs</b>. You write that setup once, instead of in every route. Without one, each route copies the same parameter list, and a later fix has to land in every copy.</p>
+    <p>You hand a dependency to FastAPI with <code>Depends()</code>, used as a parameter's default value. FastAPI calls the function first, then passes its return value into your route under that parameter's name.</p>
+
+    <pre class="nerdit-map"><span class="nerdit-map-label">Without a dependency → with one</span>Copy skip/limit into every route  <b>→</b> Write common_params() once
+Fix a bug in ten places           <b>→</b> Fix it in one function
+Guess which routes still match    <b>→</b> Every route calls the same code</pre>
+
+    <div class="nerdit-compare">
+      <div class="nerdit-compare-bad">
+        <div class="nerdit-compare-head">Wrong — the same two parameters, copied</div>
+        <pre data-lang="python"><code>@app.get("/items")
+def list_items(skip: int = 0, limit: int = 10):
+    return ITEMS[skip:skip + limit]
+
+@app.get("/users")
+def list_users(skip: int = 0, limit: int = 10):
+    return USERS[skip:skip + limit]</code></pre>
+      </div>
+      <div class="nerdit-compare-good">
+        <div class="nerdit-compare-head">Right — one dependency, reused with Depends</div>
+        <pre data-lang="python"><code>def common_params(skip: int = 0, limit: int = 10):
+    return {"skip": skip, "limit": limit}
+
+@app.get("/items")
+def list_items(params: dict = Depends(common_params)):
+    return ITEMS[params["skip"]:]</code></pre>
+      </div>
+    </div>
+    <p>Raising the default <code>limit</code> now takes one edit, in <code>common_params</code>, not one per route.</p>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: Paging Through Neha's Enquiries</h3>
+    <p>Neha's enquiry list, as in Lesson 1, is long enough to split. A route should return it one page at a time.</p>
+
+    <h3 class="nerdit-runhead">params: dict = Depends(common_params) <span class="why">— one function, called before the route</span></h3>
+    <p>Calling <code>common_params</code> directly, then handing its result to the route, shows exactly what FastAPI does for a real request.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import Depends
+
+ENQUIRIES = [
+    {"enquiry_id": "E1", "branch": "Citylight", "course": "Python Professional", "follow_ups": 1},
+    {"enquiry_id": "E2", "branch": "Citylight", "course": "Office &amp; GenAI", "follow_ups": 3},
+    {"enquiry_id": "E3", "branch": "Pal", "course": "Business Analytics", "follow_ups": 1},
+    {"enquiry_id": "E5", "branch": "Vesu", "course": "Excel &amp; Power BI", "follow_ups": 1},
+    {"enquiry_id": "E6", "branch": "Pal", "course": "Python Professional", "follow_ups": 1},
+    {"enquiry_id": "E7", "branch": "Vesu", "course": "Business Analytics", "follow_ups": 4},
+]
+
+def common_params(skip: int = 0, limit: int = 10):
+    return {"skip": skip, "limit": limit}
+
+def list_enquiries(params: dict = Depends(common_params)):
+    skip, limit = params["skip"], params["limit"]
+    return ENQUIRIES[skip:skip + limit]
+
+page = list_enquiries(common_params(skip=0, limit=3))
+print(page)</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>[{'enquiry_id': 'E1', 'branch': 'Citylight', 'course': 'Python Professional', 'follow_ups': 1}, {'enquiry_id': 'E2', 'branch': 'Citylight', 'course': 'Office &amp; GenAI', 'follow_ups': 3}, {'enquiry_id': 'E3', 'branch': 'Pal', 'course': 'Business Analytics', 'follow_ups': 1}]</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>def common_params(skip: int = 0, limit: int = 10):</code> builds the shared dependency once.</li>
+      <li><code>def list_enquiries(params: dict = Depends(common_params)):</code> tells FastAPI to run it first.</li>
+      <li><code>page = list_enquiries(common_params(skip=0, limit=3))</code> calls both by hand, the way FastAPI would for a real request.</li>
+    </ol>
+
+    <div class="nerdit-figure" data-visual="value-table" data-world-derived="offline example: common_params with different skip/limit values over the enquiries list" style="max-width:440px">
+      <p class="nerdit-vtitle">Same dependency, two different pages</p>
+      <table class="nerdit-vtable">
+        <thead><tr><th>skip</th><th>limit</th><th>rows returned</th></tr></thead>
+        <tbody>
+          <tr><td>0</td><td>3</td><td>E1, E2, E3</td></tr>
+          <tr><td>3</td><td>3</td><td>E5, E6, E7</td></tr>
+        </tbody>
+      </table>
+      <div class="nerdit-figure-caption">3 shown + 3 shown = 6 rows total ✓ — only the parameters change, never <code>common_params</code> itself.</div>
+    </div>
+
+    <p>Reach for a dependency the moment two routes need the same setup. One route on its own can keep a plain parameter.</p>
+
+    <div class="nerdit-fillblank" data-answer="Depends">
+      <div class="nerdit-fillblank-head">✏️ Try It — Fill in the blank</div>
+      <p>Complete the default value so FastAPI runs <code>common_params</code> before this route:</p>
+      <pre data-lang="python"><code>def list_items(params: dict = <input class="nerdit-blank" size="8" aria-label="your answer">(common_params)):
+    return params</code></pre>
+      <button class="nerdit-check-btn" onclick="nerditCheckBlank(this)">Check</button>
+      <span class="nerdit-check-msg" aria-live="polite"></span>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="3">2 — Reuse One Dependency Across Several Routes</h2>
+
+    <p>A dependency is just a function, so nothing stops two different routes from calling the same one. You add <code>Depends(common_params)</code> to a second route's parameters, and it <b>runs the exact same code</b> there too.</p>
+    <p>FastAPI calls the dependency fresh for each request, but the function body never changes between routes. One fix, written once, reaches every route that uses it.</p>
+
+    <div class="nerdit-figure" data-visual="diagram" style="max-width:440px">
+      <svg viewBox="0 0 360 170" role="img" aria-label="One common_params dependency feeds both the enquiries route and the learners route.">
+        <rect x="100" y="8" width="160" height="38" rx="8" fill="var(--bg-soft)" stroke="var(--nb)" stroke-width="1.5"/>
+        <text class="nerdit-flow-text" x="180" y="32" text-anchor="middle">common_params()</text>
+        <path class="nerdit-flow-edge" d="M180 46 V66 H70 V86"/>
+        <path class="nerdit-flow-edge" d="M180 46 V66 H290 V86"/>
+        <rect x="6" y="88" width="128" height="36" rx="8" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+        <text class="nerdit-flow-text" x="70" y="111" text-anchor="middle">GET /enquiries</text>
+        <rect x="226" y="88" width="128" height="36" rx="8" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+        <text class="nerdit-flow-text" x="290" y="111" text-anchor="middle">GET /learners</text>
+        <text class="nerdit-flow-text" x="180" y="150" text-anchor="middle" fill="var(--tx-m)">one function, called by both routes</text>
+      </svg>
+      <div class="nerdit-figure-caption">The same <code>common_params</code> paging logic serves two different record types.</div>
+    </div>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: Paging Enquiries and Learners the Same Way</h3>
+    <div class="nerdit-demo-table">
+      <div class="nerdit-demo-table-label">Demo Data — <code>learners</code> (4 rows)</div>
+      <table>
+        <thead><tr><th>learner_id</th><th>branch</th></tr></thead>
+        <tbody>
+          <tr><td>L1</td><td>Vesu</td></tr>
+          <tr><td>L2</td><td>Citylight</td></tr>
+          <tr><td>L3</td><td>Citylight</td></tr>
+          <tr><td>L4</td><td>Vesu</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="nerdit-runhead">list_learners(params: dict = Depends(common_params)) <span class="why">— the same dependency, a second time</span></h3>
+    <p>Nothing about <code>common_params</code> changes; only the list it slices is different.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>LEARNERS = [
+    {"learner_id": "L1", "branch": "Vesu"},
+    {"learner_id": "L2", "branch": "Citylight"},
+    {"learner_id": "L3", "branch": "Citylight"},
+    {"learner_id": "L4", "branch": "Vesu"},
+]
+
+def list_learners(params: dict = Depends(common_params)):
+    skip, limit = params["skip"], params["limit"]
+    return LEARNERS[skip:skip + limit]
+
+print(list_enquiries(common_params(skip=0, limit=2)))
+print(list_learners(common_params(skip=0, limit=2)))</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>[{'enquiry_id': 'E1', 'branch': 'Citylight', 'course': 'Python Professional', 'follow_ups': 1}, {'enquiry_id': 'E2', 'branch': 'Citylight', 'course': 'Office &amp; GenAI', 'follow_ups': 3}]
+[{'learner_id': 'L1', 'branch': 'Vesu'}, {'learner_id': 'L2', 'branch': 'Citylight'}]</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>def list_learners(params: dict = Depends(common_params)):</code> reuses the exact same dependency.</li>
+      <li><code>print(list_enquiries(common_params(skip=0, limit=2)))</code> shows the enquiries route still works.</li>
+      <li><code>print(list_learners(common_params(skip=0, limit=2)))</code> shows the learners route sharing it too.</li>
+    </ol>
+
+    <p>The full file below runs both routes for real, through a test client, so you can see the actual replies.</p>
+
+    <div class="nerdit-run nerdit-program" data-run="offline" data-file="enquiry_learner_api.py">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import FastAPI, Depends
+
+app = FastAPI()
+
+ENQUIRIES = [
+    {"enquiry_id": "E1", "branch": "Citylight", "course": "Python Professional", "follow_ups": 1},
+    {"enquiry_id": "E2", "branch": "Citylight", "course": "Office &amp; GenAI", "follow_ups": 3},
+    {"enquiry_id": "E3", "branch": "Pal", "course": "Business Analytics", "follow_ups": 1},
+]
+
+LEARNERS = [
+    {"learner_id": "L1", "branch": "Vesu"},
+    {"learner_id": "L2", "branch": "Citylight"},
+]
+
+
+def common_params(skip: int = 0, limit: int = 10):
+    return {"skip": skip, "limit": limit}
+
+
+@app.get("/enquiries")
+def route_enquiries(params: dict = Depends(common_params)):
+    skip, limit = params["skip"], params["limit"]
+    return ENQUIRIES[skip:skip + limit]
+
+
+@app.get("/learners")
+def route_learners(params: dict = Depends(common_params)):
+    skip, limit = params["skip"], params["limit"]
+    return LEARNERS[skip:skip + limit]
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="127.0.0.1", port=8000)</code></pre>
+      </div>
+      <script type="text/plain" class="nerdit-check">import warnings
+warnings.filterwarnings("ignore")
+
+from fastapi.testclient import TestClient
+
+client = TestClient(app)
+r1 = client.get("/enquiries", params={"skip": 0, "limit": 2})
+r2 = client.get("/learners", params={"skip": 0, "limit": 2})
+print(r1.status_code, r1.json())
+print(r2.status_code, r2.json())</script>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>200 [{'enquiry_id': 'E1', 'branch': 'Citylight', 'course': 'Python Professional', 'follow_ups': 1}, {'enquiry_id': 'E2', 'branch': 'Citylight', 'course': 'Office &amp; GenAI', 'follow_ups': 3}]
+200 [{'learner_id': 'L1', 'branch': 'Vesu'}, {'learner_id': 'L2', 'branch': 'Citylight'}]</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk nerdit-walk-full">
+      <li><code>from fastapi import FastAPI, Depends</code> brings in both names this file needs.</li>
+      <li><code>ENQUIRIES = [</code> holds the same rows as the demo table, as in Lesson 1.</li>
+      <li><code>LEARNERS = [</code> holds the learner rows shown above.</li>
+      <li><code>def common_params(skip: int = 0, limit: int = 10):</code> is written once, above both routes.</li>
+      <li><code>@app.get("/enquiries")</code> registers the first route, with the dependency in its parameters.</li>
+      <li><code>@app.get("/learners")</code> registers the second route, with the same dependency, unchanged.</li>
+      <li><code>if __name__ == "__main__":</code> starts the real server when you run this file directly.</li>
+    </ol>
+
+    <p>Save this file as enquiry_learner_api.py, activate your venv and run it:</p>
+    <div class="nerdit-terminal"><span class="nerdit-prompt">$ </span><span class="nerdit-cmd">uvicorn enquiry_learner_api:app --reload</span>
+<span class="nerdit-out">INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)</span>
+<span class="nerdit-comment"># Open http://127.0.0.1:8000/docs and try both GET routes</span></div>
+
+    <div class="nerdit-predict">
+      <div class="nerdit-predict-head">🤔 Try It — Predict the output</div>
+      <pre data-lang="python"><code>def shared_setting():
+    return 5
+
+def route_a(value=shared_setting()):
+    return value * 2
+
+def route_b(value=shared_setting()):
+    return value * 3
+
+print(route_a())
+print(route_b())</code></pre>
+      <details class="nerdit-predict-answer">
+        <summary>Show answer</summary>
+        <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>10
+15</code></pre></div>
+        <p><code>shared_setting</code> runs for both routes; only the maths after it changes.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="4 5">3 — Give a Dependency a Parameter, and Chain One Onto Another</h2>
+
+    <p>Sometimes a dependency itself needs a setting, decided before any request arrives. A <strong>dependency factory</strong> is a function that takes that setting and <b>returns the real dependency</b>. You call the factory once, then hand its result to <code>Depends()</code>.</p>
+    <p>A dependency can also use another dependency. FastAPI resolves this <strong>sub-dependency</strong> first. It then passes the result into the one that needs it, just like a route uses <code>Depends()</code>.</p>
+
+    <h3 class="nerdit-runhead">valid_choice(allowed) <span class="why">— a dependency that remembers a setting</span></h3>
+    <p>The inner function keeps using <code>allowed</code> long after <code>valid_choice</code> returns.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>def valid_choice(allowed: list[str]):
+    def check(value: str):
+        if value not in allowed:
+            raise ValueError(f"{value} not in {allowed}")
+        return value
+    return check
+
+check_color = valid_choice(["red", "green", "blue"])
+print(check_color("green"))</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>green</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>def valid_choice(allowed: list[str]):</code> takes the setting once, before any request.</li>
+      <li><code>def check(value: str):</code> is the real dependency, called for every request.</li>
+      <li><code>check_color = valid_choice(["red", "green", "blue"])</code> builds one specific, ready-to-use dependency.</li>
+    </ol>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: Only a Real Branch, Then Its Enquiries</h3>
+    <p>Future Vision has exactly three branches. A branch dependency should reject anything else, and a second dependency can build on it.</p>
+
+    <div class="nerdit-figure" data-visual="diagram" style="max-width:400px">
+      <svg viewBox="0 0 360 240" role="img" aria-label="A request carries a branch name through check_branch, then branch_enquiries, before the route returns rows.">
+        <rect x="20" y="8" width="320" height="38" rx="8" fill="var(--white)" stroke="var(--orange)" stroke-width="1.5"/>
+        <text class="nerdit-flow-text" x="180" y="32" text-anchor="middle" fill="var(--orange)">Request: branch=&quot;Pal&quot;</text>
+        <path class="nerdit-flow-edge" d="M180 46 V62"/>
+        <rect x="20" y="64" width="320" height="38" rx="8" fill="var(--bg-soft)" stroke="var(--nb)" stroke-width="1.5"/>
+        <text class="nerdit-flow-text" x="180" y="88" text-anchor="middle">check_branch() — is Pal real?</text>
+        <path class="nerdit-flow-edge" d="M180 102 V118"/>
+        <rect x="20" y="120" width="320" height="38" rx="8" fill="var(--bg-soft)" stroke="var(--nb)" stroke-width="1.5"/>
+        <text class="nerdit-flow-text" x="180" y="144" text-anchor="middle">branch_enquiries() — filter rows</text>
+        <path class="nerdit-flow-edge" d="M180 158 V174"/>
+        <rect x="20" y="176" width="320" height="38" rx="8" fill="var(--white)" stroke="var(--green)" stroke-width="1.5"/>
+        <text class="nerdit-flow-text" x="180" y="200" text-anchor="middle" fill="var(--green)">Route returns E3, E6</text>
+        <text class="nerdit-flow-text" x="180" y="228" text-anchor="middle" fill="var(--tx-m)">each box runs before the one below it</text>
+      </svg>
+      <div class="nerdit-figure-caption">FastAPI resolves the inner dependency first, then the one that depends on it.</div>
+    </div>
+
+    <h3 class="nerdit-runhead">branch: str = Depends(check_branch) <span class="why">— a dependency built on another one</span></h3>
+    <p><code>branch_enquiries</code> never checks the branch itself; it trusts <code>check_branch</code> to have done that already.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import Depends, HTTPException
+
+def valid_branch(allowed):
+    def check_branch(branch: str = "Citylight"):
+        if branch not in allowed:
+            raise HTTPException(status_code=400, detail=f"{branch} is not a branch")
+        return branch
+    return check_branch
+
+check_branch = valid_branch(["Citylight", "Vesu", "Pal"])
+
+def branch_enquiries(branch: str = Depends(check_branch)):
+    return [row for row in ENQUIRIES if row["branch"] == branch]
+
+print(branch_enquiries(check_branch(branch="Pal")))</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>[{'enquiry_id': 'E3', 'branch': 'Pal', 'course': 'Business Analytics', 'follow_ups': 1}, {'enquiry_id': 'E6', 'branch': 'Pal', 'course': 'Python Professional', 'follow_ups': 1}]</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>def valid_branch(allowed):</code> is the factory, holding the three real branch names.</li>
+      <li><code>check_branch = valid_branch(["Citylight", "Vesu", "Pal"])</code> builds the configured dependency.</li>
+      <li><code>def branch_enquiries(branch: str = Depends(check_branch)):</code> is a dependency that uses another one.</li>
+    </ol>
+
+    <h3 class="nerdit-runhead">check_branch(branch="Adajan") <span class="why">— one bad branch name, caught early</span></h3>
+    <p>Change only the branch name, and the inner dependency stops the request before any rows are touched.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>try:
+    check_branch(branch="Adajan")
+except HTTPException as exc:
+    print(exc.status_code)
+    print(exc.detail)</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>400
+Adajan is not a branch</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>check_branch(branch="Adajan")</code> fails before <code>branch_enquiries</code> ever runs.</li>
+    </ol>
+
+    <div class="nerdit-compare">
+      <div class="nerdit-compare-bad">
+        <div class="nerdit-compare-head">Wrong — the factory, not a built dependency</div>
+        <pre data-lang="python"><code>@app.get("/enquiries/by-branch")
+def route(branch: str = Depends(valid_branch)):
+    return branch</code></pre>
+      </div>
+      <div class="nerdit-compare-good">
+        <div class="nerdit-compare-head">Right — call the factory first, with its setting</div>
+        <pre data-lang="python"><code>@app.get("/enquiries/by-branch")
+def route(branch: str = Depends(valid_branch(["Citylight", "Vesu", "Pal"]))):
+    return branch</code></pre>
+      </div>
+    </div>
+    <p>The wrong version hands FastAPI the factory itself, which still needs <code>allowed</code> and never gets it.</p>
+
+    <div class="nerdit-predict">
+      <div class="nerdit-predict-head">🤔 Try It — Predict the output</div>
+      <pre data-lang="python"><code>def inner(x):
+    return x + 1
+
+def outer(x):
+    return inner(x) * 2
+
+print(outer(3))</code></pre>
+      <details class="nerdit-predict-answer">
+        <summary>Show answer</summary>
+        <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>8</code></pre></div>
+        <p><code>outer</code> calls <code>inner</code> first, the same order FastAPI uses for a sub-dependency.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="6">4 — Set Up and Clean Up With yield</h2>
+
+    <p>A dependency written with <code>return</code> only ever runs setup. Writing it with <strong>yield</strong> instead lets it <b>pause, then run cleanup after</b> the route uses its value. FastAPI resumes the function once the route finishes.</p>
+    <p>Put the cleanup in a <code>finally</code> block, and it still runs even when the route raises an error. Nothing you set up gets left behind.</p>
+
+    <h3 class="nerdit-runhead">yield "ready" <span class="why">— one function, two stops</span></h3>
+    <p><code>next()</code> runs the function up to its <code>yield</code>, then again past it.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>def step():
+    print("setup")
+    yield "ready"
+    print("cleanup")
+
+gen = step()
+value = next(gen)
+print(value)
+next(gen, None)</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>setup
+ready
+cleanup</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>def step():</code> is a generator function, because it contains <code>yield</code>.</li>
+      <li><code>yield "ready"</code> pauses here and hands back "ready".</li>
+      <li><code>next(gen, None)</code> resumes after the yield, the step FastAPI takes for you.</li>
+    </ol>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: Counting Requests Still Being Handled</h3>
+    <p>Future Vision wants to know how many requests are in flight at once, without touching a database yet.</p>
+
+    <div class="nerdit-figure" data-visual="value-table" data-world-derived="offline example: ACTIVE[&quot;count&quot;] before, during and after one request" style="max-width:400px">
+      <p class="nerdit-vtitle">ACTIVE["count"] around one request</p>
+      <table class="nerdit-vtable">
+        <thead><tr><th>moment</th><th>count</th></tr></thead>
+        <tbody>
+          <tr><td>before <code>track_request</code> runs</td><td>0</td></tr>
+          <tr class="nerdit-spot"><td>while the route runs</td><td>1</td></tr>
+          <tr><td>after cleanup</td><td>0</td></tr>
+        </tbody>
+      </table>
+      <div class="nerdit-figure-caption">+1 at setup, −1 at cleanup: the count always lands back at 0 ✓</div>
+    </div>
+
+    <h3 class="nerdit-runhead">ACTIVE["count"] += 1, then try / finally <span class="why">— setup and cleanup around the route</span></h3>
+    <p>The dependency below stands in for anything that must be released after the route runs.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>ACTIVE = {"count": 0}
+
+def track_request():
+    ACTIVE["count"] += 1
+    try:
+        yield ACTIVE["count"]
+    finally:
+        ACTIVE["count"] -= 1
+
+def enquiry_status(request_number):
+    return {"request_number": request_number, "in_flight": ACTIVE["count"]}
+
+gen = track_request()
+value = next(gen)
+result = enquiry_status(value)
+next(gen, None)
+print(result)
+print(ACTIVE["count"])</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>{'request_number': 1, 'in_flight': 1}
+0</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>ACTIVE["count"] += 1</code> runs before the route, as setup.</li>
+      <li><code>yield ACTIVE["count"]</code> hands the route its number and pauses here.</li>
+      <li><code>finally:</code> keeps the next line running even if the route fails.</li>
+      <li><code>next(gen, None)</code> resumes the generator, running the cleanup line.</li>
+    </ol>
+
+    <div class="nerdit-warning-block"><div class="nerdit-warning-label">Warning — skip try/finally and cleanup can be lost</div><p>Without <code>try</code>, an error in the route stops the function before <code>ACTIVE["count"] -= 1</code> ever runs.</p></div>
+
+    <h3 class="nerdit-runhead">A failing route, with the same cleanup <span class="why">— change the route, not the dependency</span></h3>
+    <p>This time the route raises an error, and the count still returns to 0.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>def failing_route(request_number):
+    raise ValueError("branch missing")
+
+gen = track_request()
+value = next(gen)
+try:
+    failing_route(value)
+except ValueError as exc:
+    print(exc)
+next(gen, None)
+print(ACTIVE["count"])</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>branch missing
+0</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>except ValueError as exc:</code> catches the route's error without stopping here.</li>
+      <li><code>next(gen, None)</code> still reaches the <code>finally</code> block, and the count drops back to 0.</li>
+    </ol>
+
+    <p>Reach for <code>yield</code> whenever a dependency opens, locks or counts something that must be released afterwards.</p>
+
+    <div class="nerdit-predict">
+      <div class="nerdit-predict-head">🤔 Try It — Predict the output</div>
+      <pre data-lang="python"><code>def countdown():
+    print("start")
+    yield 3
+    print("end")
+
+gen = countdown()
+n = next(gen)
+print(n)</code></pre>
+      <details class="nerdit-predict-answer">
+        <summary>Show answer</summary>
+        <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>start
+3</code></pre></div>
+        <p>"end" never prints, because <code>next()</code> is only called once, before the second pause.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="7 8">5 — A Class as a Dependency, Applied to a Whole App</h2>
+
+    <p>A function dependency forgets everything once it returns. A <strong>class-based dependency</strong> is a class with a <code>__call__</code> method, so one instance <b>can carry a setting</b> between calls.</p>
+    <p>FastAPI calls that instance like a function, with the setting already fixed in <code>__init__</code>.</p>
+
+    <h3 class="nerdit-runhead">def __call__(self, value): <span class="why">— an instance that acts like a function</span></h3>
+    <p><code>factor</code> is fixed once, then used on every call.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>class Multiplier:
+    def __init__(self, factor):
+        self.factor = factor
+
+    def __call__(self, value):
+        return value * self.factor
+
+double = Multiplier(2)
+print(double(5))</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>10</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>def __init__(self, factor):</code> runs once, when you build the instance.</li>
+      <li><code>def __call__(self, value):</code> runs every time FastAPI calls that instance.</li>
+      <li><code>double = Multiplier(2)</code> fixes <code>factor</code> at 2, before any call happens.</li>
+    </ol>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: One Shared Key for the Admin Routes</h3>
+    <p>Future Vision's small admin team shares one key, sent as a header.</p>
+    <p>You will build real sign-in in a later lesson. This check only compares one header to one stored key.</p>
+
+    <h3 class="nerdit-runhead">x_api_key: str = Header(None) <span class="why">— the class reads the key from the request</span></h3>
+    <p>A wrong key fails; the real key passes.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import Header, HTTPException
+
+class RequireKey:
+    def __init__(self, key):
+        self.key = key
+
+    def __call__(self, x_api_key: str = Header(None)):
+        if x_api_key != self.key:
+            raise HTTPException(status_code=401, detail="Wrong key")
+        return x_api_key
+
+require_key = RequireKey("fvc-admin-2026")
+
+try:
+    require_key(x_api_key="guess")
+except HTTPException as exc:
+    print(exc.status_code)
+print(require_key(x_api_key="fvc-admin-2026"))</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>401
+fvc-admin-2026</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>def __call__(self, x_api_key: str = Header(None)):</code> reads the header, as in Lesson 2.</li>
+      <li><code>require_key = RequireKey("fvc-admin-2026")</code> builds one instance, with the real key set.</li>
+      <li><code>require_key(x_api_key="guess")</code> fails, because FastAPI calls the instance for every request.</li>
+    </ol>
+
+    <p>A route can list a dependency in <code>dependencies=</code> instead of a parameter, when it only needs the check. The same list can guard a whole app, so every route is covered with no repeated code.</p>
+
+    <div class="nerdit-run nerdit-program" data-run="offline" data-file="admin_api.py">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import FastAPI, Header, HTTPException, Depends
+
+
+class RequireKey:
+    def __init__(self, key):
+        self.key = key
+
+    def __call__(self, x_api_key: str = Header(None)):
+        if x_api_key != self.key:
+            raise HTTPException(status_code=401, detail="Wrong key")
+
+
+require_key = RequireKey("fvc-admin-2026")
+app = FastAPI(dependencies=[Depends(require_key)])
+
+LEARNERS = [
+    {"learner_id": "L1", "branch": "Vesu"},
+    {"learner_id": "L2", "branch": "Citylight"},
+]
+
+
+@app.get("/admin/learners")
+def admin_learners():
+    return LEARNERS
+
+
+@app.get("/admin/ping")
+def admin_ping():
+    return {"status": "ok"}
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="127.0.0.1", port=8000)</code></pre>
+      </div>
+      <script type="text/plain" class="nerdit-check">import warnings
+warnings.filterwarnings("ignore")
+
+from fastapi.testclient import TestClient
+
+client = TestClient(app)
+print(client.get("/admin/ping").status_code)
+ok = client.get("/admin/learners", headers={"x-api-key": "fvc-admin-2026"})
+print(ok.status_code, ok.json())</script>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>401
+200 [{'learner_id': 'L1', 'branch': 'Vesu'}, {'learner_id': 'L2', 'branch': 'Citylight'}]</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk nerdit-walk-full">
+      <li><code>from fastapi import FastAPI, Header, HTTPException, Depends</code> brings in every name this file needs.</li>
+      <li><code>class RequireKey:</code> starts the class-based dependency, as in the run line above.</li>
+      <li><code>def __call__(self, x_api_key: str = Header(None)):</code> is the check FastAPI runs.</li>
+      <li><code>require_key = RequireKey("fvc-admin-2026")</code> builds the one instance this file uses.</li>
+      <li><code>app = FastAPI(dependencies=[Depends(require_key)])</code> guards every route on this app.</li>
+      <li><code>LEARNERS = [</code> holds the same two rows shown above.</li>
+      <li><code>@app.get("/admin/learners")</code> registers the first route; it never mentions <code>require_key</code>.</li>
+      <li><code>@app.get("/admin/ping")</code> registers the second route, guarded the same unmentioned way.</li>
+      <li><code>if __name__ == "__main__":</code> starts the real server when you run this file directly.</li>
+    </ol>
+
+    <p>Save this file as admin_api.py, activate your venv and run it:</p>
+    <div class="nerdit-terminal"><span class="nerdit-prompt">$ </span><span class="nerdit-cmd">uvicorn admin_api:app --reload</span>
+<span class="nerdit-out">INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)</span>
+<span class="nerdit-comment"># Open http://127.0.0.1:8000/docs, set x-api-key, then try GET /admin/learners</span></div>
+
+    <div class="nerdit-figure" data-visual="value-table" data-world-derived="offline example: admin_api.py requests with and without the x-api-key header" style="max-width:440px">
+      <p class="nerdit-vtitle">GET /admin/learners, two ways</p>
+      <table class="nerdit-vtable">
+        <thead><tr><th>x-api-key header</th><th>status</th></tr></thead>
+        <tbody>
+          <tr><td><span class="nerdit-null">none</span></td><td class="nerdit-cell-bad">401<span class="nerdit-vnote">guard stops it</span></td></tr>
+          <tr><td>fvc-admin-2026</td><td class="nerdit-cell-good">200<span class="nerdit-vnote">learners returned</span></td></tr>
+        </tbody>
+      </table>
+      <div class="nerdit-figure-caption">The same guard, from <code>dependencies=</code>, decides both outcomes before either route runs.</div>
+    </div>
+
+    <p>The same idea also works on a router. One setting then covers every route in it.</p>
+
+    <div class="nerdit-fillblank" data-answer="__call__">
+      <div class="nerdit-fillblank-head">✏️ Try It — Fill in the blank</div>
+      <p>Complete the method name so instances of this class can be called like a function:</p>
+      <pre data-lang="python"><code>class Checker:
+    def __init__(self, limit):
+        self.limit = limit
+
+    def <input class="nerdit-blank" size="10" aria-label="your answer">(self, value):
+        return value + self.limit</code></pre>
+      <button class="nerdit-check-btn" onclick="nerditCheckBlank(this)">Check</button>
+      <span class="nerdit-check-msg" aria-live="polite"></span>
+    </div>
+  </section>
+
+  <section>
+    <h2>📌 Quick Reference</h2>
+    <div class="nerdit-cheatsheet">
+      <table>
+        <thead><tr><th>Keyword</th><th>What it does</th><th>Tiny example</th></tr></thead>
+        <tbody>
+          <tr><td><code>Depends()</code></td><td>Runs a function first, passes its result in</td><td><code>params: dict = Depends(common_params)</code></td></tr>
+          <tr><td>dependency function</td><td>Shared setup code, written once</td><td><code>def common_params(skip=0, limit=10):</code></td></tr>
+          <tr><td>dependency factory</td><td>A function that builds a configured dependency</td><td><code>valid_branch(["Citylight", "Vesu", "Pal"])</code></td></tr>
+          <tr><td>sub-dependency</td><td>A dependency that itself uses <code>Depends()</code></td><td><code>branch: str = Depends(check_branch)</code></td></tr>
+          <tr><td><code>yield</code> dependency</td><td>Pauses for the route, then runs cleanup</td><td><code>yield value</code> inside <code>try</code>/<code>finally</code></td></tr>
+          <tr><td>class-based dependency</td><td>An instance with its own setting and a <code>__call__</code></td><td><code>RequireKey("fvc-admin-2026")</code></td></tr>
+          <tr><td><code>dependencies=</code></td><td>Runs a check without using its return value</td><td><code>FastAPI(dependencies=[Depends(require_key)])</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>🧠 Practice</h2>
+    <div class="nerdit-practical">
+      <div class="nerdit-task">Task 1: Write a dependency <code>sort_param(order="asc")</code> that raises <code>ValueError(f"{order} is not a valid order")</code> unless <code>order</code> is <code>"asc"</code> or <code>"desc"</code>, else returns <code>order</code>. Test it on <code>"desc"</code>.
+        <details class="nerdit-solution">
+          <summary>Show solution</summary>
+          <pre data-lang="python"><code>def sort_param(order="asc"):
+    if order not in ("asc", "desc"):
+        raise ValueError(f"{order} is not a valid order")
+    return order
+
+print(sort_param("desc"))</code></pre>
+          <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>desc</code></pre></div>
+        </details>
+      </div>
+      <div class="nerdit-task">Task 2: Write a dependency factory <code>max_limit(cap)</code> returning <code>check(limit=10)</code>, which raises <code>ValueError(f"{limit} is over the cap of {cap}")</code> when <code>limit &gt; cap</code>, else returns <code>limit</code>. Build <code>check20 = max_limit(20)</code> and test it on <code>15</code>.
+        <details class="nerdit-solution">
+          <summary>Show solution</summary>
+          <pre data-lang="python"><code>def max_limit(cap):
+    def check(limit=10):
+        if limit &gt; cap:
+            raise ValueError(f"{limit} is over the cap of {cap}")
+        return limit
+    return check
+
+check20 = max_limit(20)
+print(check20(15))</code></pre>
+          <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>15</code></pre></div>
+        </details>
+      </div>
+      <div class="nerdit-task">Task 3 (challenge): Write a generator <code>resource()</code> that prints <code>"open"</code>, then <code>yield</code>s <code>"handle"</code> inside <code>try</code>, then prints <code>"close"</code> in <code>finally</code>. Call <code>next()</code> once to get its value, call <code>next(gen, None)</code> again, then print the stored value.
+        <details class="nerdit-solution">
+          <summary>Show solution</summary>
+          <pre data-lang="python"><code>def resource():
+    print("open")
+    try:
+        yield "handle"
+    finally:
+        print("close")
+
+gen = resource()
+result = next(gen)
+next(gen, None)
+print(result)</code></pre>
+          <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>open
+close
+handle</code></pre></div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+</div>
+<script>
+(function(){
+  if (typeof window.nerditCheckBlank !== "function") {
+    window.nerditCheckBlank = function(btn){
+      var box = btn.closest('.nerdit-fillblank');
+      var input = box.querySelector('.nerdit-blank');
+      var msg = box.querySelector('.nerdit-check-msg');
+      var accepted = (box.getAttribute('data-answer') || '').split('|');
+      var got = (input.value || '').trim().toLowerCase();
+      var ok = accepted.some(function(a){ return a.trim().toLowerCase() === got; });
+      msg.textContent = ok ? '✅ Correct!' : '❌ Not yet — try again.';
+      msg.className = 'nerdit-check-msg ' + (ok ? 'ok' : 'no');
+      input.classList.toggle('ok', ok);
+      input.classList.toggle('no', !ok);
+    };
+  }
+})();
+</script>

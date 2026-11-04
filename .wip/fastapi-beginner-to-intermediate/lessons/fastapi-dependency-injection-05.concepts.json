@@ -1,0 +1,33 @@
+{
+  "teaches": [
+    "dependency",
+    "Depends()",
+    "dependency factory",
+    "sub-dependency",
+    "yield",
+    "try/finally",
+    "class-based dependency",
+    "__call__",
+    "__init__",
+    "dependencies=",
+    "RequireKey",
+    "common_params",
+    "valid_branch",
+    "track_request"
+  ],
+  "uses": [
+    "route",
+    "query parameter",
+    "status code",
+    "HTTPException",
+    "Header()",
+    "FastAPI",
+    "function",
+    "list",
+    "dict",
+    "generator",
+    "class",
+    "uvicorn",
+    "TestClient"
+  ]
+}

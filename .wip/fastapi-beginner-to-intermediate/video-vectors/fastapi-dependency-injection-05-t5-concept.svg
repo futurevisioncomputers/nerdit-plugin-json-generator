@@ -1,0 +1,31 @@
+<svg class="nerdit-anim" viewBox="0 0 480 360" role="img" aria-label="A shared key is checked by a class, which can guard every route on the app." font-family="Segoe UI, sans-serif">
+  <g class="na-show" style="--d:0s">
+    <rect x="40" y="20" width="400" height="76" rx="12" fill="var(--white)" stroke="var(--orange)" stroke-width="2"/>
+    <text x="240" y="60" text-anchor="middle" font-size="20" font-weight="700" fill="var(--orange)">shared key</text>
+    <text x="240" y="84" text-anchor="middle" font-size="14" fill="var(--tx-m)">sent as a header on every request</text>
+  </g>
+  <g class="na-draw" style="--d:1.1s">
+    <path d="M240 98 L240 134" stroke="var(--bd)" stroke-width="3" fill="none" marker-end="url(#fdi05t5-arrow-a)"/>
+  </g>
+  <g class="na-show" style="--d:1.5s">
+    <rect x="40" y="136" width="400" height="76" rx="12" fill="var(--bg-soft)" stroke="var(--nb)" stroke-width="2"/>
+    <text x="240" y="176" text-anchor="middle" font-size="20" font-weight="700" fill="var(--nb)">class checks it</text>
+    <text x="240" y="200" text-anchor="middle" font-size="14" fill="var(--tx-m)">one instance, built with the real key</text>
+  </g>
+  <g class="na-draw" style="--d:2.3s">
+    <path d="M240 214 L240 250" stroke="var(--bd)" stroke-width="3" fill="none" marker-end="url(#fdi05t5-arrow-b)"/>
+  </g>
+  <g class="na-show" style="--d:2.7s">
+    <rect x="40" y="252" width="400" height="90" rx="12" fill="var(--white)" stroke="var(--green)" stroke-width="2"/>
+    <text x="240" y="296" text-anchor="middle" font-size="20" font-weight="700" fill="var(--green)">whole app guarded</text>
+    <text x="240" y="320" text-anchor="middle" font-size="14" fill="var(--tx-m)">no route repeats the check</text>
+  </g>
+  <defs>
+    <marker id="fdi05t5-arrow-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--nb)"/>
+    </marker>
+    <marker id="fdi05t5-arrow-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--nb)"/>
+    </marker>
+  </defs>
+</svg>
