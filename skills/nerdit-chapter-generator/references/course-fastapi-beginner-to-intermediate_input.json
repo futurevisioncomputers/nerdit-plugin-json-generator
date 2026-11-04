@@ -1,0 +1,251 @@
+[
+  {
+    "id": "fastapi-getting-started-01",
+    "title": "Getting Started with FastAPI",
+    "description": "Create a FastAPI project from an empty folder, run it locally with Uvicorn, open the automatic documentation it generates, save the packages it needs, and keep configuration such as secrets in an .env file instead of in the code.",
+    "runner": "python",
+    "focus": "hands-on",
+    "outline": [
+      "Create the project folder",
+      "Create and activate a virtual environment on Windows and on macOS/Linux",
+      "Install FastAPI and Uvicorn with pip",
+      "Create your first application and understand each line of the code",
+      "Run the application with `uvicorn` and reload on change",
+      "Open the automatic API documentation at `/docs`",
+      "Save project dependencies with `pip freeze` into `requirements.txt`",
+      "Store configuration in an `.env` file",
+      "Protect local files with `.gitignore`",
+      "Run the app directly with Python under the `__main__` guard (alternative)"
+    ]
+  },
+  {
+    "id": "fastapi-routes-parameters-02",
+    "title": "Routes and Parameters",
+    "description": "Create endpoints for the common HTTP methods, read values from the URL as path and query parameters, give them defaults, validate them, read headers and cookies, restrict a value to a fixed set of choices, and see why the order of routes changes which one answers.",
+    "runner": "python",
+    "focus": "hands-on",
+    "outline": [
+      "Create a route with `@app.get`",
+      "Common HTTP methods: GET, POST, PUT, PATCH and DELETE",
+      "Path parameters",
+      "Multiple path parameters",
+      "Query parameters",
+      "Optional query parameters and defaults",
+      "Combine path and query parameters",
+      "Validate parameters with `Path()` and `Query()`",
+      "Read request headers and cookies with `Header()` and `Cookie()`",
+      "Restrict values with `Enum`",
+      "Route order matters: a fixed path before a path parameter"
+    ]
+  },
+  {
+    "id": "fastapi-request-body-pydantic-03",
+    "title": "Request Body and Pydantic",
+    "description": "Learn how an API receives JSON data in a request body, describe that data with a Pydantic model, let FastAPI check it before your function runs, and build models with optional fields, validation rules, lists and nested models.",
+    "runner": "python",
+    "focus": "hands-on",
+    "outline": [
+      "What a request body is and when to send one",
+      "Create a Pydantic model with `BaseModel`",
+      "Receive the request body in a FastAPI endpoint",
+      "Required and optional fields, and default values",
+      "Add simple validation rules with `Field()`",
+      "Use a list inside a model with `list[...]`",
+      "Use a nested model",
+      "Why custom validator decorators wait until the basics are comfortable"
+    ]
+  },
+  {
+    "id": "fastapi-responses-forms-errors-04",
+    "title": "Response Handling, Forms and Errors",
+    "description": "Choose the right status code for each answer, control which fields go back to the client, raise HTTP errors with a clear message, return a custom JSON response, set response headers and cookies, and receive simple HTML form fields.",
+    "runner": "python",
+    "focus": "hands-on",
+    "outline": [
+      "Set a status code with `status_code`, and why status `204` sends no body",
+      "Filter returned data with `response_model`",
+      "Include or exclude response fields with `response_model_exclude`",
+      "Raise an HTTP error with `HTTPException`",
+      "Return a custom JSON response with `JSONResponse`",
+      "Set response headers and cookies with `set_cookie`",
+      "Receive form fields with `Form()`"
+    ]
+  },
+  {
+    "id": "fastapi-dependency-injection-05",
+    "title": "Dependency Injection",
+    "description": "Write small reusable functions that FastAPI runs before an endpoint, pass their results in with Depends, chain one dependency on another, set up and clean up resources with yield, use a class as a dependency, and apply dependencies to a whole router or application.",
+    "runner": "python",
+    "focus": "hands-on",
+    "outline": [
+      "Why use dependencies: the repeated code they remove",
+      "Create your first dependency with `Depends`",
+      "Reuse a dependency in several endpoints",
+      "A dependency with a parameter",
+      "A dependency that uses another dependency (sub-dependencies)",
+      "Use `yield` for setup and cleanup",
+      "Class-based dependency",
+      "Apply dependencies to a router or application with `dependencies=`"
+    ]
+  },
+  {
+    "id": "fastapi-sqlalchemy-database-06",
+    "title": "Database Integration with SQLAlchemy",
+    "description": "Connect FastAPI to a SQLite database with SQLAlchemy, define a table as a Python class, give each request its own database session, and build create, read, update and delete endpoints for students, then see what a real project adds with migrations.",
+    "runner": "python",
+    "focus": "hands-on",
+    "outline": [
+      "Install SQLAlchemy",
+      "Create the beginner project folder",
+      "Create the database connection with `create_engine` and a table model with `DeclarativeBase`",
+      "Understand the setup: `sessionmaker`, one `Session` per request through `get_db`",
+      "Add the create endpoint",
+      "Add endpoints to read one student and all students",
+      "Add the update endpoint and how `PUT` replaces a whole record",
+      "Add the delete endpoint",
+      "Run and test the CRUD endpoints in the docs page",
+      "Next steps for real projects: database migrations with `Alembic`"
+    ]
+  },
+  {
+    "id": "fastapi-modular-applications-07",
+    "title": "Modular Application Development",
+    "description": "Split a growing FastAPI application into a package of files, put each group of routes in its own APIRouter, connect the routers in main.py with a prefix and tags, run the project from the right folder, and trace how the files connect.",
+    "runner": "python",
+    "focus": "hands-on",
+    "outline": [
+      "Why split an application into files",
+      "Create the folders: a `routers` package with `__init__.py`",
+      "Create the students router with `APIRouter`",
+      "Create the teachers router",
+      "Connect routers in main.py with `include_router`",
+      "Understand `prefix` and `tags`",
+      "Run the modular project and see how the files connect"
+    ]
+  },
+  {
+    "id": "fastapi-authentication-authorization-08",
+    "title": "Authentication and Authorization",
+    "description": "Tell authentication apart from authorization, store passwords as hashes and never as plain text, understand bearer tokens and JWTs, build a learning login flow that issues a token and protects routes, test it, and list what a production identity system still needs.",
+    "runner": "python",
+    "focus": "hands-on",
+    "outline": [
+      "Authentication vs authorization, and status codes `401` and `403`",
+      "Never store plain-text passwords: hash them with `pwdlib`",
+      "Understand a bearer token and a JWT made with `PyJWT`",
+      "Login with `OAuth2PasswordRequestForm` and issue a token",
+      "Protect routes with `OAuth2PasswordBearer` and `get_current_user`",
+      "Keep the secret key in an environment variable",
+      "Test the login and protected-route flow",
+      "What the example leaves out: token expiry, refresh and revocation, OAuth2 `scopes`, and `API key` authentication"
+    ]
+  },
+  {
+    "id": "fastapi-middleware-security-09",
+    "title": "Middleware and Security",
+    "description": "See how middleware wraps every request and response, write a custom middleware that measures request time, configure CORS so a frontend can call the API, use FastAPI's built-in middleware, add a security header, and learn why middleware order, rate limiting and safe logging matter.",
+    "runner": "python",
+    "focus": "hands-on",
+    "outline": [
+      "How middleware works around each request and response",
+      "Create simple custom middleware with `@app.middleware` and `call_next`",
+      "Configure CORS for a frontend with `CORSMiddleware`",
+      "Built-in middleware: `GZipMiddleware`, `TrustedHostMiddleware` and `HTTPSRedirectMiddleware`",
+      "Add a basic security header such as `X-Content-Type-Options`",
+      "Middleware order and which one runs first",
+      "Rate limiting and safe logging that never records secrets"
+    ]
+  },
+  {
+    "id": "fastapi-file-handling-10",
+    "title": "File Handling",
+    "description": "Receive one or many uploaded files, read their name, type and contents, reject files that are too big or the wrong type, save them in chunks under a generated name, let clients download files from a safe folder, and stream large or generated content.",
+    "runner": "python",
+    "focus": "hands-on",
+    "outline": [
+      "Install file upload support with `python-multipart`",
+      "Receive a file with `UploadFile` and `File()`",
+      "Read a file's name, content type and contents",
+      "Check size and type, answer `413` for a file that is too big",
+      "Save a file in chunks with a generated name from `uuid`",
+      "Upload multiple files",
+      "Download a file with `FileResponse` from a safe path",
+      "Stream generated or large content with `StreamingResponse`"
+    ]
+  },
+  {
+    "id": "fastapi-async-background-tasks-11",
+    "title": "Asynchronous Programming and Background Tasks",
+    "description": "Compare synchronous and asynchronous functions, decide when an endpoint should use def or async def, run several async tasks together with asyncio.gather, schedule small jobs to run after the response with BackgroundTasks, and know when a real task queue is needed instead.",
+    "runner": "python",
+    "focus": "hands-on",
+    "outline": [
+      "Synchronous and asynchronous functions with `async def` and `await`",
+      "Use def or `async def` in a FastAPI endpoint?",
+      "Run multiple async tasks together with `asyncio.gather`",
+      "Add a background task with `BackgroundTasks`",
+      "Add more than one background task with `add_task`",
+      "When not to use `BackgroundTasks`, and what a queue such as `Celery` does instead"
+    ]
+  },
+  {
+    "id": "fastapi-advanced-api-12",
+    "title": "Advanced API Development",
+    "description": "Add the features a real API needs: pagination, filtering and sorting of lists, a custom exception handler, lifespan startup and shutdown, two-way WebSockets, one-way server-sent events, static files, and versioned routes that let old clients keep working.",
+    "runner": "python",
+    "focus": "hands-on",
+    "outline": [
+      "Pagination with `skip` and `limit`",
+      "Add filtering and sorting with a `sort` parameter",
+      "Create a custom exception handler with `exception_handler`",
+      "Lifespan events with `lifespan` and `asynccontextmanager`",
+      "WebSockets with `WebSocket`",
+      "Server-Sent Events (SSE): the concept and how it differs from WebSockets",
+      "A small Server-Sent Events example with `text/event-stream`",
+      "Serve static files with `StaticFiles`",
+      "API versioning with a `/v1` prefix"
+    ]
+  },
+  {
+    "id": "fastapi-testing-debugging-13",
+    "title": "Testing and Debugging",
+    "description": "Write automated tests for a FastAPI app with pytest and TestClient, check successful and failing responses including validation errors, replace dependencies during tests, keep test data in its own database, test async endpoints, and use logging to find a problem.",
+    "runner": "python",
+    "focus": "hands-on",
+    "outline": [
+      "Install testing packages: `pytest` and `httpx`",
+      "Create a small application to test",
+      "Write the first test with `TestClient`",
+      "Test a POST request",
+      "Test error responses and validation errors with status `422`",
+      "Run tests with pytest and read the result",
+      "Dependency overrides with `dependency_overrides`",
+      "Test database-backed endpoints with an isolated test database",
+      "Test async endpoints with `AsyncClient`",
+      "Debug with `logging`"
+    ]
+  },
+  {
+    "id": "fastapi-deploy-render-14",
+    "title": "Real-World Deployment with Render",
+    "description": "Take a finished FastAPI project to production on Render: prepare the project, keep secrets out of source control, pin dependencies, set the start command, connect a hosted database and migrate it, add a health endpoint, then use a custom domain, logs, rollback and an optional Docker setup.",
+    "runner": "python",
+    "focus": "hands-on",
+    "outline": [
+      "Understand the deployment flow from code to a live URL",
+      "Prepare the project folder for deployment",
+      "Keep secrets out of source control",
+      "Prepare dependencies in requirements.txt",
+      "Configure the start command with `--host 0.0.0.0` and `$PORT`",
+      "Connect the production database through `DATABASE_URL`",
+      "Database migrations with `alembic upgrade head`",
+      "Deploy on Render step by step",
+      "Add a health endpoint at `/health`",
+      "Custom domain and HTTPS",
+      "Logs, monitoring and `rollback`",
+      "Uploaded files and background jobs need persistent storage in production",
+      "Docker as an optional deployment extension with a `Dockerfile`",
+      "Final deployment checklist"
+    ]
+  }
+]

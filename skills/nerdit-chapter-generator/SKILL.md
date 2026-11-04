@@ -153,6 +153,7 @@ schema example** for this skill's output — study them before assembling (Step 
 |------|---------------|
 | `references/course-introduction-to-langchain-and-llm-applications_input.json` | Exact input schema — array of `{id, title, description}` |
 | `references/course-introduction-to-langchain-and-llm-applications_output.json` | Exact output schema — course-level field set and order, `assessment` shape, per-lesson field set and order, `lessonIds` |
+| `references/course-fastapi-beginner-to-intermediate_input.json` | The optional `outline` field in use — every lesson lists its source notes' numbered subtopics, code terms in backticks. Copy this shape when a course comes from notes or a syllabus |
 | `references/course-sample-mixed_input.json` | The optional `runner` field in use — one chapter mixing all four runners (`sql`, `python`, `excel`, `plot`) across its lessons |
 | `references/course-sample-mixed_output.json` | Proof the `runner` field never reaches the output, and the correct root-relative `assets` URL for each of the four engines |
 

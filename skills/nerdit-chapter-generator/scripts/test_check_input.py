@@ -57,6 +57,16 @@ def test_very_long_outline_is_a_warning():
     assert [(s, i) for s, i, m in audit(long)] == [("WARN", "a-01")]
 
 
+def test_outline_reference_input_has_a_clean_outline_on_every_lesson():
+    path = os.path.join(os.path.dirname(__file__), "..", "references",
+                        "course-fastapi-beginner-to-intermediate_input.json")
+    with open(path, encoding="utf-8") as f:
+        lessons = json.load(f)
+    assert all(s.get("outline") for s in lessons)
+    # Only the course-level world/capstone rules may fire; the reference shows lessons, not a world.
+    assert [f for f in audit(lessons) if f[1] != "<chapter>"] == []
+
+
 def test_duplicate_id_is_an_error():
     bad = GOOD + [dict(GOOD[0])]
     assert any(s == "ERROR" and "duplicate id" in m for s, _, m in audit(bad))
