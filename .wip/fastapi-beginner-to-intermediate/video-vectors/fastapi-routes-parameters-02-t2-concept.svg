@@ -1,0 +1,20 @@
+<svg class="nerdit-anim" viewBox="0 0 480 360" role="img" aria-label="A path parameter is a named slot in the URL that becomes a real value." font-family="Segoe UI, sans-serif">
+  <g class="na-show" style="--d:0s">
+    <rect x="40" y="40" width="400" height="120" rx="12" fill="var(--bg-soft)" stroke="var(--nb)" stroke-width="2"/>
+    <text x="240" y="100" text-anchor="middle" font-size="22" font-weight="700" fill="var(--nb)">/enquiries/{enquiry_id}</text>
+    <text x="240" y="134" text-anchor="middle" font-size="16" fill="var(--tx-m)">a named slot in the path</text>
+  </g>
+  <g class="na-draw" style="--d:1.2s">
+    <path d="M240 162 L240 198" stroke="var(--bd)" stroke-width="3" fill="none" marker-end="url(#frp02t2a-arrow)"/>
+  </g>
+  <g class="na-show" style="--d:1.7s">
+    <rect x="40" y="200" width="400" height="120" rx="12" fill="var(--bg-soft)" stroke="var(--green)" stroke-width="2"/>
+    <text x="240" y="260" text-anchor="middle" font-size="24" font-weight="700" fill="var(--green)">E3</text>
+    <text x="240" y="294" text-anchor="middle" font-size="16" fill="var(--tx-m)">one real enquiry record</text>
+  </g>
+  <defs>
+    <marker id="frp02t2a-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--nb)"/>
+    </marker>
+  </defs>
+</svg>

@@ -1,0 +1,38 @@
+{
+  "teaches": [
+    "HTTP method",
+    "@app.get",
+    "@app.post",
+    "@app.put",
+    "@app.patch",
+    "@app.delete",
+    "path parameter",
+    "query parameter",
+    "default value",
+    "Path()",
+    "Query()",
+    "Header()",
+    "Cookie()",
+    "Enum",
+    "route order"
+  ],
+  "uses": [
+    "function",
+    "dictionary",
+    "string",
+    "list",
+    "for loop",
+    "lambda",
+    "class",
+    "boolean",
+    "print()",
+    "f-string"
+  ],
+  "visuals": [
+    {"section": 1, "visual": "none", "illustration": null},
+    {"section": 2, "visual": "value-table", "illustration": null},
+    {"section": 3, "visual": "none", "illustration": null},
+    {"section": 4, "visual": "none", "illustration": null},
+    {"section": 5, "visual": "none", "illustration": null}
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "lessonQuestions": [
+    {
+      "correctOptionIndex": 2,
+      "options": [
+        "{'enquiry_id': 'E3', 'branch': 'Citylight', 'course': 'Python Professional', 'follow_ups': 1}",
+        "{'error': 'not found'}",
+        "{'enquiry_id': 'E3', 'branch': 'Pal', 'course': 'Business Analytics', 'follow_ups': 1}",
+        "['E3']"
+      ],
+      "text": "`get_enquiry(enquiry_id: str)` loops over the lesson's `ENQUIRIES` list and returns the row whose `enquiry_id` matches. What does `get_enquiry(\"E3\")` return?"
+    },
+    {
+      "correctOptionIndex": 1,
+      "options": [
+        "FastAPI runs both routes and merges their answers into one response",
+        "`/enquiries/{enquiry_id}` matches first, so `enquiry_id` becomes the text \"stats\" and the stats route never runs",
+        "FastAPI refuses to start the app because the two paths look alike",
+        "`/enquiries/stats` always wins, no matter which route was registered first"
+      ],
+      "text": "A file registers `@app.get(\"/enquiries/{enquiry_id}\")` before `@app.get(\"/enquiries/stats\")`. What happens when a client requests `/enquiries/stats`?"
+    },
+    {
+      "correctOptionIndex": 0,
+      "options": [
+        "A verb carried by the request, such as GET or POST, that tells the server what kind of action the client wants",
+        "The text that comes after the `?` in a URL",
+        "The name of the function a route decorator is attached to",
+        "A Python package that FastAPI installs automatically"
+      ],
+      "text": "What is an HTTP method?"
+    }
+  ],
+  "assessmentQuestions": [
+    {
+      "correctOptionIndex": 3,
+      "options": [
+        "{'size': 'S', 'price': 399}",
+        "{'size': 'L', 'price': 499}",
+        "A `KeyError`, because `Size.medium` is not a valid dictionary key",
+        "{'size': 'M', 'price': 449}"
+      ],
+      "text": "`shirt_price(size: Size)` looks up `prices = {Size.small: 399, Size.medium: 449, Size.large: 499}` and returns `{\"size\": size.value, \"price\": prices[size]}`. What does `shirt_price(Size.medium)` print?"
+    },
+    {
+      "correctOptionIndex": 1,
+      "options": [
+        "FastAPI raises an error, since every header is required by default",
+        "`x_counsellor` is `None`, the value `Header(default=None)` falls back to",
+        "`x_counsellor` holds the text \"Header\"",
+        "The route is skipped entirely and the client gets no response"
+      ],
+      "text": "A route parameter is declared as `x_counsellor: str | None = Header(default=None)`. A client sends a request with no `X-Counsellor` header at all. What value does `x_counsellor` get inside the function?"
+    },
+    {
+      "correctOptionIndex": 2,
+      "options": [
+        "FastAPI calls the function with `enquiry_id` set to an empty string",
+        "FastAPI rounds `\"X\"` up to two characters and runs the function",
+        "FastAPI sends back a 422 error, and the function never runs at all",
+        "FastAPI ignores `min_length` for path parameters, only for query parameters"
+      ],
+      "text": "A path parameter is declared `enquiry_id: str = Path(min_length=2, max_length=4)`. A client requests `/enquiries/X`, where X is a single character. What does FastAPI do?"
+    }
+  ]
+}

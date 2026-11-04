@@ -1,0 +1,200 @@
+{
+  "lessonId": "fastapi-routes-parameters-02",
+  "htmlSha256": "a1988977af2c32439ba60c73691520c6eab5b89f530cb2dc587488c6c8985176",
+  "language": "hi",
+  "scenes": [
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-routes-parameters-02",
+      "topic": 1,
+      "title": "One Path, Five Methods",
+      "vector": "fastapi-routes-parameters-02-t1-concept.svg",
+      "keyIdea": "the same path answers GET, POST, PUT, PATCH and DELETE differently",
+      "terms": ["HTTP method"],
+      "focus": [],
+      "myth": null,
+      "narration": "हर request एक HTTP method carry करता है, जो decide करता है कि client क्या action चाहता है। GET method सिर्फ data read करता है, कभी कुछ change नहीं करता। उसी एक path पर, एक POST method कुछ नया create कर सकता है, जैसे एक नया task list में add करना। यही reason है कि एक address, method के हिसाब से अलग काम कर सकता है, पूरे पांच तरीकों से।"
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-routes-parameters-02",
+      "topic": 1,
+      "title": "GET and POST on /tasks",
+      "code": 1,
+      "highlight": ["line:7", "line:12"],
+      "keyIdea": "@app.get reads the list; @app.post appends to it",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "यह code एक tasks की list बनाता है, और उस पर दो routes जोड़ता है। @app.get decorator, list_tasks को register करता है, GET requests के लिए: यह सिर्फ list लौटाता है, कुछ बदलता नहीं। नीचे, @app.post decorator add_task को उसी path slash tasks पर register करता है, लेकिन यह एक नया row list में जोड़ देता है। print lines दिखाती हैं कि GET के बाद list वैसी ही रहती है, और POST के बाद उसमें एक row ज़्यादा आ जाता है।"
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-routes-parameters-02",
+      "topic": 1,
+      "title": "PUT, PATCH and DELETE on /tasks",
+      "code": 2,
+      "highlight": ["line:1", "line:6"],
+      "keyIdea": "PUT replaces, PATCH changes one part, DELETE empties the list",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "तीनों बाकी methods उसी tasks list पर काम करते हैं, पर अलग तरीके से। PUT method वाला replace_tasks function, पूरी list remove करके एक नई, छोटी list set कर देता है: यह एक full replace है। PATCH वाला rename_first_task function सिर्फ पहले row को update करता है, बाकी list same रहती है। और DELETE वाला clear_tasks, पूरी list को पूरी तरह empty कर देता है, जैसे एक real DELETE request किसी record को remove कर देती है।"
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-routes-parameters-02",
+      "topic": 2,
+      "title": "A Slot in the URL Becomes a Value",
+      "vector": "fastapi-routes-parameters-02-t2-concept.svg",
+      "keyIdea": "a path parameter is a named slot the URL fills in",
+      "terms": ["path parameter"],
+      "focus": [],
+      "myth": null,
+      "narration": "एक path parameter, URL के अंदर एक named `{enquiry_id}` slot होता है, curly braces में लिखा गया। जब कोई client enquiries slash E3 request करता है, FastAPI उस slot को वही text, यानी E3, दे देता है, आपके function के parameter में। इस तरह एक ही route function, हज़ारों अलग-अलग enquiry ids के लिए काम कर सकता है, हर बार अलग value के साथ।"
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-routes-parameters-02",
+      "topic": 2,
+      "title": "GET /items/{item_id}",
+      "code": 1,
+      "highlight": ["line:6", "line:7"],
+      "keyIdea": "item_id comes from the URL itself",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "यह सबसे सीधा example है: route path में item_id नाम का एक slot लिखा गया है। read_item function उसे एक normal text parameter की तरह लेता है। जब इसे 42 value के साथ call किया जाता है, तो वही value dictionary में item_id key के साथ return होती है। कोई database नहीं, कोई extra step नहीं, URL का वो part सीधा function तक पहुंच जाता है।"
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-routes-parameters-02",
+      "topic": 2,
+      "title": "Looking Up One of Neha's Enquiries",
+      "code": 2,
+      "highlight": ["line:14", "line:16"],
+      "keyIdea": "get_enquiry loops until enquiry_id matches",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "अब यही idea, Future Vision की असली enquiry records पर लगाया गया है। get_enquiry function, ENQUIRIES list के हर row से गुज़रता है, और हर row के enquiry_id को path वाली value से मिलाता है। जैसे ही enquiry_id E3 से match हो जाता है, loop वहीं रुक जाता है, और वही पूरा record return हो जाता है: branch Pal, course Business Analytics। बाकी सारे rows को दोबारा देखने की ज़रूरत नहीं पड़ती।"
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-routes-parameters-02",
+      "topic": 3,
+      "title": "A Query Parameter, and Its Default",
+      "vector": "fastapi-routes-parameters-02-t3-concept.svg",
+      "keyIdea": "a query parameter after ? can fall back to a default",
+      "terms": ["query parameter", "default value"],
+      "focus": [],
+      "myth": null,
+      "narration": "एक query parameter, URL में question mark के बाद आता है, जैसे `keyword=pen`। यह path का part नहीं होता, इसलिए इसे optional बनाया जा सकता है। `max_results` parameter को एक default value मिलती है, जैसे दस। जब client यह value भेजता ही नहीं, FastAPI वही default use करता है, और request फिर भी ठीक से काम करती है।"
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-routes-parameters-02",
+      "topic": 3,
+      "title": "keyword and max_results",
+      "code": 1,
+      "highlight": ["line:2", "line:6"],
+      "keyIdea": "search_items() with no arguments shows both defaults",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "search_items function में दो parameters हैं, दोनों के अपने default values के साथ। keyword को None value मिलता है, जब कुछ भेजा नहीं जाता, और `max_results` को दस। बिना कोई argument दिए call करने पर, दोनों defaults साथ में print होते हैं। यही pattern, हर query parameter को required होने से बचाता है, जब तक कोई genuine reason ना हो।"
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-routes-parameters-02",
+      "topic": 3,
+      "title": "Path and Query Together",
+      "code": 2,
+      "highlight": ["line:1", "line:4"],
+      "keyIdea": "branch from the path, min_follow_ups from the query string",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "यह route, एक path parameter और एक query parameter को together use करता है। branch, URL के path वाले slot से आता है। min_follow_ups एक optional query parameter है, जिसका default zero है। जब यह value बढ़कर two हो जाती है, Citylight की E1 row, जिसका follow_ups सिर्फ one है, result से बाहर हो जाती है, और सिर्फ E2 return होती है।"
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-routes-parameters-02",
+      "topic": 4,
+      "title": "Checking and Reading Extra Values",
+      "vector": "fastapi-routes-parameters-02-t4-concept.svg",
+      "keyIdea": "Path() and Query() validate; Header() and Cookie() read extra values",
+      "terms": ["validation"],
+      "focus": [],
+      "myth": null,
+      "narration": "Path और Query functions एक value पर rule लगा सकते हैं, जैसे minimum length या number की range। `Path()` वाली यह validation, आपके function के चलने से पहले हो जाती है। लेकिन `Header()` और Cookie functions अलग काम करते हैं: यह request के साथ आई extra headers और cookies पढ़ते हैं, जैसे कौन सा counsellor पूछ रहा है।"
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-routes-parameters-02",
+      "topic": 4,
+      "title": "Query(min_length=2) on keyword",
+      "code": 1,
+      "highlight": ["line:7"],
+      "keyIdea": "a direct call skips the rule; only a real request is checked",
+      "terms": [],
+      "focus": [],
+      "myth": {
+        "wrong": "Calling the function directly also checks min_length",
+        "right": "Only a real request through FastAPI runs that check",
+        "narration": "कुछ लोग सोचते हैं कि function को directly call करने पर भी min_length check होगा। लेकिन असल में, directly call करने पर यह सिर्फ plain Python रहता है, कोई rule नहीं लगती। सिर्फ एक असली request, FastAPI के through जाने पर, वह check चलती है, और छोटी value पर 422 error वापस आता है।"
+      },
+      "narration": "search_products function, keyword parameter पर एक rule set करता है: minimum दो characters। जब इसे directly pen value के साथ call किया जाता है, तो यह normally काम कर जाता है, क्योंकि यह अभी भी plain Python code है। असली फर्क तब दिखता है जब एक real client एक छोटी value भेजता है: FastAPI खुद वह request block कर देता है, function चलने से पहले ही, हर बार यही होता है।"
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-routes-parameters-02",
+      "topic": 5,
+      "title": "An Enum List, and Route Order",
+      "vector": "fastapi-routes-parameters-02-t5-concept.svg",
+      "keyIdea": "Enum restricts a value; route order decides which path wins",
+      "terms": ["Enum", "route order"],
+      "focus": [],
+      "myth": null,
+      "narration": "एक Enum class, सिर्फ कुछ fixed values को valid मानती है, जैसे institute के three branches। अगर branch उस list में नहीं है, FastAPI function run किए बिना ही 422 error return कर देता है। एक और surprise route order में है: FastAPI हर registered path को उसी order में check करता है जिस order में वह लिखा गया था, और पहला matching path ही answer देता है। enquiries slash stats भी इसी rule से checked होता है।"
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-routes-parameters-02",
+      "topic": 5,
+      "title": "class Size(str, Enum)",
+      "code": 1,
+      "highlight": ["line:4", "line:16"],
+      "keyIdea": "shirt_price(Size.medium) only accepts a listed size",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "Size नाम की यह class, सिर्फ तीन members रखती है: small, medium और large। shirt_price function, size parameter को इसी class के type से declare करता है। जब इसे Size.medium के साथ call किया जाता है, prices dictionary से सही कीमत मिल जाती है। एक real request में, कोई भी दूसरी value भेजने पर, FastAPI function चलाने से पहले ही उसे रोक देता है।"
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-routes-parameters-02",
+      "topic": 5,
+      "title": "which_rule: the First Match Wins",
+      "code": 2,
+      "highlight": ["line:1", "line:7"],
+      "keyIdea": "a broad rule registered first catches a value meant for a later one",
+      "terms": [],
+      "focus": [],
+      "myth": {
+        "wrong": "A more exact, later rule always wins over an earlier broad one",
+        "right": "FastAPI checks routes in the order they were written; the first match wins",
+        "narration": "कुछ developers सोचते हैं कि एक more exact, later rule हमेशा जीतेगी, चाहे वो कहीं भी लिखी हो। लेकिन असल में, FastAPI rules को उसी order में check करता है जिस order में वो list में लिखी गई हैं, और पहली matching rule ही return होती है, even अगर कोई later rule ज़्यादा exact हो।"
+      },
+      "narration": "which_rule function, rules की list में एक-एक करके जाता है, उसी order में जिस order में वो list में लिखी गई हैं। starts with A, Admin पर भी true हो जाता है, इसलिए वही पहला match return हो जाता है। is exactly Admin वाली दूसरी rule, कभी check ही नहीं होती। enquiries slash enquiry_id route वाला यही mistake, असली FastAPI app में भी हो सकता है, अगर order सही ना हो।"
+    }
+  ],
+  "practise": [
+    {"topic": 1, "tryIt": "fill in the DELETE method's meaning", "task": null},
+    {"topic": 2, "tryIt": "predict find_by_id(books, \"B2\")'s output", "task": null},
+    {"topic": 3, "tryIt": "fill in greet()'s default name", "task": null},
+    {"topic": 4, "tryIt": "predict who_is_asking()'s output", "task": null},
+    {"topic": 5, "tryIt": "predict check_branch(\"Delhi\")'s output", "task": null}
+  ],
+  "skipTopics": []
+}

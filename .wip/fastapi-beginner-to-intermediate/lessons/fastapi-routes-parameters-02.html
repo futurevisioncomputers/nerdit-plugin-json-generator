@@ -1,0 +1,769 @@
+<div class="nerdit-wrapper nerdit-simple" style="counter-reset:practical-counter challenge-counter;">
+
+  <h1>🚀 Routes and Parameters</h1>
+
+  <div class="nerdit-info-box"><strong>📘 Lesson Overview:</strong> How does one API answer dozens of different URLs, each with its own values inside it? You will add routes for every common HTTP method, read values from the path and the query string, validate them, read headers and cookies, and see why route order can change which handler answers. You set up the project in Lesson 1; now you add routes to it.</div>
+
+  <div class="nerdit-lesson-meta">
+    <span class="nerdit-meta-pill">⏱ 20 min</span>
+    <span class="nerdit-badge beginner">Beginner</span>
+  </div>
+
+  <div class="nerdit-figure" data-visual="course-map" style="max-width:440px">
+    <svg viewBox="0 0 360 78" role="img" aria-label="Course map: this lesson is the build stage, second of five: setup, build, secure, scale, ship.">
+      <rect x="4" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="36" y="35" text-anchor="middle" fill="var(--tx-m)">Setup</text>
+      <rect x="76" y="14" width="64" height="32" rx="6" fill="var(--nb)" stroke="var(--nb)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="108" y="35" text-anchor="middle" fill="var(--white)">Build</text>
+      <rect x="148" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="180" y="35" text-anchor="middle" fill="var(--tx-m)">Secure</text>
+      <rect x="220" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="252" y="35" text-anchor="middle" fill="var(--tx-m)">Scale</text>
+      <rect x="292" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="324" y="35" text-anchor="middle" fill="var(--tx-m)">Ship</text>
+      <text class="nerdit-flow-text" x="108" y="68" text-anchor="middle" fill="var(--nb)">▲ you are here</text>
+    </svg>
+    <div class="nerdit-figure-caption">You are here: building the routes that answer every address your API needs.</div>
+  </div>
+
+  <div class="nerdit-info-box nerdit-data-note"><strong>Data note:</strong> All enquiry records shown in this lesson are synthetic, made for teaching. Future Vision Computer Institute's name is used with permission.</div>
+
+  <div class="nerdit-demo-table">
+    <div class="nerdit-demo-table-label">Demo Data — <code>enquiries</code> (first 6 rows)</div>
+    <table>
+      <thead><tr><th>enquiry_id</th><th>branch</th><th>course</th><th>follow_ups</th></tr></thead>
+      <tbody>
+        <tr><td>E1</td><td>Citylight</td><td>Python Professional</td><td>1</td></tr>
+        <tr><td>E2</td><td>Citylight</td><td>Office &amp; GenAI</td><td>3</td></tr>
+        <tr><td>E3</td><td>Pal</td><td>Business Analytics</td><td>1</td></tr>
+        <tr><td>E5</td><td>Vesu</td><td>Excel &amp; Power BI</td><td>1</td></tr>
+        <tr><td>E6</td><td>Pal</td><td>Python Professional</td><td>1</td></tr>
+        <tr><td>E7</td><td>Vesu</td><td>Business Analytics</td><td>4</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <section>
+    <h2 data-outline="1 2">1 — Create a Route for Every HTTP Method</h2>
+
+    <p>How does FastAPI know that a GET and a POST sent to the same address mean two different things? Each request carries one <strong>HTTP method</strong>, a verb that <b>says what action the client wants</b>.</p>
+    <p>You already used <code>@app.get</code> for one address in Lesson 1. FastAPI has a matching decorator for the other common verbs too, so one path can mean five different actions.</p>
+
+    <pre class="nerdit-map"><span class="nerdit-map-label">HTTP method → what it usually means</span>GET    → read data, never change it
+POST   → create something new
+PUT    → replace something completely
+PATCH  → change part of something
+DELETE → remove something</pre>
+
+    <h3 class="nerdit-runhead">@app.get and @app.post <span class="why">— read a list, then add to it</span></h3>
+    <p>Both routes answer the same path, <code>/tasks</code>; the method sent decides which function runs.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import FastAPI
+
+app = FastAPI()
+TASKS = ["water the plants", "revise notes"]
+
+
+@app.get("/tasks")
+def list_tasks():
+    return TASKS
+
+
+@app.post("/tasks")
+def add_task():
+    TASKS.append("submit the report")
+    return TASKS
+
+
+print(list_tasks())
+print(add_task())</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>['water the plants', 'revise notes']
+['water the plants', 'revise notes', 'submit the report']</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>@app.get("/tasks")</code> registers <code>list_tasks</code> for GET requests to <code>/tasks</code>.</li>
+      <li><code>@app.post("/tasks")</code> registers a different function for POST on that same path.</li>
+      <li><code>TASKS.append("submit the report")</code> is the new row POST adds; GET never changes the list.</li>
+    </ol>
+
+    <h3 class="nerdit-runhead">@app.put, @app.patch and @app.delete <span class="why">— replace, change part, or remove</span></h3>
+    <p>The three remaining verbs act on the same list, each in its own way.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>@app.put("/tasks")
+def replace_tasks():
+    TASKS[:] = ["start fresh"]
+    return TASKS
+
+
+@app.patch("/tasks")
+def rename_first_task():
+    TASKS[0] = "water the plants today"
+    return TASKS
+
+
+@app.delete("/tasks")
+def clear_tasks():
+    TASKS.clear()
+    return TASKS
+
+
+print(replace_tasks())
+print(rename_first_task())
+print(clear_tasks())</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>['start fresh']
+['water the plants today']
+[]</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>TASKS[:] = ["start fresh"]</code> throws away the old list and puts one new row in its place — a full PUT replace.</li>
+      <li><code>TASKS[0] = "water the plants today"</code> changes only the first row, leaving the rest untouched — a PATCH.</li>
+      <li><code>TASKS.clear()</code> empties the list completely, which is what DELETE does to the row it targets.</li>
+    </ol>
+
+    <p>Reach for GET and DELETE when nothing you send needs checking. Reach for POST, PUT or PATCH whenever the request changes stored data.</p>
+
+    <div class="nerdit-tip"><div><strong>Tip:</strong> Open <code>/docs</code> after running your app; it lists every method on every path, each in its own colour.</div></div>
+
+    <div class="nerdit-fillblank" data-answer="remove|removes">
+      <div class="nerdit-fillblank-head">✏️ Try It — Fill in the blank</div>
+      <p>Complete the missing meaning in this mapping of HTTP methods:</p>
+      <pre data-lang="python"><code>methods = {
+    "GET": "read",
+    "POST": "create",
+    "PUT": "replace",
+    "PATCH": "change part",
+    "DELETE": "<input class="nerdit-blank" size="8" aria-label="your answer">",
+}
+print(methods["DELETE"])</code></pre>
+      <button class="nerdit-check-btn" onclick="nerditCheckBlank(this)">Check</button>
+      <span class="nerdit-check-msg" aria-live="polite"></span>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="3 4">2 — Path Parameters: One Value or Many</h2>
+
+    <p>How do you point one route at thousands of different records without writing thousands of functions? A <strong>path parameter</strong> is <b>a named slot inside the URL</b> itself, written in curly braces.</p>
+    <p>FastAPI reads the text between the slashes. It passes that text to your function as a plain argument, matched by name. You can also add more than one slot to the same path.</p>
+
+    <h3 class="nerdit-runhead">GET /items/{item_id} <span class="why">— one slot in the path</span></h3>
+    <p>The part after <code>/items/</code> becomes <code>item_id</code> inside the function.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import FastAPI
+
+app = FastAPI()
+
+
+@app.get("/items/{item_id}")
+def read_item(item_id: str):
+    return {"item_id": item_id}
+
+
+print(read_item("42"))</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>{'item_id': '42'}</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>@app.get("/items/{item_id}")</code> marks <code>item_id</code> as a value the URL supplies, not a fixed word.</li>
+      <li><code>def read_item(item_id: str):</code> takes that value as a normal parameter, typed as text.</li>
+    </ol>
+
+    <p>Use a path parameter whenever the value picks out one specific record, like an id in the address itself.</p>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: Looking Up One of Neha's Enquiries</h3>
+    <p>Future Vision's enquiry records above each have an <code>enquiry_id</code>. A route that reads one path parameter can look up any of them.</p>
+
+    <h3 class="nerdit-runhead">GET /enquiries/{enquiry_id} <span class="why">— find the matching record</span></h3>
+    <p>The function scans the list and stops at the first row whose id matches.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>ENQUIRIES = [
+    {"enquiry_id": "E1", "branch": "Citylight", "course": "Python Professional", "follow_ups": 1},
+    {"enquiry_id": "E2", "branch": "Citylight", "course": "Office &amp; GenAI", "follow_ups": 3},
+    {"enquiry_id": "E3", "branch": "Pal", "course": "Business Analytics", "follow_ups": 1},
+    {"enquiry_id": "E5", "branch": "Vesu", "course": "Excel &amp; Power BI", "follow_ups": 1},
+    {"enquiry_id": "E6", "branch": "Pal", "course": "Python Professional", "follow_ups": 1},
+    {"enquiry_id": "E7", "branch": "Vesu", "course": "Business Analytics", "follow_ups": 4},
+]
+
+
+@app.get("/enquiries/{enquiry_id}")
+def get_enquiry(enquiry_id: str):
+    for row in ENQUIRIES:
+        if row["enquiry_id"] == enquiry_id:
+            return row
+    return {"error": "not found"}
+
+
+print(get_enquiry("E3"))</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>{'enquiry_id': 'E3', 'branch': 'Pal', 'course': 'Business Analytics', 'follow_ups': 1}</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>for row in ENQUIRIES:</code> checks every record in page order.</li>
+      <li><code>if row["enquiry_id"] == enquiry_id:</code> compares it to the value the URL supplied.</li>
+      <li><code>return row</code> stops the loop and sends that one record back.</li>
+    </ol>
+
+    <div class="nerdit-figure" data-visual="value-table" data-world-derived="enquiries scanned in page order for enquiry_id=E3" style="max-width:440px">
+      <p class="nerdit-vtitle">GET /enquiries/E3</p>
+      <table class="nerdit-vtable">
+        <thead><tr><th>enquiry_id</th><th>branch</th><th>course</th><th>matched?</th></tr></thead>
+        <tbody>
+          <tr><td>E1</td><td>Citylight</td><td>Python Professional</td><td>–</td></tr>
+          <tr><td>E2</td><td>Citylight</td><td>Office &amp; GenAI</td><td>–</td></tr>
+          <tr class="nerdit-spot"><td>E3</td><td>Pal</td><td>Business Analytics</td><td>✓</td></tr>
+          <tr><td>E5</td><td>Vesu</td><td>Excel &amp; Power BI</td><td>–</td></tr>
+          <tr><td>E6</td><td>Pal</td><td>Python Professional</td><td>–</td></tr>
+          <tr><td>E7</td><td>Vesu</td><td>Business Analytics</td><td>–</td></tr>
+        </tbody>
+      </table>
+      <p class="nerdit-vlegend">✓ = matched; – = checked and skipped.</p>
+      <div class="nerdit-figure-caption">The loop stops at the row whose <code>enquiry_id</code> matches the path value; the rest are never returned.</div>
+    </div>
+
+    <h3 class="nerdit-runhead">GET /enquiries/{branch}/{course} <span class="why">— two slots in one path</span></h3>
+    <p>A path can hold more than one parameter; FastAPI matches each slot to a parameter by name and position.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>@app.get("/enquiries/{branch}/{course}")
+def enquiries_for_branch_and_course(branch: str, course: str):
+    return [r for r in ENQUIRIES
+            if r["branch"] == branch and r["course"] == course]
+
+
+print(enquiries_for_branch_and_course("Pal", "Python Professional"))</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>[{'enquiry_id': 'E6', 'branch': 'Pal', 'course': 'Python Professional', 'follow_ups': 1}]</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>def enquiries_for_branch_and_course(branch: str, course: str):</code> takes both path slots by name.</li>
+      <li><code>if r["branch"] == branch and r["course"] == course]</code> keeps only a record matching both.</li>
+    </ol>
+
+    <div class="nerdit-predict">
+      <div class="nerdit-predict-head">🤔 Try It — Predict the output</div>
+      <pre data-lang="python"><code>def find_by_id(items, item_id):
+    for item in items:
+        if item["id"] == item_id:
+            return item
+    return None
+
+books = [{"id": "B1", "title": "Python Basics"}, {"id": "B2", "title": "Web APIs"}]
+print(find_by_id(books, "B2"))</code></pre>
+      <details class="nerdit-predict-answer">
+        <summary>Show answer</summary>
+        <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>{'id': 'B2', 'title': 'Web APIs'}</code></pre></div>
+        <p>The loop stops at the book whose <code>id</code> matches, the same way a path parameter picks one row.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="5 6 7">3 — Query Parameters, Defaults and Combining Them with a Path</h2>
+
+    <p>How do you let a client narrow a list without changing the path itself? A <strong>query parameter</strong> is a name and value added after a <code>?</code> in the URL, like <em>?keyword=pen</em>.</p>
+    <p>FastAPI reads any simple parameter not written in the path as a query parameter. Give it a <strong>default value</strong> and it becomes optional, with a safe fallback when it's missing.</p>
+
+    <h3 class="nerdit-runhead">keyword and max_results <span class="why">— a required value, then one with a default</span></h3>
+    <p>A plain parameter is required; adding a default makes it optional and falls back to that value.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>@app.get("/search")
+def search_items(keyword: str | None = None, max_results: int = 10):
+    return {"keyword": keyword, "max_results": max_results}
+
+
+print(search_items())
+print(search_items(keyword="pen", max_results=5))</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>{'keyword': None, 'max_results': 10}
+{'keyword': 'pen', 'max_results': 5}</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>def search_items(keyword: str | None = None, max_results: int = 10):</code> gives both parameters a default, so neither is required.</li>
+      <li><code>print(search_items())</code> with no arguments shows both fallback values at once.</li>
+    </ol>
+
+    <p>Add a default whenever a sensible value exists. Leave a query parameter required only when the request means nothing without it.</p>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: Filtering Enquiries by Branch and Follow-up Count</h3>
+    <p>Neha often wants one branch's enquiries, and sometimes only the ones that still need another follow-up.</p>
+
+    <h3 class="nerdit-runhead">GET /branches/{branch}/enquiries?min_follow_ups <span class="why">— a path value and a query filter together</span></h3>
+    <p><code>branch</code> comes from the path; <code>min_follow_ups</code> is an optional query parameter that narrows it further.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>@app.get("/branches/{branch}/enquiries")
+def enquiries_in_branch(branch: str, min_follow_ups: int = 0):
+    return [r for r in ENQUIRIES
+            if r["branch"] == branch and r["follow_ups"] >= min_follow_ups]
+
+
+print(enquiries_in_branch("Citylight"))
+print(enquiries_in_branch("Citylight", min_follow_ups=2))</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>[{'enquiry_id': 'E1', 'branch': 'Citylight', 'course': 'Python Professional', 'follow_ups': 1}, {'enquiry_id': 'E2', 'branch': 'Citylight', 'course': 'Office &amp; GenAI', 'follow_ups': 3}]
+[{'enquiry_id': 'E2', 'branch': 'Citylight', 'course': 'Office &amp; GenAI', 'follow_ups': 3}]</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>def enquiries_in_branch(branch: str, min_follow_ups: int = 0):</code> takes <code>branch</code> from the path and <code>min_follow_ups</code> from the query string.</li>
+      <li><code>if r["branch"] == branch and r["follow_ups"] >= min_follow_ups]</code> drops E1 once the minimum rises to 2.</li>
+    </ol>
+
+    <div class="nerdit-tip"><div><strong>Tip:</strong> FastAPI decides path versus query by where the name appears in the decorated path string, never by the order of the parameters.</div></div>
+
+    <div class="nerdit-fillblank" data-answer="&quot;Guest&quot;">
+      <div class="nerdit-fillblank-head">✏️ Try It — Fill in the blank</div>
+      <p>Complete the default so calling <code>greet()</code> with no name still works:</p>
+      <pre data-lang="python"><code>def greet(name=<input class="nerdit-blank" size="10" aria-label="your answer">):
+    return f"Hello, {name}!"
+
+print(greet())</code></pre>
+      <button class="nerdit-check-btn" onclick="nerditCheckBlank(this)">Check</button>
+      <span class="nerdit-check-msg" aria-live="polite"></span>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="8 9">4 — Validate Parameters, Headers and Cookies</h2>
+
+    <p>How do you stop a client from sending a value that's too short, too long or out of range? <strong>Validation</strong> <b>checks a value against a rule</b> before your function runs. <code>Path()</code> and <code>Query()</code> add these rules in place of a plain default. Each can set a minimum length, a maximum, or a number range.</p>
+    <p>A request also carries <strong>headers</strong>: extra labelled values sent with it. It also carries <strong>cookies</strong>: small values the browser stored and resends on its own. <code>Header()</code> and <code>Cookie()</code> read them the same way <code>Query()</code> reads the query string.</p>
+
+    <pre class="nerdit-map"><span class="nerdit-map-label">Where a value comes from</span>Path parameter  → part of the URL path itself
+Query parameter → after the ? in the URL
+Header          → Header() reads a named request header
+Cookie          → Cookie() reads a value the browser already stored</pre>
+
+    <h3 class="nerdit-runhead">Query(min_length=2) <span class="why">— a rule on a query parameter</span></h3>
+    <p>Calling the function directly still works with a valid value, since this is plain Python underneath.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import Query
+
+app = FastAPI()
+
+
+@app.get("/search")
+def search_products(keyword: str = Query(min_length=2, max_length=20)):
+    return {"keyword": keyword}
+
+
+print(search_products(keyword="pen"))</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>{'keyword': 'pen'}</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>def search_products(keyword: str = Query(min_length=2, max_length=20)):</code> replaces a plain default with a rule.</li>
+    </ol>
+
+    <p>Calling a route function directly, as above, skips the rule completely. Only a real request goes through FastAPI's check. Send <em>?keyword=p</em> to a running server, and FastAPI answers with a 422 error before <code>search_products</code> ever runs.</p>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: A Validated Lookup That Also Reads Who's Asking</h3>
+    <p>Future Vision wants every <code>enquiry_id</code> checked for a sensible length, and wants to know which counsellor is asking.</p>
+
+    <h3 class="nerdit-runhead">Path(), Header() and Cookie() together <span class="why">— one route, every kind of value</span></h3>
+    <p>This program runs for real, so its output comes from an actual request, not a direct call.</p>
+    <div class="nerdit-run nerdit-program" data-run="offline" data-file="enquiry_lookup.py">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import Cookie, FastAPI, Header, Path, Query
+
+app = FastAPI()
+
+ENQUIRIES = [
+    {"enquiry_id": "E1", "branch": "Citylight", "course": "Python Professional", "follow_ups": 1},
+    {"enquiry_id": "E2", "branch": "Citylight", "course": "Office &amp; GenAI", "follow_ups": 3},
+    {"enquiry_id": "E3", "branch": "Pal", "course": "Business Analytics", "follow_ups": 1},
+    {"enquiry_id": "E5", "branch": "Vesu", "course": "Excel &amp; Power BI", "follow_ups": 1},
+    {"enquiry_id": "E6", "branch": "Pal", "course": "Python Professional", "follow_ups": 1},
+    {"enquiry_id": "E7", "branch": "Vesu", "course": "Business Analytics", "follow_ups": 4},
+]
+
+
+@app.get("/enquiries/{enquiry_id}")
+def get_enquiry(
+    enquiry_id: str = Path(min_length=2, max_length=4),
+    verbose: bool = Query(default=False),
+    x_counsellor: str | None = Header(default=None),
+    session_id: str | None = Cookie(default=None),
+):
+    row = next((r for r in ENQUIRIES if r["enquiry_id"] == enquiry_id), None)
+    if not verbose:
+        return {"enquiry_id": enquiry_id, "found": row is not None}
+    return {"row": row, "counsellor": x_counsellor, "session": session_id}
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="127.0.0.1", port=8000)</code></pre>
+      </div>
+      <script type="text/plain" class="nerdit-check">import warnings
+warnings.filterwarnings("ignore")
+
+from fastapi.testclient import TestClient
+
+client = TestClient(app)
+client.cookies.set("session_id", "sess-204")
+
+print(client.get("/enquiries/E3").json())
+print(client.get("/enquiries/E3", params={"verbose": "true"}, headers={"X-Counsellor": "Neha"}).json())
+print(client.get("/enquiries/X").status_code)</script>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>{'enquiry_id': 'E3', 'found': True}
+{'row': {'enquiry_id': 'E3', 'branch': 'Pal', 'course': 'Business Analytics', 'follow_ups': 1}, 'counsellor': 'Neha', 'session': 'sess-204'}
+422</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk nerdit-walk-full">
+      <li><code>from fastapi import Cookie, FastAPI, Header, Path, Query</code> brings in every piece this file needs.</li>
+      <li><code>ENQUIRIES = [</code> starts the same six records used since section 2.</li>
+      <li><code>@app.get("/enquiries/{enquiry_id}")</code> registers this file's one route.</li>
+      <li><code>enquiry_id: str = Path(min_length=2, max_length=4),</code> rejects an id outside that length.</li>
+      <li><code>verbose: bool = Query(default=False),</code> is an optional query flag, as in section 3.</li>
+      <li><code>x_counsellor: str | None = Header(default=None),</code> reads the <code>X-Counsellor</code> header, or <code>None</code> if it's missing.</li>
+      <li><code>session_id: str | None = Cookie(default=None),</code> reads the browser's <code>session_id</code> cookie the same way.</li>
+      <li><code>row = next((r for r in ENQUIRIES if r["enquiry_id"] == enquiry_id), None)</code> looks the record up, as in section 2.</li>
+      <li><code>uvicorn.run(app, host="127.0.0.1", port=8000)</code> starts the real server when you run this file directly.</li>
+    </ol>
+
+    <p>Save this file as enquiry_lookup.py, activate your venv from Lesson 1 and run it:</p>
+    <div class="nerdit-terminal"><span class="nerdit-prompt">$ </span><span class="nerdit-cmd">uvicorn enquiry_lookup:app --reload</span>
+<span class="nerdit-out">INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)</span>
+<span class="nerdit-comment"># Open http://127.0.0.1:8000/enquiries/E3?verbose=true in the browser</span></div>
+
+    <div class="nerdit-warning-block"><div class="nerdit-warning-label">Warning — enquiry_id "X" fails validation</div><p>One character is shorter than <code>min_length=2</code>, so FastAPI answers 422 and <code>get_enquiry</code> never runs at all.</p></div>
+
+    <div class="nerdit-predict">
+      <div class="nerdit-predict-head">🤔 Try It — Predict the output</div>
+      <pre data-lang="python"><code>request_headers = {"X-Counsellor": "Neha"}
+request_cookies = {"session_id": "sess-204"}
+
+def who_is_asking(headers, cookies):
+    return headers.get("X-Counsellor"), cookies.get("session_id")
+
+print(who_is_asking(request_headers, request_cookies))</code></pre>
+      <details class="nerdit-predict-answer">
+        <summary>Show answer</summary>
+        <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>('Neha', 'sess-204')</code></pre></div>
+        <p><code>Header()</code> and <code>Cookie()</code> read their values the same way <code>headers.get(...)</code> does here.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="10 11">5 — Why Doesn't My Route Answer? Enum Choices and Route Order</h2>
+
+    <p>What stops a client from sending <em>branch=Delhi</em> when the institute has only three branches? An <strong>Enum</strong> lists the only values FastAPI should accept.</p>
+    <p>Use <code>str, Enum</code> together. Each member becomes a plain string FastAPI can read from the URL and check against its list.</p>
+
+    <h3 class="nerdit-runhead">class Size(str, Enum) <span class="why">— only three sizes are valid</span></h3>
+    <p>Calling the route with a real member works normally, the same as any other direct call.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from enum import Enum
+
+
+class Size(str, Enum):
+    small = "S"
+    medium = "M"
+    large = "L"
+
+
+@app.get("/shirts/{size}")
+def shirt_price(size: Size):
+    prices = {Size.small: 399, Size.medium: 449, Size.large: 499}
+    return {"size": size.value, "price": prices[size]}
+
+
+print(shirt_price(Size.medium))</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>{'size': 'M', 'price': 449}</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>class Size(str, Enum):</code> lists the three valid sizes.</li>
+      <li><code>def shirt_price(size: Size):</code> makes FastAPI check the value against that list.</li>
+    </ol>
+
+    <p>Send <code>/shirts/XL</code> to a real server and FastAPI rejects it with a 422 error. It lists S, M and L as the choices.</p>
+
+    <p>A second surprise is how FastAPI picks a route. It checks every registered path in order, and the first match wins.</p>
+
+    <h3 class="nerdit-runhead">which_rule(value) <span class="why">— the first matching rule always wins</span></h3>
+    <p>A broad rule registered first can catch a value meant for a later, more exact rule.</p>
+    <div class="nerdit-run">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>rules = [
+    ("starts with A", lambda s: s.startswith("A")),
+    ("is exactly 'Admin'", lambda s: s == "Admin"),
+]
+
+
+def which_rule(value):
+    for name, check in rules:
+        if check(value):
+            return name
+    return "no match"
+
+
+print(which_rule("Admin"))</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>starts with A</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>for name, check in rules:</code> walks the list in the order it was written.</li>
+      <li><code>return name</code> stops at the first match, even though a later rule is more exact.</li>
+    </ol>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: Restricting Future Vision's Branches and Fixing a Route Order Bug</h3>
+    <p>A fixed path, like <code>/enquiries/stats</code>, is a route too, checked by the same first-match rule.</p>
+
+    <div class="nerdit-compare">
+      <div class="nerdit-compare-bad">
+        <div class="nerdit-compare-head">Wrong order — the parameter route goes first</div>
+        <pre data-lang="python"><code>@app.get("/enquiries/{enquiry_id}")
+def get_enquiry(enquiry_id: str):
+    ...
+
+@app.get("/enquiries/stats")
+def enquiry_stats():
+    return {"total": len(ENQUIRIES)}</code></pre>
+      </div>
+      <div class="nerdit-compare-good">
+        <div class="nerdit-compare-head">Fixed — the exact path goes first</div>
+        <pre data-lang="python"><code>@app.get("/enquiries/stats")
+def enquiry_stats():
+    return {"total": len(ENQUIRIES)}
+
+@app.get("/enquiries/{enquiry_id}")
+def get_enquiry(enquiry_id: str):
+    ...</code></pre>
+      </div>
+    </div>
+    <p>In the wrong order, <code>/enquiries/stats</code> matches <code>{enquiry_id}</code> first, so <code>enquiry_id</code> becomes <code>"stats"</code>. The real route never runs; the fix is registering the fixed path first.</p>
+
+    <h3 class="nerdit-runhead">The fixed route order, with the branch Enum <span class="why">— the whole file, checked for real</span></h3>
+    <p>This file puts <code>/enquiries/stats</code> first, and restricts branch to the three real branches.</p>
+    <div class="nerdit-run nerdit-program" data-run="offline" data-file="enquiry_routes.py">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from enum import Enum
+
+from fastapi import FastAPI
+
+app = FastAPI()
+
+ENQUIRIES = [
+    {"enquiry_id": "E1", "branch": "Citylight"},
+    {"enquiry_id": "E2", "branch": "Citylight"},
+    {"enquiry_id": "E3", "branch": "Pal"},
+    {"enquiry_id": "E5", "branch": "Vesu"},
+    {"enquiry_id": "E6", "branch": "Pal"},
+    {"enquiry_id": "E7", "branch": "Vesu"},
+]
+
+
+class Branch(str, Enum):
+    citylight = "Citylight"
+    vesu = "Vesu"
+    pal = "Pal"
+
+
+@app.get("/enquiries/stats")
+def enquiry_stats():
+    return {"total": len(ENQUIRIES)}
+
+
+@app.get("/enquiries/by-branch/{branch}")
+def enquiries_by_branch(branch: Branch):
+    return [r for r in ENQUIRIES if r["branch"] == branch.value]
+
+
+@app.get("/enquiries/{enquiry_id}")
+def get_enquiry(enquiry_id: str):
+    row = next((r for r in ENQUIRIES if r["enquiry_id"] == enquiry_id), None)
+    return {"enquiry_id": enquiry_id, "found": row is not None}
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="127.0.0.1", port=8000)</code></pre>
+      </div>
+      <script type="text/plain" class="nerdit-check">import warnings
+warnings.filterwarnings("ignore")
+
+from fastapi.testclient import TestClient
+
+client = TestClient(app)
+
+print(client.get("/enquiries/stats").json())
+print(client.get("/enquiries/by-branch/Pal").json())
+print(client.get("/enquiries/by-branch/Delhi").status_code)
+print(client.get("/enquiries/E3").json())</script>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>{'total': 6}
+[{'enquiry_id': 'E3', 'branch': 'Pal'}, {'enquiry_id': 'E6', 'branch': 'Pal'}]
+422
+{'enquiry_id': 'E3', 'found': True}</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk nerdit-walk-full">
+      <li><code>from enum import Enum</code> brings in the class this file restricts branch to.</li>
+      <li><code>ENQUIRIES = [</code> starts the same six records, with only id and branch.</li>
+      <li><code>class Branch(str, Enum):</code> lists the institute's three branches as the only valid values.</li>
+      <li><code>@app.get("/enquiries/stats")</code> is registered before the parameter route below it.</li>
+      <li><code>@app.get("/enquiries/by-branch/{branch}")</code> only runs when the path segment matches one listed branch.</li>
+      <li><code>return [r for r in ENQUIRIES if r["branch"] == branch.value]</code> filters by that checked branch.</li>
+      <li><code>@app.get("/enquiries/{enquiry_id}")</code> comes last, so it never swallows <code>/enquiries/stats</code>.</li>
+      <li><code>uvicorn.run(app, host="127.0.0.1", port=8000)</code> starts the real server, as in section 4.</li>
+    </ol>
+
+    <p>Save this file as enquiry_routes.py and run it the same way:</p>
+    <div class="nerdit-terminal"><span class="nerdit-prompt">$ </span><span class="nerdit-cmd">uvicorn enquiry_routes:app --reload</span>
+<span class="nerdit-out">INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)</span>
+<span class="nerdit-comment"># Open http://127.0.0.1:8000/enquiries/stats in the browser</span></div>
+
+    <div class="nerdit-predict">
+      <div class="nerdit-predict-head">🤔 Try It — Predict the output</div>
+      <pre data-lang="python"><code>ALLOWED = ["Citylight", "Vesu", "Pal"]
+
+def check_branch(branch):
+    return branch in ALLOWED
+
+print(check_branch("Delhi"))</code></pre>
+      <details class="nerdit-predict-answer">
+        <summary>Show answer</summary>
+        <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>False</code></pre></div>
+        <p>"Delhi" fails the same check an Enum makes for a path parameter.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2>📌 Quick Reference</h2>
+    <div class="nerdit-cheatsheet">
+      <table>
+        <thead><tr><th>Keyword</th><th>What it does</th><th>Tiny example</th></tr></thead>
+        <tbody>
+          <tr><td><code>@app.get/post/put/patch/delete</code></td><td>Matches one HTTP method</td><td><code>@app.post("/tasks")</code></td></tr>
+          <tr><td>Path parameter</td><td>A value taken from the URL itself</td><td><code>@app.get("/items/{item_id}")</code></td></tr>
+          <tr><td>Query parameter</td><td>A value taken from after <code>?</code></td><td><code>def f(keyword: str | None = None)</code></td></tr>
+          <tr><td><code>Path()</code>, <code>Query()</code></td><td>Add a validation rule</td><td><code>Query(min_length=2)</code></td></tr>
+          <tr><td><code>Header()</code>, <code>Cookie()</code></td><td>Read a header or cookie value</td><td><code>Header(default=None)</code></td></tr>
+          <tr><td><code>Enum</code></td><td>Restricts a value to a fixed list</td><td><code>class Branch(str, Enum):</code></td></tr>
+          <tr><td>Route order</td><td>First matching path wins</td><td><code>/enquiries/stats</code> before <code>/enquiries/{id}</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>🧠 Practice</h2>
+    <div class="nerdit-practical">
+      <div class="nerdit-task">Task 1: Write a function <code>find_enquiry(rows, enquiry_id)</code> that returns the matching dict from a list, or <code>None</code> if nothing matches. Test it on <code>[{"enquiry_id": "E1"}, {"enquiry_id": "E2"}]</code> with <code>"E2"</code>.
+        <details class="nerdit-solution">
+          <summary>Show solution</summary>
+          <pre data-lang="python"><code>def find_enquiry(rows, enquiry_id):
+    for row in rows:
+        if row["enquiry_id"] == enquiry_id:
+            return row
+    return None
+
+rows = [{"enquiry_id": "E1"}, {"enquiry_id": "E2"}]
+print(find_enquiry(rows, "E2"))</code></pre>
+          <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>{'enquiry_id': 'E2'}</code></pre></div>
+        </details>
+      </div>
+      <div class="nerdit-task">Task 2: Write <code>filter_rows(rows, branch, min_score=0)</code> with a default, that keeps only rows matching <code>branch</code> with <code>score</code> at least <code>min_score</code>. Test it on <code>[{"branch": "Pal", "score": 3}, {"branch": "Pal", "score": 9}]</code> with <code>branch="Pal"</code> and <code>min_score=5</code>.
+        <details class="nerdit-solution">
+          <summary>Show solution</summary>
+          <pre data-lang="python"><code>def filter_rows(rows, branch, min_score=0):
+    return [r for r in rows if r["branch"] == branch and r["score"] >= min_score]
+
+rows = [{"branch": "Pal", "score": 3}, {"branch": "Pal", "score": 9}]
+print(filter_rows(rows, branch="Pal", min_score=5))</code></pre>
+          <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>[{'branch': 'Pal', 'score': 9}]</code></pre></div>
+        </details>
+      </div>
+      <div class="nerdit-task">Task 3 (challenge): Write <code>is_valid_branch(branch)</code> that returns <code>True</code> only for <code>"Citylight"</code>, <code>"Vesu"</code> or <code>"Pal"</code>, the check an Enum makes for you. Test it on <code>"Vesu"</code> and <code>"Mumbai"</code>.
+        <details class="nerdit-solution">
+          <summary>Show solution</summary>
+          <pre data-lang="python"><code>def is_valid_branch(branch):
+    return branch in ("Citylight", "Vesu", "Pal")
+
+print(is_valid_branch("Vesu"))
+print(is_valid_branch("Mumbai"))</code></pre>
+          <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>True
+False</code></pre></div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+</div>
+<script>
+(function(){
+  if (typeof window.nerditCheckBlank !== "function") {
+    window.nerditCheckBlank = function(btn){
+      var box = btn.closest('.nerdit-fillblank');
+      var input = box.querySelector('.nerdit-blank');
+      var msg = box.querySelector('.nerdit-check-msg');
+      var accepted = (box.getAttribute('data-answer') || '').split('|');
+      var got = (input.value || '').trim().toLowerCase();
+      var ok = accepted.some(function(a){ return a.trim().toLowerCase() === got; });
+      msg.textContent = ok ? '✅ Correct!' : '❌ Not yet — try again.';
+      msg.className = 'nerdit-check-msg ' + (ok ? 'ok' : 'no');
+      input.classList.toggle('ok', ok);
+      input.classList.toggle('no', !ok);
+    };
+  }
+})();
+</script>
