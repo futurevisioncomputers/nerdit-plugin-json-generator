@@ -267,7 +267,7 @@ def scaffold_plan(images_dir: Path, course_path: Path) -> dict:
                 scenes.append(scene("code", lid, topic, part["heading"], code=n, highlight=list(run.get("walk", []))))
     figures = [{"id": fid, "lessonId": f["lessonId"], "label": f["label"]}
                for fid, f in lesson_figures(course_path, images_dir).items()]
-    plan = {"version": 3, "course": title, "source": str(Path(course_path).resolve()), "language": DEFAULT_LANGUAGE,
+    plan = {"version": 3, "explain": True, "course": title, "source": str(Path(course_path).resolve()), "language": DEFAULT_LANGUAGE,
             "voice": dict(DEFAULT_VOICE),
             "intro": {"title": title, "points": [], "narration": ""},
             "scenes": scenes,
@@ -464,14 +464,25 @@ def screen_text_errors(plan: dict, video_dir: Path) -> list[str]:
             for where, text in found if text and DEVANAGARI.search(str(text))]
 
 
+LONG_CODE = 30   # characters: a longer code span is explained by what it does, never read aloud
+
+
 def unnamed_parts(plan: dict, video_dir: Path) -> list[str]:
-    """A plan with "syncParts" shows each vector part when the narration names it (timeline.part_cues),
-    so every labelled part must be named, in drawing order (owner, 2026-11-04)."""
-    if not plan.get("syncParts"):
+    """The explanation rules of a new plan ("explain": true, owner 2026-11-04):
+    - each vector part appears when the narration names it (timeline.part_cues), so every labelled
+      part must be named, in drawing order;
+    - a code span the narration would read aloud is short (`@app.route("/home")`); a longer line is
+      explained by what it does ("the last line prints every path of the endpoint home, sorted")."""
+    if not plan.get("explain"):
         return []
     import build_video, timeline, voice   # lazy: both import this module
     errors = []
     for n, s in enumerate(plan.get("scenes", []), 1):
+        for text in (s.get("narration", ""), (s.get("myth") or {}).get("narration", "")):
+            for span in re.findall(r"`([^`]+)`", text or ""):
+                if len(span) > LONG_CODE:
+                    errors.append(f"scene {n}: `{span}` is read aloud; say what the line does instead "
+                                  f"(code spans up to {LONG_CODE} characters)")
         path = video_dir / "vectors" / s.get("vector", "")
         if s.get("kind") != "vector" or not path.is_file():
             continue
@@ -622,7 +633,7 @@ def lesson_video_problems(video: dict, html_text: str, lesson_id: str, title: st
         (Path(tmp) / "video" / "vectors").mkdir(parents=True)
         for svg in Path(vectors_dir).glob(f"{lesson_id}-*.svg"):
             shutil.copy(svg, Path(tmp) / "video" / "vectors" / svg.name)
-        plan = {"version": 3, "course": title, "language": video.get("language") or DEFAULT_LANGUAGE,
+        plan = {"version": 3, "explain": True, "course": title, "language": video.get("language") or DEFAULT_LANGUAGE,
                 "voice": dict(DEFAULT_VOICE), "intro": {"title": title, "points": ["a", "b"], "narration": ""},
                 "scenes": video.get("scenes") or [],
                 "skipTopics": [dict(k, lessonId=lesson_id) for k in video.get("skipTopics") or []],

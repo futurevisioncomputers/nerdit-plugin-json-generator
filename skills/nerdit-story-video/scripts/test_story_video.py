@@ -32,6 +32,7 @@ def make_course(tmp_path: Path, n=5) -> Path:
 def filled_plan(tmp_path: Path) -> tuple[dict, Path, Path]:
     images, course = tmp_path / "images", make_course(tmp_path)
     plan = json.loads(storyplan.scaffold(images, course).read_text(encoding="utf-8"))
+    plan["explain"] = False   # these fixtures test the other rules; the explain rules have their own tests
     plan["language"] = "hi"   # this fixture's narration is Hinglish
     plan["intro"].update(points=["one", "two"], narration="Hello, इस video का intro.")
     plan["recap"].update(points=["a", "b", "c"], narration="Summary: data एक recorded observation है.")
@@ -781,3 +782,12 @@ def test_each_part_appears_when_the_narration_names_it():
 def test_sentences_split_only_at_an_end_mark_and_a_space():
     from voice import sentences
     assert sentences("`app.url_map` में 2.0 है। अब देखिए! Done.") == ["`app.url_map` में 2.0 है।", "अब देखिए!", "Done."]
+
+
+def test_a_new_plan_explains_long_code_instead_of_reading_it(tmp_path):
+    from storyplan import unnamed_parts
+    long_line = '`print(sorted(r.rule for r in app.url_map.iter_rules()))`'
+    plan = {"explain": True, "scenes": [{"kind": "code", "narration": f"पहले `@app.route(\"/home\")`, फिर {long_line}।"}]}
+    errors = unnamed_parts(plan, tmp_path)
+    assert len(errors) == 1 and "say what the line does" in errors[0]
+    assert unnamed_parts(dict(plan, explain=False), tmp_path) == []   # older plans keep working

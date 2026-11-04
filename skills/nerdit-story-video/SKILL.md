@@ -56,8 +56,12 @@ stale part fails the merge: rewrite that lesson's part, never fill the gap by ha
      then the output the lesson prints. `highlight: ["line:3"]` marks the line the narration
      explains; the scaffold pre-fills it from the page's code walk (`ol.nerdit-codewalk`), so
      the clip explains the same lines the page does. Explain code the way the page's code walk
-     does: read each highlighted line in backticks, then say what it does, then read the output:
+     does: name each highlighted line, then say what it does, then read the output:
      "`@app.get("/products/1")` registers the function for GET requests. The output is 200."
+     **Explain, don't read (owner, 2026-11-04):** put a line in backticks only when it is short
+     (up to 30 characters, like `@app.route("/home")`); a longer line is described by what it
+     does: "the last line takes only the routes whose endpoint is home and prints their paths,
+     sorted", never "print sorted r dot rule for r in…". `check` fails a longer span.
      Code in backticks is spoken as a teacher reads it (`pronounce.py`: "app dot get decorator slash
      products slash one": a decorator is named as one (owner, 2026-11-04); quotes and brackets silent, `==` "is equal to", ` < ` "is less than",
      `<=` "is at most", ` * ` "times", ` - ` "minus"; a route's `<id>` stays silent); the screen keeps the
@@ -78,12 +82,12 @@ stale part fails the merge: rewrite that lesson's part, never fill the gap by ha
      (16–22 units). Every number and capitalised name drawn must be in that lesson; chart values
      come from its tables. The build stretches the delays so the drawing finishes at 80% of the
      scene's narration: order the parts in the order the narration names them.
-     **Explain the drawing (owner, 2026-11-04):** with `"syncParts": true` in the plan, every part
+     **Explain the drawing (owner, 2026-11-04):** in a new plan (`"explain": true`), every part
      shows faintly from the start, turns solid at the moment the narration names it, and glows
      while it is explained (arrows appear just before the box they lead to). So the narration
      walks the diagram: it names each labelled part (a word of its label; a code label such as
      `@app.route` in backticks), in drawing order, and says what it means. `check` fails a scene
-     that skips a part or names them out of order. New plans set `syncParts`.
+     that skips a part or names them out of order. `scaffold` and `merge` set `explain`.
    - **diagram** scenes reuse a lesson figure (`figure`: an id from `availableFigures`) when it
      already explains the idea.
    - **broll** scenes (at most 30%) set context with a real clip: `query` is 2–5 plain English
@@ -124,10 +128,10 @@ stale part fails the merge: rewrite that lesson's part, never fill the gap by ha
 - `python scripts/voice.py --images-dir <images>`: Google Chirp 3 HD, `voice.name` default
   `hi-IN-Chirp3-HD-Aoede` (an `en-IN` plan uses `en-IN-Chirp3-HD-Aoede`), `voice.rate` 1.0.
   `python scripts/voice.py --list-voices hi-IN` lists the alternatives; try two or three and
-  keep the one the owner prefers. **Owner's choice (2026-11-04):** `voice.name`
-  `hi-IN-Chirp3-HD-Achird` (male), `voice.spelling` `"devanagari"` (English words read from their
-  Devanagari spelling in the presenter-shorts `pronunciation-hi.json`, for an Indian accent), and
-  narration that is mostly English with Hindi for the grammar. Google is called once per
+  keep the one the owner prefers. **Owner's choice (2026-11-04), after comparing male voices,
+  Devanagari spelling, voice conversion and a lip-synced presenter:** keep the default
+  `hi-IN-Chirp3-HD-Aoede` with the default spelling, exactly as the Flask course video; no
+  presenter. (`voice.spelling: "devanagari"` exists but is not used.) Google is called once per
   sentence, so each sentence's words are timed from where it really starts.
   Google and edge voices speak code words respelled from `scripts/pronunciation.json` (JSON →
   Jason, dict → dictionary, json.dumps → Jason dot dumps; snake_case, dotted names, camelCase and
