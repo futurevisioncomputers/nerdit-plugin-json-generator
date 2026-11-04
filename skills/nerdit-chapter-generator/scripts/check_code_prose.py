@@ -157,47 +157,32 @@ SEEN_STEP = 'nerdit-walk-seen'   # CORE.md §4: folds lines explained earlier in
 SEEN_STEP_WORDS = 15              # a pointer, not a second explanation
 
 
-def _walk_steps(content: str):
-    """(section, quoted line, seen?, words of prose) for every code-walk step, in page order."""
-    section = 'opening'
-    for node in parse(content).all:
-        if node.tag == 'h2':
-            section = _squash(text_of(node))
-        elif node.tag == 'ol' and 'nerdit-codewalk' in node.classes:
-            for step in (c for c in node.children if c.tag == 'li'):
-                codes = [c for c in step.children if c.tag == 'code']
-                prose = text_of(step)
-                for code in codes:
-                    prose = prose.replace(text_of(code), ' ', 1)
-                line = _squash(text_of(codes[0])) if codes else ''
-                yield section, line, SEEN_STEP in step.classes, len(prose.split())
-
-
 def repeat_problems(lessons: list[dict], new_course: bool = False,
                     know_earlier: bool = True) -> tuple[list[str], list[str]]:
     """(failures, warnings): each code line is explained once per course (owner, 2026-11-04).
     A walk step quoting a line an earlier step (earlier section or lesson) explained repeats it;
     a <li class="nerdit-walk-seen"> step folds such lines into one short pointer instead. Without
     the earlier lessons (the gate sees one), a seen step's pointer is not judged."""
+    from fold_repeats import walks  # lazy: fold_repeats imports this module
     walked, problems = {}, []
-    for lesson in lessons:
-        lid = lesson.get('id', '?')
-        for section, line, seen, words in _walk_steps(lesson.get('content', '')):
-            if not line:
-                continue
-            where, first = f'{lid} {section}', walked.get(line)
-            if seen:
-                if first is None and know_earlier:
-                    problems.append(f'{where}: seen step `{line}` was never explained in an earlier '
-                                    'section or lesson; explain it here instead')
-                if words > SEEN_STEP_WORDS:
-                    problems.append(f'{where}: seen step `{line}` has {words} words; keep it short '
-                                    f'(at most {SEEN_STEP_WORDS}), it only points back')
-            elif first is not None:
-                problems.append(f'{where}: walk step `{line}` re-explains a line {first} already explained; '
-                                f'drop it, or fold it into one <li class="{SEEN_STEP}"> step')
-            else:
-                walked[line] = where
+    steps = ((lesson.get('id', '?'), section, step) for lesson in lessons
+             for section, _full, walk in walks(lesson.get('content', '')) for step in walk)
+    for lid, section, (line, seen, covers, words) in steps:
+        if not line:
+            continue
+        where, first = f'{lid} section {section or "?"}', walked.get(line)
+        if seen:
+            if first is None and know_earlier:
+                problems.append(f'{where}: seen step `{line}` was never explained in an earlier '
+                                'section or lesson; explain it here instead')
+            if words > SEEN_STEP_WORDS:
+                problems.append(f'{where}: seen step `{line}` has {words} words; keep it short '
+                                f'(at most {SEEN_STEP_WORDS}), it only points back')
+        elif first is not None and all(c in walked for c in covers):  # a step with new lines stays
+            problems.append(f'{where}: walk step `{line}` re-explains a line {first} already explained; '
+                            f'drop it, or fold it into one <li class="{SEEN_STEP}"> step')
+        elif first is None:
+            walked[line] = where
     return (problems, []) if new_course else ([], problems)
 
 

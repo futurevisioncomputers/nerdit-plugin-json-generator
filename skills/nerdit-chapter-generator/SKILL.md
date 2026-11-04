@@ -411,7 +411,9 @@ every `<workdir>/<id>.quiz.json`, then writes the full course object — course-
 `createdAt`/`updatedAt` from one timestamp, all question ids (one shared session/batch pair),
 per-lesson `content` + computed `duration` + engine `assets`, the `assessment` bank (all
 `assessmentQuestions` concatenated in lesson order, `passingScore` 70, `examQuestionCount` 20),
-and `lessonIds`:
+and `lessonIds`. It also folds code-walk steps that re-explain a line an earlier lesson walked
+(`fold_repeats.py`, zero tokens), so no writer reads earlier lessons and no lesson is regenerated
+for a repeat:
 
     python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/assemble_course.py" \
       --chapter <chaptername> \

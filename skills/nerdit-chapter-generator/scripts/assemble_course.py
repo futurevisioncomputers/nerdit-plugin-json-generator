@@ -24,6 +24,7 @@ import re
 import sys
 import time
 
+from fold_repeats import fold_course
 from titlecase import fix_headings, title_case
 
 # The website serves these from future-vision/public/, which Vite exposes at the
@@ -171,6 +172,7 @@ def build_course(chapter, input_lessons, meta, html_dir, now_ms=None):
         assessment_qs += with_ids(m.get("assessmentQuestions", []), "assessment", session, lid, batch)
         lesson_ids.append(lid)
 
+    fold_course(lessons)   # each code line is explained once per course (fold_repeats.py)
     course = {"id": f"course-{chapter}-{now_ms}"}
     for k, v in COURSE_DEFAULTS:
         course[k] = v

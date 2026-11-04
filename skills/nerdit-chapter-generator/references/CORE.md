@@ -413,9 +413,12 @@ Rules:
   lesson already walked becomes one pointer step of any length,
   `<li class="nerdit-walk-seen"><code>from flask import Flask</code> the app setup from Lesson 3.</li>`,
   at most 15 words, quoting the run's first line. A short walk simply leaves old lines out.
-  `check_code_prose.repeat_problems` fails a re-explained line, a wordy pointer, or a pointer
-  to a line never explained (gate: inside the lesson; `verify_course.py`: across the course). The program ships as
-  `data-file` in the chapter's pack folder, beside the dataset files it reads.
+  `assemble_course.py` folds repeats across lessons itself (`fold_repeats.py`, zero tokens);
+  a full-walk step that also covers a new line stays. `check_code_prose.repeat_problems` fails a
+  re-explained line, a wordy pointer, or a pointer to a line never explained (gate: inside the
+  lesson; `verify_course.py`: across the course). `fold_repeats.py --course` cleans a delivered
+  course. The program ships as `data-file` in the chapter's pack folder, beside the dataset
+  files it reads.
 - **The whole script** (data lessons). Run lines may build on each other like notebook cells, but
   a code lesson whose examples need earlier code ends its last concept section with "The whole
   script": one program holding the lesson's examples in page order as one runnable file, data

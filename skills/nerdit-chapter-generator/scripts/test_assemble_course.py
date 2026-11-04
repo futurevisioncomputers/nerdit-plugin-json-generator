@@ -279,3 +279,16 @@ def test_course_duration_is_the_lessons_total():
     assert course_duration(["30m", "1h 30m"]) == "2h"
     assert course_duration(["8m"]) == "8m"
     assert course_duration([]) == "0m"
+
+
+def test_assembly_folds_walk_steps_an_earlier_lesson_explained(tmp_path):
+    # Writers do not read earlier lessons to avoid repeats; the assembler folds them (owner, 2026-11-04).
+    walk = '<ol class="nerdit-codewalk">' + "".join(f"<li><code>{x}</code> does it.</li>" for x in ("x = 1", "{y}")) + "</ol>"
+    for lid, y in (("l1", "y = 2"), ("l2", "z = 3")):
+        html = f'<div class="nerdit-wrapper nerdit-simple"><section><h2>1 — A</h2>{walk.format(y=y)}</section></div>'
+        (tmp_path / f"{lid}.html").write_text(html, encoding="utf-8")
+    inp = [{"id": "l1", "title": "One", "description": "d"}, {"id": "l2", "title": "Two", "description": "d"}]
+    c = build_course("demo", inp, None, str(tmp_path), now_ms=1700000000000)
+    assert "<code>x = 1</code>" in c["lessons"][0]["content"]
+    assert "<code>x = 1</code>" not in c["lessons"][1]["content"]
+    assert "<code>z = 3</code>" in c["lessons"][1]["content"]

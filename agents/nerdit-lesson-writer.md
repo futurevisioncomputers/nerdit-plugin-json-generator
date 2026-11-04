@@ -131,12 +131,9 @@ The rulebook is authoritative; these are the spine (violating any = rejected by 
   `<ol class="nerdit-codewalk"><li><code>exact line</code> what it does.</li>…</ol>`, 2–4 steps.
   Each step's `<code>` is one whole line of that section's code, copied exactly
   (`check_code_prose.py` fails anything else). Never put markers inside the code: the runners
-  execute it. **Explain only new lines** (owner, 2026-11-04): a line an earlier section or
-  lesson already walked is never walked again. Before writing a walk, read the earlier
-  lessons' `nerdit-codewalk` steps. In a short walk, drop the old lines; in a full walk, which
-  must still cover every line, fold each run of old lines into one pointer step,
-  `<li class="nerdit-walk-seen"><code>first old line</code> the app setup from Lesson 3.</li>`,
-  at most 15 words. `check_code_prose.py` and `verify_course.py` fail a repeat in a new course.
+  execute it. **Explain each line once** (owner, 2026-11-04): inside this lesson, never walk a
+  line an earlier section walked. Do **not** read other lessons to avoid repeats across
+  lessons: the assembler's `fold_repeats.py` folds those for free (zero tokens).
 - **Course setup once.** Name the case company, the person and the starting records once,
   in the first lesson or its overview; later lessons refer back in one clause. Say how to
   install or run the code once per lesson, not once per section. Reuse one app object or
