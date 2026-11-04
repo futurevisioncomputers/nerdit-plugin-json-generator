@@ -141,6 +141,57 @@ def scene_svgs(plan: dict, vid: Path, figures: dict, parts: dict | None = None) 
     return out
 
 
+THUMB_CSS = """html,body{margin:0;width:1280px;height:720px;overflow:hidden;background:#0B1F3A;
+font-family:'Segoe UI','Noto Sans',Arial,sans-serif}
+.photo{position:absolute;right:0;top:0;width:640px;height:720px;background:url('PHOTO') 50% 30%/cover}
+.fade{position:absolute;left:520px;top:0;width:200px;height:720px;background:linear-gradient(90deg,#0B1F3A 15%,rgba(11,31,58,0))}
+.text{position:absolute;left:64px;top:0;bottom:0;width:520px;display:flex;flex-direction:column;justify-content:center}
+.brand{font-weight:800;letter-spacing:6px;color:#2dd4bf;font-size:30px}
+.course{color:#fff;font-weight:800;font-size:60px;line-height:1.05;margin-top:18px}
+.title{color:#fbbf24;font-weight:700;line-height:1.15;margin-top:24px}
+.lesson{color:#cbd5e1;font-size:28px;margin-top:22px}"""
+
+
+def thumbnail_html(photo: Path, course: str, title: str, lesson: str = "") -> str:
+    """A YouTube thumbnail page: the owner's photo on the right, the course and the clip's title
+    on the left (owner, 2026-11-04). Static, but with renderAt and ready like the stage page."""
+    import html as h
+    size = 46 if len(title) <= 34 else 38 if len(title) <= 52 else 32
+    return ("<!doctype html><html><head><meta charset='utf-8'><style>"
+            + THUMB_CSS.replace("PHOTO", photo.resolve().as_uri()) + "</style></head><body>"
+            "<div class='photo'></div><div class='fade'></div><div class='text'>"
+            "<div class='brand'>NERDIT</div>"
+            f"<div class='course'>{h.escape(course)}</div>"
+            f"<div class='title' style='font-size:{size}px'>{h.escape(title)}</div>"
+            + (f"<div class='lesson'>{h.escape(lesson)}</div>" if lesson else "")
+            + "</div><script>window.renderAt=function(){};window.ready=Promise.resolve(true);</script></body></html>")
+
+
+def make_thumbnails(vid: Path, plan: dict, clips: list[dict], titles: dict) -> list[Path]:
+    """thumb-<clip>.jpg for every clip, plus thumbnail.jpg for the whole video, when the plan names
+    the owner's photo (plan.thumbnail.photo, a file in the video folder). Adds "thumbnail" to each clip."""
+    photo_name = (plan.get("thumbnail") or {}).get("photo")
+    if not photo_name:
+        return []
+    photo, course = vid / photo_name, plan.get("course", "")
+    if not photo.is_file():
+        raise SystemExit(f"thumbnail photo {photo} is missing")
+    work = vid / "parts" / "thumbs"
+    work.mkdir(parents=True, exist_ok=True)
+    pages = [(course, "Full course explained", "", vid / "thumbnail.jpg")]
+    for c in clips:
+        c["thumbnail"] = "thumb-" + Path(c["file"]).stem + ".jpg"
+        title = c["title"].split(": ", 1)[-1] if c["title"].startswith(course + ":") else c["title"]
+        pages.append((course, title, titles.get(c["lessonId"], ""), vid / c["thumbnail"]))
+    jobs = []
+    for i, (crs, title, lesson, out) in enumerate(pages):
+        page = work / f"t{i:03d}.html"
+        page.write_text(thumbnail_html(photo, crs, title, lesson), encoding="utf-8")
+        jobs.append((page, out))
+    render.stills(jobs)
+    return [out for _, out in jobs]
+
+
 def svg_parts(svg: str) -> list | None:
     """The animated parts of a vector, in drawing order: each top-level <g> with a na- class gives
     its text (the label the narration must name) or None (an arrow or line). stage.py walks the
@@ -223,8 +274,21 @@ def build(images_dir: Path, workers: int = 3, music: Path | None = None) -> Path
     for c in clips:
         subprocess.run(cut_command(ff, final, c, vid / c["file"]), check=True)
         c["youtubeTitle"] = storyplan.title_case(f"{plan.get('course', '')}: {c['title']}")
+    make_thumbnails(vid, plan, clips, titles)
     (vid / "clips.json").write_text(json.dumps(clips, ensure_ascii=False, indent=2), encoding="utf-8")
     return final
+
+
+def thumbnails_only(images_dir: Path) -> list[Path]:
+    """Redo the thumbnails of an already built video from plan.json and clips.json."""
+    vid = Path(images_dir).resolve() / "video"
+    plan = storyplan.load_json(vid / "plan.json")
+    clips = json.loads((vid / "clips.json").read_text(encoding="utf-8"))
+    course = Path(plan["source"]) if plan.get("source") else None
+    titles = {l["id"]: l.get("title", "") for l in storyplan.course_lessons(course)} if course else {}
+    made = make_thumbnails(vid, plan, clips, titles)
+    (vid / "clips.json").write_text(json.dumps(clips, ensure_ascii=False, indent=2), encoding="utf-8")
+    return made
 
 
 def main(argv=None) -> int:
@@ -232,8 +296,13 @@ def main(argv=None) -> int:
     ap.add_argument("--images-dir", required=True, type=Path)
     ap.add_argument("--workers", type=int, default=3)
     ap.add_argument("--music", type=Path, help="optional background music, mixed quietly under the voice")
+    ap.add_argument("--thumbnails-only", action="store_true", help="redo the thumbnails of a built video")
     a = ap.parse_args(argv)
     t0 = time.time()
+    if a.thumbnails_only:
+        made = thumbnails_only(a.images_dir)
+        print(f"{len(made)} thumbnails" if made else "no plan.thumbnail.photo: nothing to do")
+        return 0
     final = build(a.images_dir, a.workers, a.music)
     print(f"built {final} ({final.stat().st_size / 1e6:.1f} MB) in {time.time() - t0:.0f}s")
     return 0

@@ -7,7 +7,7 @@
 Clips: intro, s1, s1-myth, ..., recap. The words file holds each spoken word's start and length in
 seconds; the video uses it for key-term pop-ins, camera focus and vector build-up.
 
-google: Google Cloud Text-to-Speech Chirp 3 HD (default hi-IN-Chirp3-HD-Aoede), the most human
+google: Google Cloud Text-to-Speech Chirp 3 HD (default hi-IN-Chirp3-HD-Achird at 0.9x), the most human
         voice; key in the GOOGLE_TTS_API_KEY environment variable, never in the plan. Word timings
         are estimated from text length (Chirp returns none). Needs internet.
 edge  : Microsoft neural voice through edge-tts (hi-IN-SwaraNeural), exact word timings, sounds synthetic.
@@ -208,7 +208,7 @@ def run(images_dir: Path, engine: str | None, python: str | None, ref: Path | No
     items = clips(plan)
     if engine == "google":
         key = google_key()
-        name, rate = voice.get("name", "hi-IN-Chirp3-HD-Aoede"), float(voice.get("rate", 1.0))
+        name, rate = voice.get("name", "hi-IN-Chirp3-HD-Achird"), float(voice.get("rate", 0.9))
         say = spoken
         if voice.get("spelling") == "devanagari":   # English words in Devanagari: an Indian accent (owner, 2026-11-04)
             sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "nerdit-presenter-shorts" / "scripts"))

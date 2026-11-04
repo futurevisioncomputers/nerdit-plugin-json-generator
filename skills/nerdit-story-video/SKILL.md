@@ -126,12 +126,13 @@ stale part fails the merge: rewrite that lesson's part, never fill the gap by ha
 ## 2. Voice and B-roll
 
 - `python scripts/voice.py --images-dir <images>`: Google Chirp 3 HD, `voice.name` default
-  `hi-IN-Chirp3-HD-Aoede` (an `en-IN` plan uses `en-IN-Chirp3-HD-Aoede`), `voice.rate` 1.0.
+  `hi-IN-Chirp3-HD-Achird` (male), `voice.rate` 0.9.
   `python scripts/voice.py --list-voices hi-IN` lists the alternatives; try two or three and
-  keep the one the owner prefers. **Owner's choice (2026-11-04), after comparing male voices,
-  Devanagari spelling, voice conversion and a lip-synced presenter:** keep the default
-  `hi-IN-Chirp3-HD-Aoede` with the default spelling, exactly as the Flask course video; no
-  presenter. (`voice.spelling: "devanagari"` exists but is not used.) Google is called once per
+  keep the one the owner prefers. **Owner's choice (2026-11-04), after comparing it on the same
+  text with `hi-IN-Chirp3-HD-Aoede` (the Flask course video's voice):** Achird at 0.9 — crisper
+  consonants, the same pace as Aoede, and a male voice to match the owner's photo on the
+  thumbnails. Default spelling; no presenter, lip-sync or voice conversion (all tried and
+  rejected; `voice.spelling: "devanagari"` exists but is not used). Google is called once per
   sentence, so each sentence's words are timed from where it really starts.
   Google and edge voices speak code words respelled from `scripts/pronunciation.json` (JSON →
   Jason, dict → dictionary, json.dumps → Jason dot dumps; snake_case, dotted names, camelCase and
@@ -149,6 +150,12 @@ stale part fails the merge: rewrite that lesson's part, never fill the gap by ha
 `story.mp4` (1280×720), `thumbnail.jpg`, `title.txt` and `description.txt` (YouTube chapters and
 Pexels credits) to `<images>/video/`. It re-runs the plan check first. `stage.html` draws every
 frame; open it and call `renderAt(seconds)` to inspect a moment.
+
+**Thumbnails (owner, 2026-11-04):** copy the owner's own photo (only theirs; the AI-styled suit
+photo they chose) to `<images>/video/presenter.jpg` and set `"thumbnail": {"photo": "presenter.jpg"}`
+in the plan. The build then writes `thumbnail.jpg` and one `thumb-<clip>.jpg` per clip: the photo on
+the right, NERDIT, the course title, the clip's topic and its lesson on the left; `clips.json`
+names each clip's thumbnail. `--thumbnails-only` redoes them for an already built video.
 
 Rendering takes about 1.5× the video's length with 3 workers (a 2-hour course took 3 hours).
 Run it in the background, with its output in a log; it prints a line per worker every 5 video

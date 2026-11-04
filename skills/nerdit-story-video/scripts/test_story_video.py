@@ -184,11 +184,12 @@ def test_google_engine_uses_the_key_from_the_environment(tmp_path, monkeypatch):
     voice.run(images, None, None, None, runner=runner, google=google)
     path, body, key = bodies[0]
     assert (path, key) == ("text:synthesize", "k123")
-    assert body["voice"] == {"languageCode": "hi-IN", "name": "hi-IN-Chirp3-HD-Aoede"}
+    assert body["voice"] == {"languageCode": "hi-IN", "name": "hi-IN-Chirp3-HD-Achird"}
+    assert body["audioConfig"]["speakingRate"] == 0.9
     assert body["audioConfig"]["audioEncoding"] == "LINEAR16" and body["input"]["text"] == "Hello, इस video का intro."
     words = json.loads((images / "video" / "audio" / "intro.words.json").read_text(encoding="utf-8"))
     assert [w["w"] for w in words] == ["Hello", "इस", "video", "का", "intro"]
-    assert len(calls) == len(voice.clips(plan))
+    assert len(calls) >= len(voice.clips(plan))   # one Google call per sentence
 
 
 def test_google_engine_needs_a_key(tmp_path, monkeypatch):
@@ -208,7 +209,7 @@ def test_edge_engine_keeps_word_timings(tmp_path, monkeypatch):
 
     calls = []
     voice.run(images, "edge", None, None, runner=lambda cmd, **kw: calls.append(cmd), edge=fake_edge)
-    assert len(calls) == len(voice.clips(plan))
+    assert len(calls) >= len(voice.clips(plan))   # one Google call per sentence
 
 
 def test_edge_speaks_code_words_respelled(tmp_path, monkeypatch):
@@ -562,7 +563,7 @@ def test_new_plans_are_hinglish_with_the_google_hindi_voice(tmp_path):
     images, course = tmp_path / "images", make_course(tmp_path)
     plan = json.loads(storyplan.scaffold(images, course).read_text(encoding="utf-8"))
     assert plan["language"] == "hi"
-    assert plan["voice"] == {"engine": "google", "name": "hi-IN-Chirp3-HD-Aoede", "rate": 1.0}
+    assert plan["voice"] == {"engine": "google", "name": "hi-IN-Chirp3-HD-Achird", "rate": 0.9}
 
 
 # Code in backticks is read the way a teacher says it; the screen keeps the real code.
@@ -791,3 +792,13 @@ def test_a_new_plan_explains_long_code_instead_of_reading_it(tmp_path):
     errors = unnamed_parts(plan, tmp_path)
     assert len(errors) == 1 and "say what the line does" in errors[0]
     assert unnamed_parts(dict(plan, explain=False), tmp_path) == []   # older plans keep working
+
+
+def test_thumbnail_page_puts_the_photo_beside_the_course_and_topic(tmp_path):
+    from build_video import thumbnail_html
+    photo = tmp_path / "presenter.jpg"
+    photo.write_bytes(b"x")
+    page = thumbnail_html(photo, "Flask Web Development", "GET & POST Methods", "Flask HTTP Methods")
+    assert photo.resolve().as_uri() in page and "Flask Web Development" in page
+    assert "GET &amp; POST Methods" in page and "Flask HTTP Methods" in page    # escaped
+    assert "window.renderAt" in page and "window.ready" in page                # render.stills can open it

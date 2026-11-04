@@ -56,7 +56,7 @@ MIN_ENGLISH = 0.3   # Hinglish: natural Hindi grammar and verbs, English technic
 # is the default; "en-IN" (mostly English, an Indian-English voice) stays available.
 ENGLISH_FLOOR = {"hi": MIN_ENGLISH, "en-IN": 0.8}
 DEFAULT_LANGUAGE = "hi"
-DEFAULT_VOICE = {"engine": "google", "name": "hi-IN-Chirp3-HD-Aoede", "rate": 1.0}
+DEFAULT_VOICE = {"engine": "google", "name": "hi-IN-Chirp3-HD-Achird", "rate": 0.9}   # owner, 2026-11-04: male, slower for beginners
 FIGURE = re.compile(r'<div[^>]*data-nerdit-img="([^"]+)"[^>]*>\s*(<svg\b.*?</svg>)', re.S)
 ARIA = re.compile(r'aria-label="([^"]*)"')
 SVG_TEXT = re.compile(r"<text\b[^>]*>(.*?)</text>", re.S)
