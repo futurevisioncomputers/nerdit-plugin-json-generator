@@ -11,7 +11,7 @@ Words come from pronunciation.json next to this file. A word not listed there is
 Every number is said in English words, so a Hindi voice never reads digits in Hindi:
     2,000 -> two thousand · 2.0 -> two point zero · 30% -> thirty percent · M12 -> M twelve
 Code the narration writes in backticks is read the way a teacher says it, never symbol by symbol:
-    `@app.get("/products/1")` -> at app dot get slash products slash one
+    `@app.get("/products/1")` -> app dot get decorator slash products slash one
     `response.json["name"]`   -> response dot Jason, name
     `if pid == 2:`            -> if pid is equal to two
 """
@@ -103,8 +103,16 @@ CODE_WORDS = (("==", " is equal to "), ("!=", " is not equal to "), (">=", " is 
               ("->", " returns "), ("=", " equals "), ("@", " at "), ("/", " slash "), ("+", " plus "))
 
 
+DECORATOR = re.compile(r"\s*@([\w.]+)(.*)", re.S)
+
+
 def code_speech(code: str) -> str:
-    """One code span as a teacher reads it aloud: operators as words, other symbols silent."""
+    """One code span as a teacher reads it aloud: operators as words, other symbols silent.
+    A decorator is named as one (owner, 2026-11-04): `@app.route("/home")` -> app.route decorator slash home."""
+    dec = DECORATOR.fullmatch(code)
+    if dec:
+        rest = code_speech(dec.group(2)) if dec.group(2).strip() else ""
+        return f"{dec.group(1)} decorator {rest}".strip()
     for sym, said in CODE_WORDS:
         code = code.replace(sym, said)
     # A comparison has spaces round it; a route's <name> never does, so its brackets stay silent.
@@ -118,8 +126,19 @@ def code_speech(code: str) -> str:
     return code.strip(" ,")
 
 
+def speak_code_spans(text: str) -> str:
+    """Every backtick span read aloud. When the narration already says "decorator" right after
+    a decorator span, the word is not said twice."""
+    def one(m: re.Match) -> str:
+        said = code_speech(m.group(1))
+        if " decorator" in said and re.match(r"\s*decorators?\b", text[m.end():]):
+            said = said.replace(" decorator", "", 1)
+        return said
+    return CODE_SPAN.sub(one, text)
+
+
 def spoken(text: str, lex: dict | None = None) -> str:
     """The narration as the voice should say it."""
     lex = lexicon() if lex is None else lex
-    text = CODE_SPAN.sub(lambda m: code_speech(m.group(1)), text)
+    text = speak_code_spans(text)
     return NUMBER.sub(number, TOKEN.sub(lambda m: name(m.group(0), lex), text))

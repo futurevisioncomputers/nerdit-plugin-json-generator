@@ -58,8 +58,8 @@ stale part fails the merge: rewrite that lesson's part, never fill the gap by ha
      the clip explains the same lines the page does. Explain code the way the page's code walk
      does: read each highlighted line in backticks, then say what it does, then read the output:
      "`@app.get("/products/1")` registers the function for GET requests. The output is 200."
-     Code in backticks is spoken as a teacher reads it (`pronounce.py`: "at app dot get slash
-     products slash one"; quotes and brackets silent, `==` "is equal to", ` < ` "is less than",
+     Code in backticks is spoken as a teacher reads it (`pronounce.py`: "app dot get decorator slash
+     products slash one": a decorator is named as one (owner, 2026-11-04); quotes and brackets silent, `==` "is equal to", ` < ` "is less than",
      `<=` "is at most", ` * ` "times", ` - ` "minus"; a route's `<id>` stays silent); the screen keeps the
      real code. Never spell symbols out yourself.
    - Every key term the section bolds is spoken in its clip; each clip has at least 3 scenes and

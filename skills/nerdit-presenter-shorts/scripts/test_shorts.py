@@ -118,6 +118,6 @@ def test_respell_reads_code_names_and_numbered_words():
     lex = shorts.hi_lexicon()
     said, missing = shorts.respell("`@app.route(\"/home\")` और app.url_map, sqlite3, h1, html", lex)
     assert missing == []
-    assert said.startswith("एट ऐप डॉट रूट स्लैश होम")
+    assert said.startswith("ऐप डॉट रूट डेकोरेटर स्लैश होम")
     assert "ऐप डॉट यू आर एल मैप" in said and "एस क्यू लाइट थ्री" in said and "एच वन" in said
     assert said.endswith("एच टी एम एल")

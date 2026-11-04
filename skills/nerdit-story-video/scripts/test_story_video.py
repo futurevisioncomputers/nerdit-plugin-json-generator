@@ -567,7 +567,7 @@ def test_new_plans_are_hinglish_with_the_google_hindi_voice(tmp_path):
 # Code in backticks is read the way a teacher says it; the screen keeps the real code.
 def test_code_in_backticks_is_spoken_like_a_teacher_reads_it():
     say = pronounce.spoken
-    assert say('`@app.get("/products/1")` registers it.') == "at app dot get slash products slash one registers it."
+    assert say('`@app.get("/products/1")` registers it.') == "app dot get decorator slash products slash one registers it."
     assert say('`response.json["name"]` gives Notebook.') == "response dot Jason, name gives Notebook."
     assert say("`products.get(product_id)` looks it up.") == "products dot get product I D looks it up."
     assert say("`if pid == 2:` then") == "if pid is equal to two then"
@@ -744,3 +744,9 @@ def test_dunder_word_comes_from_the_lexicon():
     tpl = {"dunder": "double underscore {} double underscore"}
     assert spoken("`Flask(__name__)`", tpl) == "Flask double underscore name double underscore"
     assert spoken("`__init__.py`", tpl) == "double underscore init double underscore dot py"
+
+
+def test_a_decorator_is_named_once():
+    from pronounce import spoken
+    assert spoken('two `@app.route` decorator lines') == "two app dot route decorator lines"
+    assert spoken('First `@app.route("/")` line') == "First app dot route decorator slash line"

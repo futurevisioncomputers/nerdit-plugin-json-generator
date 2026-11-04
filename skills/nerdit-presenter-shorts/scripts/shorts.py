@@ -15,7 +15,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "nerdit-story-video" / "scripts"))
 from storyplan import course_lessons   # noqa: E402
-from pronounce import CODE_SPAN, NUMBER, cardinal, code_speech, number   # noqa: E402
+from pronounce import NUMBER, cardinal, number, speak_code_spans   # noqa: E402
 
 
 def number_words(n: int) -> str:
@@ -45,11 +45,11 @@ def respell(text: str, lex: dict) -> tuple[str, list[str]]:
     """What a Hindi voice should read: numbers as English words, then every Latin-script word
     in Devanagari, so it is said with an Indian accent (Flask -> फ्लास्क). An unlisted ALL-CAPS
     word of up to 5 letters, or a single letter, is spelled letter by letter (API -> ए पी आई).
-    Code in backticks is first read the way the story video reads it (`@app.route("/")` -> at app
-    dot route slash), and names split at dots and underscores (url_map -> url map). Returns the
+    Code in backticks is first read the way the story video reads it (`@app.route("/")` -> app
+    dot route decorator slash), and names split at dots and underscores (url_map -> url map). Returns the
     text and the words it could not spell."""
     missing = []
-    text = CODE_SPAN.sub(lambda m: code_speech(m.group(1)), text)
+    text = speak_code_spans(text)
     text = re.sub(r"(?<=[A-Za-z0-9])\.(?=[A-Za-z_])", " dot ", text)
     text = re.sub(r"(?<=[A-Za-z0-9])_+|_+(?=[A-Za-z0-9])", " ", text)
 
