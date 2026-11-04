@@ -109,3 +109,58 @@ def test_the_walk_follows_the_python_file_not_its_companion_files():
     files = (("templates/a.html", "&lt;p&gt;one&lt;/p&gt;", "html"), ("static/s.css", "p {}", "css"))
     ok = page(program_line(PROGRAM, None, offline=False, files=files), walk("x1 = 1", "x5 = 5", "x9 = 9"))
     assert cp.walk_problems(ok, new_course=True) == ([], [])
+
+
+# Each code line is explained once per course (owner, 2026-11-04): a later walk skips it or
+# folds the already-explained lines into one short <li class="nerdit-walk-seen"> step.
+
+def lesson(lid, *parts):
+    return {"id": lid, "content": page(*parts)}
+
+
+SETUP = "from flask import Flask\napp = Flask(__name__)"
+
+
+def test_a_walk_step_that_re_explains_an_earlier_line_fails():
+    first = lesson("L1", program_line(SETUP, None, offline=False),
+                   walk("from flask import Flask", "app = Flask(__name__)"))
+    again = lesson("L2", program_line(SETUP + "\nx = 1", None, offline=False),
+                   walk("from flask import Flask", "app = Flask(__name__)", "x = 1"))
+    fails, warns = cp.repeat_problems([first, again], new_course=True)
+    assert len(fails) == 2 and warns == [], fails
+    assert all("L2" in f and "L1" in f for f in fails), fails
+    assert cp.repeat_problems([first, again], new_course=False)[0] == []
+
+
+def test_a_seen_step_folds_explained_lines_into_one_short_step():
+    first = lesson("L1", program_line(SETUP, None, offline=False),
+                   walk("from flask import Flask", "app = Flask(__name__)"))
+    seen = ('<ol class="nerdit-codewalk nerdit-walk-full">'
+            '<li class="nerdit-walk-seen"><code>from flask import Flask</code> set up the app, as in Lesson 1.</li>'
+            '<li><code>x = 1</code> stores one.</li></ol>')
+    later = lesson("L2", program_line(SETUP + "\nx = 1", None, offline=False), seen)
+    assert cp.repeat_problems([first, later], new_course=True) == ([], [])
+    assert cp.walk_problems(later["content"], new_course=True) == ([], [])
+    wordy = seen.replace("set up the app, as in Lesson 1.",
+                         "imports the Flask class from the flask package so that the next line can build the app object we use.")
+    fails, _ = cp.repeat_problems([first, lesson("L2", wordy)], new_course=True)
+    assert any("short" in f for f in fails), fails
+
+
+def test_a_seen_step_must_point_at_a_line_explained_before():
+    seen = ('<ol class="nerdit-codewalk"><li class="nerdit-walk-seen">'
+            '<code>from flask import Flask</code> as before.</li></ol>')
+    fails, _ = cp.repeat_problems([lesson("L1", seen)], new_course=True)
+    assert any("never explained" in f for f in fails), fails
+    # The gate sees one lesson; it cannot know what earlier lessons explained.
+    assert cp.repeat_problems([lesson("L1", seen)], new_course=True, know_earlier=False) == ([], [])
+
+
+def test_a_seen_step_may_cover_more_than_eight_lines():
+    body = "\n".join(f"y{i} = {i}" for i in range(1, 11))
+    first = lesson("L1", program_line(body, None, offline=False), walk("y1 = 1", "y9 = 9"))
+    seen = ('<ol class="nerdit-codewalk nerdit-walk-full">'
+            '<li class="nerdit-walk-seen"><code>y1 = 1</code> the values from Lesson 1.</li>'
+            '<li><code>z = 0</code> starts the total.</li></ol>')
+    later = lesson("L2", program_line(body + "\nz = 0", None, offline=False), seen)
+    assert cp.walk_problems(later["content"], new_course=True) == ([], [])

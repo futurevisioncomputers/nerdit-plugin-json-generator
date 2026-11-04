@@ -84,7 +84,7 @@ and injects the fragment into an inner-HTML region.
     ── the case study: the course world, as an example of the topic ──
     [the data first: the records or table this example uses, and which columns matter here]
     [worked example: run line(s), within 3 paragraphs of the case heading — 1–2 sentences each: what to notice]
-    [code walk: <ol class="nerdit-codewalk">, 2–4 steps; each <li> starts with one whole code line in <code>, copied exactly, then what it does]
+    [code walk: <ol class="nerdit-codewalk">, 2–4 steps; each <li> starts with one whole code line in <code>, copied exactly, then what it does; only lines no earlier section or lesson walked]
     [program — when the idea only works inside a running program: the whole file + a full walk (§4 Programs)]
     [ONE callout max — only if there is a real gotcha]
     [Go deeper — optional <details class="nerdit-deeper"><summary>Go deeper</summary>…</details> for standards and production notes]
@@ -407,8 +407,14 @@ Rules:
   A program that starts a server has a `nerdit-check` snippet and runs offline: checkers import
   it (never as `__main__`, so `app.run()` stays off), run the snippet, and compare what it prints
   with the shown output. What the page looks like in the browser is a screen spec (figures.md §16).
-  The **full walk** follows the program: every line, in order, a step covering at most 8 lines;
-  it may say "Section 2 explained this" instead of re-explaining. The program ships as
+  The **full walk** follows the program: every line, in order, a step covering at most 8 lines.
+  **Each line is explained once per course** (owner, 2026-11-04: learners skimmed walks that
+  re-taught `app = Flask(__name__)` in every lesson). A run of lines an earlier section or
+  lesson already walked becomes one pointer step of any length,
+  `<li class="nerdit-walk-seen"><code>from flask import Flask</code> the app setup from Lesson 3.</li>`,
+  at most 15 words, quoting the run's first line. A short walk simply leaves old lines out.
+  `check_code_prose.repeat_problems` fails a re-explained line, a wordy pointer, or a pointer
+  to a line never explained (gate: inside the lesson; `verify_course.py`: across the course). The program ships as
   `data-file` in the chapter's pack folder, beside the dataset files it reads.
 - **The whole script** (data lessons). Run lines may build on each other like notebook cells, but
   a code lesson whose examples need earlier code ends its last concept section with "The whole

@@ -28,7 +28,7 @@ sys.path.insert(0, str(HERE.parent.parent / "nerdit-lesson-illustrator" / "scrip
 
 from assemble_course import build_course  # noqa: E402
 from check_case import case_problems, case_warnings, world_names  # noqa: E402
-from check_code_prose import check_lesson as check_code_prose, walk_problems  # noqa: E402
+from check_code_prose import check_lesson as check_code_prose, repeat_problems, walk_problems  # noqa: E402
 from check_modern_code import lesson_code, scan as scan_modern  # noqa: E402
 from check_outline import outline_problems  # noqa: E402
 from check_prose import banned_patterns, check_lesson as check_voice  # noqa: E402
@@ -121,6 +121,10 @@ def gate(input_path: Path, lesson_dir: Path, lid: str, contract: str = "v11",
     w_fails, w_warns = walk_problems(html, new_course or bool({"programs"} & set(modes)))
     fails += [f"walk: {p}" for p in w_fails]
     warns += [f"walk: {p}" for p in w_warns]
+    # Repeats inside this lesson; verify_course.py checks them across the course.
+    r_fails, r_warns = repeat_problems([{"id": "lesson", "content": html}], new_course, know_earlier=False)
+    fails += [f"walk: {p}" for p in r_fails]
+    warns += [f"walk: {p}" for p in r_warns]
     labelled = [(f"question {i}", qn) for i, qn in enumerate(course["lessons"][0].get("questions", []), 1)]
     labelled += [(f"assessment {i}", qn) for i, qn in enumerate(course["assessment"]["questions"], 1)]
     try:

@@ -699,9 +699,14 @@ def verify_code_accuracy(rep: Report, out: dict, new_course: bool = False) -> No
     trace to their chapter and are unique in the course (CORE.md §6e). Engine checks (outputs,
     answers, quiz) stay in check_python_outputs / check_quiz."""
     # Lazy imports: these modules import this one's DOM helpers.
-    from check_code_prose import check_lesson as code_prose
+    from check_code_prose import check_lesson as code_prose, repeat_problems
     from check_modern_code import lesson_code, scan
     from practice_files import name_problems, read_spec
+    r_fails, r_warns = repeat_problems(out.get("lessons", []), new_course)
+    for problem in r_fails:
+        rep.check(False, f"walk: {problem}")
+    for problem in r_warns:
+        rep.warn(False, f"walk: {problem}")
     seen: dict[str, str] = {}
     for position, lesson in enumerate(out.get("lessons", []), 1):
         lid, html = lesson.get("id", "?"), lesson.get("content", "")
