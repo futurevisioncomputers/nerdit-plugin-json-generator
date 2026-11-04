@@ -141,6 +141,34 @@ def scene_svgs(plan: dict, vid: Path, figures: dict, parts: dict | None = None) 
     return out
 
 
+def svg_parts(svg: str) -> list | None:
+    """The animated parts of a vector, in drawing order: each top-level <g> with a na- class gives
+    its text (the label the narration must name) or None (an arrow or line). stage.py walks the
+    same groups, so the two lists line up."""
+    import xml.etree.ElementTree as ET
+    try:
+        root = ET.fromstring(svg)
+    except ET.ParseError:
+        return None
+    parts = []
+    for g in root:
+        if g.tag.split("}")[-1] == "g" and "na-" in g.get("class", ""):
+            text = " ".join(" ".join(t.itertext()) for t in g.iter() if t.tag.split("}")[-1] == "text").strip()
+            parts.append(text or None)
+    return parts if any(parts) else None
+
+
+def vector_labels(plan: dict, vid: Path) -> dict:
+    """labels[scene number] for timeline.build: the parts of every vector scene."""
+    out = {}
+    for n, s in enumerate(plan["scenes"], 1):
+        if s["kind"] == "vector":
+            parts = svg_parts((vid / "vectors" / s["vector"]).read_text(encoding="utf-8-sig"))
+            if parts:
+                out[n] = parts
+    return out
+
+
 def build(images_dir: Path, workers: int = 3, music: Path | None = None) -> Path:
     images_dir = Path(images_dir).resolve()
     import imageio_ffmpeg
@@ -159,7 +187,7 @@ def build(images_dir: Path, workers: int = 3, music: Path | None = None) -> Path
         raise SystemExit("plan has problems; run storyplan.py check:\n" + "\n".join(errors))
 
     tl = timeline.build(plan, clip_info(vid / "audio", plan),
-                        storyplan.practise_cards(plan, practice) if practice else None)
+                        storyplan.practise_cards(plan, practice) if practice else None, vector_labels(plan, vid))
     work = vid / "parts"
     work.mkdir(parents=True, exist_ok=True)
     html = vid / "stage.html"

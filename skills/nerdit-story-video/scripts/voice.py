@@ -73,6 +73,40 @@ def estimate_words(text: str, seconds: float) -> list[dict]:
     return out
 
 
+SENTENCE_GAP = 0.15   # seconds of silence between sentences recorded one by one
+
+
+def sentences(text: str) -> list[str]:
+    """Sentences, split only at an end mark followed by a space, so app.url_map and 2.0 stay whole."""
+    return [s.strip() for s in re.split(r"(?<=[.!?।])\s+", text) if s.strip()]
+
+
+def google_sentences(text: str, say, name: str, rate: float, wav: Path, key: str, ff: str,
+                     google=None, runner=subprocess.run) -> list[dict]:
+    """One Google call per sentence, joined into wav. Each sentence's words are timed from where
+    that sentence really starts, so a vector part appears when its sentence is spoken.
+    say(sentence) is the text the voice reads (pronounce.spoken, or a Devanagari respelling)."""
+    google = google or google_clip
+    words, frames, params, start = [], [], None, 0.0
+    for k, sentence in enumerate(sentences(text)):
+        raw, part = wav.with_name(f"{wav.stem}.p{k}.google.wav"), wav.with_name(f"{wav.stem}.p{k}.wav")
+        google(say(sentence), name, rate, raw, key)
+        to_wav(ff, raw, part, runner)
+        with wave.open(str(part)) as w:
+            params = params or w.getparams()
+            frames.append(w.readframes(w.getnframes()))
+            seconds = w.getnframes() / w.getframerate()
+        words += [dict(x, t=round(start + x["t"], 3)) for x in estimate_words(sentence, seconds)]
+        start += seconds + SENTENCE_GAP
+        raw.unlink(missing_ok=True)
+        part.unlink(missing_ok=True)
+    gap = b"\0" * int(params.framerate * SENTENCE_GAP) * params.sampwidth * params.nchannels
+    with wave.open(str(wav), "wb") as w:
+        w.setparams(params)
+        w.writeframes(gap.join(frames))
+    return words
+
+
 def wav_seconds(path: Path) -> float:
     with wave.open(str(path)) as w:
         return w.getnframes() / w.getframerate()
@@ -175,13 +209,16 @@ def run(images_dir: Path, engine: str | None, python: str | None, ref: Path | No
     if engine == "google":
         key = google_key()
         name, rate = voice.get("name", "hi-IN-Chirp3-HD-Aoede"), float(voice.get("rate", 1.0))
+        say = spoken
+        if voice.get("spelling") == "devanagari":   # English words in Devanagari: an Indian accent (owner, 2026-11-04)
+            sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "nerdit-presenter-shorts" / "scripts"))
+            from shorts import hi_lexicon, respell
+            lex = hi_lexicon()
+            say = lambda s: respell(s, lex)[0]   # noqa: E731
         for c in items:
             wav = audio / f"{c['id']}.wav"
-            raw = audio / f"{c['id']}.google.wav"
-            google(spoken(c["text"]), name, rate, raw, key)
-            to_wav(ff, raw, wav, runner)
-            (audio / f"{c['id']}.words.json").write_text(
-                json.dumps(estimate_words(c["text"], wav_seconds(wav)), ensure_ascii=False), encoding="utf-8")
+            words = google_sentences(c["text"], say, name, rate, wav, key, ff, google, runner)
+            (audio / f"{c['id']}.words.json").write_text(json.dumps(words, ensure_ascii=False), encoding="utf-8")
     elif engine == "edge":
         for c in items:
             mp3, wav = audio / f"{c['id']}.mp3", audio / f"{c['id']}.wav"

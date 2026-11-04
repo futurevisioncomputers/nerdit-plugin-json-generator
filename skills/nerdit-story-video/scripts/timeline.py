@@ -4,12 +4,55 @@ Pure functions, no I/O: build() takes the plan and each clip's length and word t
 returns segments (absolute seconds), YouTube chapters and audio placements. Word timings place
 key terms and camera moves at the moment the narration says them.
 """
+import re
+
 from pronounce import spoken
 from storyplan import title_case
 
 PAD_IN, PAD_OUT = 0.5, 0.8       # silence before and after each narration clip
 MOVE = 0.9                       # camera move to a focus point, seconds
 CARD = 4.0                       # the silent "Now practise" card closing each topic clip
+
+
+STOP = set("a an the in of to for and or is are it on at by with as be this that from into".split())
+CODE_CHARS = set("@=()[]{}\"'_")
+BEFORE = 0.35                    # an arrow or line appears this long before the part it leads to
+
+
+def _tokens(text: str) -> set[str]:
+    return {t for t in re.findall(r"[a-z0-9]+|[ऀ-ॿ]+", text.lower()) if t not in STOP and len(t) > 1}
+
+
+def part_cues(labels: list[str | None], words: list[dict], offset: float) -> list[dict] | None:
+    """When each animated part of a vector scene appears: the moment the narration names it.
+
+    labels: one entry per animated group in drawing order, its text, or None for an arrow or line.
+    A labelled part appears at the first word, after the previous named part, that shares a word
+    with its label; a code label (`@app.route`) must match a backtick code span, and matching then
+    continues after that span. An unlabelled part appears just before the next named one. None when
+    some labelled part is never named in order: the narration must name every drawn part."""
+    times, i = [], 0
+    for label in labels:
+        if label is None:
+            times.append(None)
+            continue
+        want, code = _tokens(label), bool(CODE_CHARS & set(label))
+        j = next((k for k in range(i, len(words)) if want & _tokens(words[k]["w"])
+                  and (not code or "`" in words[k]["w"])), None)
+        if j is None:
+            return None
+        times.append(round(offset + words[j]["t"], 3))
+        i = j + 1
+        if words[j]["w"].count("`") == 1:          # skip the rest of this code span
+            i = next((k + 1 for k in range(j + 1, len(words)) if "`" in words[k]["w"]), i)
+    out = []
+    for k, t in enumerate(times):
+        if t is None:
+            nxt = next((x for x in times[k + 1:] if x is not None), None)
+            prev = next((x for x in reversed(times[:k]) if x is not None), offset)
+            t = round(nxt - BEFORE, 3) if nxt is not None else round(prev + BEFORE, 3)
+        out.append({"t": max(t, round(offset, 3)), "named": labels[k] is not None})
+    return out
 
 
 def first_spoken(words: list[dict], phrase: str, offset: float) -> float | None:
@@ -24,10 +67,12 @@ def first_spoken(words: list[dict], phrase: str, offset: float) -> float | None:
     return None
 
 
-def build(plan: dict, clips: dict, cards: dict | None = None) -> dict:
+def build(plan: dict, clips: dict, cards: dict | None = None, labels: dict | None = None) -> dict:
     """clips[id] = {"dur": seconds, "words": [{t, d, w}]}.
     cards[(lessonId, topic)] = {"tryIt", "pack"}: a "Now practise" card after that topic's last
-    scene (storyplan.practise_cards); it carries that scene's number, so the topic clip keeps it."""
+    scene (storyplan.practise_cards); it carries that scene's number, so the topic clip keeps it.
+    labels[scene number] = the vector's animated parts (svg_parts); each part then appears when
+    the narration names it (part_cues) instead of on its own timer."""
     t = 0.0
     segments, audio, chapters = [], [], []
 
@@ -58,8 +103,10 @@ def build(plan: dict, clips: dict, cards: dict | None = None) -> dict:
             focus.append({"x": f["x"], "y": f["y"], "zoom": f.get("zoom", 1.4), "ring": bool(f.get("ring")),
                           "t": round(max(at - MOVE / 2, start), 3)})
         focus.sort(key=lambda f: f["t"])
+        parts = part_cues(labels[n], words, t + PAD_IN) if labels and labels.get(n) else None
         segments.append({"kind": "scene", "scene": n, "visual": s.get("kind", "vector"),
-                         "start": round(start, 3), "end": round(end, 3), "terms": terms, "focus": focus})
+                         "start": round(start, 3), "end": round(end, 3), "terms": terms, "focus": focus,
+                         "parts": parts})
         t = end
         if s.get("myth"):
             dur, _ = narrate(f"s{n}-myth", t + PAD_IN)

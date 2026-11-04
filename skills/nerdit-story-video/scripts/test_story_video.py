@@ -750,3 +750,34 @@ def test_a_decorator_is_named_once():
     from pronounce import spoken
     assert spoken('two `@app.route` decorator lines') == "two app dot route decorator lines"
     assert spoken('First `@app.route("/")` line') == "First app dot route decorator slash line"
+
+
+SVG_STEPS = ('<svg viewBox="0 0 480 360" class="nerdit-anim">'
+             '<g class="na-show" style="--d:0.3s"><rect/><text>GET: ask for a page</text></g>'
+             '<g class="na-draw" style="--d:0.9s"><path d="M1 1"/></g>'
+             '<g class="na-show" style="--d:1.4s"><text>POST: send data</text></g>'
+             '<g class="na-show" style="--d:2s"><text>@app.route</text></g></svg>')
+
+
+def test_svg_parts_lists_animated_groups_with_their_labels():
+    from build_video import svg_parts
+    assert svg_parts(SVG_STEPS) == ["GET: ask for a page", None, "POST: send data", "@app.route"]
+
+
+def test_each_part_appears_when_the_narration_names_it():
+    from build_video import svg_parts
+    from timeline import part_cues
+    from voice import estimate_words
+    text = "Browser दो job माँगता है। GET page माँगता है। POST data भेजता है, और `@app.route` उसे जोड़ता है।"
+    words = estimate_words(text, 10.0)
+    cues = part_cues(svg_parts(SVG_STEPS), words, 1.0)
+    at = {w["w"]: round(1.0 + w["t"], 3) for w in words}
+    assert cues[0] == {"t": at["GET"], "named": True}
+    assert cues[2]["t"] == at["POST"] and cues[1] == {"t": round(at["POST"] - 0.35, 3), "named": False}
+    assert cues[3]["t"] == at["`@app.route`"]           # a code label matches the code span, not a plain word
+    assert part_cues(svg_parts(SVG_STEPS), estimate_words("POST पहले, फिर GET", 5.0), 0) is None   # out of order
+
+
+def test_sentences_split_only_at_an_end_mark_and_a_space():
+    from voice import sentences
+    assert sentences("`app.url_map` में 2.0 है। अब देखिए! Done.") == ["`app.url_map` में 2.0 है।", "अब देखिए!", "Done."]

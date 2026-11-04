@@ -64,6 +64,8 @@ html, body { width:1280px; height:720px; overflow:hidden; background:var(--bg);
 
 SCRIPT = r"""
 const D = window.DATA, TL = D.timeline, FADE = 0.35, MOVE = 0.9, PAD_IN = 0.5, BUILD = 0.8;
+const GLOW = 'drop-shadow(0 0 3px rgba(13,148,136,.95)) drop-shadow(0 0 10px rgba(13,148,136,.6))';   // the part being explained
+const GHOST = 0.14;   // a part not yet named: a faint outline of where it will be
 const $ = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls;
   if (html !== undefined) e.innerHTML = html; return e; };
 const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
@@ -89,7 +91,7 @@ recap.append(rc); stage.append(recap);
 const scenes = D.scenes.map((s, i) => {
   const n = i + 1, main = seg('scene', n), myth = seg('myth', n);
   const layer = $('div', 'layer'), box = $('div', 'box'), cam = $('div', 'cam'), ring = $('div', 'ring');
-  let doc = null, total = 0;
+  let doc = null, total = 0, groups = null;
   if (s.kind === 'broll') {
     cam.append($('div', 'broll'));
   } else {
@@ -99,6 +101,13 @@ const scenes = D.scenes.map((s, i) => {
       if (svg) svg.classList.add('na-play');
       // Longest delay + duration: the build-up is stretched to finish while the narration explains it.
       total = Math.max(0, ...doc.getAnimations().map(a => a.effect.getComputedTiming().endTime || 0));
+      // The animated parts, in the order build_video.svg_parts lists them, each with its own animations.
+      groups = svg ? [...svg.children].filter(g => g.tagName.toLowerCase() === 'g' && /\bna-/.test(g.getAttribute('class') || ''))
+        .map(g => { const anims = doc.getAnimations().filter(a => a.effect && a.effect.target && g.contains(a.effect.target));
+          // the moment its drawing is complete (an endless pulse counts one second after it starts)
+          const end = Math.max(0, ...anims.map(a => { const c = a.effect.getComputedTiming();
+            return isFinite(c.endTime) ? c.endTime : (c.delay || 0) + 1000; }));
+          return { g, anims, end }; }) : null;
       r(); })));
     cam.append(fr);
   }
@@ -114,7 +123,7 @@ const scenes = D.scenes.map((s, i) => {
     m.append(wrong, right); panel.append(m);
   }
   layer.append(box, panel); stage.append(layer);
-  return { s, n, main, myth, layer, cam, ring, chips, wrong, right, get doc() { return doc; }, get total() { return total; },
+  return { s, n, main, myth, layer, cam, ring, chips, wrong, right, get doc() { return doc; }, get total() { return total; }, get groups() { return groups; },
            start: main.start, end: myth ? myth.end : main.end };
 });
 
@@ -168,8 +177,20 @@ window.renderAt = function (t) {
         sc.wrong.style.opacity = clamp((t - sc.myth.start - .2) / .3, 0, 1);
         sc.right.style.opacity = clamp((t - sc.myth.rightAt) / .3, 0, 1);
       }
-      const doc = sc.doc;
-      if (doc) {
+      const doc = sc.doc, parts = sc.main.parts, gs = sc.groups;
+      if (doc && parts && gs && gs.length === parts.length) {
+        // Every part shows faintly from the start, so the learner sees the whole shape; it turns solid
+        // the moment the narration names it, and the part being explained glows.
+        let active = -1;
+        parts.forEach((p, i) => { if (p.named && t >= p.t) active = i; });
+        const inGroup = new Set();
+        gs.forEach((x, i) => {
+          x.anims.forEach(a => { inGroup.add(a); a.pause(); a.currentTime = x.end; });
+          const p = clamp((t - parts[i].t) / 0.4, 0, 1);
+          x.g.style.filter = `opacity(${(GHOST + (1 - GHOST) * ease(p)).toFixed(3)})` + (i === active ? ' ' + GLOW : '');
+        });
+        doc.getAnimations().forEach(a => { if (!inGroup.has(a)) { a.pause(); a.currentTime = Math.max(0, t - sc.start - PAD_IN) * 1000; } });
+      } else if (doc) {
         const spoken = Math.max(sc.main.end - sc.main.start - 1.3, 1);
         const at = sc.total ? clamp((t - sc.start - PAD_IN) / (spoken * BUILD), 0, 1) * sc.total : Math.max(0, t - sc.start - PAD_IN) * 1000;
         doc.getAnimations().forEach(a => { a.pause(); a.currentTime = at; });

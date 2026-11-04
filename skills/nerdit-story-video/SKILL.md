@@ -78,6 +78,12 @@ stale part fails the merge: rewrite that lesson's part, never fill the gap by ha
      (16–22 units). Every number and capitalised name drawn must be in that lesson; chart values
      come from its tables. The build stretches the delays so the drawing finishes at 80% of the
      scene's narration: order the parts in the order the narration names them.
+     **Explain the drawing (owner, 2026-11-04):** with `"syncParts": true` in the plan, every part
+     shows faintly from the start, turns solid at the moment the narration names it, and glows
+     while it is explained (arrows appear just before the box they lead to). So the narration
+     walks the diagram: it names each labelled part (a word of its label; a code label such as
+     `@app.route` in backticks), in drawing order, and says what it means. `check` fails a scene
+     that skips a part or names them out of order. New plans set `syncParts`.
    - **diagram** scenes reuse a lesson figure (`figure`: an id from `availableFigures`) when it
      already explains the idea.
    - **broll** scenes (at most 30%) set context with a real clip: `query` is 2–5 plain English
@@ -118,7 +124,11 @@ stale part fails the merge: rewrite that lesson's part, never fill the gap by ha
 - `python scripts/voice.py --images-dir <images>`: Google Chirp 3 HD, `voice.name` default
   `hi-IN-Chirp3-HD-Aoede` (an `en-IN` plan uses `en-IN-Chirp3-HD-Aoede`), `voice.rate` 1.0.
   `python scripts/voice.py --list-voices hi-IN` lists the alternatives; try two or three and
-  keep the one the owner prefers.
+  keep the one the owner prefers. **Owner's choice (2026-11-04):** `voice.name`
+  `hi-IN-Chirp3-HD-Achird` (male), `voice.spelling` `"devanagari"` (English words read from their
+  Devanagari spelling in the presenter-shorts `pronunciation-hi.json`, for an Indian accent), and
+  narration that is mostly English with Hindi for the grammar. Google is called once per
+  sentence, so each sentence's words are timed from where it really starts.
   Google and edge voices speak code words respelled from `scripts/pronunciation.json` (JSON →
   Jason, dict → dictionary, json.dumps → Jason dot dumps; snake_case, dotted names, camelCase and
   acronyms are handled by `scripts/pronounce.py`). Only the audio changes; the screen keeps the real

@@ -464,6 +464,24 @@ def screen_text_errors(plan: dict, video_dir: Path) -> list[str]:
             for where, text in found if text and DEVANAGARI.search(str(text))]
 
 
+def unnamed_parts(plan: dict, video_dir: Path) -> list[str]:
+    """A plan with "syncParts" shows each vector part when the narration names it (timeline.part_cues),
+    so every labelled part must be named, in drawing order (owner, 2026-11-04)."""
+    if not plan.get("syncParts"):
+        return []
+    import build_video, timeline, voice   # lazy: both import this module
+    errors = []
+    for n, s in enumerate(plan.get("scenes", []), 1):
+        path = video_dir / "vectors" / s.get("vector", "")
+        if s.get("kind") != "vector" or not path.is_file():
+            continue
+        labels = build_video.svg_parts(path.read_text(encoding="utf-8-sig"))
+        if labels and timeline.part_cues(labels, voice.estimate_words(s.get("narration", ""), 60.0), 0.0) is None:
+            named = [l for l in labels if l]
+            errors.append(f"scene {n}: the narration must name every drawn part, in drawing order: {named}")
+    return errors
+
+
 def check_plan(plan: dict, video_dir: Path, figures: dict | None = None, texts: dict | None = None,
                topics: dict | None = None, parts: dict | None = None,
                practice: dict | None = None) -> list[str]:
@@ -483,6 +501,7 @@ def check_plan(plan: dict, video_dir: Path, figures: dict | None = None, texts: 
         for p in points:
             _limit(part, "point", p, MAX_POINT, errors)
     errors += screen_text_errors(plan, video_dir)
+    errors += unnamed_parts(plan, video_dir)
     brolls = sum(1 for s in scenes if s.get("kind") == "broll")
     if scenes and brolls / len(scenes) > MAX_BROLL_SHARE:
         errors.append(f"{brolls} of {len(scenes)} scenes are B-roll; keep B-roll to {MAX_BROLL_SHARE:.0%} "
