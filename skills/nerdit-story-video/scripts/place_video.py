@@ -4,23 +4,41 @@
 
 Reads <images>/video/clips.json (written by build_video.py) and writes <course>.with-video.json
 unless --out is given. Each slot is
-    <div class="nerdit-video" data-nerdit-video="<key>" data-title="<title>"></div>
-A topic clip (<lessonId>-t<N>-video) goes at the end of the lesson's section N, so the learner reads
+    <div class="nerdit-video" data-nerdit-video="<key>" data-title="<title>" data-start="<s>" data-end="<e>"></div>
+data-start/data-end are the clip's whole seconds inside story.mp4, so the admin can paste ONE link
+(story.mp4 uploaded once) and every slot plays its own part. A slot placed before times existed gets
+them on the next run. A topic clip (<lessonId>-t<N>-video) goes at the end of the lesson's section N, so the learner reads
 the section, then watches it explained; the intro clip goes before the first lesson's first section
 and the recap clip before the last lesson's cheat sheet (📌 section). A clip with no place to go
 lands before the cheat sheet, else at the end of the lesson wrapper. On the
 admin's Import JSON + Images page each slot gets a box for its YouTube link; an empty slot stays
 hidden from learners. Running it again never adds a second slot for the same clip.
 """
-import argparse, html, json, re, sys
+import argparse, html, json, math, re, sys
 from pathlib import Path
 
 CHEATSHEET = re.compile(r'<(?:section|div)[^>]*class="[^"]*nerdit-cheatsheet|<h2[^>]*>\s*📌')
 TOPIC_HEADING = re.compile(r"<h2[^>]*>\s*(\d+)\s*[—–-]")
 
 
-def slot_html(key: str, title: str) -> str:
-    return f'<div class="nerdit-video" data-nerdit-video="{key}" data-title="{html.escape(title, quote=True)}"></div>'
+def clip_times(clip: dict) -> str:
+    """ data-start/data-end in whole seconds (start rounded down, end up), or "" when the clip has none."""
+    if clip.get("start") is None or clip.get("end") is None:
+        return ""
+    return f' data-start="{math.floor(clip["start"])}" data-end="{math.ceil(clip["end"])}"'
+
+
+def slot_html(key: str, title: str, times: str = "") -> str:
+    return f'<div class="nerdit-video" data-nerdit-video="{key}" data-title="{html.escape(title, quote=True)}"{times}></div>'
+
+
+def add_times(content: str, clip: dict) -> str:
+    """Give an existing slot of this clip its times when it has none yet."""
+    times = clip_times(clip)
+    if not times:
+        return content
+    opening = re.compile(r'(<div class="nerdit-video" data-nerdit-video="' + re.escape(clip["key"]) + r'"(?: data-title="[^"]*")?)>')
+    return opening.sub(lambda m: m.group(1) + times + ">", content, count=1)
 
 
 def topic_end(content: str, topic: int) -> int | None:
@@ -75,8 +93,9 @@ def add_slots(course: dict, clips: list[dict]) -> tuple[dict, list[str]]:
         if lesson is None:
             raise SystemExit(f"clip {c['key']}: lesson {c['lessonId']} is not in the course JSON")
         if f'data-nerdit-video="{c["key"]}"' in lesson.get("content", ""):
+            lesson["content"] = add_times(lesson["content"], c)
             continue
-        lesson["content"] = place_clip(lesson.get("content", ""), slot_html(c["key"], c["title"]), c)
+        lesson["content"] = place_clip(lesson.get("content", ""), slot_html(c["key"], c["title"], clip_times(c)), c)
         added.append(c["key"])
     return course, added
 

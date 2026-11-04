@@ -123,6 +123,24 @@ stale part fails the merge: rewrite that lesson's part, never fill the gap by ha
 <!-- video-pack:end -->
 3. `python scripts/storyplan.py check --images-dir <images>`. Fix every error and run again.
 
+## Pilot first (owner, 2026-11-04): never pay for the whole course before a check
+
+A full run costs every voice character and hours of render; a fault found afterwards is paid
+again. Check in this order, and stop at the first step the owner is not happy with:
+
+1. **Plan check** (above): free, seconds.
+2. **Stills**: `python scripts/build_video.py --images-dir <images> --stills [--only <lessonId>]`
+   writes `<images>/video/stills/<lessonId>.jpg`, one frame per scene at the end of its build-up,
+   timed from the narration's length, before anything is recorded: free, seconds. Look at every
+   sheet yourself: text touching a box edge, unreadable code, an empty panel, a wrong diagram.
+3. **Pilot topic**: pick the most code-heavy topic; `python scripts/voice.py --images-dir <images>
+   --only <lessonId>:<topic>` (about 1,500 characters), then `python scripts/build_video.py
+   --images-dir <images> --only <lessonId>:<topic>` writes `<images>/video/pilot/pilot-*.mp4` in under
+   a minute. Give the owner that clip and wait for their OK.
+4. **Full run** (sections 2-3). The voice is cached: a clip whose text and voice settings are
+   unchanged is not recorded again (its `.key` file matches), so a fix re-records only the scenes
+   it changed, and the pilot's clips are reused.
+
 ## 2. Voice and B-roll
 
 - `python scripts/voice.py --images-dir <images>`: Google Chirp 3 HD, `voice.name` default
@@ -151,11 +169,11 @@ stale part fails the merge: rewrite that lesson's part, never fill the gap by ha
 Pexels credits) to `<images>/video/`. It re-runs the plan check first. `stage.html` draws every
 frame; open it and call `renderAt(seconds)` to inspect a moment.
 
-**Thumbnails (owner, 2026-11-04):** copy the owner's own photo (only theirs; the AI-styled suit
-photo they chose) to `<images>/video/presenter.jpg` and set `"thumbnail": {"photo": "presenter.jpg"}`
-in the plan. The build then writes `thumbnail.jpg` and one `thumb-<clip>.jpg` per clip: the photo on
-the right, NERDIT, the course title, the clip's topic and its lesson on the left; `clips.json`
-names each clip's thumbnail. `--thumbnails-only` redoes them for an already built video.
+**Thumbnail (owner, 2026-11-04):** the course has one story video, so one thumbnail. Copy the
+owner's own photo (only theirs; the AI-styled suit photo they chose) to
+`<images>/video/presenter.jpg` and set `"thumbnail": {"photo": "presenter.jpg"}` in the plan; the
+build then writes `thumbnail.jpg` with the photo on the right and NERDIT, the course title and
+"Full course explained" on the left. `--thumbnail-only` redoes it for an already built video.
 
 Rendering takes about 1.5× the video's length with 3 workers (a 2-hour course took 3 hours).
 Run it in the background, with its output in a log; it prints a line per worker every 5 video
@@ -170,11 +188,16 @@ clip, and lists them in `clips.json` with each clip's key, place and YouTube tit
 `python scripts/place_video.py --images-dir <images> --course <course .with-images.json>` writes
 `<course>.with-images.with-video.json`: one empty slot per clip. A topic clip goes at the end of
 its section, the intro clip before the first lesson's first section, the recap clip before the
-last lesson's cheat sheet.
+last lesson's cheat sheet. Each slot carries its clip's whole seconds in `story.mp4`
+(`data-start`/`data-end`); a re-run adds them to slots placed before.
 
-Tell the user: upload each clip to YouTube (Unlisted) with its title from `clips.json`; then in
-the admin, Import JSON + Images → the `.with-video.json` and the images folder → in the **Videos**
-box paste each clip's YouTube link next to its slot (same key as the file name) → Apply video links → preview → publish.
+Tell the user: upload `story.mp4` ONCE to YouTube (Unlisted, Allow embedding on, not made for
+kids; a video over 15 minutes needs a phone-verified channel) with `title.txt`, `thumbnail.jpg`,
+and a description of at most 5,000 characters; then in the admin, Import JSON + Images → the
+bundle (or the `.with-video.json` and the images folder) → in the **Videos** box paste the link
+once in **One video for the whole course** → Fill all slots → preview → publish. Each slot plays
+only its own part; the classroom sends a seek outside it back to its start and starts with
+captions off. (The per-slot boxes still take one clip upload per slot, for a course without times.)
 Empty slots stay hidden from learners. Look at the thumbnail and one frame per scene kind first.
 Never upload an MP4 to Firebase.
 

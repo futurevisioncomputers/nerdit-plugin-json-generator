@@ -452,6 +452,25 @@ def test_place_video_puts_each_clip_where_it_belongs():
     assert place_video.add_slots(course, clips)[1] == []
 
 
+def test_place_video_marks_each_slot_with_its_part_of_the_course_video():
+    """One upload of story.mp4 fills every slot: the admin pastes one link, each slot plays start..end."""
+    import place_video
+    course = {"lessons": [{"id": "l1", "content": '<div class="nerdit-wrapper"><section><h2>1 — A</h2></section>'
+                           '<div class="nerdit-video" data-nerdit-video="l1-t2-video" data-title="Old"></div></div>'}]}
+    clips = [{"key": "l1-t1-video", "place": "topic", "lessonId": "l1", "topic": 1, "title": "A",
+              "start": 29.82, "end": 102.12},
+             {"key": "l1-t2-video", "place": "topic", "lessonId": "l1", "topic": 2, "title": "Old",
+              "start": 102.12, "end": 180.5}]
+    course, added = place_video.add_slots(course, clips)
+    content = course["lessons"][0]["content"]
+    assert added == ["l1-t1-video"]
+    assert 'data-nerdit-video="l1-t1-video" data-title="A" data-start="29" data-end="103"></div>' in content
+    # A slot placed before times existed gets them on the next run, and stays one slot.
+    assert 'data-nerdit-video="l1-t2-video" data-title="Old" data-start="102" data-end="181"></div>' in content
+    assert content.count('data-nerdit-video="l1-t2-video"') == 1
+    assert place_video.add_slots(course, clips) == (course, [])
+
+
 def test_lesson_css_loads_the_site_stylesheets():
     assert ".nerdit-anim.na-play .na-show" in stage.lesson_css()
 
@@ -802,3 +821,43 @@ def test_thumbnail_page_puts_the_photo_beside_the_course_and_topic(tmp_path):
     assert photo.resolve().as_uri() in page and "Flask Web Development" in page
     assert "GET &amp; POST Methods" in page and "Flask HTTP Methods" in page    # escaped
     assert "window.renderAt" in page and "window.ready" in page                # render.stills can open it
+
+
+def _fake_google(tmp_path, monkeypatch):
+    monkeypatch.setattr(voice, "ffmpeg", lambda: "ff")
+    monkeypatch.setenv("GOOGLE_TTS_API_KEY", "k")
+    calls = []
+
+    def runner(cmd, **kw):
+        Path(cmd[-1]).write_bytes(silent_wav(1.0))
+
+    def google(text, name, rate, wav, key):
+        calls.append(text)
+        Path(wav).write_bytes(silent_wav(1.0))
+    return calls, runner, google
+
+
+def test_unchanged_clips_are_not_recorded_again(tmp_path, monkeypatch):
+    plan, images = write_plan(tmp_path)
+    calls, runner, google = _fake_google(tmp_path, monkeypatch)
+    voice.run(images, None, None, None, runner=runner, google=google)
+    first = len(calls)
+    voice.run(images, None, None, None, runner=runner, google=google)
+    assert first > 0 and len(calls) == first                          # second run: nothing paid for
+    plan["scenes"][0]["narration"] += " एक और sentence."
+    (images / "video" / "plan.json").write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    voice.run(images, None, None, None, runner=runner, google=google)
+    assert first < len(calls) <= first + 3                             # only the changed scene again
+
+
+def test_only_records_one_lesson_or_topic(tmp_path, monkeypatch):
+    plan, images = write_plan(tmp_path)
+    lesson = plan["scenes"][0]["lessonId"]
+    picked = voice.selected(plan, f"{lesson}:{plan['scenes'][0].get('topic', 1)}")
+    assert "s1" in picked and "intro" not in picked
+    with pytest.raises(SystemExit):
+        voice.selected(plan, "no-such-lesson")
+    calls, runner, google = _fake_google(tmp_path, monkeypatch)
+    voice.run(images, None, None, None, runner=runner, google=google, only=lesson)
+    assert not (images / "video" / "audio" / "intro.wav").exists()
+    assert (images / "video" / "audio" / "s1.wav").exists()
