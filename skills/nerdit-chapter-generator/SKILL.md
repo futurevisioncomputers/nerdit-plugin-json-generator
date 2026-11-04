@@ -272,6 +272,13 @@ One page with every lesson, the site's styles and the site's code colours. Open 
 **Workdir:** decide the output directory up front (ask the user per Step 6's destination rules —
 never the plugin folder). Every `<id>.html`, `<id>.quiz.json`, and the final output JSON live there.
 
+**Pilot lesson first (owner, 2026-11-04).** Before launching the other writers, write ONE lesson
+alone: the most code-heavy one (or the first, for a course without code), with its video part.
+Gate it (`gate_lesson.py`), preview it (Previewing a course) and run its video pilot
+(nerdit-story-video, "Pilot first"). Show the owner the page and the pilot clip and wait for
+their OK. A pattern they reject is then fixed once, in the rules or the prompt, not in 28 lessons
+after a full run. Skip only when the owner says so.
+
 Process every lesson object in the input array. For each lesson:
 
 ### 2a. Preserve source metadata (copy exactly — no changes, no reformatting)

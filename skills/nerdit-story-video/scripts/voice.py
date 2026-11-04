@@ -16,7 +16,7 @@ google and edge speak pronounce.spoken(text): code words respelled from pronunci
 clone : local XTTS-v2 in a separate venv (xtts_narrate.py); word timings are estimated from text length.
         Non-commercial licence: local tests only.
 """
-import argparse, asyncio, json, os, re, subprocess, sys, wave
+import argparse, asyncio, hashlib, json, os, re, subprocess, sys, wave
 from pathlib import Path
 
 from pronounce import spoken
@@ -197,16 +197,49 @@ def clone_command(python: str, clips_path: Path, ref: Path, raw_dir: Path) -> li
     return [python, str(HERE / "xtts_narrate.py"), str(clips_path), str(ref), str(raw_dir)]
 
 
+def selected(plan: dict, only: str | None) -> set[str] | None:
+    """Clip ids of the scenes in `only` ("<lessonId>" or "<lessonId>:<topic>"), for a pilot run;
+    None means every clip. An unknown lesson or topic is an error, not an empty run."""
+    if not only:
+        return None
+    lesson, _, topic = only.partition(":")
+    ids = set()
+    for n, s in enumerate(plan["scenes"], 1):
+        if s.get("lessonId") == lesson and (not topic or str(s.get("topic", 1)) == topic):
+            ids |= {f"s{n}", f"s{n}-myth"}
+    if not ids:
+        raise SystemExit(f"--only {only}: no scene of that lesson/topic in the plan")
+    return ids
+
+
+def clip_key(text: str, voice: dict, engine: str) -> str:
+    """What a recording depends on: its text and the voice settings. Same key = reuse the file."""
+    data = json.dumps([text, engine, voice.get("name"), voice.get("rate"), voice.get("spelling")], ensure_ascii=False)
+    return hashlib.sha256(data.encode("utf-8")).hexdigest()[:16]
+
+
+def cached(audio: Path, clip_id: str, key: str) -> bool:
+    files = [audio / f"{clip_id}{ext}" for ext in (".wav", ".words.json", ".key")]
+    return all(f.is_file() for f in files) and files[2].read_text(encoding="utf-8").strip() == key
+
+
 def run(images_dir: Path, engine: str | None, python: str | None, ref: Path | None,
-        runner=subprocess.run, edge=edge_clip, google=google_clip):
+        runner=subprocess.run, edge=edge_clip, google=google_clip, only: str | None = None):
     plan = json.loads((images_dir / "video" / "plan.json").read_text(encoding="utf-8-sig"))
     voice = plan.get("voice") or {}
     engine = engine or voice.get("engine", "google")
     audio = images_dir / "video" / "audio"
     audio.mkdir(parents=True, exist_ok=True)
     ff = ffmpeg()
-    items = clips(plan)
+    pick = selected(plan, only)
+    items = [c for c in clips(plan) if pick is None or c["id"] in pick]
     if engine == "google":
+        # A clip whose text and voice settings are unchanged is not recorded (or paid for) again.
+        keys = {c["id"]: clip_key(c["text"], voice, engine) for c in items}
+        reused = [c for c in items if cached(audio, c["id"], keys[c["id"]])]
+        items = [c for c in items if c not in reused]
+        print(f"recording {len(items)} clip(s), {sum(len(c['text']) for c in items)} characters; "
+              f"{len(reused)} unchanged clip(s) reused", flush=True)
         key = google_key()
         name, rate = voice.get("name", "hi-IN-Chirp3-HD-Achird"), float(voice.get("rate", 0.9))
         say = spoken
@@ -219,6 +252,7 @@ def run(images_dir: Path, engine: str | None, python: str | None, ref: Path | No
             wav = audio / f"{c['id']}.wav"
             words = google_sentences(c["text"], say, name, rate, wav, key, ff, google, runner)
             (audio / f"{c['id']}.words.json").write_text(json.dumps(words, ensure_ascii=False), encoding="utf-8")
+            (audio / f"{c['id']}.key").write_text(keys[c["id"]], encoding="utf-8")
     elif engine == "edge":
         for c in items:
             mp3, wav = audio / f"{c['id']}.mp3", audio / f"{c['id']}.wav"
@@ -256,13 +290,14 @@ def main(argv=None) -> int:
     ap.add_argument("--python")
     ap.add_argument("--ref", type=Path)
     ap.add_argument("--list-voices", metavar="LANG")
+    ap.add_argument("--only", metavar="LESSON[:TOPIC]", help="pilot: record only this lesson or topic")
     a = ap.parse_args(argv)
     if a.list_voices:
         print("\n".join(list_voices(a.list_voices)))
         return 0
     if not a.images_dir:
         ap.error("--images-dir is required")
-    print(f"narration in {run(a.images_dir, a.engine, a.python, a.ref)}")
+    print(f"narration in {run(a.images_dir, a.engine, a.python, a.ref, only=a.only)}")
     return 0
 
 

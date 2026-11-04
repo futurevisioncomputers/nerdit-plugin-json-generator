@@ -123,6 +123,24 @@ stale part fails the merge: rewrite that lesson's part, never fill the gap by ha
 <!-- video-pack:end -->
 3. `python scripts/storyplan.py check --images-dir <images>`. Fix every error and run again.
 
+## Pilot first (owner, 2026-11-04): never pay for the whole course before a check
+
+A full run costs every voice character and hours of render; a fault found afterwards is paid
+again. Check in this order, and stop at the first step the owner is not happy with:
+
+1. **Plan check** (above): free, seconds.
+2. **Stills**: `python scripts/build_video.py --images-dir <images> --stills [--only <lessonId>]`
+   writes `<images>/video/stills/<lessonId>.jpg`, one frame per scene at the end of its build-up,
+   timed from the narration's length, before anything is recorded: free, seconds. Look at every
+   sheet yourself: text touching a box edge, unreadable code, an empty panel, a wrong diagram.
+3. **Pilot topic**: pick the most code-heavy topic; `python scripts/voice.py --images-dir <images>
+   --only <lessonId>:<topic>` (about 1,500 characters), then `python scripts/build_video.py
+   --images-dir <images> --only <lessonId>:<topic>` writes `<images>/video/pilot/pilot-*.mp4` in under
+   a minute. Give the owner that clip and wait for their OK.
+4. **Full run** (sections 2-3). The voice is cached: a clip whose text and voice settings are
+   unchanged is not recorded again (its `.key` file matches), so a fix re-records only the scenes
+   it changed, and the pilot's clips are reused.
+
 ## 2. Voice and B-roll
 
 - `python scripts/voice.py --images-dir <images>`: Google Chirp 3 HD, `voice.name` default

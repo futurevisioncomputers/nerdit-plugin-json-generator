@@ -90,6 +90,18 @@ def render(html: Path, duration: float, fps: int, workers: int, out: Path, ff: s
     return out
 
 
+def frames(html: Path, shots: list[tuple[float, Path]]) -> None:
+    """Several moments of one stage page as JPEGs, in one browser (the --stills preview)."""
+    from playwright.sync_api import sync_playwright
+    exe = chromium()
+    with sync_playwright() as p:
+        browser, page = open_stage(p, str(html), exe)
+        for t, out in shots:
+            page.evaluate(f"renderAt({t})")
+            page.screenshot(path=str(out), type="jpeg", quality=85)
+        browser.close()
+
+
 def stills(pages: list[tuple[Path, Path]]) -> None:
     """Several static pages (each with renderAt and ready) as JPEGs, in one browser."""
     from playwright.sync_api import sync_playwright

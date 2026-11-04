@@ -7,7 +7,7 @@ description.txt (with YouTube chapters), plus one short clip per lesson topic, a
 a recap clip (clip-NN-<key>.mp4), listed in clips.json.
 Host the MP4 on YouTube (unlisted is fine) and link it from the course; never upload it to Firebase.
 """
-import argparse, array, json, subprocess, sys, time, wave
+import argparse, array, json, shutil, subprocess, sys, time, wave
 from pathlib import Path
 
 import lessonparts
@@ -279,6 +279,116 @@ def build(images_dir: Path, workers: int = 3, music: Path | None = None) -> Path
     return final
 
 
+STILL_CPS = 14.0   # characters per second of narration, to time a preview before anything is recorded
+
+
+def _course_context(vid: Path, plan: dict):
+    course = Path(plan["source"]) if plan.get("source") else None
+    figures = storyplan.lesson_figures(course, vid.parent) if course else {}
+    parts = storyplan.lesson_parts(course) if course else None
+    practice = storyplan.lesson_practice(course) if course else None
+    errors = storyplan.check_plan(plan, vid, figures, storyplan.lesson_texts(course) if course else None,
+                                  storyplan.lesson_topics(course) if course else None, parts, practice)
+    if errors:
+        raise SystemExit("plan has problems; run storyplan.py check:\n" + "\n".join(errors))
+    return course, figures, parts, practice
+
+
+def _subset(plan: dict, only: str | None) -> tuple[dict, list[int]]:
+    """The plan with only the scenes of `only` (all when None), and their original numbers."""
+    pick = voice.selected(plan, only)
+    numbers = [n for n in range(1, len(plan["scenes"]) + 1) if pick is None or f"s{n}" in pick]
+    return dict(plan, scenes=[plan["scenes"][n - 1] for n in numbers]), numbers
+
+
+def _stage(vid: Path, sub: dict, tl: dict, figures: dict, parts: dict | None, html: Path) -> None:
+    headings = {(lid, n): p["heading"] for lid, secs in (parts or {}).items() for n, p in secs.items()}
+    html.parent.mkdir(parents=True, exist_ok=True)
+    html.write_text(stage.build_stage(sub, tl, scene_svgs(sub, vid, figures, parts), stage.lesson_css(), headings),
+                    encoding="utf-8")
+
+
+def preview_stills(images_dir: Path, only: str | None = None) -> list[Path]:
+    """One frame per scene, at the end of its build-up, before any narration is recorded: a free
+    check of the visuals. Timing comes from the narration's length; writes <video>/stills/<lesson>.jpg
+    contact sheets (3 frames per row)."""
+    import imageio_ffmpeg
+    ff = imageio_ffmpeg.get_ffmpeg_exe()
+    vid = Path(images_dir).resolve() / "video"
+    plan = storyplan.load_json(vid / "plan.json")
+    course, figures, parts, practice = _course_context(vid, plan)
+    sub, _ = _subset(plan, only)
+    info = {}
+    for c in voice.clips(sub):
+        dur = max(len(c["text"]) / STILL_CPS, 1.0)
+        info[c["id"]] = {"dur": dur, "words": voice.estimate_words(c["text"], dur)}
+    tl = timeline.build(sub, info, storyplan.practise_cards(sub, practice) if practice else None, vector_labels(sub, vid))
+    out_dir = vid / "stills"
+    shutil.rmtree(out_dir, ignore_errors=True)
+    _stage(vid, sub, tl, figures, parts, out_dir / "stage.html")
+    shots, by_lesson = [], {}
+    for seg in (s for s in tl["segments"] if s["kind"] == "scene"):
+        lesson = sub["scenes"][seg["scene"] - 1]["lessonId"]
+        folder = out_dir / lesson
+        folder.mkdir(exist_ok=True)
+        by_lesson[lesson] = by_lesson.get(lesson, 0) + 1
+        shots.append((round(seg["end"] - 0.6, 3), folder / f"{by_lesson[lesson]:03d}.jpg"))
+    render.frames(out_dir / "stage.html", shots)
+    sheets = []
+    for lesson, count in by_lesson.items():
+        sheet = out_dir / f"{lesson}.jpg"
+        subprocess.run([ff, "-y", "-v", "error", "-framerate", "1", "-i", str(out_dir / lesson / "%03d.jpg"),
+                        "-vf", f"scale=640:-1,tile=3x{(count + 2) // 3}", "-frames:v", "1", "-q:v", "3", str(sheet)],
+                       check=True)
+        sheets.append(sheet)
+    return sheets
+
+
+def pilot(images_dir: Path, only: str, workers: int = 3) -> Path:
+    """One lesson or topic, voiced and rendered on its own (voice.py --only first), so the owner can
+    watch a minute of the real video before the whole course is recorded and rendered.
+    Writes <video>/pilot/pilot-<lesson>[-t<topic>].mp4."""
+    import imageio_ffmpeg
+    ff = imageio_ffmpeg.get_ffmpeg_exe()
+    vid = Path(images_dir).resolve() / "video"
+    plan = storyplan.load_json(vid / "plan.json")
+    course, figures, parts, practice = _course_context(vid, plan)
+    sub, numbers = _subset(plan, only)
+    work = vid / "pilot"
+    audio = work / "audio"
+    shutil.rmtree(work, ignore_errors=True)
+    audio.mkdir(parents=True)
+    for new, old in enumerate(numbers, 1):           # the subset's scenes are numbered from 1
+        for suffix in ("", "-myth"):
+            for ext in (".wav", ".words.json"):
+                src = vid / "audio" / f"s{old}{suffix}{ext}"
+                if src.is_file():
+                    shutil.copy(src, audio / f"s{new}{suffix}{ext}")
+                elif not suffix:
+                    raise SystemExit(f"missing {src}; run voice.py --only {only} first")
+    for clip in ("intro", "recap"):                  # not part of the pilot: a short silence
+        with wave.open(str(audio / f"{clip}.wav"), "wb") as w:
+            w.setnchannels(1), w.setsampwidth(2), w.setframerate(RATE), w.writeframes(b"\0\0" * (RATE // 10))
+        (audio / f"{clip}.words.json").write_text("[]", encoding="utf-8")
+    tl = timeline.build(sub, clip_info(audio, sub), storyplan.practise_cards(sub, practice) if practice else None,
+                        vector_labels(sub, vid))
+    _stage(vid, sub, tl, figures, parts, work / "stage.html")
+    narration = mix(audio, tl["audio"], tl["duration"], work / "narration.wav")
+    silent = render.render(work / "stage.html", tl["duration"], FPS, workers, work / "video.mp4", ff)
+    brolls = [vid / "broll" / f"s{n}.mp4" for n in numbers if plan["scenes"][n - 1]["kind"] == "broll"]
+    if tl["broll"]:
+        subprocess.run(broll_command(ff, silent, tl["broll"], brolls, work / "video-broll.mp4"), check=True)
+        silent = work / "video-broll.mp4"
+    full = work / "full.mp4"
+    subprocess.run(mux_command(ff, silent, narration, full), check=True)
+    segs = [s for s in tl["segments"] if s.get("scene")]
+    start, end = segs[0]["start"], segs[-1]["end"]
+    out = work / f"pilot-{only.replace(':', '-t')}.mp4"
+    subprocess.run([ff, "-y", "-v", "error", "-ss", str(start), "-i", str(full), "-t", str(end - start),
+                    "-c:v", "libx264", "-crf", "18", "-c:a", "aac", "-b:a", "192k", str(out)], check=True)
+    return out
+
+
 def thumbnails_only(images_dir: Path) -> list[Path]:
     """Redo the thumbnails of an already built video from plan.json and clips.json."""
     vid = Path(images_dir).resolve() / "video"
@@ -297,8 +407,17 @@ def main(argv=None) -> int:
     ap.add_argument("--workers", type=int, default=3)
     ap.add_argument("--music", type=Path, help="optional background music, mixed quietly under the voice")
     ap.add_argument("--thumbnails-only", action="store_true", help="redo the thumbnails of a built video")
+    ap.add_argument("--stills", action="store_true", help="free preview: one frame per scene, no narration needed")
+    ap.add_argument("--only", metavar="LESSON[:TOPIC]", help="pilot: render only this lesson or topic")
     a = ap.parse_args(argv)
     t0 = time.time()
+    if a.stills:
+        for sheet in preview_stills(a.images_dir, a.only):
+            print("stills", sheet)
+        return 0
+    if a.only:
+        print(f"pilot {pilot(a.images_dir, a.only, a.workers)} in {time.time() - t0:.0f}s")
+        return 0
     if a.thumbnails_only:
         made = thumbnails_only(a.images_dir)
         print(f"{len(made)} thumbnails" if made else "no plan.thumbnail.photo: nothing to do")

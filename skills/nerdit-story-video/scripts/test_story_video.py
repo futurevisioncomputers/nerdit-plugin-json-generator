@@ -802,3 +802,43 @@ def test_thumbnail_page_puts_the_photo_beside_the_course_and_topic(tmp_path):
     assert photo.resolve().as_uri() in page and "Flask Web Development" in page
     assert "GET &amp; POST Methods" in page and "Flask HTTP Methods" in page    # escaped
     assert "window.renderAt" in page and "window.ready" in page                # render.stills can open it
+
+
+def _fake_google(tmp_path, monkeypatch):
+    monkeypatch.setattr(voice, "ffmpeg", lambda: "ff")
+    monkeypatch.setenv("GOOGLE_TTS_API_KEY", "k")
+    calls = []
+
+    def runner(cmd, **kw):
+        Path(cmd[-1]).write_bytes(silent_wav(1.0))
+
+    def google(text, name, rate, wav, key):
+        calls.append(text)
+        Path(wav).write_bytes(silent_wav(1.0))
+    return calls, runner, google
+
+
+def test_unchanged_clips_are_not_recorded_again(tmp_path, monkeypatch):
+    plan, images = write_plan(tmp_path)
+    calls, runner, google = _fake_google(tmp_path, monkeypatch)
+    voice.run(images, None, None, None, runner=runner, google=google)
+    first = len(calls)
+    voice.run(images, None, None, None, runner=runner, google=google)
+    assert first > 0 and len(calls) == first                          # second run: nothing paid for
+    plan["scenes"][0]["narration"] += " एक और sentence."
+    (images / "video" / "plan.json").write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    voice.run(images, None, None, None, runner=runner, google=google)
+    assert first < len(calls) <= first + 3                             # only the changed scene again
+
+
+def test_only_records_one_lesson_or_topic(tmp_path, monkeypatch):
+    plan, images = write_plan(tmp_path)
+    lesson = plan["scenes"][0]["lessonId"]
+    picked = voice.selected(plan, f"{lesson}:{plan['scenes'][0].get('topic', 1)}")
+    assert "s1" in picked and "intro" not in picked
+    with pytest.raises(SystemExit):
+        voice.selected(plan, "no-such-lesson")
+    calls, runner, google = _fake_google(tmp_path, monkeypatch)
+    voice.run(images, None, None, None, runner=runner, google=google, only=lesson)
+    assert not (images / "video" / "audio" / "intro.wav").exists()
+    assert (images / "video" / "audio" / "s1.wav").exists()
