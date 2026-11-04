@@ -1,0 +1,66 @@
+{
+  "lessonQuestions": [
+    {
+      "correctOptionIndex": 0,
+      "options": [
+        "{'message': 'Hello, FastAPI!'}",
+        "Hello, FastAPI!",
+        "None",
+        "'message': 'Hello, FastAPI!'"
+      ],
+      "text": "Given `def read_root(): return {\"message\": \"Hello, FastAPI!\"}` and then `print(read_root())`, what does Python print?"
+    },
+    {
+      "correctOptionIndex": 0,
+      "options": [
+        "__main__",
+        "main.py",
+        "main",
+        "__init__"
+      ],
+      "text": "A checker imports main.py and prints `__name__`, showing `main`. What does `__name__` hold instead when you run the file directly with `python main.py`?"
+    },
+    {
+      "correctOptionIndex": 0,
+      "options": [
+        "FastAPI Getting Started",
+        "None",
+        "APP_NAME",
+        "KeyError"
+      ],
+      "text": "Your .env file holds `APP_NAME=FastAPI Getting Started`, and main.py calls `load_dotenv()` before `os.getenv(\"APP_NAME\")`. What does that call return?"
+    }
+  ],
+  "assessmentQuestions": [
+    {
+      "correctOptionIndex": 0,
+      "options": [
+        "The exact packages and versions listed in requirements.txt",
+        "Only fastapi, with no other packages",
+        "Whatever the newest versions of every package are",
+        "Nothing; the command only checks for an internet connection"
+      ],
+      "text": "A teammate runs `pip install -r requirements.txt` in a fresh virtual environment. What does this command install?"
+    },
+    {
+      "correctOptionIndex": 0,
+      "options": [
+        "It restarts the server automatically when a project file changes",
+        "It opens a database connection before the server starts",
+        "It hides Uvicorn's startup log lines",
+        "It switches the server from HTTP to HTTPS"
+      ],
+      "text": "What does the --reload flag do when you start Uvicorn with `uvicorn main:app --reload`?"
+    },
+    {
+      "correctOptionIndex": 0,
+      "options": [
+        "None of them",
+        "Only .env",
+        "Only venv/",
+        "All three"
+      ],
+      "text": "A .gitignore file lists `venv/`, `.env` and `__pycache__/`. Which of these shows up when you run `git status` afterward?"
+    }
+  ]
+}

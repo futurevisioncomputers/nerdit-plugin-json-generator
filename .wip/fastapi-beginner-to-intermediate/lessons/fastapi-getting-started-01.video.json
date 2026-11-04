@@ -1,0 +1,176 @@
+{
+  "lessonId": "fastapi-getting-started-01",
+  "htmlSha256": "89c5581272bd941187d5fe69ce1fffd522a8d67f8fb2a4f393c1ce35176ed3f9",
+  "language": "hi",
+  "scenes": [
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-getting-started-01",
+      "topic": 1,
+      "title": "A Project Folder and a Virtual Environment",
+      "vector": "fastapi-getting-started-01-t1-concept.svg",
+      "keyIdea": "a project folder and its own virtual environment",
+      "terms": ["project folder", "virtual environment"],
+      "focus": [],
+      "myth": null,
+      "narration": "A new web API बनाने से पहले, आप एक project folder बनाते हैं। यह folder आपके app की हर file रखता है, बाकी code से अलग, एक clean structure में। उसी folder के अंदर एक virtual environment भी setup होता है: यानी सिर्फ इस project के लिए, Python का एक private, isolated copy। इससे हर project के dependencies और packages अलग-अलग रहते हैं, और two different projects कभी एक-दूसरे से clash नहीं करते।"
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-getting-started-01",
+      "topic": 1,
+      "title": "Activating venv: Windows vs macOS/Linux",
+      "vector": "fastapi-getting-started-01-t1-compare.svg",
+      "keyIdea": "activating looks different on Windows and macOS/Linux",
+      "terms": ["activates"],
+      "focus": [],
+      "myth": {
+        "wrong": "pip install works without turning on venv first",
+        "right": "Activate venv first, so packages stay inside this project",
+        "narration": "Many beginners सोचते हैं कि pip install बिना venv activates किए भी ठीक से काम कर लेगा। लेकिन बिना activate किए, packages पूरे computer में globally install हो जाते हैं, सिर्फ इस project में नहीं। इसलिए हर बार pip install से पहले, अपना venv activate करना ज़रूरी है।"
+      },
+      "narration": "Making a virtual environment उसी एक command से होता है, हर operating system पर। लेकिन उसे activate करने का तरीका अलग होता है, क्योंकि हर system इसे अलग तरीके से activates करता है। On Windows, आप एक command चलाते हैं, और macOS या Linux पर, थोड़ा अलग रास्ता होता है। activate होने के बाद, आपके terminal prompt पर venv दिखने लगता है, जो confirm करता है कि environment अब ready है।"
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-getting-started-01",
+      "topic": 2,
+      "title": "pip, the App and a Route",
+      "vector": "fastapi-getting-started-01-t2-concept.svg",
+      "keyIdea": "pip installs the library; the app collects routes",
+      "terms": ["pip", "FastAPI app", "route"],
+      "focus": [],
+      "myth": null,
+      "narration": "FastAPI से एक route बनाने के लिए, पहले उसकी library अपने project में add करनी होती है। pip, Python का package installer है, और यह FastAPI की library, उसके साथ वाली packages के साथ, install कर देता है। फिर एक FastAPI app बनाया जाता है, जो हर route को अपने अंदर इकट्ठा रखता है। और एक route, एक URL path को सीधा एक Python function से जोड़ता है।"
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-getting-started-01",
+      "topic": 2,
+      "title": "Your First Route",
+      "code": 1,
+      "highlight": ["line:1", "line:3", "line:6", "line:8"],
+      "keyIdea": "@app.get(\"/\") connects / to read_root",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "यह असली Python code है, जो main.py में save होता है। पहली line से FastAPI class import होती है। फिर FastAPI() को call करके एक app बनाया जाता है। @app.get decorator, read_root function को register करता है, slash path पर आने वाले GET requests के लिए। आखिरी return line, एक plain dictionary भेजती है, जो JSON बन जाती है। नीचे की print line, इस function को directly call करके, वही dictionary दिखाती है।"
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-getting-started-01",
+      "topic": 2,
+      "title": "Future Vision's Welcome Message",
+      "code": 2,
+      "highlight": ["line:3"],
+      "keyIdea": "only the returned message changes",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "यह वही file है, सिर्फ एक line बदली गई है। Future Vision Computer Institute इसी app को अपनी admissions API बनाना चाहता है। app वही रहता है जो ऊपर बनाया गया था, लेकिन read_root अब एक नया message लौटाता है: Future Vision Admissions API is running। नीचे की print line दिखाती है कि function अब यही नया dictionary return करता है।"
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-getting-started-01",
+      "topic": 3,
+      "title": "Uvicorn Serves, --reload Restarts",
+      "vector": "fastapi-getting-started-01-t3-concept.svg",
+      "keyIdea": "Uvicorn serves the app; --reload restarts it",
+      "terms": ["Uvicorn"],
+      "focus": [],
+      "myth": null,
+      "narration": "To turn main.py into a real, running server, आप Uvicorn नाम का tool अपने terminal से चलाते हैं। It loads your FastAPI app, और requests सुनना शुरू कर देता है, at 127.0.0.1:8000। Adding the --reload flag means, जैसे ही आप file save करते हैं, the server अपने आप restart हो जाता है, automatically, बिना manually रोके। यह development के दौरान बहुत समय बचाता है, क्योंकि हर छोटे change के बाद server फिर से शुरू करने की ज़रूरत नहीं पड़ती।"
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-getting-started-01",
+      "topic": 3,
+      "title": "The Automatic Docs Page",
+      "vector": "fastapi-getting-started-01-t3-docs.svg",
+      "keyIdea": "the docs page is built from your routes automatically",
+      "terms": ["automatic docs"],
+      "focus": [],
+      "myth": {
+        "wrong": "You must write test code to see a route's response",
+        "right": "Open /docs and click Execute to see it instantly",
+        "narration": "कुछ लोग सोचते हैं कि route का response देखने के लिए एक अलग test script लिखना पड़ेगा। लेकिन असल में, slash docs खोलकर, Try it out और फिर Execute दबाकर, वही response सीधा browser में दिख जाता है, बिना एक लाइन code लिखे।"
+      },
+      "narration": "FastAPI reads हर route को, और इसीलिए एक automatic docs page अपने आप बना देता है, at slash docs। This interactive page हर route को list करता है, जैसे GET slash। Clicking Try it out एक editable form खोलता है, और Execute दबाने से, एक real request जाती है, साथ में असली response के, जिसमें Future Vision Admissions API is running वाला message भी शामिल होता है।"
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-getting-started-01",
+      "topic": 4,
+      "title": "requirements.txt and .env",
+      "vector": "fastapi-getting-started-01-t4-concept.svg",
+      "keyIdea": "requirements.txt pins packages; .env holds settings",
+      "terms": ["requirements file", ".env file"],
+      "focus": [],
+      "myth": null,
+      "narration": "A teammate को आपके exact packages चाहिए, और आपकी app को ऐसी settings चाहिए जो हर computer पर अलग हो सकती हैं। A requirements file, हर installed package को उसकी version के साथ list करती है, और pip freeze command से बनाई जाती है। And an .env file, settings और secrets को आपके Python code से पूरी तरह बाहर, अलग रखती है। दोनों files मिलकर, आपके project को किसी भी दूसरे computer पर आसानी से चलने लायक बनाती हैं।"
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-getting-started-01",
+      "topic": 4,
+      "title": "One Setting in .env",
+      "code": 1,
+      "highlight": ["line:1"],
+      "keyIdea": "one setting, APP_NAME, ready for os.getenv",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "यह .env file है, सिर्फ एक line के साथ: APP_NAME equals FastAPI Getting Started। No quotes की ज़रूरत नहीं पड़ती, बस key, एक equals sign, और value। python-dotenv इसे पढ़ता है, और इसे एक setting के रूप में ready कर देता है, ताकि आपके main.py के अंदर os.getenv इसे आगे पढ़ सके।"
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-getting-started-01",
+      "topic": 4,
+      "title": "Reading APP_NAME with os.getenv",
+      "code": 2,
+      "highlight": ["line:6", "line:12"],
+      "keyIdea": "load_dotenv() lets os.getenv read .env's values",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "यह वही main.py file है, section 2 वाली, लेकिन अब settings .env से आती हैं। load_dotenv() call, .env file को ढूंढकर उसकी lines load करता है, app बनने से पहले। आखिरी return line, os.getenv से APP_NAME की value पढ़ता है, और उसे वापस भेजता है, एक hard-coded message की जगह। इस तरह, वही code किसी भी computer पर अलग settings के साथ चल सकता है।"
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-getting-started-01",
+      "topic": 5,
+      "title": "python main.py and the __main__ Guard",
+      "vector": "fastapi-getting-started-01-t5-concept.svg",
+      "keyIdea": "__main__ is only true when you run the file directly",
+      "terms": ["__main__ guard"],
+      "focus": [],
+      "myth": null,
+      "narration": "Sometimes आपको main.py को python command से directly run करना होता है, Uvicorn के बिना। हर Python file का अपना special name होता है। जब कोई और module इस file को import करता है, तो उसे एक different name मिलता है, file के अपने नाम जैसा। लेकिन जब आप इसी file को run directly करते हैं, तो name becomes main, और तभी __main__ guard के अंदर वाला code चलता है। यही पूरी वजह है कि यह guard हर file के अंत में लिखा जाता है।"
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-getting-started-01",
+      "topic": 5,
+      "title": "Keeping Local Files Out of Git",
+      "code": 1,
+      "highlight": ["line:1", "line:2", "line:3"],
+      "keyIdea": ".gitignore keeps venv, .env and __pycache__ out of Git",
+      "terms": [".gitignore"],
+      "focus": [],
+      "myth": {
+        "wrong": "A .gitignore file deletes the files it lists",
+        "right": "It only keeps Git from tracking them; they still exist",
+        "narration": "Some people think कि .gitignore में लिखी हुई files, permanently delete हो जाती हैं computer से। In reality ऐसा नहीं होता; those files अब भी वहीं exist करती हैं, सिर्फ Git उन्हें track करना completely बंद कर देता है, एक simple local setting से।"
+      },
+      "narration": ".gitignore file में venv slash, .env, और __pycache__ slash लिखा गया है। venv slash पूरा virtual environment skip कर देता है, क्योंकि every teammate अपना खुद बना सकता है। .env अपने settings और secrets को पूरी तरह Git history से दूर रखता है। और __pycache__ slash, Python की अपनी compiled files को छोड़ देता है। Below, git status के output में, यह चार तरह की files बिलकुल नहीं दिखती, even though वो वहीं मौजूद हैं।"
+    }
+  ],
+  "practise": [
+    {"topic": 1, "tryIt": "fill in venv's activate path", "task": null},
+    {"topic": 2, "tryIt": "predict read_root()'s plain output", "task": null},
+    {"topic": 3, "tryIt": "fill in the --reload flag", "task": null},
+    {"topic": 4, "tryIt": "complete pip freeze's output file name", "task": null},
+    {"topic": 5, "tryIt": "fill in the __main__ comparison", "task": null}
+  ],
+  "skipTopics": []
+}

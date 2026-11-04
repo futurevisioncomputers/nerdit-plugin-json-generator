@@ -1,0 +1,35 @@
+{
+  "teaches": [
+    "project folder",
+    "virtual environment",
+    "pip",
+    "FastAPI app",
+    "route",
+    "@app.get",
+    "Uvicorn",
+    "automatic docs",
+    "--reload",
+    "requirements file",
+    "pip freeze",
+    ".env file",
+    "load_dotenv()",
+    "os.getenv",
+    ".gitignore",
+    "__main__ guard"
+  ],
+  "uses": [
+    "function",
+    "dictionary",
+    "string",
+    "import",
+    "print()",
+    "terminal"
+  ],
+  "visuals": [
+    {"section": 1, "visual": "none", "illustration": null},
+    {"section": 2, "visual": "none", "illustration": null},
+    {"section": 3, "visual": "screen", "illustration": "the Swagger UI docs page listing the GET / route"},
+    {"section": 4, "visual": "none", "illustration": null},
+    {"section": 5, "visual": "none", "illustration": null}
+  ]
+}

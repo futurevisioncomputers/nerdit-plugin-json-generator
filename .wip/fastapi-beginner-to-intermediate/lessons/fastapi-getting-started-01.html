@@ -1,0 +1,461 @@
+<div class="nerdit-wrapper nerdit-simple" style="counter-reset:practical-counter challenge-counter;">
+
+  <h1>🚀 Getting Started with FastAPI</h1>
+
+  <div class="nerdit-info-box"><strong>📘 Lesson Overview:</strong> How do you turn an empty folder into a working web API in a few minutes? You will set up a Python project, install <code>fastapi</code> and <code>uvicorn</code>, and run your first route.</div>
+
+  <div class="nerdit-lesson-meta">
+    <span class="nerdit-meta-pill">⏱ 20 min</span>
+    <span class="nerdit-badge beginner">Beginner</span>
+  </div>
+
+  <div class="nerdit-figure" data-visual="course-map" style="max-width:440px">
+    <svg viewBox="0 0 360 78" role="img" aria-label="Course map: this lesson is the setup stage, first of five: setup, build, secure, scale, ship.">
+      <rect x="4" y="14" width="64" height="32" rx="6" fill="var(--nb)" stroke="var(--nb)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="36" y="35" text-anchor="middle" fill="var(--white)">Setup</text>
+      <rect x="76" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="108" y="35" text-anchor="middle" fill="var(--tx-m)">Build</text>
+      <rect x="148" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="180" y="35" text-anchor="middle" fill="var(--tx-m)">Secure</text>
+      <rect x="220" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="252" y="35" text-anchor="middle" fill="var(--tx-m)">Scale</text>
+      <rect x="292" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="324" y="35" text-anchor="middle" fill="var(--tx-m)">Ship</text>
+      <text class="nerdit-flow-text" x="36" y="68" text-anchor="middle" fill="var(--nb)">▲ you are here</text>
+    </svg>
+    <div class="nerdit-figure-caption">You are here: setting up the project before you build any routes.</div>
+  </div>
+
+  <div class="nerdit-info-box nerdit-case-intro">
+    <p><strong>Meet the case study.</strong> Future Vision Computer Institute is a computer institute in Surat, with branches in Citylight, Vesu and Pal. Its admissions team wants a web API, so counsellors like Neha can manage enquiries without a spreadsheet.</p>
+    <p class="nerdit-data-note">This chapter builds that admissions API, one feature at a time, starting with the empty project in this lesson. All records, people and amounts you see later are synthetic, made for teaching. Future Vision Computer Institute's name is used with permission.</p>
+  </div>
+
+  <section>
+    <h2 data-outline="1 2">1 — Create the Project Folder and a Virtual Environment</h2>
+
+    <p>Where should the files for a new web API live? A <strong>project folder</strong> is one folder that holds every file for this app, kept apart from your other code.</p>
+    <p>Every Python project can need its own package versions. A <strong>virtual environment</strong> is a private copy of Python just for one folder, <b>so two projects never clash</b>.</p>
+    <p>Create the folder first, then the environment inside it.</p>
+
+    <h3 class="nerdit-runhead">mkdir &amp; cd <span class="why">— make the project folder</span></h3>
+    <p>These two commands make a new folder and step inside it, so every later command runs from the right place.</p>
+    <div class="nerdit-terminal"><span class="nerdit-prompt">$ </span><span class="nerdit-cmd">mkdir fastapi-getting-started</span>
+<span class="nerdit-prompt">$ </span><span class="nerdit-cmd">cd fastapi-getting-started</span>
+<span class="nerdit-comment"># your terminal prompt now shows the new folder</span></div>
+
+    <h3 class="nerdit-runhead">python -m venv venv <span class="why">— make and turn on the virtual environment</span></h3>
+    <p>The command that creates a virtual environment is the same on every system. The command that <strong>activates</strong> it is not, so Windows and macOS/Linux get their own tab.</p>
+    <div class="nerdit-code-tabs">
+      <div class="nerdit-tab-buttons">
+        <button class="nerdit-tab-btn active" onclick="switchTab(this,'fgs01-venv-win')">Windows</button>
+        <button class="nerdit-tab-btn" onclick="switchTab(this,'fgs01-venv-mac')">macOS / Linux</button>
+      </div>
+      <div id="fgs01-venv-win" class="nerdit-tab-content active">
+        <pre data-lang="bash"><code>python -m venv venv
+venv\Scripts\activate</code></pre>
+      </div>
+      <div id="fgs01-venv-mac" class="nerdit-tab-content">
+        <pre data-lang="bash"><code>python3 -m venv venv
+source venv/bin/activate</code></pre>
+      </div>
+    </div>
+    <div class="nerdit-out"><span class="nerdit-tag">Terminal shows</span><pre><code>(venv) $</code></pre></div>
+    <ol class="nerdit-codewalk">
+      <li><code>python -m venv venv</code> creates a folder named <code>venv</code> holding a private copy of Python.</li>
+      <li><code>venv\Scripts\activate</code> (or <code>source venv/bin/activate</code>) turns that copy on for this terminal.</li>
+    </ol>
+
+    <pre class="nerdit-map"><span class="nerdit-map-label">Command → what it does</span>mkdir fastapi-getting-started → creates the project folder
+cd fastapi-getting-started    → moves your terminal into it
+python -m venv venv           → creates the virtual environment</pre>
+
+    <p>Make a new virtual environment for every project, so its packages never mix with another project's.</p>
+
+    <div class="nerdit-tip"><div><strong>Tip:</strong> Run the activate command again any time you open a new terminal window for this project.</div></div>
+
+    <div class="nerdit-fillblank" data-answer="Scripts|scripts">
+      <div class="nerdit-fillblank-head">✏️ Try It — Fill in the blank</div>
+      <p>On Windows, complete the path that activates the virtual environment:</p>
+      <pre data-lang="bash"><code>venv\<input class="nerdit-blank" size="8" aria-label="your answer">\activate</code></pre>
+      <button class="nerdit-check-btn" onclick="nerditCheckBlank(this)">Check</button>
+      <span class="nerdit-check-msg" aria-live="polite"></span>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="3 4">2 — Install FastAPI and Write Your First App</h2>
+
+    <p>How do you add FastAPI's code to your project? <strong>pip</strong> is Python's package installer. It downloads a library and every package that library needs.</p>
+    <p>A <strong>FastAPI app</strong> is the one object that collects every address, or <strong>route</strong>, your API will answer. <b>You create the app once</b>, then attach routes to it with a decorator.</p>
+
+    <h3 class="nerdit-runhead">pip install fastapi uvicorn <span class="why">— with your venv active, add both libraries</span></h3>
+    <div class="nerdit-terminal"><span class="nerdit-prompt">$ </span><span class="nerdit-cmd">pip install fastapi uvicorn</span>
+<span class="nerdit-out">Successfully installed fastapi-0.115.6 starlette-0.41.3 pydantic-2.10.3 click-8.1.7 uvicorn-0.32.1</span>
+<span class="nerdit-comment"># pip also installs the smaller packages fastapi and uvicorn depend on</span></div>
+
+    <h3 class="nerdit-runhead">@app.get("/") <span class="why">— connect one URL to one function</span></h3>
+    <p>Save this as <code>main.py</code>. The <code>@app.get("/")</code> decorator tells FastAPI which function answers a request for the path <code>/</code>.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import FastAPI
+
+app = FastAPI()
+
+
+@app.get("/")
+def read_root():
+    return {"message": "Hello, FastAPI!"}
+
+
+print(read_root())</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>{'message': 'Hello, FastAPI!'}</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>from fastapi import FastAPI</code> brings in the class every route needs.</li>
+      <li><code>app = FastAPI()</code> creates the app that will collect your routes.</li>
+      <li><code>@app.get("/")</code> registers <code>read_root</code> for GET requests to <code>/</code>.</li>
+      <li><code>return {"message": "Hello, FastAPI!"}</code> sends back a plain Python dict as JSON.</li>
+    </ol>
+
+    <p>Reach for a new route whenever your API needs to answer a new URL; one function handles one path.</p>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: Future Vision's Admissions API</h3>
+    <p>Future Vision Computer Institute wants this exact file to grow into its admissions API. Only the welcome message changes.</p>
+
+    <h3 class="nerdit-runhead">A Welcome Message for the Admissions Team <span class="why">— one line changes, the rest stays</span></h3>
+    <p>The <code>app</code> object stays the one you built above; only the returned dict is different.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>@app.get("/")
+def read_root():
+    return {"message": "Future Vision Admissions API is running"}
+
+
+print(read_root())</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>{'message': 'Future Vision Admissions API is running'}</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>app = FastAPI()</code> is the same instance created above; a file keeps only one.</li>
+      <li><code>return {"message": "Future Vision Admissions API is running"}</code> replaces the earlier greeting.</li>
+    </ol>
+
+    <div class="nerdit-predict">
+      <div class="nerdit-predict-head">🤔 Try It — Predict the output</div>
+      <pre data-lang="python"><code>def read_root():
+    return {"message": "Welcome to the API"}
+
+print(read_root())</code></pre>
+      <details class="nerdit-predict-answer">
+        <summary>Show answer</summary>
+        <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>{'message': 'Welcome to the API'}</code></pre></div>
+        <p><code>read_root</code> is a plain function here. Calling it directly returns its dict, the same value FastAPI sends as JSON.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="5 6">3 — Run the App and Open the Automatic Docs</h2>
+
+    <p>How do you turn <code>main.py</code> into a running web server? <strong>Uvicorn</strong> is the server that loads your FastAPI app and listens for requests.</p>
+    <p>FastAPI also reads your routes and writes <strong>automatic docs</strong>: an interactive page at <code>/docs</code>, with no extra work from you.</p>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: Running the Admissions API</h3>
+    <p>Future Vision's admissions team can now start the exact file you built in section 2.</p>
+
+    <h3 class="nerdit-runhead">uvicorn main:app --reload <span class="why">— start the server and watch for changes</span></h3>
+    <p>Activate your venv from section 1, then run this from the same folder as <code>main.py</code>.</p>
+    <div class="nerdit-terminal"><span class="nerdit-prompt">$ </span><span class="nerdit-cmd">uvicorn main:app --reload</span>
+<span class="nerdit-out">INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)</span>
+<span class="nerdit-out">INFO:     Started reloader process using WatchFiles</span>
+<span class="nerdit-out">INFO:     Application startup complete.</span>
+<span class="nerdit-comment"># Press Ctrl+C to stop the server</span></div>
+    <p>Open http://127.0.0.1:8000 in your browser. The page shows the JSON your route returns: <code>{"message": "Future Vision Admissions API is running"}</code>.</p>
+    <p><code>main:app</code> tells Uvicorn to look inside <code>main.py</code> for the <code>app</code> object. <code>--reload</code> restarts the server the moment you save a change.</p>
+
+    <h3 class="nerdit-runhead">/docs <span class="why">— try a route without writing a request</span></h3>
+    <p>Open http://127.0.0.1:8000/docs to see every route listed, built straight from your code.</p>
+    <script type="application/json" class="nerdit-screen">
+{"id": "fgs01-docs-root", "app": "Swagger UI", "layout": "app",
+ "goal": "Try the GET / route from the docs page",
+ "path": ["/docs"],
+ "panel": [{"kind": "item", "text": "GET /"},
+           {"kind": "button", "label": "Try it out"},
+           {"kind": "button", "label": "Execute"}],
+ "steps": [{"do": "click", "path": ["GET /"]},
+           {"do": "click", "path": ["Try it out"]},
+           {"do": "click", "path": ["Execute"]}],
+ "alt": "Swagger UI listing GET /, with Try it out and Execute buttons below it.",
+ "takeaway": "The docs page runs a route for you, with no request code to write.",
+ "misconception": "You must write a test script to see what a route returns.",
+ "check": {"question": "What must you click before Execute becomes active?", "answer": "Try it out",
+           "reasoning": "Try it out opens the editable request form that Execute then sends."}}
+    </script>
+    <p>It lists <code>GET /</code>, with a <code>Try it out</code> button that opens a form and an <code>Execute</code> button that sends the real request. The response body comes back as <code>{"message": "Future Vision Admissions API is running"}</code>, the same JSON your browser showed at the plain URL.</p>
+
+    <div class="nerdit-tip"><div><strong>Tip:</strong> Add <code>.env</code> to <code>.gitignore</code> (section 5) so secrets never reach Git history.</div></div>
+
+    <div class="nerdit-fillblank" data-answer="reload">
+      <div class="nerdit-fillblank-head">✏️ Try It — Fill in the blank</div>
+      <p>Complete the flag that restarts Uvicorn automatically whenever you save <code>main.py</code>:</p>
+      <pre data-lang="bash"><code>uvicorn main:app --<input class="nerdit-blank" size="8" aria-label="your answer"></code></pre>
+      <button class="nerdit-check-btn" onclick="nerditCheckBlank(this)">Check</button>
+      <span class="nerdit-check-msg" aria-live="polite"></span>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="7 8">4 — Save Dependencies and Configuration</h2>
+
+    <p>A teammate needs your exact package list, and your app needs <b>settings that differ by computer</b>. A <strong>requirements file</strong> lists every installed package; an <strong>.env file</strong> holds settings outside your code.</p>
+    <p><code>pip freeze</code> prints every installed package, pinned by <code>==</code>. Redirecting it into <code>requirements.txt</code> lets a teammate run <code>pip install -r</code> <code>requirements.txt</code> to match your versions exactly.</p>
+
+    <h3 class="nerdit-runhead">pip freeze &gt; requirements.txt <span class="why">— write down what you installed</span></h3>
+    <div class="nerdit-terminal"><span class="nerdit-prompt">$ </span><span class="nerdit-cmd">pip freeze &gt; requirements.txt</span>
+<span class="nerdit-prompt">$ </span><span class="nerdit-cmd">cat requirements.txt</span>
+<span class="nerdit-out">fastapi==0.115.6
+python-dotenv==1.0.1
+uvicorn==0.32.1</span>
+<span class="nerdit-comment"># pip freeze also lists the smaller packages these depend on</span></div>
+
+    <h3 class="nerdit-runhead">.env <span class="why">— one setting per line, outside your code</span></h3>
+    <div class="nerdit-run">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="text"><code>APP_NAME=FastAPI Getting Started</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">python-dotenv reads</span>
+        <p>One setting, <code>APP_NAME</code>, ready for <code>os.getenv</code> to read.</p>
+      </div>
+    </div>
+    <p>python-dotenv's <code>load_dotenv()</code> reads a file like this one and lets <code>os.getenv</code> read its values anywhere in your code.</p>
+
+    <h3 class="nerdit-runhead">load_dotenv() <span class="why">— read main.py's setting from .env</span></h3>
+    <p>Add these lines to <code>main.py</code> from section 2, then read <code>APP_NAME</code> instead of writing it in the file.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>import os
+
+from dotenv import load_dotenv
+from fastapi import FastAPI
+
+load_dotenv()
+app = FastAPI()
+
+
+@app.get("/")
+def read_root():
+    return {"message": os.getenv("APP_NAME")}</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <p>With <code>.env</code> beside <code>main.py</code>, calling <code>read_root()</code> now returns the value <code>load_dotenv()</code> loaded, not a message typed into the file.</p>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>load_dotenv()</code> finds <code>.env</code> next to <code>main.py</code> and loads its lines.</li>
+      <li><code>APP_NAME=FastAPI Getting Started</code> in <code>.env</code> sets one setting, with no quotes needed.</li>
+      <li><code>return {"message": os.getenv("APP_NAME")}</code> reads that setting back inside your route.</li>
+    </ol>
+
+    <pre class="nerdit-map"><span class="nerdit-map-label">File → what it holds</span>requirements.txt → the exact packages pip install needs
+.env              → settings and secrets your code reads at startup</pre>
+
+    <div class="nerdit-warning-block"><div class="nerdit-warning-label">Warning — never commit .env</div><p>A real <code>.env</code> can hold passwords or API keys. Section 5 keeps it out of Git entirely.</p></div>
+
+    <div class="nerdit-fillblank" data-answer="requirements.txt">
+      <div class="nerdit-fillblank-head">✏️ Try It — Fill in the blank</div>
+      <p>Complete the command that saves your installed packages to a file pip install -r can replay:</p>
+      <pre data-lang="bash"><code>pip freeze &gt; <input class="nerdit-blank" size="18" aria-label="your answer"></code></pre>
+      <button class="nerdit-check-btn" onclick="nerditCheckBlank(this)">Check</button>
+      <span class="nerdit-check-msg" aria-live="polite"></span>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="9 10">5 — Protect Local Files and Run the App Directly</h2>
+
+    <p>Which files should never reach a shared repository? Your <strong>.gitignore</strong> file lists folders and files Git should always skip, like <code>venv</code> and <code>.env</code>.</p>
+    <p>How do you run a script directly instead of through Uvicorn's command? The <strong>__main__ guard</strong> checks whether Python ran this file itself, not just imported it.</p>
+
+    <h3 class="nerdit-runhead">.gitignore <span class="why">— keep local files out of Git</span></h3>
+    <p>Create this file once, before your first commit.</p>
+    <div class="nerdit-run">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="text"><code>venv/
+.env
+__pycache__/
+*.pyc</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Git shows</span>
+        <pre><code>On branch main
+Untracked files:
+  (use "git add &lt;file&gt;..." to include in what will be committed)
+        .gitignore
+        main.py
+        requirements.txt</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>venv/</code> skips your whole virtual environment; a teammate rebuilds their own from <code>requirements.txt</code>.</li>
+      <li><code>.env</code> keeps your settings and secrets out of Git entirely.</li>
+      <li><code>__pycache__/</code> and <code>*.pyc</code> skip Python's own compiled files.</li>
+    </ol>
+    <p>None of those four kinds of files appear in the untracked list above.</p>
+
+    <h3 class="nerdit-runhead">if __name__ == "__main__": <span class="why">— an alternative to the uvicorn command</span></h3>
+    <p>Every module has a <code>__name__</code>. Running a file directly sets it to <code>"__main__"</code>; importing that file sets it to the file's own name instead.</p>
+    <div class="nerdit-run nerdit-program" data-run="offline" data-file="main.py">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>import uvicorn
+from fastapi import FastAPI
+
+app = FastAPI()
+
+
+@app.get("/")
+def read_root():
+    return {"message": "Hello, FastAPI!"}
+
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)</code></pre>
+      </div>
+      <script type="text/plain" class="nerdit-check">print(read_root())
+print(__name__)</script>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>{'message': 'Hello, FastAPI!'}
+main</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk nerdit-walk-full">
+      <li><code>import uvicorn</code> imports the library this file now runs directly.</li>
+      <li><code>from fastapi import FastAPI</code> is the same import as section 2.</li>
+      <li><code>app = FastAPI()</code> is the same pattern as section 2.</li>
+      <li><code>@app.get("/")</code> registers the route, as in section 2.</li>
+      <li><code>def read_root():</code> is the function that answers <code>/</code>.</li>
+      <li><code>return {"message": "Hello, FastAPI!"}</code> is the JSON FastAPI sends back.</li>
+      <li><code>if __name__ == "__main__":</code> is true only when you run this file directly.</li>
+      <li><code>uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)</code> starts the server, the same way the terminal command in section 3 does.</li>
+    </ol>
+    <p>Save the file, activate your venv from section 1, and run it directly:</p>
+    <div class="nerdit-terminal"><span class="nerdit-prompt">$ </span><span class="nerdit-cmd">python main.py</span>
+<span class="nerdit-out">INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)</span>
+<span class="nerdit-comment"># Press Ctrl+C to stop the server</span></div>
+    <p>Loading <code>main.py</code> as a module printed <code>main</code> for <code>__name__</code>, so the guard's server never started. Run it directly and <code>__name__</code> becomes <code>"__main__"</code> instead, so it does.</p>
+
+    <div class="nerdit-tip"><div><strong>Tip:</strong> Most teams still start their server with <code>uvicorn main:app --reload</code>; the <code>__main__</code> guard is handy for scripts that must run the same way everywhere.</div></div>
+
+    <div class="nerdit-fillblank" data-answer="&quot;__main__&quot;">
+      <div class="nerdit-fillblank-head">✏️ Try It — Fill in the blank</div>
+      <p>Complete the comparison so this code only runs when Python executes the file directly:</p>
+      <pre data-lang="python"><code>if __name__ == <input class="nerdit-blank" size="12" aria-label="your answer">:
+    print("Hello from main.py")</code></pre>
+      <button class="nerdit-check-btn" onclick="nerditCheckBlank(this)">Check</button>
+      <span class="nerdit-check-msg" aria-live="polite"></span>
+    </div>
+  </section>
+
+  <section>
+    <h2>📌 Quick Reference</h2>
+    <div class="nerdit-cheatsheet">
+      <table>
+        <thead><tr><th>Keyword</th><th>What it does</th><th>Tiny example</th></tr></thead>
+        <tbody>
+          <tr><td><code>venv</code></td><td>A private copy of Python for one project</td><td><code>python -m venv venv</code></td></tr>
+          <tr><td><code>pip install</code></td><td>Adds a library and its dependencies</td><td><code>pip install fastapi uvicorn</code></td></tr>
+          <tr><td><code>FastAPI()</code></td><td>Creates the app that holds your routes</td><td><code>app = FastAPI()</code></td></tr>
+          <tr><td><code>@app.get(...)</code></td><td>Connects a URL to a function</td><td><code>@app.get("/")</code></td></tr>
+          <tr><td><code>uvicorn ... --reload</code></td><td>Runs the server, restarts on save</td><td><code>uvicorn main:app --reload</code></td></tr>
+          <tr><td><code>/docs</code></td><td>Interactive docs built from your routes</td><td><code>http://127.0.0.1:8000/docs</code></td></tr>
+          <tr><td><code>pip freeze</code></td><td>Lists installed packages with versions</td><td><code>pip freeze &gt; requirements.txt</code></td></tr>
+          <tr><td><code>load_dotenv()</code></td><td>Loads <code>.env</code> settings for <code>os.getenv</code></td><td><code>os.getenv("APP_NAME")</code></td></tr>
+          <tr><td><code>.gitignore</code></td><td>Lists files Git should never track</td><td><code>venv/</code></td></tr>
+          <tr><td><code>if __name__ == "__main__":</code></td><td>True only when run directly</td><td><code>python main.py</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>🧠 Practice</h2>
+    <div class="nerdit-practical">
+      <div class="nerdit-task">Task 1: Write the command that creates a virtual environment named <code>venv</code>, then the macOS/Linux command that activates it.
+        <details class="nerdit-solution">
+          <summary>Show solution</summary>
+          <pre data-lang="bash"><code>python3 -m venv venv
+source venv/bin/activate</code></pre>
+          <div class="nerdit-out"><span class="nerdit-tag">Terminal shows</span><pre><code>(venv) $</code></pre></div>
+        </details>
+      </div>
+      <div class="nerdit-task">Task 2: Add a second route function, <code>health_check</code>, that returns <code>{"status": "ok"}</code>, then print what both route functions return.
+        <details class="nerdit-solution">
+          <summary>Show solution</summary>
+          <pre data-lang="python"><code>def read_root():
+    return {"message": "Hello, FastAPI!"}
+
+def health_check():
+    return {"status": "ok"}
+
+print(read_root())
+print(health_check())</code></pre>
+          <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>{'message': 'Hello, FastAPI!'}
+{'status': 'ok'}</code></pre></div>
+        </details>
+      </div>
+      <div class="nerdit-task">Task 3: Write <code>.gitignore</code> lines that skip <code>venv</code>, <code>.env</code> and <code>__pycache__</code>, then add a line that also skips a file named <code>secrets.json</code>.
+        <details class="nerdit-solution">
+          <summary>Show solution</summary>
+          <pre data-lang="text"><code>venv/
+.env
+__pycache__/
+secrets.json</code></pre>
+          <div class="nerdit-out"><span class="nerdit-tag">Git shows</span><p>None of the four (<code>venv/</code>, <code>.env</code>, <code>__pycache__/</code> or <code>secrets.json</code>) show up in <code>git status</code>.</p></div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+</div>
+<script>
+(function(){
+  if (typeof window.switchTab !== "function") {
+    window.switchTab = function(btn, id){
+      var tabs = btn.closest('.nerdit-code-tabs');
+      tabs.querySelectorAll('.nerdit-tab-btn').forEach(function(b){ b.classList.remove('active'); });
+      tabs.querySelectorAll('.nerdit-tab-content').forEach(function(c){ c.classList.remove('active'); });
+      btn.classList.add('active');
+      document.getElementById(id).classList.add('active');
+    };
+  }
+
+  if (typeof window.nerditCheckBlank !== "function") {
+    window.nerditCheckBlank = function(btn){
+      var box = btn.closest('.nerdit-fillblank');
+      var input = box.querySelector('.nerdit-blank');
+      var msg = box.querySelector('.nerdit-check-msg');
+      var accepted = (box.getAttribute('data-answer') || '').split('|');
+      var got = (input.value || '').trim().toLowerCase();
+      var ok = accepted.some(function(a){ return a.trim().toLowerCase() === got; });
+      msg.textContent = ok ? '✅ Correct!' : '❌ Not yet — try again.';
+      msg.className = 'nerdit-check-msg ' + (ok ? 'ok' : 'no');
+      input.classList.toggle('ok', ok);
+      input.classList.toggle('no', !ok);
+    };
+  }
+})();
+</script>
