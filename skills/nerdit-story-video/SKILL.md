@@ -169,11 +169,11 @@ again. Check in this order, and stop at the first step the owner is not happy wi
 Pexels credits) to `<images>/video/`. It re-runs the plan check first. `stage.html` draws every
 frame; open it and call `renderAt(seconds)` to inspect a moment.
 
-**Thumbnails (owner, 2026-11-04):** copy the owner's own photo (only theirs; the AI-styled suit
-photo they chose) to `<images>/video/presenter.jpg` and set `"thumbnail": {"photo": "presenter.jpg"}`
-in the plan. The build then writes `thumbnail.jpg` and one `thumb-<clip>.jpg` per clip: the photo on
-the right, NERDIT, the course title, the clip's topic and its lesson on the left; `clips.json`
-names each clip's thumbnail. `--thumbnails-only` redoes them for an already built video.
+**Thumbnail (owner, 2026-11-04):** the course has one story video, so one thumbnail. Copy the
+owner's own photo (only theirs; the AI-styled suit photo they chose) to
+`<images>/video/presenter.jpg` and set `"thumbnail": {"photo": "presenter.jpg"}` in the plan; the
+build then writes `thumbnail.jpg` with the photo on the right and NERDIT, the course title and
+"Full course explained" on the left. `--thumbnail-only` redoes it for an already built video.
 
 Rendering takes about 1.5× the video's length with 3 workers (a 2-hour course took 3 hours).
 Run it in the background, with its output in a log; it prints a line per worker every 5 video

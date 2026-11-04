@@ -167,29 +167,20 @@ def thumbnail_html(photo: Path, course: str, title: str, lesson: str = "") -> st
             + "</div><script>window.renderAt=function(){};window.ready=Promise.resolve(true);</script></body></html>")
 
 
-def make_thumbnails(vid: Path, plan: dict, clips: list[dict], titles: dict) -> list[Path]:
-    """thumb-<clip>.jpg for every clip, plus thumbnail.jpg for the whole video, when the plan names
-    the owner's photo (plan.thumbnail.photo, a file in the video folder). Adds "thumbnail" to each clip."""
+def make_thumbnail(vid: Path, plan: dict) -> Path | None:
+    """thumbnail.jpg for the course's one story video (owner, 2026-11-04: one upload per course),
+    when the plan names the owner's photo (plan.thumbnail.photo, a file in the video folder)."""
     photo_name = (plan.get("thumbnail") or {}).get("photo")
     if not photo_name:
-        return []
-    photo, course = vid / photo_name, plan.get("course", "")
+        return None
+    photo = vid / photo_name
     if not photo.is_file():
         raise SystemExit(f"thumbnail photo {photo} is missing")
-    work = vid / "parts" / "thumbs"
-    work.mkdir(parents=True, exist_ok=True)
-    pages = [(course, "Full course explained", "", vid / "thumbnail.jpg")]
-    for c in clips:
-        c["thumbnail"] = "thumb-" + Path(c["file"]).stem + ".jpg"
-        title = c["title"].split(": ", 1)[-1] if c["title"].startswith(course + ":") else c["title"]
-        pages.append((course, title, titles.get(c["lessonId"], ""), vid / c["thumbnail"]))
-    jobs = []
-    for i, (crs, title, lesson, out) in enumerate(pages):
-        page = work / f"t{i:03d}.html"
-        page.write_text(thumbnail_html(photo, crs, title, lesson), encoding="utf-8")
-        jobs.append((page, out))
-    render.stills(jobs)
-    return [out for _, out in jobs]
+    page = vid / "parts" / "thumbnail.html"
+    page.parent.mkdir(parents=True, exist_ok=True)
+    page.write_text(thumbnail_html(photo, plan.get("course", ""), "Full course explained"), encoding="utf-8")
+    render.stills([(page, vid / "thumbnail.jpg")])
+    return vid / "thumbnail.jpg"
 
 
 def svg_parts(svg: str) -> list | None:
@@ -274,7 +265,7 @@ def build(images_dir: Path, workers: int = 3, music: Path | None = None) -> Path
     for c in clips:
         subprocess.run(cut_command(ff, final, c, vid / c["file"]), check=True)
         c["youtubeTitle"] = storyplan.title_case(f"{plan.get('course', '')}: {c['title']}")
-    make_thumbnails(vid, plan, clips, titles)
+    make_thumbnail(vid, plan)   # the owner's photo replaces the scene-frame thumbnail
     (vid / "clips.json").write_text(json.dumps(clips, ensure_ascii=False, indent=2), encoding="utf-8")
     return final
 
@@ -389,16 +380,10 @@ def pilot(images_dir: Path, only: str, workers: int = 3) -> Path:
     return out
 
 
-def thumbnails_only(images_dir: Path) -> list[Path]:
-    """Redo the thumbnails of an already built video from plan.json and clips.json."""
+def thumbnail_only(images_dir: Path) -> Path | None:
+    """Redo thumbnail.jpg of an already built video from plan.json."""
     vid = Path(images_dir).resolve() / "video"
-    plan = storyplan.load_json(vid / "plan.json")
-    clips = json.loads((vid / "clips.json").read_text(encoding="utf-8"))
-    course = Path(plan["source"]) if plan.get("source") else None
-    titles = {l["id"]: l.get("title", "") for l in storyplan.course_lessons(course)} if course else {}
-    made = make_thumbnails(vid, plan, clips, titles)
-    (vid / "clips.json").write_text(json.dumps(clips, ensure_ascii=False, indent=2), encoding="utf-8")
-    return made
+    return make_thumbnail(vid, storyplan.load_json(vid / "plan.json"))
 
 
 def main(argv=None) -> int:
@@ -406,7 +391,7 @@ def main(argv=None) -> int:
     ap.add_argument("--images-dir", required=True, type=Path)
     ap.add_argument("--workers", type=int, default=3)
     ap.add_argument("--music", type=Path, help="optional background music, mixed quietly under the voice")
-    ap.add_argument("--thumbnails-only", action="store_true", help="redo the thumbnails of a built video")
+    ap.add_argument("--thumbnail-only", action="store_true", help="redo thumbnail.jpg of a built video")
     ap.add_argument("--stills", action="store_true", help="free preview: one frame per scene, no narration needed")
     ap.add_argument("--only", metavar="LESSON[:TOPIC]", help="pilot: render only this lesson or topic")
     a = ap.parse_args(argv)
@@ -418,9 +403,9 @@ def main(argv=None) -> int:
     if a.only:
         print(f"pilot {pilot(a.images_dir, a.only, a.workers)} in {time.time() - t0:.0f}s")
         return 0
-    if a.thumbnails_only:
-        made = thumbnails_only(a.images_dir)
-        print(f"{len(made)} thumbnails" if made else "no plan.thumbnail.photo: nothing to do")
+    if a.thumbnail_only:
+        made = thumbnail_only(a.images_dir)
+        print(made or "no plan.thumbnail.photo: nothing to do")
         return 0
     final = build(a.images_dir, a.workers, a.music)
     print(f"built {final} ({final.stat().st_size / 1e6:.1f} MB) in {time.time() - t0:.0f}s")
