@@ -452,6 +452,25 @@ def test_place_video_puts_each_clip_where_it_belongs():
     assert place_video.add_slots(course, clips)[1] == []
 
 
+def test_place_video_marks_each_slot_with_its_part_of_the_course_video():
+    """One upload of story.mp4 fills every slot: the admin pastes one link, each slot plays start..end."""
+    import place_video
+    course = {"lessons": [{"id": "l1", "content": '<div class="nerdit-wrapper"><section><h2>1 — A</h2></section>'
+                           '<div class="nerdit-video" data-nerdit-video="l1-t2-video" data-title="Old"></div></div>'}]}
+    clips = [{"key": "l1-t1-video", "place": "topic", "lessonId": "l1", "topic": 1, "title": "A",
+              "start": 29.82, "end": 102.12},
+             {"key": "l1-t2-video", "place": "topic", "lessonId": "l1", "topic": 2, "title": "Old",
+              "start": 102.12, "end": 180.5}]
+    course, added = place_video.add_slots(course, clips)
+    content = course["lessons"][0]["content"]
+    assert added == ["l1-t1-video"]
+    assert 'data-nerdit-video="l1-t1-video" data-title="A" data-start="29" data-end="103"></div>' in content
+    # A slot placed before times existed gets them on the next run, and stays one slot.
+    assert 'data-nerdit-video="l1-t2-video" data-title="Old" data-start="102" data-end="181"></div>' in content
+    assert content.count('data-nerdit-video="l1-t2-video"') == 1
+    assert place_video.add_slots(course, clips) == (course, [])
+
+
 def test_lesson_css_loads_the_site_stylesheets():
     assert ".nerdit-anim.na-play .na-show" in stage.lesson_css()
 
