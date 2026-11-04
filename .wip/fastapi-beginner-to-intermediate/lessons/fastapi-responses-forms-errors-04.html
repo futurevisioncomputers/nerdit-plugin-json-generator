@@ -1,0 +1,780 @@
+<div class="nerdit-wrapper nerdit-simple" style="counter-reset:practical-counter challenge-counter;">
+
+  <h1>🚦 Response Handling, Forms and Errors</h1>
+
+  <div class="nerdit-info-box"><strong>📘 Lesson Overview:</strong> How do you tell a client exactly what happened, and keep private fields out of a reply? You will pick a status code for each answer, shape what <code>response_model</code> sends back, raise clear <code>HTTPException</code> errors, build a <code>JSONResponse</code> by hand, set response headers and cookies, and read plain form fields with <code>Form()</code>. You built the enquiry endpoint in Lesson 3; this lesson makes its replies precise.</div>
+
+  <div class="nerdit-lesson-meta">
+    <span class="nerdit-meta-pill">⏱ 22 min</span>
+    <span class="nerdit-badge beginner">Beginner</span>
+  </div>
+
+  <div class="nerdit-figure" data-visual="course-map" style="max-width:440px">
+    <svg viewBox="0 0 360 78" role="img" aria-label="Course map: this lesson is the build stage, second of five: setup, build, secure, scale, ship.">
+      <rect x="4" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="36" y="35" text-anchor="middle" fill="var(--tx-m)">Setup</text>
+      <rect x="76" y="14" width="64" height="32" rx="6" fill="var(--nb)" stroke="var(--nb)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="108" y="35" text-anchor="middle" fill="var(--white)">Build</text>
+      <rect x="148" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="180" y="35" text-anchor="middle" fill="var(--tx-m)">Secure</text>
+      <rect x="220" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="252" y="35" text-anchor="middle" fill="var(--tx-m)">Scale</text>
+      <rect x="292" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="324" y="35" text-anchor="middle" fill="var(--tx-m)">Ship</text>
+      <text class="nerdit-flow-text" x="108" y="68" text-anchor="middle" fill="var(--nb)">▲ you are here</text>
+    </svg>
+    <div class="nerdit-figure-caption">You are here: build stage, shaping clear replies and catching errors before they reach a client.</div>
+  </div>
+
+  <div class="nerdit-info-box nerdit-data-note"><strong>Data note:</strong> All enquiry records shown in this lesson are synthetic, made for teaching. Future Vision Computer Institute's name is used with permission.</div>
+
+  <div class="nerdit-demo-table">
+    <div class="nerdit-demo-table-label">Demo Data — <code>enquiries</code> (6 rows)</div>
+    <table>
+      <thead><tr><th>enquiry_id</th><th>name</th><th>branch</th><th>course</th><th>follow_ups</th></tr></thead>
+      <tbody>
+        <tr><td>E1</td><td>Aarav Shah</td><td>Citylight</td><td>Python Professional</td><td>1</td></tr>
+        <tr><td>E2</td><td>Priya Mehta</td><td>Citylight</td><td>Office &amp; GenAI</td><td>3</td></tr>
+        <tr class="nerdit-spot"><td>E3</td><td>Zoya Khan</td><td>Pal</td><td>Business Analytics</td><td>1</td></tr>
+        <tr><td>E5</td><td>Rohan Trivedi</td><td>Vesu</td><td>Excel &amp; Power BI</td><td>1</td></tr>
+        <tr><td>E6</td><td>Kavya Patel</td><td>Pal</td><td>Python Professional</td><td>1</td></tr>
+        <tr><td>E7</td><td>Yash Solanki</td><td>Vesu</td><td>Business Analytics</td><td>4</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <section>
+    <h2 data-outline="1">1 — Choose a Status Code, and Send No Body With 204</h2>
+
+    <p>Every response carries a <strong>status code</strong>, a short number that <b>tells the client what happened</b>. A 2xx code means success, a 4xx means the client erred, and a 5xx means the server failed. FastAPI replies with 200 by default, but a route can set a different one.</p>
+    <p>You set <code>status_code=204</code> when a request succeeds with nothing to send back, like a delete. A 204 response has <b>no body at all</b>, not even an empty JSON object. Sending one tells the client the action worked, with no wasted bytes.</p>
+
+    <pre class="nerdit-map"><span class="nerdit-map-label">Situation → status code</span>Created something new   <b>→</b> 201
+Nothing to send back    <b>→</b> 204
+Can't find the record   <b>→</b> 404
+Data failed validation  <b>→</b> 422</pre>
+
+    <p>A delete route often builds <code>Response(status_code=204)</code> directly, so you can see its empty body.</p>
+
+    <h3 class="nerdit-runhead">Response(status_code=204) <span class="why">— build the no-body reply yourself</span></h3>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import Response
+
+TASKS = [{"id": 1, "text": "water the plants"}, {"id": 2, "text": "revise notes"}]
+
+
+def delete_task(task_id: int):
+    TASKS[:] = [t for t in TASKS if t["id"] != task_id]
+
+
+empty = Response(status_code=204)
+print(empty.status_code)
+print(empty.body)</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>204
+b''</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>def delete_task(task_id: int):</code> removes the matching task from the list.</li>
+      <li><code>empty = Response(status_code=204)</code> builds the same reply FastAPI sends for a 204 route.</li>
+      <li><code>print(empty.body)</code> shows the body is empty, not just short.</li>
+    </ol>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: Deleting One of Neha's Enquiries</h3>
+    <p>Future Vision also removes an enquiry once a visitor asks to be taken off the list.</p>
+
+    <h3 class="nerdit-runhead">DELETE /enquiries/{enquiry_id} <span class="why">— 204 after a real delete</span></h3>
+    <p>The route drops the matching row, then returns the same empty reply.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import FastAPI, Response
+
+app = FastAPI()
+
+ENQUIRIES = [
+    {"enquiry_id": "E1", "branch": "Citylight", "follow_ups": 1},
+    {"enquiry_id": "E2", "branch": "Citylight", "follow_ups": 3},
+    {"enquiry_id": "E3", "branch": "Pal", "follow_ups": 1},
+    {"enquiry_id": "E5", "branch": "Vesu", "follow_ups": 1},
+    {"enquiry_id": "E6", "branch": "Pal", "follow_ups": 1},
+    {"enquiry_id": "E7", "branch": "Vesu", "follow_ups": 4},
+]
+
+
+@app.delete("/enquiries/{enquiry_id}", status_code=204)
+def delete_enquiry(enquiry_id: str):
+    ENQUIRIES[:] = [r for r in ENQUIRIES if r["enquiry_id"] != enquiry_id]
+
+
+delete_enquiry("E1")
+print(len(ENQUIRIES))
+print(Response(status_code=204).body)</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>5
+b''</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>@app.delete("/enquiries/{enquiry_id}", status_code=204)</code> registers the route with 204 as its default.</li>
+      <li><code>ENQUIRIES[:] = [r for r in ENQUIRIES if r["enquiry_id"] != enquiry_id]</code> drops the matching row, as in Lesson 2.</li>
+      <li><code>print(len(ENQUIRIES))</code> shows 5, six rows minus the one deleted.</li>
+    </ol>
+
+    <div class="nerdit-figure" data-visual="value-table" data-world-derived="offline example: status code and body for three enquiry requests" style="max-width:440px">
+      <p class="nerdit-vtitle">Status code decides whether a body follows</p>
+      <table class="nerdit-vtable">
+        <thead><tr><th>request</th><th>status</th><th>body</th></tr></thead>
+        <tbody>
+          <tr><td>POST /enquiries</td><td>201</td><td>new enquiry</td></tr>
+          <tr><td>GET /enquiries/E3</td><td>200</td><td>enquiry record</td></tr>
+          <tr><td>DELETE /enquiries/E1</td><td class="nerdit-cell-good">204</td><td class="nerdit-cell-good"><span class="nerdit-null">none</span><span class="nerdit-vnote">no body</span></td></tr>
+        </tbody>
+      </table>
+      <div class="nerdit-figure-caption">201 and 200 both carry a body; 204 carries none at all. 6 rows − 1 deleted = 5 left ✓</div>
+    </div>
+
+    <p>Reach for 204 for a delete, and for any update where the client only needs to know it worked.</p>
+
+    <div class="nerdit-predict">
+      <div class="nerdit-predict-head">🤔 Try It — Predict the output</div>
+      <pre data-lang="python"><code>class Reply:
+    def __init__(self, status_code, body=b""):
+        self.status_code = status_code
+        self.body = body
+
+reply = Reply(204)
+print(reply.status_code)
+print(len(reply.body))</code></pre>
+      <details class="nerdit-predict-answer">
+        <summary>Show answer</summary>
+        <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>204
+0</code></pre></div>
+        <p>A fresh <code>bytes</code> value is empty, so <code>len()</code> is 0, the same shape as <code>Response(status_code=204)</code>.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="2 3">2 — Shape the Response With response_model and response_model_exclude</h2>
+
+    <p>A route can return more data than a client should see. A <strong>response model</strong> is a second Pydantic model that <b>filters the return value</b> before FastAPI sends it. Set it with <code>response_model</code> on the decorator, and only its fields reach the client.</p>
+    <p><code>response_model_exclude</code> skips that second model. Hand the route a set of field names; FastAPI drops just those from the model you already have. It is a quick hide, with no new class.</p>
+
+    <h3 class="nerdit-runhead">response_model=UserOut <span class="why">— hide the password field</span></h3>
+    <p><code>UserIn</code> takes a password; <code>UserOut</code>, the response model, does not define one.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from pydantic import BaseModel
+
+
+class UserIn(BaseModel):
+    username: str
+    password: str
+
+
+class UserOut(BaseModel):
+    username: str
+
+
+new_user = UserIn(username="arjun99", password="hunter2")
+print(UserOut.model_validate(new_user.model_dump()).model_dump())</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>{'username': 'arjun99'}</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>class UserOut(BaseModel):</code> keeps only the one field a client may see.</li>
+      <li><code>print(UserOut.model_validate(new_user.model_dump()).model_dump())</code> drops password the same way <code>response_model</code> does.</li>
+    </ol>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: Hiding a Counsellor's Private Note</h3>
+    <p>Neha adds a private note to some enquiries; the student-facing reply must never show it.</p>
+
+    <h3 class="nerdit-runhead">@app.get(..., response_model=EnquiryOut) <span class="why">— the decorator does the filtering</span></h3>
+    <p>The route stays simple; <code>EnquiryOut</code> decides what leaves the server.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import FastAPI
+from pydantic import BaseModel
+
+app = FastAPI()
+
+ENQUIRIES = [
+    {"enquiry_id": "E1", "name": "Aarav Shah", "branch": "Citylight", "follow_ups": 1},
+    {"enquiry_id": "E2", "name": "Priya Mehta", "branch": "Citylight", "follow_ups": 3},
+]
+
+
+class EnquiryOut(BaseModel):
+    enquiry_id: str
+    name: str
+    branch: str
+    follow_ups: int
+
+
+@app.get("/enquiries/{enquiry_id}", response_model=EnquiryOut)
+def get_enquiry(enquiry_id: str):
+    for row in ENQUIRIES:
+        if row["enquiry_id"] == enquiry_id:
+            return row
+
+
+full_row = {"enquiry_id": "E2", "name": "Priya Mehta", "branch": "Citylight",
+            "follow_ups": 3, "internal_note": "asked about EMI"}
+print(EnquiryOut.model_validate(full_row).model_dump())</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>{'enquiry_id': 'E2', 'name': 'Priya Mehta', 'branch': 'Citylight', 'follow_ups': 3}</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>class EnquiryOut(BaseModel):</code> is the model you set as <code>response_model</code>.</li>
+      <li><code>@app.get("/enquiries/{enquiry_id}", response_model=EnquiryOut)</code> tells FastAPI to filter every reply through it.</li>
+      <li><code>print(EnquiryOut.model_validate(full_row).model_dump())</code> shows the private note already gone.</li>
+    </ol>
+
+    <h3 class="nerdit-runhead">response_model_exclude={"internal_note"} <span class="why">— the same hide, no second model</span></h3>
+    <p><code>EnquiryFull</code> keeps the note; the exclude set drops it only for this route.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>class EnquiryFull(BaseModel):
+    enquiry_id: str
+    name: str
+    branch: str
+    follow_ups: int
+    internal_note: str
+
+
+@app.get(
+    "/enquiries/{enquiry_id}/public",
+    response_model=EnquiryFull,
+    response_model_exclude={"internal_note"},
+)
+def get_enquiry_public(enquiry_id: str):
+    for row in ENQUIRIES:
+        if row["enquiry_id"] == enquiry_id:
+            return row
+
+
+print(EnquiryFull.model_validate(full_row).model_dump(exclude={"internal_note"}))</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>{'enquiry_id': 'E2', 'name': 'Priya Mehta', 'branch': 'Citylight', 'follow_ups': 3}</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>class EnquiryFull(BaseModel):</code> keeps every field, including the private one.</li>
+      <li><code>response_model_exclude={"internal_note"},</code> drops just that field, with no second model needed.</li>
+      <li><code>print(EnquiryFull.model_validate(full_row).model_dump(exclude={"internal_note"}))</code> matches the first run line's result.</li>
+    </ol>
+
+    <div class="nerdit-figure" data-visual="value-table" data-world-derived="offline example: EnquiryFull row for E2, response_model and response_model_exclude" style="max-width:440px">
+      <p class="nerdit-vtitle">What reaches the client for E2</p>
+      <table class="nerdit-vtable">
+        <thead><tr><th>field</th><th>in response_model?</th></tr></thead>
+        <tbody>
+          <tr><td>enquiry_id</td><td>✓</td></tr>
+          <tr><td>name</td><td>✓</td></tr>
+          <tr><td>branch</td><td>✓</td></tr>
+          <tr><td>follow_ups</td><td>✓</td></tr>
+          <tr class="nerdit-row-dropped"><td>internal_note</td><td class="nerdit-cell-bad">✗<span class="nerdit-vnote">stays on the server</span></td></tr>
+        </tbody>
+      </table>
+      <p class="nerdit-vlegend">✓ sent to the client · ✗ never leaves the server.</p>
+      <div class="nerdit-figure-caption"><code>response_model</code> and <code>response_model_exclude</code> both keep <code>internal_note</code> out of the reply.</div>
+    </div>
+
+    <p>Write a second model when you reuse the public shape elsewhere; reach for <code>response_model_exclude</code> for a one-off hide.</p>
+
+    <div class="nerdit-fillblank" data-answer="fields">
+      <div class="nerdit-fillblank-head">✏️ Try It — Fill in the blank</div>
+      <p>Complete the comprehension so it keeps only the named fields:</p>
+      <pre data-lang="python"><code>def public_view(record, fields):
+    return {k: record[k] for k in <input class="nerdit-blank" size="8" aria-label="your answer">}
+
+full = {"name": "Pen", "price": 15, "cost": 9}
+print(public_view(full, ["name"]))</code></pre>
+      <button class="nerdit-check-btn" onclick="nerditCheckBlank(this)">Check</button>
+      <span class="nerdit-check-msg" aria-live="polite"></span>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="4 5">3 — Raise an Error With HTTPException and Build a JSONResponse</h2>
+
+    <p>A lookup can fail: the id a client sent might not exist. Raising an <strong>HTTPException</strong> stops your function and <b>sends a clear error status</b> with a message. FastAPI turns it into JSON for you.</p>
+
+    <h3 class="nerdit-runhead">raise HTTPException(status_code=404) <span class="why">— a clear 404 instead of guessing</span></h3>
+    <p>Catching it shows the exact status and message FastAPI would send back.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import HTTPException
+
+ITEMS = {1: "Pen", 2: "Notebook"}
+
+
+def get_item(item_id: int):
+    if item_id not in ITEMS:
+        raise HTTPException(status_code=404, detail=f"Item {item_id} not found")
+    return {"item_id": item_id, "name": ITEMS[item_id]}
+
+
+try:
+    get_item(9)
+except HTTPException as exc:
+    print(exc.status_code)
+    print(exc.detail)</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>404
+Item 9 not found</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>raise HTTPException(status_code=404, detail=f"Item {item_id} not found")</code> stops the function right there.</li>
+      <li><code>except HTTPException as exc:</code> catches it the same way FastAPI does for a real request.</li>
+      <li><code>print(exc.status_code)</code> shows the status the client would receive.</li>
+    </ol>
+
+    <div class="nerdit-compare">
+      <div class="nerdit-compare-bad">
+        <div class="nerdit-compare-head">Wrong — a plain dict still looks like success</div>
+        <pre data-lang="python"><code>@app.get("/enquiries/{enquiry_id}")
+def get_enquiry(enquiry_id: str):
+    for row in ENQUIRIES:
+        if row["enquiry_id"] == enquiry_id:
+            return row
+    return {"error": "not found"}</code></pre>
+      </div>
+      <div class="nerdit-compare-good">
+        <div class="nerdit-compare-head">Right — raise HTTPException instead</div>
+        <pre data-lang="python"><code>@app.get("/enquiries/{enquiry_id}")
+def get_enquiry(enquiry_id: str):
+    for row in ENQUIRIES:
+        if row["enquiry_id"] == enquiry_id:
+            return row
+    raise HTTPException(status_code=404, detail="Enquiry not found")</code></pre>
+      </div>
+    </div>
+    <p>The wrong version still sends 200 OK, so a client's success check passes anyway.</p>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: A Missing Enquiry, and One That Needs Head Office</h3>
+    <p>Neha's team often looks up an id that was mistyped.</p>
+
+    <h3 class="nerdit-runhead">GET /enquiries/{enquiry_id} <span class="why">— the real 404 for a missing id</span></h3>
+    <p>The same pattern now runs on Future Vision's enquiry list.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import HTTPException
+
+ENQUIRIES = [
+    {"enquiry_id": "E1", "branch": "Citylight"},
+    {"enquiry_id": "E2", "branch": "Citylight"},
+    {"enquiry_id": "E3", "branch": "Pal"},
+    {"enquiry_id": "E5", "branch": "Vesu"},
+    {"enquiry_id": "E6", "branch": "Pal"},
+    {"enquiry_id": "E7", "branch": "Vesu"},
+]
+
+
+def get_enquiry(enquiry_id: str):
+    for row in ENQUIRIES:
+        if row["enquiry_id"] == enquiry_id:
+            return row
+    raise HTTPException(status_code=404, detail=f"Enquiry {enquiry_id} not found")
+
+
+try:
+    get_enquiry("E9")
+except HTTPException as exc:
+    print(exc.status_code)
+    print(exc.detail)</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>404
+Enquiry E9 not found</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>for row in ENQUIRIES:</code> scans the list, as in Lesson 2.</li>
+      <li><code>raise HTTPException(status_code=404, detail=f"Enquiry {enquiry_id} not found")</code> replaces the error dict from the compare above.</li>
+    </ol>
+
+    <p>Sometimes the status code depends on data you only know at run time. A <strong>JSONResponse</strong> is a response object you build yourself, with its own status code and body. Returning one gives you that control.</p>
+
+    <h3 class="nerdit-runhead">JSONResponse(status_code=202) <span class="why">— a different code when Citylight can't handle it</span></h3>
+    <p>A branch other than Citylight gets a 202; Citylight gets a normal 200.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi.responses import JSONResponse
+
+
+def escalate_enquiry(enquiry_id: str):
+    row = next(r for r in ENQUIRIES if r["enquiry_id"] == enquiry_id)
+    if row["branch"] != "Citylight":
+        return JSONResponse(status_code=202, content={
+            "status": "escalated_to_head_office", "enquiry_id": enquiry_id,
+        })
+    return {"status": "handled_at_branch", "enquiry_id": enquiry_id}
+
+
+result = escalate_enquiry("E3")
+print(result.status_code)
+print(result.body.decode())</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>202
+{"status":"escalated_to_head_office","enquiry_id":"E3"}</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>if row["branch"] != "Citylight":</code> decides the status code at run time, not at the decorator.</li>
+      <li><code>return JSONResponse(status_code=202, content={</code> sends 202 with a shape of its own.</li>
+      <li><code>print(result.body.decode())</code> shows the exact bytes FastAPI would send.</li>
+    </ol>
+
+    <p>Reach for <code>JSONResponse</code> when the status code or shape changes with the data, not just with the route.</p>
+
+    <div class="nerdit-predict">
+      <div class="nerdit-predict-head">🤔 Try It — Predict the output</div>
+      <pre data-lang="python"><code>class ApiError(Exception):
+    def __init__(self, status_code, detail):
+        self.status_code = status_code
+        self.detail = detail
+
+def find(items, key):
+    if key not in items:
+        raise ApiError(404, "missing")
+    return items[key]
+
+try:
+    find({"a": 1}, "b")
+except ApiError as exc:
+    print(exc.status_code)</code></pre>
+      <details class="nerdit-predict-answer">
+        <summary>Show answer</summary>
+        <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>404</code></pre></div>
+        <p><code>HTTPException</code> works the same way: it carries the status and stops the function right there.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="6">4 — Set Response Headers and Cookies</h2>
+
+    <p>A route can add more to a reply than its body. A parameter typed <code>Response</code> <b>gives you the real reply object</b> before FastAPI sends it. You write to <code>response.headers</code> for a <strong>response header</strong>, or call <code>response.set_cookie()</code> to store a small <strong>cookie</strong> in the browser.</p>
+
+    <h3 class="nerdit-runhead">response.headers["X-..."] <span class="why">— add a header without changing the body</span></h3>
+    <p>The body stays the same; only a new header rides along with it.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import Response
+
+VISITS = {"count": 0}
+
+
+def home(response: Response):
+    VISITS["count"] += 1
+    response.headers["X-Visit-Count"] = str(VISITS["count"])
+    return {"message": "Welcome"}
+
+
+resp = Response()
+print(home(resp))
+print(resp.headers["x-visit-count"])</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>{'message': 'Welcome'}
+1</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>def home(response: Response):</code> asks FastAPI for the real reply object.</li>
+      <li><code>response.headers["X-Visit-Count"] = str(VISITS["count"])</code> rides along beside the body.</li>
+      <li><code>print(resp.headers["x-visit-count"])</code> reads it back, in lower case.</li>
+    </ol>
+
+    <h3 class="nerdit-runhead">response.set_cookie(key, value) <span class="why">— remember a value for next time</span></h3>
+    <p>The same function now also asks the browser to keep a small value.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>VISITS["count"] = 0
+
+
+def home(response: Response):
+    VISITS["count"] += 1
+    response.headers["X-Visit-Count"] = str(VISITS["count"])
+    response.set_cookie(key="theme", value="dark")
+    return {"message": "Welcome"}
+
+
+resp = Response()
+print(home(resp))
+print(resp.headers["x-visit-count"])
+print(resp.headers["set-cookie"])</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>{'message': 'Welcome'}
+1
+theme=dark; Path=/; SameSite=lax</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>response.set_cookie(key="theme", value="dark")</code> asks the browser to keep this value.</li>
+      <li><code>print(resp.headers["set-cookie"])</code> shows the exact cookie line sent with the reply.</li>
+    </ol>
+
+    <div class="nerdit-figure" data-visual="value-table" data-world-derived="offline example: headers and cookie set for the home route" style="max-width:440px">
+      <p class="nerdit-vtitle">GET / — one reply, three parts</p>
+      <table class="nerdit-vtable">
+        <thead><tr><th>part of the reply</th><th>value</th></tr></thead>
+        <tbody>
+          <tr><td>body</td><td>message</td></tr>
+          <tr class="nerdit-spot"><td>X-Visit-Count header</td><td>1</td></tr>
+          <tr><td>Set-Cookie header</td><td>theme=dark</td></tr>
+        </tbody>
+      </table>
+      <div class="nerdit-figure-caption">The header and the cookie both ride beside the same body.</div>
+    </div>
+
+    <p>Reach for a header or a cookie when the client needs a value that sits outside the body itself.</p>
+
+    <div class="nerdit-predict">
+      <div class="nerdit-predict-head">🤔 Try It — Predict the output</div>
+      <pre data-lang="python"><code>class Reply:
+    def __init__(self):
+        self.headers = {}
+
+    def set_cookie(self, key, value):
+        self.headers[key] = value
+
+reply = Reply()
+reply.set_cookie("theme", "dark")
+print(reply.headers)</code></pre>
+      <details class="nerdit-predict-answer">
+        <summary>Show answer</summary>
+        <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>{'theme': 'dark'}</code></pre></div>
+        <p>FastAPI's real <code>set_cookie()</code> does the same job: it stores a value the browser sends back next time.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="7">5 — Receive Simple Form Fields With Form()</h2>
+
+    <p>Not every client sends JSON. An HTML <code>&lt;form&gt;</code> posts plain text fields instead, the way a paper form would. <code>Form()</code> reads one <strong>form field</strong> by name, the same way a query parameter reads one value from the URL.</p>
+    <p><code>Form()</code> needs the python-multipart package, already in this course's requirements.txt. Without it, FastAPI raises an error the moment it starts.</p>
+
+    <h3 class="nerdit-runhead">name: str = Form(...) <span class="why">— one field per parameter</span></h3>
+    <p>Calling the function directly, with plain keyword arguments, works the same way a real submit does.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import Form
+
+
+def contact_form(name: str = Form(...), message: str = Form(...)):
+    return {"name": name, "message": message}
+
+
+print(contact_form(name="Dev", message="When is the next batch?"))</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>{'name': 'Dev', 'message': 'When is the next batch?'}</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>def contact_form(name: str = Form(...), message: str = Form(...)):</code> tells FastAPI to read both fields from a form, not JSON.</li>
+      <li><code>print(contact_form(name="Dev", message="When is the next batch?"))</code> calls it directly, with plain text.</li>
+    </ol>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: A Walk-in Form at the Citylight Counter</h3>
+    <p>A walk-in visitor fills three fields on paper at the Citylight counter.</p>
+    <p>The whole file below reads those three fields and stores a new enquiry. Its output is checked for real.</p>
+
+    <div class="nerdit-run nerdit-program" data-run="offline" data-file="quick_enquiry_form.py">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import FastAPI, Form
+
+app = FastAPI()
+
+ENQUIRIES = [
+    {"enquiry_id": "E1", "name": "Aarav Shah", "phone": "9825011111",
+     "course": "Python Professional"},
+]
+
+
+@app.post("/enquiries/quick")
+def quick_enquiry(
+    name: str = Form(...),
+    phone: str = Form(...),
+    course: str = Form(...),
+):
+    enquiry_id = f"E{len(ENQUIRIES) + 1}"
+    row = {"enquiry_id": enquiry_id, "name": name, "phone": phone, "course": course}
+    ENQUIRIES.append(row)
+    return row
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="127.0.0.1", port=8000)</code></pre>
+      </div>
+      <script type="text/plain" class="nerdit-check">import warnings
+warnings.filterwarnings("ignore")
+
+from fastapi.testclient import TestClient
+
+client = TestClient(app)
+
+result = client.post("/enquiries/quick", data={
+    "name": "Meher Joshi", "phone": "9825099999", "course": "Excel & Power BI",
+})
+print(result.status_code)
+print(result.json())</script>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>200
+{'enquiry_id': 'E2', 'name': 'Meher Joshi', 'phone': '9825099999', 'course': 'Excel &amp; Power BI'}</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk nerdit-walk-full">
+      <li><code>from fastapi import FastAPI, Form</code> brings in <code>Form()</code>, alongside <code>FastAPI</code> from Lesson 1.</li>
+      <li><code>name: str = Form(...),</code> reads this field from the form, as in the run line above.</li>
+      <li><code>ENQUIRIES.append(row)</code> stores the new enquiry, the way Lesson 3's route did.</li>
+      <li><code>uvicorn.run(app, host="127.0.0.1", port=8000)</code> starts the real server when you run this file directly.</li>
+    </ol>
+
+    <p>Save this file as quick_enquiry_form.py, activate your venv and run it:</p>
+    <div class="nerdit-terminal"><span class="nerdit-prompt">$ </span><span class="nerdit-cmd">uvicorn quick_enquiry_form:app --reload</span>
+<span class="nerdit-out">INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)</span>
+<span class="nerdit-comment"># Open http://127.0.0.1:8000/docs and try POST /enquiries/quick</span></div>
+
+    <div class="nerdit-tip"><div><strong>Tip:</strong> Open /docs; FastAPI draws a real form for every Form() field, so you can submit one without writing HTML.</div></div>
+
+    <p>Reach for <code>Form()</code> for a plain HTML form; keep a Pydantic body for a JSON client like a frontend app.</p>
+
+    <div class="nerdit-predict">
+      <div class="nerdit-predict-head">🤔 Try It — Predict the output</div>
+      <pre data-lang="python"><code>def signup(name, age):
+    return {"name": name, "age": int(age)}
+
+print(signup("Isha", "21"))</code></pre>
+      <details class="nerdit-predict-answer">
+        <summary>Show answer</summary>
+        <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>{'name': 'Isha', 'age': 21}</code></pre></div>
+        <p>Called directly with plain text, this behaves exactly like a <code>Form()</code> parameter does.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2>📌 Quick Reference</h2>
+    <div class="nerdit-cheatsheet">
+      <table>
+        <thead><tr><th>Keyword</th><th>What it does</th><th>Tiny example</th></tr></thead>
+        <tbody>
+          <tr><td><code>status_code</code></td><td>Sets the default status for a route</td><td><code>status_code=204</code></td></tr>
+          <tr><td><code>response_model</code></td><td>Filters the return value to one shape</td><td><code>response_model=EnquiryOut</code></td></tr>
+          <tr><td><code>response_model_exclude</code></td><td>Drops named fields, no second model</td><td><code>response_model_exclude={"internal_note"}</code></td></tr>
+          <tr><td><code>HTTPException</code></td><td>Raises a clear error status and message</td><td><code>HTTPException(status_code=404, detail="...")</code></td></tr>
+          <tr><td><code>JSONResponse</code></td><td>A response you build yourself</td><td><code>JSONResponse(status_code=202, content={...})</code></td></tr>
+          <tr><td><code>Response</code></td><td>Lets you set headers and cookies</td><td><code>response: Response</code></td></tr>
+          <tr><td><code>set_cookie()</code></td><td>Stores a small value in the browser</td><td><code>response.set_cookie(key="last_viewed", value="E3")</code></td></tr>
+          <tr><td><code>Form()</code></td><td>Reads one field from form data</td><td><code>name: str = Form(...)</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>🧠 Practice</h2>
+    <div class="nerdit-practical">
+      <div class="nerdit-task">Task 1: Write <code>status_for(action)</code> that returns 201 for <code>"create"</code>, 204 for <code>"delete"</code>, and 200 for anything else. Test it on <code>"delete"</code>.
+        <details class="nerdit-solution">
+          <summary>Show solution</summary>
+          <pre data-lang="python"><code>def status_for(action):
+    if action == "create":
+        return 201
+    if action == "delete":
+        return 204
+    return 200
+
+print(status_for("delete"))</code></pre>
+          <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>204</code></pre></div>
+        </details>
+      </div>
+      <div class="nerdit-task">Task 2: Write <code>public_fields(record, hidden)</code> that returns a copy of <code>record</code> without the keys in <code>hidden</code>. Test it on <code>{"name": "Priya", "internal_note": "asked about EMI"}</code> with <code>hidden={"internal_note"}</code>.
+        <details class="nerdit-solution">
+          <summary>Show solution</summary>
+          <pre data-lang="python"><code>def public_fields(record, hidden):
+    return {k: v for k, v in record.items() if k not in hidden}
+
+data = {"name": "Priya", "internal_note": "asked about EMI"}
+print(public_fields(data, {"internal_note"}))</code></pre>
+          <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>{'name': 'Priya'}</code></pre></div>
+        </details>
+      </div>
+      <div class="nerdit-task">Task 3 (challenge): Write <code>safe_lookup(table, key)</code> that raises <code>ValueError(f"{key} not found")</code> when <code>key</code> is missing from <code>table</code>, else returns <code>table[key]</code>. Catch the error and print its message for <code>{"E1": "Aarav"}</code> with key <code>"E9"</code>.
+        <details class="nerdit-solution">
+          <summary>Show solution</summary>
+          <pre data-lang="python"><code>def safe_lookup(table, key):
+    if key not in table:
+        raise ValueError(f"{key} not found")
+    return table[key]
+
+try:
+    safe_lookup({"E1": "Aarav"}, "E9")
+except ValueError as exc:
+    print(exc)</code></pre>
+          <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>E9 not found</code></pre></div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+</div>
+<script>
+(function(){
+  if (typeof window.nerditCheckBlank !== "function") {
+    window.nerditCheckBlank = function(btn){
+      var box = btn.closest('.nerdit-fillblank');
+      var input = box.querySelector('.nerdit-blank');
+      var msg = box.querySelector('.nerdit-check-msg');
+      var accepted = (box.getAttribute('data-answer') || '').split('|');
+      var got = (input.value || '').trim().toLowerCase();
+      var ok = accepted.some(function(a){ return a.trim().toLowerCase() === got; });
+      msg.textContent = ok ? '✅ Correct!' : '❌ Not yet — try again.';
+      msg.className = 'nerdit-check-msg ' + (ok ? 'ok' : 'no');
+      input.classList.toggle('ok', ok);
+      input.classList.toggle('no', !ok);
+    };
+  }
+})();
+</script>

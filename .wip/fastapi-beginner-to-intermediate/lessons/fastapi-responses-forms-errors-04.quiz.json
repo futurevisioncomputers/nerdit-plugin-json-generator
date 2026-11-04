@@ -1,0 +1,66 @@
+{
+  "lessonQuestions": [
+    {
+      "correctOptionIndex": 0,
+      "options": [
+        "Nothing; the body is empty",
+        "`{\"detail\": \"deleted\"}`",
+        "The deleted enquiry's full data",
+        "`null`"
+      ],
+      "text": "A route is declared `@app.delete(\"/enquiries/{enquiry_id}\", status_code=204)`. What does the client receive in the response body?"
+    },
+    {
+      "correctOptionIndex": 0,
+      "options": [
+        "Only enquiry_id, name, branch and follow_ups; internal_note is dropped",
+        "All five fields, including internal_note",
+        "A 422 error, since the dict has an extra key",
+        "Only internal_note"
+      ],
+      "text": "`EnquiryOut` lists enquiry_id, name, branch and follow_ups. A route sets `response_model=EnquiryOut`, but its function returns a dict that also has internal_note. What does the client see?"
+    },
+    {
+      "correctOptionIndex": 1,
+      "options": [
+        "A 404, the same as `raise HTTPException(status_code=404, ...)`",
+        "A 200, with `{\"error\": \"not found\"}` as the body",
+        "A crash, since FastAPI expects a model instance",
+        "A 204, since the body is just a short dict"
+      ],
+      "text": "A missing-record branch does `return {\"error\": \"not found\"}` instead of raising `HTTPException`. What status code does the client actually get?"
+    }
+  ],
+  "assessmentQuestions": [
+    {
+      "correctOptionIndex": 2,
+      "options": [
+        "It is required for every POST route in FastAPI",
+        "A decorator's `status_code=` only works for GET routes",
+        "The status code depends on data only known at run time, not at registration",
+        "FastAPI cannot return a plain `dict` from a route function"
+      ],
+      "text": "A route returns `JSONResponse(status_code=202, content={...})` for one branch, and a plain dict for another. Why use `JSONResponse` here instead of `status_code=` on the decorator?"
+    },
+    {
+      "correctOptionIndex": 1,
+      "options": [
+        "A JSON body with a \"name\" key",
+        "A form-encoded field named name, the way a browser `<form>` sends it",
+        "A query parameter named name in the URL",
+        "A header named name"
+      ],
+      "text": "A route reads `name: str = Form(...)`. What must the client actually send for this field?"
+    },
+    {
+      "correctOptionIndex": 0,
+      "options": [
+        "Add a header that asks the browser to store a value and send it back later",
+        "Delete a cookie named theme from the browser",
+        "Read the cookie named theme from the request",
+        "Add a query parameter named theme to the URL"
+      ],
+      "text": "What does `response.set_cookie(key=\"theme\", value=\"dark\")` do?"
+    }
+  ]
+}

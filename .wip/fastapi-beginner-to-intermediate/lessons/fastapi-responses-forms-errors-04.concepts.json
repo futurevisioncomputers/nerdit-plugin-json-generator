@@ -1,0 +1,32 @@
+{
+  "teaches": [
+    "status code",
+    "status_code",
+    "204",
+    "response_model",
+    "response_model_exclude",
+    "HTTPException",
+    "JSONResponse",
+    "Response",
+    "response header",
+    "cookie",
+    "set_cookie()",
+    "Form()",
+    "form field"
+  ],
+  "uses": [
+    "BaseModel",
+    "route",
+    "decorator",
+    "dict",
+    "try/except",
+    "path parameter"
+  ],
+  "visuals": [
+    {"section": 1, "visual": "value-table", "illustration": null},
+    {"section": 2, "visual": "value-table", "illustration": "hiding a password field on a signup form"},
+    {"section": 3, "visual": "none", "illustration": null},
+    {"section": 4, "visual": "value-table", "illustration": null},
+    {"section": 5, "visual": "none", "illustration": "a walk-in visitor filling a paper form at the counter"}
+  ]
+}

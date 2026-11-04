@@ -1,0 +1,200 @@
+{
+  "lessonId": "fastapi-responses-forms-errors-04",
+  "htmlSha256": "29573f3f59e79840edb0122af587f22780c281024ae30aa9549aa0e9888e6584",
+  "language": "hi",
+  "scenes": [
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-responses-forms-errors-04",
+      "topic": 1,
+      "title": "200 Carries a Body, 204 Does Not",
+      "vector": "fastapi-responses-forms-errors-04-t1-concept.svg",
+      "keyIdea": "200 sends a body; 204 means success with no body at all",
+      "terms": ["status code"],
+      "focus": [],
+      "myth": null,
+      "narration": "Har response ek status code ke saath aata hai, jo client ko batata hai ki kya hua. Ek 200 code success dikhata hai, aur usme body mein data hota hai. Lekin kabhi request succeed hoti hai, par bhejne ke liye kuch hota nahi, jaise ek delete. Us waqt aap 204 use karte hain. 204 response mein body bilkul empty hoti hai, ek bhi byte nahi, kyunki client ko sirf itna pata chalna hota hai ki kaam ho gaya."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-responses-forms-errors-04",
+      "topic": 1,
+      "title": "Response(status_code=204)",
+      "code": 1,
+      "highlight": ["line:6", "line:10", "line:12"],
+      "keyIdea": "Building Response(status_code=204) directly proves the body is truly empty",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "Yeh pehla run line ek chhoti task list se ek task delete karta hai. delete_task function, matching task_id wali row ko list se hata deta hai, bilkul jaise ek real route karta hai. Phir ek Response, status_code 204 ke saath seedha banaya jaata hai, bina kisi route ke. print(empty.body) dikhata hai ki body sach mein khali hai, kuch bhi print nahi hota uske andar."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-responses-forms-errors-04",
+      "topic": 1,
+      "title": "DELETE /enquiries/{enquiry_id}",
+      "code": 2,
+      "highlight": ["line:15", "line:17", "line:21"],
+      "keyIdea": "The same 204 pattern now runs on Future Vision's own enquiry list",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "Ab yehi idea, Future Vision ke enquiry list par chalta hai. delete_enquiry function, status_code 204 ke saath register hui hai, aur matching enquiry_id wali row ko hata deti hai. Jab E1 delete hoti hai, 6 rows mein se 5 reh jaati hain. Reply ka body ek baar phir khali hota hai, bilkul pehle wale example jaisa."
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-responses-forms-errors-04",
+      "topic": 2,
+      "title": "response_model Filters the Shape",
+      "vector": "fastapi-responses-forms-errors-04-t2-concept.svg",
+      "keyIdea": "response_model and response_model_exclude both keep a private field out",
+      "terms": ["response model"],
+      "focus": [],
+      "myth": null,
+      "narration": "Ek route, client ko zaroorat se zyada data bhej sakta hai. `EnquiryFull` jaisa model, har field rakhta hai, private note samet. Ek response model, ek doosra model hota hai jo return value ko filter karta hai, FastAPI use bhejne se pehle, jaise `EnquiryOut`, jo sirf safe fields rakhta hai. response_model_exclude, bina naya model likhe, sirf chuni hui fields ko hata deta hai."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-responses-forms-errors-04",
+      "topic": 2,
+      "title": "response_model=UserOut",
+      "code": 1,
+      "highlight": ["line:9", "line:14"],
+      "keyIdea": "UserOut keeps username, but password never leaves the server",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "Yeh chhota example, signup jaisa real pattern dikhata hai. UserIn model, username aur password dono rakhta hai. UserOut model, sirf username rakhta hai, password ko bilkul chhod deta hai. Jab UserOut se dobara validate karte hain, result mein sirf username dikhta hai, password gayab ho jaata hai, response_model yehi kaam karta hai, bina ek line bhi extra likhe route ke andar."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-responses-forms-errors-04",
+      "topic": 2,
+      "title": "EnquiryOut vs EnquiryFull",
+      "code": 2,
+      "highlight": ["line:12", "line:19", "line:28"],
+      "keyIdea": "EnquiryOut drops internal_note the same way the decorator would",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "Neha har enquiry ke saath ek private counsellor note bhi rakhti hai. `EnquiryFull` model, us note samet har field rakhta hai. `EnquiryOut` model, sirf enquiry_id, name, branch aur follow_ups rakhta hai, note ko chhod kar. Jab route par response model, EnquiryOut set hota hai, exactly jaisa section ek mein status_code set hua tha, client ko sirf wahi safe fields milte hain."
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-responses-forms-errors-04",
+      "topic": 3,
+      "title": "HTTPException Stops, JSONResponse Builds",
+      "vector": "fastapi-responses-forms-errors-04-t3-concept.svg",
+      "keyIdea": "HTTPException sends a clear 404; JSONResponse lets you choose 202 yourself",
+      "terms": ["HTTPException", "JSONResponse"],
+      "focus": [],
+      "myth": null,
+      "narration": "Jab ek lookup fail hota hai, jaise id hi exist nahi karti, HTTPException raise karna function ko wahin rok deta hai aur ek saaf error status bhej deta hai. FastAPI use JSON mein badal deta hai, khud. Lekin kabhi status code, data par depend karta hai, decorator ke time par nahi, tab aap JSONResponse use karte hain. JSONResponse, apna status code aur body khud choose karne deta hai."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-responses-forms-errors-04",
+      "topic": 3,
+      "title": "raise HTTPException(status_code=404)",
+      "code": 1,
+      "highlight": ["line:8", "line:14", "line:15"],
+      "keyIdea": "Catching HTTPException shows the exact status and message it carries",
+      "terms": [],
+      "focus": [],
+      "myth": {
+        "wrong": "Returning {\"error\": \"not found\"} is the same as a real 404",
+        "right": "That still sends 200 OK; only raise HTTPException sends a real 404",
+        "narration": "Kuch log sochte hain ki ek error dictionary return karna, jaise error not found, bhi ek real 404 jaisa hota hai. Lekin asal mein, FastAPI us dictionary ko ek normal 200 OK reply bhej deta hai, kyunki koi exception raise nahin hua. Sirf raise HTTPException, status_code 404 ke saath, ek real 404 client tak pahunchata hai."
+      },
+      "narration": "get_item function, ek chhoti ITEMS dictionary mein id dhoondta hai. Jab id nahin milti, yeh HTTPException raise karta hai, status_code 404 aur ek detail message ke saath. except HTTPException pakad kar, exc.status_code aur exc.detail print karta hai, bilkul wahi jo FastAPI ek real request par bhejta."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-responses-forms-errors-04",
+      "topic": 3,
+      "title": "JSONResponse(status_code=202)",
+      "code": 3,
+      "highlight": ["line:6", "line:7", "line:15"],
+      "keyIdea": "The branch decides 202 or 200 inside the function, at run time",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "escalate_enquiry function, enquiry ka branch check karta hai. Jab branch Citylight nahin hoti, yeh JSONResponse return karta hai, status_code 202 aur apni khud ki shape ke saath. Citylight ke liye, yeh ek plain dictionary return karta hai, jo normal 200 ban jaata hai. result.body.decode() se pata chalta hai ki exact kaunsi bytes bheji ja rahi hain."
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-responses-forms-errors-04",
+      "topic": 4,
+      "title": "A Response Carries a Header and a Cookie",
+      "vector": "fastapi-responses-forms-errors-04-t4-concept.svg",
+      "keyIdea": "A response header and a cookie both ride beside the same body",
+      "terms": ["response header", "cookie"],
+      "focus": [],
+      "myth": null,
+      "narration": "Ek route, apni body ke saath aur bhi kuch bhej sakta hai. `Response` type ka parameter, aapko asli reply object de deta hai, FastAPI use bhejne se pehle. response.headers par likhna, ek response header banata hai, jo body ke saath hi reply mein chala jaata hai. `set_cookie()` call karna, browser mein ek chhota cookie store karta hai, jo wapas bheja jaata hai agli request ke saath, bina client ko kuch extra karna padta."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-responses-forms-errors-04",
+      "topic": 4,
+      "title": "response.headers[\"X-Visit-Count\"]",
+      "code": 1,
+      "highlight": ["line:6", "line:8", "line:14"],
+      "keyIdea": "The body stays simple; the header rides along beside it",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "home function, ek Response parameter leta hai, asli reply object ke roop mein. Har call par, VISITS count ek se badhta hai, aur response.headers mein X-Visit-Count header set hota hai. Function phir bhi ek simple message wala dictionary return karta hai, jaisa ek normal route karta. resp.headers se, chhote letters mein, wahi header dobara padh sakte hain, kyunki header ke naam case ignore karte hain."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-responses-forms-errors-04",
+      "topic": 4,
+      "title": "response.set_cookie(key, value)",
+      "code": 2,
+      "highlight": ["line:7", "line:14"],
+      "keyIdea": "set_cookie() asks the browser to remember a value for next time",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "Yehi function, ab ek cookie bhi set karta hai. response.set_cookie key theme aur value dark ke saath, browser ko batata hai ki yeh value yaad rakhe. resp.headers se set-cookie line padhne par, exact wahi text dikhta hai jo FastAPI reply ke saath bhejta, header aur cookie dono ek hi body ke saath."
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-responses-forms-errors-04",
+      "topic": 5,
+      "title": "Form() Reads One Field at a Time",
+      "vector": "fastapi-responses-forms-errors-04-t5-concept.svg",
+      "keyIdea": "Form() reads plain text fields the way a browser form sends them",
+      "terms": ["form field"],
+      "focus": [],
+      "myth": {
+        "wrong": "Form() needs you to also write a real HTML <form> tag",
+        "right": "FastAPI draws one for you in /docs; Form() only reads the data",
+        "narration": "Kuch beginners sochte hain ki Form() use karne ke liye, khud ek HTML form tag bhi likhna padega. Lekin asal mein, FastAPI /docs page par apne aap ek form bana deta hai, taaki aap use try kar sakein. Form() ka kaam sirf itna hai ki jo text fields aayein, unhe ek-ek field ke roop mein padh le."
+      },
+      "narration": "Har client JSON nahin bhejta. Ek HTML form, plain text fields bhejta hai, kagaz ke form jaisa. `Form()` ek form field ko naam se padhta hai, bilkul jaise ek query parameter URL se value padhta hai. Iske liye `FastAPI` ko python-multipart package chahiye hota hai, jo already is course ke requirements mein hai."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-responses-forms-errors-04",
+      "topic": 5,
+      "title": "name: str = Form(...)",
+      "code": 1,
+      "highlight": ["line:4", "line:8"],
+      "keyIdea": "Calling the function directly with plain text works the same way a submit does",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "contact_form function, name aur message, dono ko Form() ke saath define karta hai, taaki FastAPI unhe form data se padhe, JSON se nahin. Direct call karne par, name equals Dev aur message ek sawaal ke saath, function unhe plain keyword arguments ki tarah leta hai, bina kisi form field ke real parsing ke. Print hone par, same dictionary dikhti hai jo ek real browser submit par milti, dono fields apne plain text roop mein."
+    }
+  ],
+  "practise": [
+    {"lessonId": "fastapi-responses-forms-errors-04", "topic": 1, "tryIt": "predict Reply(204)'s body length", "task": null},
+    {"lessonId": "fastapi-responses-forms-errors-04", "topic": 2, "tryIt": "fill in the dict comprehension's field name", "task": null},
+    {"lessonId": "fastapi-responses-forms-errors-04", "topic": 3, "tryIt": "predict find({\"a\": 1}, \"b\")'s status code", "task": null},
+    {"lessonId": "fastapi-responses-forms-errors-04", "topic": 4, "tryIt": "predict reply.set_cookie(...)'s result", "task": null},
+    {"lessonId": "fastapi-responses-forms-errors-04", "topic": 5, "tryIt": "predict signup(\"Isha\", \"21\")'s output", "task": null}
+  ],
+  "skipTopics": []
+}
