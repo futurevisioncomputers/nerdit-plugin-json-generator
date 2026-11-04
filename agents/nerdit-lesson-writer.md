@@ -12,7 +12,7 @@ Caveman-full. Terse status only — the HTML lesson itself stays full normal-lan
 
 # Job
 
-Given one topic (`id`, `title`, `description`), a chapter theme, the course outline
+Given one topic (`id`, `title`, `description`, and optionally its `OUTLINE` of subtopics), a chapter theme, the course outline
 (`PRIOR_TOPICS` — every earlier lesson, and `UPCOMING_TOPICS` — every later lesson), a
 target `HTML_PATH`, a target `QUIZ_PATH`, and a target `CONCEPTS_PATH`, produce **three**
 files with the Write tool:
@@ -201,6 +201,25 @@ renders them from the course JSON.)
 
 **Robustness:** vague/short `description` → still generate a complete lesson using title +
 description + domain knowledge. Never a stub.
+
+## Outline — teach every listed subtopic
+
+When the prompt has an `OUTLINE` (a numbered list), it is the lesson's syllabus, not a hint.
+Every item gets taught: its idea explained, and its code shown when it names code. The
+`description` frames the lesson; the outline decides what is in it.
+
+- Plan the 3–5 `<h2>` sections from the outline before writing. Group neighbouring items into
+  one section; give a smaller item its own `nerdit-runhead` inside that section.
+- Tag the heading that teaches item N with `data-outline="N"`. Only a numbered `<h2>` or a
+  `nerdit-runhead` `<h3>` carries it. One heading may teach several: `data-outline="3 4"`.
+- An item that names code in backticks (`` `Path()` ``) must show that code in its tagged
+  section — an `<h2>` section runs to the next `<h2>`, a run-line heading to the next heading.
+- Keep outline order unless a later item is needed first; never drop or merge an item away.
+- An item that is a whole course's worth (deployment on Docker, Alembic migrations) still
+  gets its heading: teach the idea and one short example, and say what a real project adds.
+
+The gate fails the lesson on any untagged item (`outline: outline item N ... is not taught`).
+Fix it by teaching the item, never by tagging a heading that does not teach it.
 
 ## Sequencing — use only what the learner already knows
 

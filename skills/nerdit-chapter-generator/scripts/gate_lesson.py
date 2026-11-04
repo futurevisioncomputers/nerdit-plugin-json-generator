@@ -5,7 +5,8 @@
                           [--contract v11] [--before-dir <dir> --modes figures,sql-layout,programs,readability]
 
 Builds a one-lesson course from <dir>/<id>.html, .quiz.json and .concepts.json, then runs:
-verify_course (schema, structure, density) -> check_world (with --world; without one, its SVG
+verify_course (schema, structure, density) -> outline coverage (check_outline, when the input
+lesson has an `outline`) -> check_world (with --world; without one, its SVG
 number check) -> check_sql_outputs -> check_python_outputs (only
 when the lesson has Python, every answer included; a missing engine fails it) -> deprecated code
 (check_modern_code) -> prose names only code the page has (check_code_prose) -> computable quiz
@@ -29,6 +30,7 @@ from assemble_course import build_course  # noqa: E402
 from check_case import case_problems, case_warnings, world_names  # noqa: E402
 from check_code_prose import check_lesson as check_code_prose, walk_problems  # noqa: E402
 from check_modern_code import lesson_code, scan as scan_modern  # noqa: E402
+from check_outline import outline_problems  # noqa: E402
 from check_prose import banned_patterns, check_lesson as check_voice  # noqa: E402
 from check_quiz import check_questions as check_quiz  # noqa: E402
 from practice_files import name_problems, read_spec  # noqa: E402
@@ -79,6 +81,7 @@ def gate(input_path: Path, lesson_dir: Path, lid: str, contract: str = "v11",
     warns += [f"verify: {w}" for w in rep.warnings]
 
     html = course["lessons"][0]["content"]
+    fails += [f"outline: {p}" for p in outline_problems(html, one[0].get("outline") or [])]
     world = rows = None
     if world_path is not None:
         world = load_world(Path(world_path))

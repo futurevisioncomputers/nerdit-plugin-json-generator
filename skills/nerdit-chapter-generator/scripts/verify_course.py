@@ -676,6 +676,16 @@ def verify_density(rep: Report, out: dict, inp: list):
         total = sum(len(c.splitlines()) for c in blocks)
         rep.warn(total <= cap, f"{lid}: lesson shows {total} code lines (max {cap} for {kind})")
 
+def verify_outline(rep: Report, out: dict, inp: list) -> None:
+    """Every `outline` item in the input is tagged and taught in its lesson (check_outline.py)."""
+    from check_outline import outline_problems  # lazy, like the code-accuracy checks
+    outlines = {s.get("id"): s.get("outline") or [] for s in inp}
+    for lesson in out.get("lessons", []):
+        lid = lesson.get("id", "?")
+        for problem in outline_problems(lesson.get("content", ""), outlines.get(lid, [])):
+            rep.check(False, f"{lid}: outline: {problem}")
+
+
 def walk(node: Node):
     stack = list(node.children)
     while stack:
@@ -739,6 +749,7 @@ def main() -> int:
     rep = Report()
     verify_schema(rep, out, inp)
     verify_structure(rep, out, args.contract)
+    verify_outline(rep, out, inp)
     if args.contract == "v11":
         verify_density(rep, out, inp)
         verify_programs(rep, out, inp, args.new_course)

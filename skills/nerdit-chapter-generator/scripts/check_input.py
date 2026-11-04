@@ -18,6 +18,8 @@ from pathlib import Path
 from make_world_data import load_world
 
 MIN_DESCRIPTION_WORDS = 12
+# 5 sections x (1 <h2> + up to 3 run-line headings) holds more, but past 15 items each gets a line.
+MAX_OUTLINE_ITEMS = 15
 
 # CORE.md §2b. A preset decides the run line's tags and which optional blocks a lesson may
 # use. It is optional in the input -- when absent the writer derives it from `runner`, then
@@ -32,6 +34,23 @@ CODE_PRESETS = {"code", "spreadsheet"}
 
 def _norm(text):
     return re.sub(r"\s+", " ", (text or "")).strip().lower()
+
+
+def _outline_findings(outline):
+    """`outline`: the subtopics the lesson must teach, each tagged in the HTML (check_outline.py)."""
+    if outline is None:
+        return []
+    if not isinstance(outline, list) or not all(isinstance(t, str) and t.strip() for t in outline):
+        return [("ERROR", "outline must be a list of non-empty strings, one subtopic each")]
+    out, seen = [], {}
+    for n, item in enumerate(outline, 1):
+        if _norm(item) in seen:
+            out.append(("ERROR", f"outline item {n} repeats item {seen[_norm(item)]}"))
+        seen.setdefault(_norm(item), n)
+    if len(outline) > MAX_OUTLINE_ITEMS:
+        out.append(("WARN", f"outline has {len(outline)} items; a lesson holds 3-5 sections, so over "
+                            f"{MAX_OUTLINE_ITEMS} usually means it should be two lessons"))
+    return out
 
 
 def _is_code_course(input_lessons) -> bool:
@@ -67,6 +86,8 @@ def audit(input_lessons, world_declared=None):
         if preset is not None and str(preset).lower() not in PRESETS:
             out.append(("ERROR", lid, f"unknown preset {preset!r} -- one of "
                                       f"{', '.join(sorted(PRESETS))}"))
+
+        out += [(sev, lid, msg) for sev, msg in _outline_findings(src.get("outline"))]
 
         focus = src.get("focus")
         if focus is not None and str(focus).lower() not in FOCUS:

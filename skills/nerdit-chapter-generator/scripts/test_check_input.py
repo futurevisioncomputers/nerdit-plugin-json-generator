@@ -36,6 +36,27 @@ def test_missing_description_is_an_error():
     assert audit(bad)[0][0] == "ERROR"
 
 
+def test_outline_of_strings_is_clean():
+    ok = [dict(GOOD[0], outline=["Name a value", "Read it back with `print()`"])] + GOOD[1:]
+    assert audit(ok) == []
+
+
+def test_outline_must_be_a_list_of_non_empty_strings():
+    for bad_outline in ("Name a value", ["Name a value", ""], ["Name a value", 3]):
+        bad = [dict(GOOD[0], outline=bad_outline)] + GOOD[1:]
+        assert any(s == "ERROR" and "outline" in m for s, _, m in audit(bad)), bad_outline
+
+
+def test_repeated_outline_item_is_an_error():
+    bad = [dict(GOOD[0], outline=["Name a value", "name a value "])] + GOOD[1:]
+    assert any(s == "ERROR" and "outline item 2 repeats item 1" in m for s, _, m in audit(bad))
+
+
+def test_very_long_outline_is_a_warning():
+    long = [dict(GOOD[0], outline=[f"Subtopic number {i}" for i in range(1, 18)])] + GOOD[1:]
+    assert [(s, i) for s, i, m in audit(long)] == [("WARN", "a-01")]
+
+
 def test_duplicate_id_is_an_error():
     bad = GOOD + [dict(GOOD[0])]
     assert any(s == "ERROR" and "duplicate id" in m for s, _, m in audit(bad))

@@ -48,6 +48,28 @@ def test_a_clean_lesson_passes(tmp_path):
     assert fails == []
 
 
+def _with_outline(inp, outline):
+    lessons = json.loads(inp.read_text(encoding="utf-8"))
+    lessons[0]["outline"] = outline
+    inp.write_text(json.dumps(lessons), encoding="utf-8")
+
+
+def test_gate_fails_an_outline_item_the_lesson_does_not_tag(tmp_path):
+    inp, d = setup(tmp_path)
+    _with_outline(inp, ["Count rows", "Name the result with `AS`"])
+    fails, _ = gate(inp, d, "c-01")
+    assert [f for f in fails if f.startswith("outline:")] and all("item" in f for f in fails if f.startswith("outline:"))
+
+
+def test_gate_passes_when_every_outline_item_is_tagged(tmp_path):
+    tagged = LESSON.replace("<h2>1 — Count rows</h2>", '<h2 data-outline="1">1 — Count rows</h2>').replace(
+        '<h3 class="nerdit-runhead">', '<h3 class="nerdit-runhead" data-outline="2">')
+    inp, d = setup(tmp_path, tagged)
+    _with_outline(inp, ["Count rows", "Name the result with `AS`"])
+    fails, _ = gate(inp, d, "c-01")
+    assert fails == []
+
+
 def test_wrong_output_and_banned_phrase_fail(tmp_path):
     bad = LESSON.replace("| 1 |", "| 2 |").replace("You count rows", "You delve into rows")
     inp, d = setup(tmp_path, bad)

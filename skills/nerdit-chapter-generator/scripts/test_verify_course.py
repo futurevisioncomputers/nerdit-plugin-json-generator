@@ -28,6 +28,16 @@ def test_phone_width_rule_skips_v9_and_run_output_charts():
     assert not any("viewBox is" in f for f in failures(lesson(640, inside_output=True)))
 
 
+def test_outline_items_are_checked_per_lesson():
+    from verify_course import Report, verify_outline
+    inp = [{"id": "a-01", "outline": ["Routes", "Path parameters"]}, {"id": "a-02"}]
+    out = {"lessons": [{"id": "a-01", "content": '<h2 data-outline="1">1 — Routes</h2>'},
+                       {"id": "a-02", "content": "<h2>1 — Anything</h2>"}]}
+    rep = Report()
+    verify_outline(rep, out, inp)
+    assert len(rep.failures) == 1 and rep.failures[0].startswith("a-01: outline: outline item 2")
+
+
 def test_v11_checks_code_accuracy_across_the_course():
     from verify_course import Report, verify_code_accuracy
     spec = ('<script type="application/json" class="nerdit-files-spec">'

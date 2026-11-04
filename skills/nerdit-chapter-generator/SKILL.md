@@ -227,6 +227,12 @@ One page with every lesson, the site's styles and the site's code colours. Open 
      copied into the output, and the assembler ignores it.
    - `focus` — *optional*. `concept` or `hands-on` (default `hands-on`). Sets how much code the
      lesson shows (CORE.md §4). Like `runner`, it never reaches the output.
+   - `outline` — *optional*. A list of strings: every subtopic the lesson must teach, in order,
+     usually the numbered headings of the source notes. A `description` is one paragraph, so
+     without it the writer covers what the paragraph names and drops the rest. Put code terms
+     in backticks (``"Validate with `Path()` and `Query()`"``): the gate checks the tagged
+     section shows them. Generation context only, never in the output. Over 15 items warns —
+     split the lesson.
 3. Resolve the runner for every lesson before spawning anything.
    - If `runner` is absent on some or all lessons, infer it from the chapter name and the
      lesson descriptions, then **print your per-lesson choice and get the user's
@@ -290,7 +296,8 @@ the same way `title` is used to inform content, but it does not appear in the as
 Do not generate the HTML lesson yourself. Spawn the `nerdit-lesson-writer` agent for this
 lesson (in groups of 3–4 in parallel — see the batching note below),
 passing it: `id`, `title`, `description`, chapter name, whether this is a multi-lesson chapter,
-`RUNNER` (the value resolved in Step 1), `FOCUS` (the lesson's `focus`, default `hands-on`), `PRIOR_TOPICS` + `UPCOMING_TOPICS` (the curriculum
+`RUNNER` (the value resolved in Step 1), `FOCUS` (the lesson's `focus`, default `hands-on`), `OUTLINE` (the
+lesson's `outline` as a numbered list, verbatim; omit when absent), `PRIOR_TOPICS` + `UPCOMING_TOPICS` (the curriculum
 context — see below), `HTML_PATH = <workdir>/<id>.html`,
 `QUIZ_PATH = <workdir>/<id>.quiz.json`,
 `CONCEPTS_PATH = <workdir>/<id>.concepts.json`, `RULES = <the pack path>`, and the lesson's
