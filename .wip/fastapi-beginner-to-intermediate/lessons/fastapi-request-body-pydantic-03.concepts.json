@@ -1,0 +1,37 @@
+{
+  "teaches": [
+    "request body",
+    "Pydantic model",
+    "BaseModel",
+    "required field",
+    "optional field",
+    "default value",
+    "Field()",
+    "list[...]",
+    "nested model",
+    "ValidationError",
+    "model_dump()",
+    "custom validator"
+  ],
+  "uses": [
+    "class",
+    "function",
+    "dictionary",
+    "string",
+    "integer",
+    "type hint",
+    "import",
+    "@app.post",
+    "HTTP method",
+    "query parameter",
+    "path parameter",
+    "422"
+  ],
+  "visuals": [
+    {"section": 1, "visual": "none", "illustration": null},
+    {"section": 2, "visual": "none", "illustration": null},
+    {"section": 3, "visual": "none", "illustration": null},
+    {"section": 4, "visual": "diagram", "illustration": "a nested model inside another model, and a list field holding several values"},
+    {"section": 5, "visual": "none", "illustration": null}
+  ]
+}

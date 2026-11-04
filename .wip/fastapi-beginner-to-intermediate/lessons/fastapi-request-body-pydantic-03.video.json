@@ -1,0 +1,186 @@
+{
+  "lessonId": "fastapi-request-body-pydantic-03",
+  "htmlSha256": "46b12ca52ffdc598617c7939ba0fdfa37d0fe571227e90eeec9f0c1b33515abf",
+  "language": "hi",
+  "scenes": [
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-request-body-pydantic-03",
+      "topic": 1,
+      "title": "A Small Value, or a Whole New Record",
+      "vector": "fastapi-request-body-pydantic-03-t1-concept.svg",
+      "keyIdea": "a whole new record goes in the request body, described by a Pydantic model",
+      "terms": ["request body", "Pydantic model"],
+      "focus": [],
+      "myth": null,
+      "narration": "Jab client ek chhota value bhejta hai, jaise ek id, wo Path ya Query parameter mein jaata hai. Lekin ek pura naya record bhejna ho, jaise ek nayi enquiry, to wo JSON data request body mein jaata hai. FastAPI ko trust karne se pehle, us data ka shape pata hona chahiye. Isliye aap BaseModel ko subclass karke ek Pydantic model banate hain, jo har field aur uska type naam karta hai."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-request-body-pydantic-03",
+      "topic": 1,
+      "title": "class Item(BaseModel)",
+      "code": 1,
+      "highlight": ["line:4", "line:9"],
+      "keyIdea": "Pydantic checks the type and converts it when it safely can",
+      "terms": ["BaseModel"],
+      "focus": [],
+      "myth": null,
+      "narration": "Yeh pehla run line dikhata hai ki Pydantic model kaise banta hai. Item class, BaseModel ko subclass karti hai, aur name, price jaise fields ko type ke saath define karti hai. Jab Item ko price=\"15.0\" ek text string ke saath call kiya jaata hai, Pydantic use automatically ek real float mein convert kar deta hai. model_dump() call karne par, model ka data ek plain dictionary ki tarah print hota hai: name Pen, price 15.0."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-request-body-pydantic-03",
+      "topic": 1,
+      "title": "class EnquiryIn(BaseModel)",
+      "code": 2,
+      "highlight": ["line:1", "line:6"],
+      "keyIdea": "three required fields describe one new enquiry form",
+      "terms": ["required field"],
+      "focus": [],
+      "myth": null,
+      "narration": "Ab yehi idea, Future Vision ke paas aane wale ek naye student ke form par laagu hota hai. EnquiryIn model teen required fields rakhta hai: name, phone aur course, sab plain string type ke. Jab Priya Mehta apna naam, phone number aur course bharti hai, enquiry object bilkul wahi teen values store karta hai, model_dump() se ek clean dictionary ki tarah."
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-request-body-pydantic-03",
+      "topic": 2,
+      "title": "Required, or Optional with a Default",
+      "vector": "fastapi-request-body-pydantic-03-t2-concept.svg",
+      "keyIdea": "a required field has no default; an optional field falls back to one",
+      "terms": ["required field", "optional field", "default value"],
+      "focus": [],
+      "myth": null,
+      "narration": "Har field ka request mein aana zaroori nahi hota. Ek required field ka koi default value nahin hota, isliye use bhejna hi padta hai, jaise name, phone, course aur branch. Ek optional field, jaise follow_ups, ek default value rakhta hai: follow_ups ko 0 default milta hai, aur notes ko None. Jab client yeh fields chhod deta hai, Pydantic apne aap wahi default value bhar deta hai, aur request fail nahin hoti."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-request-body-pydantic-03",
+      "topic": 2,
+      "title": "follow_ups: int = 0",
+      "code": 1,
+      "highlight": ["line:5", "line:6"],
+      "keyIdea": "leaving out an optional field still builds the model",
+      "terms": [],
+      "focus": [],
+      "myth": {
+        "wrong": "Calling create_enquiry() directly also runs FastAPI's field check",
+        "right": "Only a real request through FastAPI runs that check, with a 422 on failure",
+        "narration": "Kuch log sochte hain ki function ko directly Python mein call karne se bhi wahi required-field check chal jaata hai. Lekin asal mein, directly call karna sirf plain Python code hota hai, koi validation nahin lagti. Sirf ek real request, FastAPI ke through jaane par, missing phone field par 422 error deta hai, function chalne se pehle hi."
+      },
+      "narration": "Yeh run line EnquiryIn model dikhata hai jisme branch bhi required hai, aur follow_ups, notes optional hain. Jab enquiry ko Priya Mehta, unka phone, course aur branch Citylight ke saath banaya jaata hai, follow_ups field apne aap 0 ban jaata hai, aur notes None reh jaata hai, bina kisi error ke."
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-request-body-pydantic-03",
+      "topic": 3,
+      "title": "Field() and ValidationError",
+      "vector": "fastapi-request-body-pydantic-03-t3-concept.svg",
+      "keyIdea": "Field() adds a rule; a failed rule raises a ValidationError with a plain message",
+      "terms": ["validation rule"],
+      "focus": [],
+      "myth": null,
+      "narration": "Sirf type hint batata hai ki value kis kism ki honi chahiye, lekin yeh nahin batata ki value sensible hai ya nahin. `Field()` function, type ke upar ek validation rule laga deta hai, jaise minimum length ya number ki range. Jab yeh rule fail hota hai, Pydantic ek ValidationError raise karta hai, jisme ek plain message hota hai ki kya galat hua."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-request-body-pydantic-03",
+      "topic": 3,
+      "title": "Field(min_length=2)",
+      "code": 1,
+      "highlight": ["line:4", "line:5"],
+      "keyIdea": "a one-letter name fails the min_length rule",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "Yeh code EnquiryIn model banata hai jisme naam par kam se kam 2 characters ka rule hai, aur age 5 se 80 ke beech honi chahiye. Priya Mehta, age 19 ke saath, model normally ban jaata hai. Lekin sirf ek letter wale naam P ke saath try karne par, ValidationError aata hai, jo kehta hai ki string ke paas kam se kam 2 characters hone chahiye."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-request-body-pydantic-03",
+      "topic": 3,
+      "title": "Field(ge=5, le=80)",
+      "code": 2,
+      "highlight": ["line:2"],
+      "keyIdea": "an age of 120 fails the le=80 rule",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "Yehi model, age 120 ke saath bhi reject kar deta hai, kyunki 80 se zyada hai. Error message kehta hai ki value 80 se kam ya barabar honi chahiye. Yeh dikhata hai ki Field() ka ge aur le rule, kisi bhi galat value ko model banne se pehle hi rok deta hai, FastAPI route tak pahunchne se bhi pehle."
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-request-body-pydantic-03",
+      "topic": 4,
+      "title": "A List Field, or a Nested Model",
+      "vector": "fastapi-request-body-pydantic-03-t4-concept.svg",
+      "keyIdea": "a nested model field holds another model's data; a list field holds several values",
+      "terms": ["list field", "nested model"],
+      "focus": [],
+      "myth": null,
+      "narration": "Kabhi kabhi ek field, ek hi type ki kayi values rakhta hai, jaise kayi courses ek saath. Ek list field, list ke andar type likh kar banaya jaata hai, jaise `list[str]`. Pydantic us list ke har item ko check karta hai, na ki poori list ko sirf ek object ki tarah. Doosri taraf, kabhi data naturally grouped hota hai: ek nested model, contact jaisa ek model, doosre model ke field ke type ki tarah use hota hai, jisse related values saath mein travel karte hain."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-request-body-pydantic-03",
+      "topic": 4,
+      "title": "interested_courses: list[str]",
+      "code": 1,
+      "highlight": ["line:2"],
+      "keyIdea": "every string in the list is checked, and len() counts them",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "Yeh run line interested_courses field dikhata hai, jo list[str] type ka hai. Priya Mehta jab Python Professional aur Office GenAI, dono courses mein interested hoti hai, dono strings ek list mein store ho jaate hain, aur len() se pata chalta hai ki total 2 courses aaye hain."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-request-body-pydantic-03",
+      "topic": 4,
+      "title": "contact: ContactInfo",
+      "code": 2,
+      "highlight": ["line:1", "line:7"],
+      "keyIdea": "the whole contact object becomes a real ContactInfo instance",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "Dusra example, ContactInfo naam ka ek chhota model banata hai, jisme phone aur whatsapp fields hain. EnquiryIn model mein, contact field ka type ContactInfo hai. Jab contact ko ek plain dictionary ke roop mein bheja jaata hai, Pydantic use andar hi andar ek real ContactInfo object mein badal deta hai, aur enquiry.contact.whatsapp seedha us nested value ko padh leta hai."
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-request-body-pydantic-03",
+      "topic": 5,
+      "title": "One Field Alone, or Two Fields Together",
+      "vector": "fastapi-request-body-pydantic-03-t5-concept.svg",
+      "keyIdea": "a custom validator checks a rule across two or more fields together",
+      "terms": ["custom validator"],
+      "focus": [],
+      "myth": null,
+      "narration": "`Field()` function, ek field ko bilkul akela, apne aap check karta hai: length, range, ya ek required value. Lekin kuch real rules, do fields ko saath mein dekhte hain, jaise start date, end date se pehle honi chahiye. Yeh kaam karne ke liye, ek custom validator chahiye hota hai: ek function jo kayi fields ke beech ka rule check karta hai."
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-request-body-pydantic-03",
+      "topic": 5,
+      "title": "Why It Waits",
+      "vector": "fastapi-request-body-pydantic-03-t5-wait.svg",
+      "keyIdea": "field_validator is added once the model basics feel natural",
+      "terms": [],
+      "focus": [],
+      "myth": {
+        "wrong": "A custom validator is written the same way as Field()",
+        "right": "It is a separate function, hooked to the model with @field_validator",
+        "narration": "Kuch beginners sochte hain ki custom validator bhi `Field()` jaisa hi, ek simple default hota hai, bina kisi function ke. Lekin asal mein, yeh ek alag function hota hai, jise `field_validator` decorator se model se joda jaata hai. Yeh step tab seekha jaata hai jab functions aur decorators dono comfortable ho jaate hain, kabhi bhi shortcut ke roop mein nahin."
+      },
+      "narration": "Pydantic, aise function ko model se jodta hai ek decorator ke through, jise `field_validator` kehte hain. Isse likhne ke liye, aapko functions, decorators aur model basics mein already comfortable hona chahiye, jo yeh poora lesson cover karta hai. Jab yeh basics natural lagne lagein, tab field_validator seekhna aata hai, taaki har naya idea ek trusted, already-seekha hua idea par bane, aur koi bhi step jaldi mein skip na ho."
+    }
+  ],
+  "practise": [
+    {"topic": 1, "tryIt": "predict make_item(\"Pen\", \"15.0\")'s output", "task": null},
+    {"topic": 2, "tryIt": "fill in follow_ups' default value", "task": null},
+    {"topic": 3, "tryIt": "predict check_name(\"Priya\")'s output", "task": null},
+    {"topic": 4, "tryIt": "predict the nested enquiry dict's output", "task": null},
+    {"topic": 5, "tryIt": "predict check_dates(...)'s output", "task": null}
+  ],
+  "skipTopics": []
+}

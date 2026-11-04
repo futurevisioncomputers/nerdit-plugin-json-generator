@@ -1,0 +1,66 @@
+{
+  "lessonQuestions": [
+    {
+      "correctOptionIndex": 1,
+      "options": [
+        "It runs `create_enquiry` with `phone` set to an empty string",
+        "It sends back a 422 response, and `create_enquiry` never runs",
+        "It fills `phone` with `\"0\"`, since that is `follow_ups`' default",
+        "It silently drops `course` and accepts the rest of the fields"
+      ],
+      "text": "`EnquiryIn` requires `name`, `phone`, `course` and `branch`, with `follow_ups` defaulting to `0`. A client POSTs a body that leaves out `phone`. What does FastAPI do?"
+    },
+    {
+      "correctOptionIndex": 0,
+      "options": [
+        "Pydantic raises a validation error, since `course` has no default",
+        "Pydantic fills `course` with an empty string automatically",
+        "Python raises a `TypeError` before Pydantic ever runs",
+        "The model builds successfully, with `course` set to `None`"
+      ],
+      "text": "`EnquiryIn` lists `name`, `phone` and `course`, none with a default. You build `EnquiryIn(name=\"Priya Mehta\", phone=\"9825012345\")` directly in Python, leaving out `course`. What happens?"
+    },
+    {
+      "correctOptionIndex": 0,
+      "options": [
+        "A Python class that describes a piece of data's shape and checks it against that shape",
+        "A function that converts a dictionary into a database table",
+        "A built-in FastAPI decorator that registers a new route",
+        "A file that stores a course's JSON configuration"
+      ],
+      "text": "What is a Pydantic model?"
+    }
+  ],
+  "assessmentQuestions": [
+    {
+      "correctOptionIndex": 1,
+      "options": [
+        "1, since only the first course is kept",
+        "2, one entry for each course sent",
+        "0, because `list[str]` ignores the values passed in",
+        "A `TypeError`, because a model field cannot hold a list"
+      ],
+      "text": "`EnquiryIn` has `interested_courses: list[str]`. It is built with `interested_courses=[\"Python Professional\", \"Office & GenAI\"]`. What does `len(enquiry.interested_courses)` equal?"
+    },
+    {
+      "correctOptionIndex": 2,
+      "options": [
+        "A plain `dict`",
+        "A `str`",
+        "A `ContactInfo` instance",
+        "A list of dictionaries"
+      ],
+      "text": "`EnquiryIn` has `contact: ContactInfo`, built with `contact={\"phone\": \"9825012345\"}`. What type is `enquiry.contact` afterwards?"
+    },
+    {
+      "correctOptionIndex": 0,
+      "options": [
+        "\"Input should be less than or equal to 80\"",
+        "\"Field required\"",
+        "\"String should have at least 2 characters\"",
+        "\"Input should be a valid integer\""
+      ],
+      "text": "`EnquiryIn` declares `age: int = Field(ge=5, le=80)`. Building it with `age=120` raises a `ValidationError`. What does the error message say?"
+    }
+  ]
+}

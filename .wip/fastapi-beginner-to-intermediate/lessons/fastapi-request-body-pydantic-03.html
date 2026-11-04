@@ -1,0 +1,533 @@
+<div class="nerdit-wrapper nerdit-simple" style="counter-reset:practical-counter challenge-counter;">
+
+  <h1>🧾 Request Body and Pydantic</h1>
+
+  <div class="nerdit-info-box"><strong>📘 Lesson Overview:</strong> How can your API receive a whole new record, like a new enquiry, and check its shape before your function runs? You will describe incoming JSON with a <code>Pydantic</code> model, let FastAPI validate it, and build models with optional fields, validation rules, lists and models inside models. You added routes and parameters in Lesson 2; now you teach FastAPI what a valid request looks like.</div>
+
+  <div class="nerdit-lesson-meta">
+    <span class="nerdit-meta-pill">⏱ 20 min</span>
+    <span class="nerdit-badge beginner">Beginner</span>
+  </div>
+
+  <div class="nerdit-figure" data-visual="course-map" style="max-width:440px">
+    <svg viewBox="0 0 360 78" role="img" aria-label="Course map: this lesson is the build stage, second of five: setup, build, secure, scale, ship.">
+      <rect x="4" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="36" y="35" text-anchor="middle" fill="var(--tx-m)">Setup</text>
+      <rect x="76" y="14" width="64" height="32" rx="6" fill="var(--nb)" stroke="var(--nb)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="108" y="35" text-anchor="middle" fill="var(--white)">Build</text>
+      <rect x="148" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="180" y="35" text-anchor="middle" fill="var(--tx-m)">Secure</text>
+      <rect x="220" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="252" y="35" text-anchor="middle" fill="var(--tx-m)">Scale</text>
+      <rect x="292" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="324" y="35" text-anchor="middle" fill="var(--tx-m)">Ship</text>
+      <text class="nerdit-flow-text" x="108" y="68" text-anchor="middle" fill="var(--nb)">▲ you are here</text>
+    </svg>
+    <div class="nerdit-figure-caption">You are here: build stage, describing new data with Pydantic models before it reaches your route.</div>
+  </div>
+
+  <div class="nerdit-info-box nerdit-data-note"><strong>Data note:</strong> All enquiry records shown in this lesson are synthetic, made for teaching. Future Vision Computer Institute's name is used with permission.</div>
+
+  <section>
+    <h2 data-outline="1 2">1 — What a Request Body Is, and Your First Pydantic Model</h2>
+
+    <p>How does an API receive a whole new record in one request, instead of one value at a time? A <strong>request body</strong> is the JSON data a client sends along with its request. You send one whenever the data has many parts: a new sign-up, order or enquiry. A simple value like an id still belongs in the path or the query string.</p>
+    <p>FastAPI needs to know the shape of that JSON before it can trust it. A <strong>Pydantic model</strong> is a Python class that <b>names each field and its type</b>. You build one by subclassing <code>BaseModel</code>; Pydantic then checks and converts the data the moment you create it.</p>
+
+    <pre class="nerdit-map"><span class="nerdit-map-label">Where a value comes from</span>One small value    <b>&#8594;</b> a path or query parameter
+A whole new record <b>&#8594;</b> a request body, described by a model</pre>
+
+    <h3 class="nerdit-runhead">class Item(BaseModel) <span class="why">— one model, two typed fields</span></h3>
+    <p>Pydantic checks each value against its type, and converts it when it safely can.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from pydantic import BaseModel
+
+
+class Item(BaseModel):
+    name: str
+    price: float
+
+
+item = Item(name="Pen", price="15.0")
+print(item)
+print(item.model_dump())</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>name='Pen' price=15.0
+{'name': 'Pen', 'price': 15.0}</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>class Item(BaseModel):</code> starts a model by subclassing <code>BaseModel</code>.</li>
+      <li><code>name: str</code> and <code>price: float</code> are typed fields, one per line.</li>
+      <li><code>item = Item(name="Pen", price="15.0")</code> turns the text <code>"15.0"</code> into a real float.</li>
+      <li><code>print(item.model_dump())</code> shows the model's data as a plain dictionary.</li>
+    </ol>
+
+    <p>Reach for a model whenever a piece of data has more than one or two related fields.</p>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: Describing a New Enquiry as Data</h3>
+    <p>A prospective student fills in a short form: their name, phone number and the course they want. That form becomes one JSON object.</p>
+
+    <h3 class="nerdit-runhead">class EnquiryIn(BaseModel) <span class="why">— the shape of one new enquiry</span></h3>
+    <p>Three required fields, each a plain <code>str</code>, describe the whole form.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>class EnquiryIn(BaseModel):
+    name: str
+    phone: str
+    course: str
+
+
+enquiry = EnquiryIn(name="Priya Mehta", phone="9825012345", course="Python Professional")
+print(enquiry)
+print(enquiry.model_dump())</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>name='Priya Mehta' phone='9825012345' course='Python Professional'
+{'name': 'Priya Mehta', 'phone': '9825012345', 'course': 'Python Professional'}</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>class EnquiryIn(BaseModel):</code> describes one enquiry form, the same way as above.</li>
+      <li><code>enquiry = EnquiryIn(name="Priya Mehta", phone="9825012345", course="Python Professional")</code> fills all three fields.</li>
+    </ol>
+
+    <div class="nerdit-tip"><div><strong>Tip:</strong> An attribute with no type hint is not a field. Pydantic only checks the names you give a type.</div></div>
+
+    <div class="nerdit-predict">
+      <div class="nerdit-predict-head">🤔 Try It — Predict the output</div>
+      <pre data-lang="python"><code>def make_item(name, price):
+    return {"name": str(name), "price": float(price)}
+
+print(make_item("Pen", "15.0"))</code></pre>
+      <details class="nerdit-predict-answer">
+        <summary>Show answer</summary>
+        <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>{'name': 'Pen', 'price': 15.0}</code></pre></div>
+        <p>This is the same job a Pydantic model does for you: check the type, then convert it.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="3 4">2 — Receiving the Body, Required and Optional Fields</h2>
+
+    <p>How does your endpoint actually get that whole JSON object?</p>
+    <p>You add a parameter typed as your model, and FastAPI reads the request body into it before your function runs. Not every field has to arrive. A <strong>required field</strong> has no default, so a request missing it is rejected. An <strong>optional field</strong> gets a <strong>default value</strong>, which <b>fills in when the field is left out</b>.</p>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: Opening the Enquiry Form to Real Requests</h3>
+    <p>Future Vision's website form also asks for the branch. A visitor can skip how many follow-ups they expect, or add a note.</p>
+
+    <h3 class="nerdit-runhead">follow_ups: int = 0 <span class="why">— a default fills the gap</span></h3>
+    <p>Building the model with only the required fields still works; the optional ones fall back to their defaults.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>class EnquiryIn(BaseModel):
+    name: str
+    phone: str
+    course: str
+    branch: str
+    follow_ups: int = 0
+    notes: str | None = None
+
+
+enquiry = EnquiryIn(name="Priya Mehta", phone="9825012345", course="Python Professional", branch="Citylight")
+print(enquiry.follow_ups)
+print(enquiry.notes)</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>0
+None</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>follow_ups: int = 0</code> is optional; it falls back to <code>0</code> when left out.</li>
+      <li><code>notes: str | None = None</code> is optional too, and falls back to <code>None</code>.</li>
+      <li><code>name: str</code> stays required, with no default after the type — <code>phone</code>, <code>course</code> and <code>branch</code> work the same way.</li>
+    </ol>
+
+    <p>This program runs for real, so FastAPI itself checks a request, not just a direct call in Python.</p>
+    <div class="nerdit-run nerdit-program" data-run="offline" data-file="enquiry_form.py">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import FastAPI
+from pydantic import BaseModel
+
+app = FastAPI()
+
+
+class EnquiryIn(BaseModel):
+    name: str
+    phone: str
+    course: str
+    branch: str
+    follow_ups: int = 0
+    notes: str | None = None
+
+
+@app.post("/enquiries", status_code=201)
+def create_enquiry(enquiry: EnquiryIn):
+    return enquiry.model_dump()
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="127.0.0.1", port=8000)</code></pre>
+      </div>
+      <script type="text/plain" class="nerdit-check">import warnings
+warnings.filterwarnings("ignore")
+
+from fastapi.testclient import TestClient
+
+client = TestClient(app)
+
+good = client.post("/enquiries", json={
+    "name": "Priya Mehta",
+    "phone": "9825012345",
+    "course": "Python Professional",
+    "branch": "Citylight",
+})
+print(good.status_code)
+print(good.json())
+
+bad = client.post("/enquiries", json={
+    "name": "Priya Mehta",
+    "course": "Python Professional",
+    "branch": "Citylight",
+})
+print(bad.status_code)
+print(bad.json()["detail"][0]["msg"])</script>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>201
+{'name': 'Priya Mehta', 'phone': '9825012345', 'course': 'Python Professional', 'branch': 'Citylight', 'follow_ups': 0, 'notes': None}
+422
+Field required</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk nerdit-walk-full">
+      <li><code>from fastapi import FastAPI</code> brings in the class this file builds its app from.</li>
+      <li><code>from pydantic import BaseModel</code> brings in the base class for the model.</li>
+      <li><code>class EnquiryIn(BaseModel):</code> is the same model from the run line above.</li>
+      <li><code>@app.post("/enquiries", status_code=201)</code> registers the route and its success code.</li>
+      <li><code>def create_enquiry(enquiry: EnquiryIn):</code> types the parameter as the model, so FastAPI reads the whole body into it.</li>
+      <li><code>return enquiry.model_dump()</code> sends the parsed data straight back as JSON.</li>
+      <li><code>uvicorn.run(app, host="127.0.0.1", port=8000)</code> starts the real server when you run this file directly.</li>
+    </ol>
+
+    <p>Save this file as enquiry_form.py, activate your venv from Lesson 1 and run it:</p>
+    <div class="nerdit-terminal"><span class="nerdit-prompt">$ </span><span class="nerdit-cmd">uvicorn enquiry_form:app --reload</span>
+<span class="nerdit-out">INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)</span>
+<span class="nerdit-comment"># Open http://127.0.0.1:8000/docs and try POST /enquiries</span></div>
+
+    <div class="nerdit-warning-block"><div class="nerdit-warning-label">Warning — a direct call skips the check</div><p>Calling <code>create_enquiry(...)</code> yourself in Python never runs FastAPI's request parsing. Only a real request, like the one above, can trigger a 422.</p></div>
+
+    <div class="nerdit-fillblank" data-answer="0">
+      <div class="nerdit-fillblank-head">✏️ Try It — Fill in the blank</div>
+      <p>Complete the default so leaving out <code>follow_ups</code> still works:</p>
+      <pre data-lang="python"><code>def new_enquiry(name, phone, course, follow_ups=<input class="nerdit-blank" size="3" aria-label="your answer">):
+    return {"name": name, "phone": phone, "course": course, "follow_ups": follow_ups}
+
+print(new_enquiry("Priya Mehta", "9825012345", "Office &amp; GenAI"))</code></pre>
+      <button class="nerdit-check-btn" onclick="nerditCheckBlank(this)">Check</button>
+      <span class="nerdit-check-msg" aria-live="polite"></span>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="5">3 — Add Simple Validation Rules with Field()</h2>
+
+    <p>A type hint alone only checks the kind of value you got, not whether it makes sense. <code>Field()</code> adds a <strong>validation rule</strong> on top of the type, a check your data must pass before the model is built. You write it as the field's default.</p>
+    <p>Common rules include <code>min_length</code> and max_length for text, and <code>ge</code> (at least) and <code>le</code> (at most) for numbers. A failed rule raises <code>ValidationError</code>, with a plain message naming what went wrong.</p>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: Catching a Too-Short Name or an Impossible Age</h3>
+    <p>A one-letter name or an age of 120 are real mistakes a counsellor would want FastAPI to catch early.</p>
+
+    <h3 class="nerdit-runhead">Field(min_length=2) <span class="why">— reject a name that is too short</span></h3>
+    <p>A valid name builds normally; a name under the minimum length raises an error instead.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from pydantic import Field, ValidationError
+
+
+class EnquiryIn(BaseModel):
+    name: str = Field(min_length=2)
+    age: int = Field(ge=5, le=80)
+
+
+print(EnquiryIn(name="Priya Mehta", age=19))
+
+try:
+    EnquiryIn(name="P", age=19)
+except ValidationError as e:
+    print(e.errors()[0]["msg"])</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>name='Priya Mehta' age=19
+String should have at least 2 characters</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>name: str = Field(min_length=2)</code> replaces the plain type with a rule.</li>
+      <li><code>age: int = Field(ge=5, le=80)</code> keeps age inside a sensible range.</li>
+      <li><code>except ValidationError as e:</code> catches the failure instead of crashing the script.</li>
+    </ol>
+
+    <h3 class="nerdit-runhead">Field(ge=5, le=80) <span class="why">— reject an age outside the range</span></h3>
+    <p>The same model also rejects an age of 120, well past <code>le=80</code>.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>try:
+    EnquiryIn(name="Priya Mehta", age=120)
+except ValidationError as e:
+    print(e.errors()[0]["msg"])</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>Input should be less than or equal to 80</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>EnquiryIn(name="Priya Mehta", age=120)</code> fails only the <code>le=80</code> rule; the name is fine.</li>
+    </ol>
+
+    <p>Add these same <code>Field()</code> rules to the enquiry form's model from section 2. Then a request with <code>age=120</code> gets a 422, the same way a missing <code>phone</code> did.</p>
+
+    <div class="nerdit-predict">
+      <div class="nerdit-predict-head">🤔 Try It — Predict the output</div>
+      <pre data-lang="python"><code>def check_name(name):
+    if len(name) < 2:
+        raise ValueError("name is too short")
+    return name
+
+print(check_name("Priya"))</code></pre>
+      <details class="nerdit-predict-answer">
+        <summary>Show answer</summary>
+        <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>Priya</code></pre></div>
+        <p><code>Field(min_length=2)</code> runs a check like this one, before your route ever sees the value.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="6 7">4 — Use a List and a Nested Model</h2>
+
+    <p>Some fields hold more than one value of the same kind. A <strong>list field</strong> is written <code>list[...]</code>, with the item type inside the brackets, like <code>list[str]</code>. Pydantic checks every item inside it, not just the list as a whole.</p>
+    <p>Other data is naturally grouped. A <strong>nested model</strong> is one model used as the type of another model's field. A group of related values travels together that way. Pydantic builds the inner model from the matching part of the JSON.</p>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: One Enquiry, Several Courses and a Phone Number</h3>
+    <p>A visitor often asks about more than one course, and the form always needs a way to reach them back.</p>
+
+    <h3 class="nerdit-runhead">interested_courses: list[str] <span class="why">— more than one course in one field</span></h3>
+    <p>Each string in the list is checked the same way a single field would be.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>class EnquiryIn(BaseModel):
+    name: str
+    interested_courses: list[str]
+
+
+enquiry = EnquiryIn(name="Priya Mehta", interested_courses=["Python Professional", "Office &amp; GenAI"])
+print(enquiry.interested_courses)
+print(len(enquiry.interested_courses))</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>['Python Professional', 'Office &amp; GenAI']
+2</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>interested_courses: list[str]</code> accepts zero or more strings, in order.</li>
+      <li><code>print(len(enquiry.interested_courses))</code> shows how many courses came in.</li>
+    </ol>
+
+    <h3 class="nerdit-runhead">contact: ContactInfo <span class="why">— one model nested inside another</span></h3>
+    <p>The whole <code>contact</code> object in the JSON becomes a <code>ContactInfo</code> instance, not a plain dictionary.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>class ContactInfo(BaseModel):
+    phone: str
+    whatsapp: str | None = None
+
+class EnquiryIn(BaseModel):
+    name: str
+    contact: ContactInfo
+    interested_courses: list[str] = []
+
+enquiry = EnquiryIn(
+    name="Priya Mehta", contact={"phone": "9825012345", "whatsapp": "9825012345"},
+    interested_courses=["Python Professional"],
+)
+print(enquiry.contact.whatsapp)
+print(enquiry.model_dump())</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>9825012345
+{'name': 'Priya Mehta', 'contact': {'phone': '9825012345', 'whatsapp': '9825012345'}, 'interested_courses': ['Python Professional']}</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>class ContactInfo(BaseModel):</code> is a small model of its own, with two fields.</li>
+      <li><code>contact: ContactInfo</code> uses that model as this field's type.</li>
+      <li><code>name="Priya Mehta", contact={"phone": "9825012345", "whatsapp": "9825012345"},</code> passes a plain dict for <code>contact</code>; Pydantic builds the nested model from it.</li>
+      <li><code>print(enquiry.contact.whatsapp)</code> reads a field two levels deep, through the nested model.</li>
+    </ol>
+
+    <div class="nerdit-figure" data-visual="diagram" style="max-width:440px">
+      <svg viewBox="0 0 360 210" role="img" aria-label="A nested model field holds another model's data, and a list field holds several values of one type.">
+        <rect x="16" y="14" width="328" height="34" rx="6" fill="var(--bg-soft)" stroke="var(--bd)" stroke-width="1"/>
+        <text x="28" y="36" font-family="var(--font-code)" font-size="14" fill="var(--orange)">contact: ContactInfo</text>
+        <path d="M60 48 V74" stroke="var(--nb)" stroke-width="1.4" fill="none"/>
+        <path d="M54 68 L60 76 L66 68" stroke="var(--nb)" stroke-width="1.4" fill="none"/>
+        <text class="nerdit-flow-text" x="78" y="90" fill="var(--nb)">a model nested inside another model</text>
+        <rect x="16" y="104" width="328" height="34" rx="6" fill="var(--bg-soft)" stroke="var(--bd)" stroke-width="1"/>
+        <text x="28" y="126" font-family="var(--font-code)" font-size="13" fill="var(--green)">interested_courses: list[str]</text>
+        <path d="M60 138 V164" stroke="var(--nb)" stroke-width="1.4" fill="none"/>
+        <path d="M54 158 L60 166 L66 158" stroke="var(--nb)" stroke-width="1.4" fill="none"/>
+        <text class="nerdit-flow-text" x="78" y="180" fill="var(--nb)">zero or more strings, [] if none sent</text>
+      </svg>
+      <div class="nerdit-figure-caption">A nested model field holds another model's data; a list field holds several values of one type.</div>
+    </div>
+
+    <div class="nerdit-predict">
+      <div class="nerdit-predict-head">🤔 Try It — Predict the output</div>
+      <pre data-lang="python"><code>enquiry = {
+    "name": "Priya Mehta",
+    "contact": {"phone": "9825012345"},
+    "interested_courses": ["Python Professional", "Office &amp; GenAI"],
+}
+print(enquiry["contact"]["phone"])
+print(len(enquiry["interested_courses"]))</code></pre>
+      <details class="nerdit-predict-answer">
+        <summary>Show answer</summary>
+        <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>9825012345
+2</code></pre></div>
+        <p>A nested model and a list field work on JSON shaped exactly like this dictionary.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="8">5 — Why Custom Validator Decorators Wait</h2>
+
+    <p><code>Field()</code> checks one field entirely on its own: a length, a range, a required value. Some real rules need more than that. A <strong>custom validator</strong> is a function that checks a rule across two or more fields together. A start date that must come before an end date is one example.</p>
+    <p>Pydantic hooks such a function to a model with a decorator, written <code>@field_validator</code>. Writing one needs you to already be comfortable with functions, decorators and the model basics this lesson covers. You will meet it once those feel natural, so each new idea builds on one you already trust. For now, just recognise its shape when you see it in someone else's code.</p>
+
+    <div class="nerdit-syntax">
+      <div class="nerdit-syntax-label">Syntax — for a later lesson, not this one</div>
+      <pre data-lang="python"><code>@field_validator(<em>"field_name"</em>)
+def <em>check_fn</em>(cls, value):
+    ...</code></pre>
+    </div>
+
+    <pre class="nerdit-map"><span class="nerdit-map-label">One rule, or a rule across fields</span>A rule inside one field    <b>&#8594;</b> Field()
+A rule across two fields   <b>&#8594;</b> a validator function, added later</pre>
+
+    <div class="nerdit-predict">
+      <div class="nerdit-predict-head">🤔 Try It — Predict the output</div>
+      <pre data-lang="python"><code>def check_dates(start, end):
+    return start &lt;= end
+
+print(check_dates("2026-01-01", "2026-01-10"))</code></pre>
+      <details class="nerdit-predict-answer">
+        <summary>Show answer</summary>
+        <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>True</code></pre></div>
+        <p>A custom validator is a function like this one, checking two fields together instead of one.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2>📌 Quick Reference</h2>
+    <div class="nerdit-cheatsheet">
+      <table>
+        <thead><tr><th>Keyword</th><th>What it does</th><th>Tiny example</th></tr></thead>
+        <tbody>
+          <tr><td>Request body</td><td>JSON data sent with the request</td><td><code>@app.post("/enquiries")</code></td></tr>
+          <tr><td><code>BaseModel</code></td><td>Base class for a Pydantic model</td><td><code>class Item(BaseModel):</code></td></tr>
+          <tr><td>Required field</td><td>No default; the request must send it</td><td><code>name: str</code></td></tr>
+          <tr><td>Optional field</td><td>Falls back to its default if missing</td><td><code>follow_ups: int = 0</code></td></tr>
+          <tr><td><code>Field()</code></td><td>Adds a validation rule to a field</td><td><code>Field(min_length=2)</code></td></tr>
+          <tr><td><code>list[...]</code></td><td>Zero or more values of one type</td><td><code>list[str]</code></td></tr>
+          <tr><td>Nested model</td><td>A model used as another's field type</td><td><code>contact: ContactInfo</code></td></tr>
+          <tr><td><code>@field_validator</code></td><td>Checks a rule across fields (later)</td><td><code>@field_validator("end_date")</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>🧠 Practice</h2>
+    <div class="nerdit-practical">
+      <div class="nerdit-task">Task 1: Write <code>with_default(data, key, default)</code> that returns <code>data[key]</code> if that key exists, else <code>default</code>. Test it on <code>{"name": "Priya"}</code> with key <code>"follow_ups"</code> and default <code>0</code>.
+        <details class="nerdit-solution">
+          <summary>Show solution</summary>
+          <pre data-lang="python"><code>def with_default(data, key, default):
+    if key in data:
+        return data[key]
+    return default
+
+data = {"name": "Priya"}
+print(with_default(data, "follow_ups", 0))</code></pre>
+          <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>0</code></pre></div>
+        </details>
+      </div>
+      <div class="nerdit-task">Task 2: Write <code>has_required(data, required)</code> that returns <code>True</code> only if every name in the list <code>required</code> is a key in <code>data</code>. Test it on <code>{"name": "Priya", "course": "Python Professional"}</code> with <code>required=["name", "phone", "course"]</code>.
+        <details class="nerdit-solution">
+          <summary>Show solution</summary>
+          <pre data-lang="python"><code>def has_required(data, required):
+    for key in required:
+        if key not in data:
+            return False
+    return True
+
+data = {"name": "Priya", "course": "Python Professional"}
+print(has_required(data, ["name", "phone", "course"]))</code></pre>
+          <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>False</code></pre></div>
+        </details>
+      </div>
+      <div class="nerdit-task">Task 3 (challenge): Write <code>valid_length(text, minimum, maximum)</code> that returns <code>True</code> only when <code>len(text)</code> is between <code>minimum</code> and <code>maximum</code>, both included. Test it on <code>"P"</code> with <code>minimum=2</code> and <code>maximum=40</code>.
+        <details class="nerdit-solution">
+          <summary>Show solution</summary>
+          <pre data-lang="python"><code>def valid_length(text, minimum, maximum):
+    return minimum &lt;= len(text) &lt;= maximum
+
+print(valid_length("P", 2, 40))</code></pre>
+          <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>False</code></pre></div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+</div>
+<script>
+(function(){
+  if (typeof window.nerditCheckBlank !== "function") {
+    window.nerditCheckBlank = function(btn){
+      var box = btn.closest('.nerdit-fillblank');
+      var input = box.querySelector('.nerdit-blank');
+      var msg = box.querySelector('.nerdit-check-msg');
+      var accepted = (box.getAttribute('data-answer') || '').split('|');
+      var got = (input.value || '').trim().toLowerCase();
+      var ok = accepted.some(function(a){ return a.trim().toLowerCase() === got; });
+      msg.textContent = ok ? '✅ Correct!' : '❌ Not yet — try again.';
+      msg.className = 'nerdit-check-msg ' + (ok ? 'ok' : 'no');
+      input.classList.toggle('ok', ok);
+      input.classList.toggle('no', !ok);
+    };
+  }
+})();
+</script>
