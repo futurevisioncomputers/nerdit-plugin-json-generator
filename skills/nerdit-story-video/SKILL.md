@@ -170,11 +170,16 @@ clip, and lists them in `clips.json` with each clip's key, place and YouTube tit
 `python scripts/place_video.py --images-dir <images> --course <course .with-images.json>` writes
 `<course>.with-images.with-video.json`: one empty slot per clip. A topic clip goes at the end of
 its section, the intro clip before the first lesson's first section, the recap clip before the
-last lesson's cheat sheet.
+last lesson's cheat sheet. Each slot carries its clip's whole seconds in `story.mp4`
+(`data-start`/`data-end`); a re-run adds them to slots placed before.
 
-Tell the user: upload each clip to YouTube (Unlisted) with its title from `clips.json`; then in
-the admin, Import JSON + Images → the `.with-video.json` and the images folder → in the **Videos**
-box paste each clip's YouTube link next to its slot (same key as the file name) → Apply video links → preview → publish.
+Tell the user: upload `story.mp4` ONCE to YouTube (Unlisted, Allow embedding on, not made for
+kids; a video over 15 minutes needs a phone-verified channel) with `title.txt`, `thumbnail.jpg`,
+and a description of at most 5,000 characters; then in the admin, Import JSON + Images → the
+bundle (or the `.with-video.json` and the images folder) → in the **Videos** box paste the link
+once in **One video for the whole course** → Fill all slots → preview → publish. Each slot plays
+only its own part; the classroom sends a seek outside it back to its start and starts with
+captions off. (The per-slot boxes still take one clip upload per slot, for a course without times.)
 Empty slots stay hidden from learners. Look at the thumbnail and one frame per scene kind first.
 Never upload an MP4 to Firebase.
 
