@@ -1781,6 +1781,51 @@
 }
 
 /* ====================================================================
+   v12 · CODE YOU TYPE ON THE DARK GROUND (owner, 2026-11-04)
+   ====================================================================
+   A run line's code half used a clay tint with light-theme tokens. The
+   owner preferred the plain example's look: navy code block, bright
+   tokens, green output under it. Only halves that hold code change;
+   a "You work out" or "You do" half with prose stays light.
+   ==================================================================== */
+
+.nerdit-wrapper .nerdit-run:has(> .nerdit-in > pre) { border-radius: var(--r-sm, 8px); }
+
+.nerdit-wrapper .nerdit-in:has(> pre) {
+  background: #0F2747;
+  border-left-color: #0F2747;
+}
+
+.nerdit-wrapper .nerdit-in:has(> pre),
+.nerdit-wrapper .nerdit-in:has(> pre) *,
+.nerdit-wrapper .nerdit-in:has(> pre) pre,
+.nerdit-wrapper .nerdit-in:has(> pre) pre code { color: #DCE4EE; }
+
+.nerdit-wrapper .nerdit-in:has(> pre) > .nerdit-tag { color: #FDBA74; }
+
+.nerdit-wrapper .nerdit-in:has(> pre) pre .kw     { color: var(--syn-kw); }
+.nerdit-wrapper .nerdit-in:has(> pre) pre .fn     { color: var(--syn-fn); }
+.nerdit-wrapper .nerdit-in:has(> pre) pre .bltin  { color: var(--syn-blt); }
+.nerdit-wrapper .nerdit-in:has(> pre) pre .cls-n  { color: var(--syn-cls); }
+.nerdit-wrapper .nerdit-in:has(> pre) pre .str    { color: var(--syn-str); }
+.nerdit-wrapper .nerdit-in:has(> pre) pre .num    { color: var(--syn-num); }
+.nerdit-wrapper .nerdit-in:has(> pre) pre .cmt    { color: #94A3B8; }
+.nerdit-wrapper .nerdit-in:has(> pre) pre .op     { color: var(--syn-op); }
+.nerdit-wrapper .nerdit-in:has(> pre) pre .dec    { color: var(--syn-dec); }
+.nerdit-wrapper .nerdit-in:has(> pre) pre .slf    { color: var(--syn-self); }
+.nerdit-wrapper .nerdit-in:has(> pre) pre .param  { color: var(--syn-param); }
+.nerdit-wrapper .nerdit-in:has(> pre) pre .ident  { color: #9CDCFE; }
+
+/* A walk step that only points back to lines an earlier lesson explained
+   (CORE.md §4). Quieter than a real step, so the eye lands on what is new. */
+.nerdit-codewalk li.nerdit-walk-seen { color: var(--tx-m); font-size: 13.5px; }
+.nerdit-codewalk li.nerdit-walk-seen::before {
+  background: transparent;
+  color: var(--tx-m);
+  border: 1px dashed var(--tx-m);
+}
+
+/* ====================================================================
    v11 · TEACHING VISUALS
    ====================================================================
    figures.md templates 11-13 (value table, decision grid, unit tiles),
