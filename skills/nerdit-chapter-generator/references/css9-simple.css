@@ -343,9 +343,11 @@
   counter-reset: walk;
   margin: .4rem 0 1.4rem !important;
   padding: .6rem .9rem !important;
-  background: var(--bg-soft);
-  border: 1px solid var(--bd);
-  border-radius: var(--r);
+  /* Same shape as the output block (tint + left edge), in navy so the walk reads as explanation, not output. */
+  background: var(--blue-bg);
+  border: 0;
+  border-left: 3px solid var(--nb);
+  border-radius: 0;
 }
 
 .nerdit-codewalk::before {
