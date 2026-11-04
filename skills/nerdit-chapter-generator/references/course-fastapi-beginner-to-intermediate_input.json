@@ -247,5 +247,27 @@
       "Docker as an optional deployment extension with a `Dockerfile`",
       "Final deployment checklist"
     ]
+  },
+  {
+    "id": "fastapi-capstone-15",
+    "title": "Capstone: Institute Enquiry API",
+    "description": "Build one complete FastAPI service for the institute's admissions team that uses every chapter: Pydantic models for enquiries, SQLAlchemy storage loaded from the institute's enquiry records, routers split by area, counsellor login with tokens, paginated and filtered lists, CSV file import and export, a background follow-up task, pytest tests that prove each milestone, and a deployment-ready start command with a health endpoint.",
+    "runner": "python",
+    "focus": "project",
+    "outline": [
+      "The problem: what the enquiry API does for the admissions team, and an architecture figure",
+      "Milestone 1: project setup, settings from `.env` and a `/health` endpoint (Chapters 1 and 14)",
+      "Milestone 2: enquiry models with `BaseModel` and `Field()`, and response models (Chapters 3 and 4)",
+      "Milestone 3: SQLAlchemy storage, a `get_db` dependency and CRUD endpoints (Chapters 5 and 6)",
+      "Milestone 4: split the app into routers with `APIRouter` (Chapter 7)",
+      "Milestone 5: counsellor login with a JWT and protected routes using `Depends` (Chapter 8)",
+      "Milestone 6: request-timing middleware and CORS with `CORSMiddleware` (Chapter 9)",
+      "Milestone 7: paginated, filtered and sorted enquiry lists with `skip` and `limit` (Chapters 2 and 12)",
+      "Milestone 8: CSV import with `UploadFile` and CSV export with `StreamingResponse` (Chapter 10)",
+      "Milestone 9: a follow-up reminder with `BackgroundTasks` (Chapter 11)",
+      "Milestone 10: tests for every milestone with `TestClient` and `dependency_overrides` (Chapter 13)",
+      "Run the whole thing locally and with the production start command",
+      "Extension ideas"
+    ]
   }
 ]
