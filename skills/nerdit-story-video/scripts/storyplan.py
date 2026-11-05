@@ -785,6 +785,32 @@ def lesson_video_problems(video: dict, html_text: str, lesson_id: str, title: st
     return errors
 
 
+def lesson_part_skeleton(html_text: str, lesson_id: str, title: str) -> dict:
+    """A lesson writer's starting <id>.video.json: the scaffold's scenes, clips and Try It cards for
+    this one lesson (one concept vector per numbered section, every field present and empty), with
+    `htmlSha256` already set. The writer fills the text and draws the vectors."""
+    import tempfile
+    with tempfile.TemporaryDirectory() as tmp:
+        course = Path(tmp) / "course.json"
+        course.write_text(json.dumps({"title": title, "lessons": [{"id": lesson_id, "title": title,
+                                                                   "content": html_text}]}), encoding="utf-8")
+        plan = scaffold_plan(Path(tmp), course)
+    return {"lessonId": lesson_id, "htmlSha256": html_sha256(html_text), "language": DEFAULT_LANGUAGE,
+            "scenes": plan["scenes"], "clips": plan["clips"],
+            "practise": [{k: v for k, v in p.items() if k != "lessonId"} for p in plan["practise"]],
+            "skipTopics": []}
+
+
+def stamp(video_path: Path, html_path: Path) -> str:
+    """Set the part's htmlSha256 to the lesson as it is now, hashed exactly as merge and the gate
+    hash it (the UTF-8 text, newlines as Python reads them). Run it after the last HTML edit, once
+    the narration still matches the page."""
+    video = load_json(video_path)
+    video["htmlSha256"] = html_sha256(html_path.read_text(encoding="utf-8"))
+    video_path.write_text(json.dumps(video, ensure_ascii=False, indent=2), encoding="utf-8")
+    return video["htmlSha256"]
+
+
 def print_review_flags(flags: list[dict]) -> None:
     """A writer that found the lesson itself unclear or wrong says so in `reviewFlags` instead of
     changing it in the video; the owner reads these lines. They never fail the check."""
@@ -794,7 +820,7 @@ def print_review_flags(flags: list[dict]) -> None:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("command", choices=["scaffold", "check", "check-lesson", "merge"])
+    ap.add_argument("command", choices=["scaffold", "check", "check-lesson", "merge", "part", "stamp"])
     ap.add_argument("--images-dir", type=Path)
     ap.add_argument("--course", type=Path, help="course JSON (scaffold; check defaults to plan.source)")
     ap.add_argument("--video", type=Path, help="check-lesson: the lesson's <id>.video.json")
@@ -805,6 +831,21 @@ def main(argv=None) -> int:
     ap.add_argument("--lessons-dir", type=Path, help="merge: the workdir holding every <id>.video.json")
     ap.add_argument("--previous", type=Path, help="scaffold: the course's old video plan.json, to revise it")
     a = ap.parse_args(argv)
+    if a.command in ("part", "stamp"):
+        if not (a.video and a.html):
+            raise SystemExit(f"{a.command} needs --video and --html")
+        if a.command == "stamp":
+            print(f"htmlSha256 {stamp(a.video, a.html)} written to {a.video}")
+            return 0
+        if a.video.exists():
+            raise SystemExit(f"{a.video} already exists; edit it, and run `stamp` after the last HTML edit")
+        if not a.lesson_id:
+            raise SystemExit("part needs --lesson-id")
+        part = lesson_part_skeleton(a.html.read_text(encoding="utf-8"), a.lesson_id, a.title)
+        a.video.write_text(json.dumps(part, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(f"wrote {a.video}: {len(part['scenes'])} scene(s), {len(part['practise'])} Try It card(s); "
+              f"fill every empty field, draw each vector, then run the gate with --video")
+        return 0
     if a.command == "check-lesson":
         video = load_json(a.video)
         errors = lesson_video_problems(video, a.html.read_text(encoding="utf-8"), a.lesson_id, a.title, a.vectors)

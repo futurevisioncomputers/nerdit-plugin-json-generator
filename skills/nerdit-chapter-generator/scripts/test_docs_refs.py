@@ -36,7 +36,7 @@ def test_writer_trim_rule_matches_the_refresh_guard():
 
 
 def test_plugin_version_is_3_14_0():
-    assert json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))["version"] == "3.20.0"
+    assert json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))["version"] == "3.21.0"
 
 
 def test_skill_md_matches_the_v11_figure_rules():

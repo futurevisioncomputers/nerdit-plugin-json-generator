@@ -40,6 +40,15 @@ Before writing anything:
   rules cut to this course's preset (section numbers unchanged, so "CORE.md §7" is §7 there):
   skeleton, language rules, component set, banned list, shared script helpers. With no `RULES:`
   line, read `${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/references/CORE.md` in full.
+- **Environment and course notes (when the prompt has `ENV:`).** Read that file (`_env.md`): it
+  lists the gate venv's Python and every installed package version, and the browser engine's
+  state. Then read the course notes file it names, and apply every note: each is a course-wide fix
+  an earlier writer already found. Never run `pip show`, `pip list`, `pip install`, `npm ci` or
+  `python -c "import …"` probes; `check_python_outputs.py --probe` is the one allowed question.
+- **Gate failures: act on the message.** Each failure says what is wrong, and a `FIX` line under
+  it gives the exact command for the known ones. The rule behind a message is in your pack:
+  search the pack for the message's key words. Open a checker's source only when both leave the
+  fix unclear.
 - **A pack built with `--runner` already holds** `voice.md`, the runner fragment(s) and (code or
   data) `deprecated.md` at its end; its first lines name them. Do not open those files again:
   every "read voice.md / runners/… / deprecated.md" below is then already done.
@@ -419,11 +428,23 @@ hand: `VIDEO_PATH` (`<workdir>/<id>.video.json`) holding `{"lessonId", "htmlSha2
 "hi", "scenes": [...], "clips": [{"topic", "objective", "pageHas", "adds", "format"}], "practise":
 [{"topic", "tryIt", "task", "question"}], "skipTopics": [{"topic", "reason"}], "reviewFlags": [{"topic",
 "issue"}]}` (each scene also carries its `purpose`; `reviewFlags` only when the lesson looks wrong), and each vector SVG in `<workdir>/video-vectors/` named `<id>-t<topic>-<name>.svg`.
-Follow the "Video part" section of your rule pack (the story-video scene rules). `htmlSha256` is
-the SHA-256 of your final `<id>.html` bytes: compute it with Bash after the lesson is final, and
-rewrite the video part whenever you change the lesson. Run the GATE command with `--video` and
-fix what it prints, then add a fourth line `VIDEO: <VIDEO_PATH>` to the three above.
+Follow the "Video part" section of your rule pack (the story-video scene rules). Start from the
+skeleton, never from another lesson's video part:
+
+    python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-story-video/scripts/storyplan.py" part --video <VIDEO_PATH> --html <HTML_PATH> --lesson-id <id> --title "<title>"
+
+It writes every field (one concept scene, clip and Try It card per numbered section) with
+`htmlSha256` set; fill the empty ones and draw each vector. After your last HTML edit, once the
+narration still matches the page, run the same script with `stamp --video <VIDEO_PATH> --html
+<HTML_PATH>`; never compute the hash yourself. Run the GATE command with `--video` and fix what
+it prints, then add a fourth line `VIDEO: <VIDEO_PATH>` to the three above.
+
+**Course notes.** When you fixed something that will hit every lesson of this course (a library
+warning, an engine limit, a package that needs an offline run line), add one line per fix after
+your path lines: `NOTE: <what fails> → <what to write instead>`. Lesson-specific fixes are not
+notes.
 
 No preamble, no explanation, no HTML echo, no JSON echo, no markdown fences. All three files
-written to disk still obey every rule above. The one exception to "nothing else": if a
-`VIOLATIONS` term was genuinely unavoidable, one line saying so after the path lines.
+written to disk still obey every rule above. The exceptions to "nothing else": if a
+`VIOLATIONS` term was genuinely unavoidable, one line saying so after the path lines, and any
+`NOTE:` lines (course-wide fixes, above).

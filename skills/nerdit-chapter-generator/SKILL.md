@@ -309,7 +309,7 @@ passing it: `id`, `title`, `description`, chapter name, whether this is a multi-
 lesson's `outline` as a numbered list, verbatim; omit when absent), `PRIOR_TOPICS` + `UPCOMING_TOPICS` (the curriculum
 context — see below), `HTML_PATH = <workdir>/<id>.html`,
 `QUIZ_PATH = <workdir>/<id>.quiz.json`,
-`CONCEPTS_PATH = <workdir>/<id>.concepts.json`, `RULES = <the pack path>`, and the lesson's
+`CONCEPTS_PATH = <workdir>/<id>.concepts.json`, `RULES = <the pack path>`, `ENV = <workdir>/_env.md` (below), and the lesson's
 `GATE` command:
 
     python "${CLAUDE_PLUGIN_ROOT}/skills/nerdit-chapter-generator/scripts/gate_lesson.py" --input <input.json> --dir <workdir> --id <id> [--world <world.json>] [--new-course] --run-dir <workdir>/gate-run --requirements <course requirements.txt> [--capstone <workdir>/capstone]
@@ -319,6 +319,20 @@ The writer runs it before returning and fixes what it prints, while the lesson i
 venv per course, cached in `gate-run/venv`). Omit `--run-dir`/`--requirements` for a course with
 no Python. You still run the gate yourself after it returns; a writer that reports PASS is rarely
 resumed.
+
+**Environment first (once per course, before the first writer):**
+
+    python scripts/course_env.py --workdir <workdir> [--requirements <course requirements.txt>]
+
+It installs the browser engine when missing, builds the gate venv once, and writes
+`<workdir>/_env.md` (Python and package versions, engine state) and an empty
+`<workdir>/_course_notes.md`. Exit 1 means something is missing: fix it before spawning. Pass
+every writer `ENV = <workdir>/_env.md`; writers then never probe pip or install the engine.
+
+**Course notes between groups:** a writer may return `NOTE: <what fails> → <what to write
+instead>` lines after its paths: course-wide fixes (a library warning, an engine limit). Append
+each new one to `<workdir>/_course_notes.md` as `- <note>` (skip duplicates) before spawning the
+next group, so later writers apply it instead of rediscovering it.
 
 **Spawn writers in groups of 3–4, not all at once.** Each finished group frees its context; a
 usage limit that hits mid-course then stops at most one group, and the next session resumes from

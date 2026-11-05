@@ -869,3 +869,22 @@ def test_only_records_one_lesson_or_topic(tmp_path, monkeypatch):
     voice.run(images, None, None, None, runner=runner, google=google, only=lesson)
     assert not (images / "video" / "audio" / "intro.wav").exists()
     assert (images / "video" / "audio" / "s1.wav").exists()
+
+
+def test_lesson_part_skeleton_and_stamp(tmp_path):
+    html = ('<div class="nerdit-wrapper nerdit-simple"><h2>1 — Read a File</h2><p>Read it.</p>'
+            '<h2>2 — Save a File</h2><p>Save it.</p></div>')
+    part = storyplan.lesson_part_skeleton(html, "files-10", "Files")
+    assert part["lessonId"] == "files-10" and part["htmlSha256"] == storyplan.html_sha256(html)
+    assert [s["topic"] for s in part["scenes"]] == [1, 2] and part["scenes"][0]["narration"] == ""
+    assert [c["topic"] for c in part["clips"]] == [1, 2] and part["skipTopics"] == []
+    assert all("lessonId" not in p for p in part["practise"])
+    h, v = tmp_path / "files-10.html", tmp_path / "files-10.video.json"
+    h.write_bytes(html.replace("</p>", "</p>\r\n").encode("utf-8"))   # a CRLF file: hashed as Python reads it
+    assert storyplan.main(["part", "--video", str(v), "--html", str(h), "--lesson-id", "files-10"]) == 0
+    with pytest.raises(SystemExit):
+        storyplan.main(["part", "--video", str(v), "--html", str(h), "--lesson-id", "files-10"])
+    h.write_text(html + "<p>More.</p>", encoding="utf-8")
+    assert storyplan.main(["stamp", "--video", str(v), "--html", str(h)]) == 0
+    stamped = json.loads(v.read_text(encoding="utf-8"))["htmlSha256"]
+    assert stamped == storyplan.html_sha256(h.read_text(encoding="utf-8"))

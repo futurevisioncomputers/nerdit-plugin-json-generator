@@ -208,6 +208,24 @@ def video_problems(lesson_dir: Path, lid: str, title: str, html: str) -> list[st
                                  lesson_dir / "video-vectors")
 
 
+def hints(fails: list[str], lesson_dir: Path, lid: str) -> list[str]:
+    """One fix line per known failure, so a writer acts on it instead of reading checker code."""
+    story = Path(__file__).resolve().parents[2] / "nerdit-story-video" / "scripts" / "storyplan.py"
+    here = Path(__file__).resolve().parent
+    found = []
+    if any("changed after its video part was written" in f for f in fails):
+        found.append("the video part's htmlSha256 is stale. If its narration still matches the page, run "
+                     f'python "{story.as_posix()}" stamp --video "{(lesson_dir / (lid + ".video.json")).as_posix()}" '
+                     f'--html "{(lesson_dir / (lid + ".html")).as_posix()}"  (never hash the file yourself)')
+    if any("engine missing" in f or "Pyodide engine is not installed" in f for f in fails):
+        found.append("the browser engine is not set up. Run once (do not npm ci yourself): "
+                     f'python "{(here / "course_env.py").as_posix()}" --workdir "{lesson_dir.as_posix()}"')
+    if any("ModuleNotFoundError" in f for f in fails):
+        found.append(f"a module did not load. Installed versions are in {(lesson_dir / '_env.md').as_posix()}; "
+                     "a library the browser engine cannot load goes in an offline run line (runners/python.md)")
+    return found
+
+
 def main() -> int:
     sys.stdout.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser()
@@ -243,6 +261,8 @@ def main() -> int:
     print(f"{'FAIL' if fails else 'PASS'}  {args.id}: {len(fails)} failure(s), {len(warns)} warning(s)")
     for f in fails:
         print(f"  - {f}")
+    for h in hints(fails, Path(args.dir), args.id):
+        print(f"  FIX {h}")
     for w in warns:
         print(f"  WARN {w}")
     return 1 if fails else 0
