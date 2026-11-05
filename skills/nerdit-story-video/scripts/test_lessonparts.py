@@ -1,4 +1,4 @@
-"""Topic clips mirror their section: the page's own tables and code, coverage of every section."""
+"""Lesson parts (the page's own tables and code), the scaffold, and coverage of every section."""
 import json, re
 from pathlib import Path
 
@@ -76,11 +76,11 @@ def course_file(tmp_path: Path) -> Path:
     return path
 
 
-def test_scaffold_fills_each_section_with_its_table_and_code(tmp_path):
+def test_scaffold_starts_each_section_with_a_concept_vector_only(tmp_path):
+    # Owner, 2026-11-05: the video complements the page, so the scaffold copies none of its tables or code.
     plan = json.loads(storyplan.scaffold(tmp_path / "images", course_file(tmp_path)).read_text(encoding="utf-8"))
-    assert [(s["kind"], s["topic"], s.get("table") or s.get("code")) for s in plan["scenes"]] == [
-        ("vector", 1, None), ("table", 1, 1), ("code", 1, 1), ("vector", 2, None)]
-    assert plan["scenes"][1]["title"] == "an observation becomes a record" and plan["skipTopics"] == []
+    assert [(s["kind"], s["topic"]) for s in plan["scenes"]] == [("vector", 1), ("vector", 2)]
+    assert plan["scenes"][0]["title"] == "an observation becomes a record" and plan["skipTopics"] == []
 
 
 def test_coverage_makes_each_clip_explain_its_section(tmp_path):
@@ -136,10 +136,8 @@ def test_code_walk_lines_become_the_run_highlight_and_go_deeper_is_left_out():
     assert lessonparts.section_parts(SECTION, 1)["runs"][0]["walk"] == []
 
 
-def test_scaffold_highlights_the_lines_the_page_walks_through(tmp_path):
+def test_a_code_run_knows_the_lines_the_page_walks_through(tmp_path):
     path = tmp_path / "course.json"
     path.write_text(json.dumps({"title": "C", "lessons": [{"id": "l1", "title": "L1", "content": WALKED}]}),
                     encoding="utf-8")
-    plan = json.loads(storyplan.scaffold(tmp_path / "images", path).read_text(encoding="utf-8"))
-    code = next(s for s in plan["scenes"] if s["kind"] == "code")
-    assert code["highlight"] == ["line:2"]
+    assert storyplan.lesson_parts(path)["l1"][1]["runs"][0]["walk"] == ["line:2"]

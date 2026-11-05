@@ -12,6 +12,7 @@ from storyplan import title_case
 PAD_IN, PAD_OUT = 0.5, 0.8       # silence before and after each narration clip
 MOVE = 0.9                       # camera move to a focus point, seconds
 CARD = 4.0                       # the silent "Now practise" card closing each topic clip
+CARD_QUESTION = 7.0              # ... longer when it asks a question to think about (owner, 2026-11-05)
 
 
 STOP = set("a an the in of to for and or is are it on at by with as be this that from into".split())
@@ -118,9 +119,10 @@ def build(plan: dict, clips: dict, cards: dict | None = None, labels: dict | Non
         following = plan["scenes"][n] if n < len(plan["scenes"]) else None
         last_of_topic = following is None or (following.get("lessonId"), following.get("topic", 1)) != key
         if cards and last_of_topic and key in cards:
-            segments.append({"kind": "practise", "scene": n, "start": round(t, 3), "end": round(t + CARD, 3),
+            hold = CARD_QUESTION if cards[key].get("question") else CARD
+            segments.append({"kind": "practise", "scene": n, "start": round(t, 3), "end": round(t + hold, 3),
                              "card": cards[key]})
-            t += CARD
+            t += hold
 
     recap = plan["recap"]
     chapters.append((round(t, 3), "Recap"))

@@ -59,6 +59,7 @@ html, body { width:1280px; height:720px; overflow:hidden; background:var(--bg);
 .practise { background:var(--navy); color:#fff; }
 .practise .label { margin:0 0 18px; font-size:24px; color:var(--teal); font-weight:800; }
 .practise .pt { opacity:1; }
+.practise .q { font-size:38px; font-weight:800; line-height:1.25; margin:0 0 26px; }
 .broll { position:absolute; inset:0; background:#0B1F3A; }
 """
 
@@ -152,7 +153,9 @@ function camera(sc, t) {
 // "Now practise" cards: the Try It on the page, then the starter task in the pack
 const practise = TL.segments.filter(s => s.kind === 'practise').map(s => {
   const layer = $('div', 'layer'), c = $('div', 'card practise');
-  c.append($('div', 'label', 'Now practise'), $('div', 'pt', '<i>1</i><span>' + esc(s.card.tryIt) + '</span>'));
+  c.append($('div', 'label', 'Now practise'));
+  if (s.card.question) c.append($('div', 'q', esc(s.card.question)));
+  c.append($('div', 'pt', '<i>1</i><span>' + esc(s.card.tryIt) + '</span>'));
   if (s.card.pack) c.append($('div', 'pt', '<i>2</i><span>' + esc(s.card.pack) + '</span>'));
   layer.append(c); stage.append(layer); return { s, layer };
 });

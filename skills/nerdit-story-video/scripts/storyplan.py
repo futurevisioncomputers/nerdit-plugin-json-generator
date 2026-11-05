@@ -16,9 +16,12 @@ characters and not quizzes. A scene is one of:
   code    - the section's own worked example (`code`: 1 = its first): the code typed in line by
             line (`highlight` ["line:3"]), then the output the lesson shows.
 
-Each topic clip mirrors its section on the page: the same heading, the same table and code, all
-its key terms spoken, at least MIN_TOPIC_SCENES scenes and MIN_TOPIC_WORDS words (about a
-minute and a half). It explains first: its first scene after any B-roll is a concept (`vector`
+A complementing plan ("complement": true, the default since 2026-11-05) adds what the page lacks:
+each clip has a `clips` entry (objective, what it adds, format), each scene a `purpose`, at most one
+table and one code scene with at most MAX_HIGHLIGHTS highlights, at least COMPLEMENT_MIN_SCENES
+scenes and COMPLEMENT_MIN_WORDS words, and no narration that reads the page aloud. An older plan
+mirrors its section: the same table and code, at least MIN_TOPIC_SCENES scenes and
+MIN_TOPIC_WORDS words (about a minute and a half). It explains first: its first scene after any B-roll is a concept (`vector`
 or `diagram`), never the table or code. A section with no clip is listed in `skipTopics` with a reason.
 
 Each scene belongs to one topic: `topic` is the number of the lesson section it explains (the
@@ -46,6 +49,21 @@ MAX_SENTENCES, MAX_CHARS = 6, 550
 MAX_KEY_IDEA, MAX_MYTH_LINE, MAX_POINT = 90, 80, 70
 MAX_TERMS, MAX_FOCUS = 4, 4
 MAX_BROLL_SHARE = 0.3            # B-roll sets the scene; the vectors do the explaining
+# A complementing plan ("complement": true, owner 2026-11-05, supplementary video strategy): the video
+# adds what the page lacks instead of mirroring it, so a simple idea may get a short clip.
+FORMATS = ("process", "comparison", "story", "case-study", "whiteboard", "hybrid")
+MAX_OBJECTIVE, MAX_ADDS, MAX_PURPOSE = 120, 160, 90
+COMPLEMENT_MIN_SCENES, COMPLEMENT_MIN_WORDS = 2, 90   # about a minute
+MAX_HIGHLIGHTS = 2      # a code or table scene points at the idea; the page's code walk explains each line
+READ_ALOUD_WORDS = 8    # this many page words in a row in the narration is reading the page aloud
+MAX_COMPLEMENT_WORDS = 340   # about 150 s: a longer idea is cut to its core, never crammed into one clip
+MAX_QUESTION = 90            # the "Now practise" question that checks the clip's idea
+DECISIONS = ("keep", "revise", "create")   # revising a course that already has a video (plan.previous)
+CODE_WORD = re.compile(r"[\w./<>:-]+")
+# A clip opens with the learner's question or problem, never an announcement of itself.
+GENERIC_OPENER = re.compile(r"^\W*(?:in this video|this video|today we(?:'ll| will)|let's learn|"
+                            r"आज हम|इस (?:video|वीडियो) में)", re.I)
+ENGLISH_WORD = re.compile(r"[A-Za-z][A-Za-z']*")
 MIN_VECTOR_ASPECT, MAX_VECTOR_ASPECT = 1.15, 1.55   # the picture box is 4:3
 SENTENCE_END = re.compile(r"[.!?।]+(?=\s|$)")   # not the point in 0.25
 NUMBER = re.compile(r"\d+(?:[.,]\d+)?")
@@ -173,7 +191,10 @@ def practise_cards(plan: dict, practice: dict) -> dict:
         info = practice.get(e.get("lessonId")) or {}
         pack = (f"Pack: {info['starter']}, Task {e['task']}"
                 if info.get("starter") and isinstance(e.get("task"), int) else None)
-        cards[(e.get("lessonId"), e.get("topic"))] = {"tryIt": f"Try It: {e.get('tryIt', '')}", "pack": pack}
+        card = {"tryIt": f"Try It: {e.get('tryIt', '')}", "pack": pack}
+        if e.get("question"):
+            card["question"] = e["question"]   # a complementing plan's question, shown first
+        cards[(e.get("lessonId"), e.get("topic"))] = card
     return cards
 
 
@@ -227,10 +248,21 @@ def check_vector(svg: str, source: str) -> list[str]:
     return errors
 
 
-def scaffold(images_dir: Path, course_path: Path) -> Path:
-    """One clip per numbered section, pre-filled from the page: a concept vector, then the
-    section's own tables and code runs. The writer adds narration, key ideas and the vectors."""
-    return _write_plan(images_dir, scaffold_plan(images_dir, course_path))
+def scaffold(images_dir: Path, course_path: Path, previous: Path | None = None) -> Path:
+    """One clip per numbered section, starting from a concept vector. The writer adds narration,
+    key ideas and the vectors. With `previous` (the course's old video plan.json) the plan revises
+    that video: each clip lists the old clip's key ideas, and the writer says what the old clip
+    taught (`oldVideo`) and whether to keep, revise or create it (`decision`)."""
+    plan = scaffold_plan(images_dir, course_path)
+    if previous is not None:
+        old = load_json(Path(previous))
+        plan["previous"] = str(Path(previous).resolve())
+        for clip in plan["clips"]:
+            clip.update(oldKeyIdeas=[s.get("keyIdea", "") for s in old.get("scenes") or []
+                                     if (s.get("lessonId"), s.get("topic")) == (clip["lessonId"], clip["topic"])
+                                     and s.get("keyIdea")],
+                        oldVideo="", decision="")
+    return _write_plan(images_dir, plan)
 
 
 def _write_plan(images_dir: Path, plan: dict) -> Path:
@@ -250,7 +282,7 @@ def scaffold_plan(images_dir: Path, course_path: Path) -> dict:
     parts = lesson_parts(course_path)
 
     def scene(kind: str, lid: str, topic: int, heading: str, **extra) -> dict:
-        return {"kind": kind, "lessonId": lid, "topic": topic, "title": heading, **extra,
+        return {"kind": kind, "lessonId": lid, "topic": topic, "title": heading, **extra, "purpose": "",
                 "narration": "", "keyIdea": "", "terms": [], "focus": [], "myth": None}
 
     scenes = []
@@ -259,20 +291,18 @@ def scaffold_plan(images_dir: Path, course_path: Path) -> dict:
         if not parts.get(lid):
             scenes.append(scene("vector", lid, 1, l.get("title", ""), vector=f"{lid}-v1.svg"))
             continue
-        for topic, part in parts[lid].items():
+        for topic, part in parts[lid].items():   # the page already shows its tables and code: no copies
             scenes.append(scene("vector", lid, topic, part["heading"], vector=f"{lid}-t{topic}-concept.svg"))
-            for n, _ in enumerate(part["tables"][:MAX_PART_SCENES], 1):
-                scenes.append(scene("table", lid, topic, part["heading"], table=n, highlight=[]))
-            for n, run in enumerate(part["runs"][:MAX_PART_SCENES], 1):   # the page's code-walk lines
-                scenes.append(scene("code", lid, topic, part["heading"], code=n, highlight=list(run.get("walk", []))))
     figures = [{"id": fid, "lessonId": f["lessonId"], "label": f["label"]}
                for fid, f in lesson_figures(course_path, images_dir).items()]
-    plan = {"version": 3, "explain": True, "course": title, "source": str(Path(course_path).resolve()), "language": DEFAULT_LANGUAGE,
+    clips = [{"lessonId": s["lessonId"], "topic": s["topic"], "objective": "", "pageHas": "", "adds": "",
+              "format": ""} for s in scenes]
+    plan = {"version": 3, "explain": True, "complement": True, "clips": clips, "course": title, "source": str(Path(course_path).resolve()), "language": DEFAULT_LANGUAGE,
             "voice": dict(DEFAULT_VOICE),
             "intro": {"title": title, "points": [], "narration": ""},
             "scenes": scenes,
             "skipTopics": [],
-            "practise": [{"lessonId": lid, "topic": topic, "tryIt": "", "task": None}
+            "practise": [{"lessonId": lid, "topic": topic, "tryIt": "", "task": None, "question": ""}
                          for lid, sections in parts.items() for topic in sections],
             "recap": {"points": [], "narration": ""},
             "availableFigures": figures}
@@ -291,6 +321,7 @@ def merge(images_dir: Path, course_path: Path, lessons_dir: Path) -> Path:
         raise SystemExit(f"{out} already exists; edit it or delete it first")
     plan = scaffold_plan(images_dir, course_path)
     lessons_dir, errors, scenes, skips, vectors, owner = Path(lessons_dir), [], [], [], [], {}
+    clips, flags = [], []
     cards = {(c["lessonId"], c["topic"]): c for c in plan["practise"]}
     for lesson in course_lessons(course_path):
         lid = lesson.get("id", "")
@@ -310,13 +341,16 @@ def merge(images_dir: Path, course_path: Path, lessons_dir: Path) -> Path:
                 owner[name] = lid
                 vectors.append(lessons_dir / "video-vectors" / name)
         scenes += part.get("scenes") or []
+        clips += [dict(c, lessonId=lid) for c in part.get("clips") or []]
         skips += [dict(k, lessonId=lid) for k in part.get("skipTopics") or []]
         for card in part.get("practise") or []:
             if (lid, card.get("topic")) in cards:
-                cards[(lid, card["topic"])].update(tryIt=card.get("tryIt", ""), task=card.get("task"))
+                cards[(lid, card["topic"])].update(tryIt=card.get("tryIt", ""), task=card.get("task"),
+                                                   question=card.get("question", ""))
+        flags += [dict(f, lessonId=lid) for f in part.get("reviewFlags") or []]
     if errors:
         raise SystemExit("\n".join(errors))
-    plan.update(scenes=scenes, skipTopics=skips)
+    plan.update(scenes=scenes, skipTopics=skips, clips=clips, reviewFlags=flags)
     path = _write_plan(images_dir, plan)
     for svg in vectors:
         if svg.is_file():
@@ -401,9 +435,12 @@ def part_of(s: dict, parts: dict | None) -> dict | None:
 
 
 def check_coverage(plan: dict, parts: dict) -> list[str]:
-    """Each section's clip mirrors the page: every section covered (or skipped with a reason),
-    enough scenes and narration, its own table or code shown, all its key terms spoken."""
+    """Every section covered (or skipped with a reason), with enough scenes and narration and all
+    its key terms spoken; an older (mirroring) plan must also show the section's own table or code."""
     errors = []
+    complement = bool(plan.get("complement"))
+    min_scenes = COMPLEMENT_MIN_SCENES if complement else MIN_TOPIC_SCENES
+    min_words = COMPLEMENT_MIN_WORDS if complement else MIN_TOPIC_WORDS
     skipped = {(k.get("lessonId"), k.get("topic")) for k in plan.get("skipTopics") or []
                if (k.get("reason") or "").strip()}
     by_topic = {}
@@ -420,19 +457,20 @@ def check_coverage(plan: dict, parts: dict) -> list[str]:
             words = " ".join((s.get("narration") or "") + " " + ((s.get("myth") or {}).get("narration") or "")
                              for s in scenes)
             steps = len(scenes) + sum(1 for s in scenes if s.get("myth"))   # a myth is the "mistake" step
-            if steps < MIN_TOPIC_SCENES:
-                errors.append(f"{tag}: {len(scenes)} scene(s); explain it in at least {MIN_TOPIC_SCENES} steps "
-                              "(concept, the page's table or code, the mistake or takeaway; a myth counts as one)")
+            if steps < min_scenes:
+                errors.append(f"{tag}: {len(scenes)} scene(s); explain it in at least {min_scenes} steps "
+                              "(the idea, how it works or where it is used; a myth counts as one)")
             if len(scenes) > MAX_TOPIC_SCENES:
                 errors.append(f"{tag}: {len(scenes)} scenes; one clip uses at most {MAX_TOPIC_SCENES}")
-            if len(words.split()) < MIN_TOPIC_WORDS:
-                errors.append(f"{tag}: {len(words.split())} words of narration; give at least {MIN_TOPIC_WORDS} "
-                              "(about a minute and a half) so the clip explains what the page explains")
+            if len(words.split()) < min_words:
+                errors.append(f"{tag}: {len(words.split())} words of narration; give at least {min_words}, "
+                              "or list the topic in skipTopics when the page already makes it clear")
             first = next((s for s in scenes if s.get("kind") != "broll"), None)
             if first is not None and first.get("kind") not in ("vector", "diagram"):
                 errors.append(f"{tag}: opens with a {first.get('kind')} scene; explain the idea first with a "
                               "vector or diagram scene, then the case study's table or code")
-            if (part["tables"] or part["runs"]) and not any(s.get("kind") in ("table", "code") for s in scenes):
+            if (not complement and (part["tables"] or part["runs"])
+                    and not any(s.get("kind") in ("table", "code") for s in scenes)):
                 errors.append(f"{tag}: show the section's own table or code (a table or code scene)")
             for term in part["terms"]:
                 if term.lower() not in words.lower():
@@ -441,6 +479,105 @@ def check_coverage(plan: dict, parts: dict) -> list[str]:
 
 
 DEVANAGARI = re.compile(r"[ऀ-ॿ]")
+
+
+def _read_aloud(narration: str, page: str) -> str | None:
+    """The first READ_ALOUD_WORDS-word run the narration shares with the page, or None.
+    Code in backticks is left out: naming a line is not reading the page."""
+    said = [w.lower() for w in ENGLISH_WORD.findall(re.sub(r"`[^`]*`", " ", narration or ""))]
+    if len(said) < READ_ALOUD_WORDS:
+        return None
+    words = [w.lower() for w in ENGLISH_WORD.findall(page or "")]
+    runs = {tuple(words[i:i + READ_ALOUD_WORDS]) for i in range(len(words) - READ_ALOUD_WORDS + 1)}
+    for i in range(len(said) - READ_ALOUD_WORDS + 1):
+        if tuple(said[i:i + READ_ALOUD_WORDS]) in runs:
+            return " ".join(said[i:i + READ_ALOUD_WORDS])
+    return None
+
+
+def _repeats(question: str, try_it: str) -> bool:
+    """The question names the Try It's own example (a code-shaped word such as a/b.txt or show_file)
+    or reuses most of its words."""
+    def words(text):
+        return {w.strip(".:-") for w in CODE_WORD.findall(text.lower())} - {""}
+    q, t = words(question), words(try_it)
+    shaped = {w for w in q & t if re.search(r"[/._<>:\d]", w)}
+    plain = {w for w in q if len(w) > 3}
+    return bool(shaped) or (bool(plain) and len(plain & t) / len(plain) >= 0.7)
+
+
+def complement_errors(plan: dict, parts: dict, texts: dict) -> list[str]:
+    """The rules of a complementing plan ("complement": true, owner 2026-11-05): every clip says its
+    objective, what it adds beyond the page and its format; every scene says what it teaches; a clip
+    shows at most one table and one code scene, each pointing at no more than MAX_HIGHLIGHTS lines or
+    rows (the page's code walk explains each line); and no narration reads the page aloud."""
+    if not plan.get("complement"):
+        return []
+    errors = []
+    scenes = plan.get("scenes") or []
+    clips = {(c.get("lessonId"), c.get("topic")): c for c in plan.get("clips") or []}
+    by_topic = {}
+    for s in scenes:
+        by_topic.setdefault((s.get("lessonId"), s.get("topic")), []).append(s)
+    for (lid, topic), group in by_topic.items():
+        tag = f"{lid} section {topic}"
+        clip = clips.get((lid, topic))
+        if clip is None:
+            errors.append(f"{tag}: no clips entry; give its objective, what the page already covers (pageHas), "
+                          "what the clip adds and its format")
+        else:
+            _limit(tag, "clip objective", clip.get("objective"), MAX_OBJECTIVE, errors)
+            _limit(tag, "clip pageHas", clip.get("pageHas"), MAX_ADDS, errors)
+            _limit(tag, "clip adds", clip.get("adds"), MAX_ADDS, errors)
+            if clip.get("format") not in FORMATS:
+                errors.append(f"{tag}: clip format {clip.get('format')!r}; use one of {', '.join(FORMATS)}")
+            if plan.get("previous"):   # revising: say what the old clip taught and what to do with it
+                _limit(tag, "clip oldVideo", clip.get("oldVideo"), MAX_ADDS, errors)
+                if clip.get("decision") not in DECISIONS:
+                    errors.append(f"{tag}: clip decision {clip.get('decision')!r}; use one of {', '.join(DECISIONS)}")
+        for kind in ("table", "code"):
+            if sum(1 for s in group if s.get("kind") == kind) > 1:
+                errors.append(f"{tag}: one {kind} scene per clip; the page already shows them all")
+        words = sum(len(((s.get("narration") or "") + " " + ((s.get("myth") or {}).get("narration") or "")).split())
+                    for s in group)
+        if words > MAX_COMPLEMENT_WORDS:
+            errors.append(f"{tag}: {words} words of narration; keep a clip within about 150 s "
+                          f"({MAX_COMPLEMENT_WORDS} words): cut it to the one idea the clip adds")
+        if GENERIC_OPENER.search(group[0].get("narration") or ""):
+            errors.append(f"{tag}: opens with an announcement; open with the learner's question or problem")
+    covered = set(by_topic) - {(k.get("lessonId"), k.get("topic")) for k in plan.get("skipTopics") or []}
+    objectives = {}
+    for key in sorted(covered, key=str):
+        objective = " ".join(re.findall(r"\w+", ((clips.get(key) or {}).get("objective") or "").lower()))
+        if objective and objective in objectives:
+            errors.append(f"{key[0]} section {key[1]}: same objective as {objectives[objective][0]} section "
+                          f"{objectives[objective][1]}; a clip must teach something no other clip does")
+        objectives.setdefault(objective, key)
+    for e in plan.get("practise") or []:
+        if (e.get("lessonId"), e.get("topic")) not in covered:
+            continue
+        tag = f"practise {e.get('lessonId')} section {e.get('topic')}"
+        question = (e.get("question") or "").strip()
+        _limit(tag, "question", question, MAX_QUESTION, errors)
+        if question and not question.endswith("?"):
+            errors.append(f"{tag}: question {question!r} must ask something (end with ?): predict, identify, "
+                          "explain why, compare or apply the clip's idea")
+        if question and _repeats(question, e.get("tryIt") or ""):
+            errors.append(f"{tag}: question repeats the page's Try It ({e.get('tryIt')!r}); ask about a new "
+                          "small case the clip prepares the learner for")
+    for n, s in enumerate(scenes, 1):
+        tag = f"scene {n}"
+        _limit(tag, "purpose", s.get("purpose"), MAX_PURPOSE, errors)
+        if len(SENTENCE_END.findall((s.get("keyIdea") or "").strip())) > 1:
+            errors.append(f"{tag}: keyIdea must be one sentence; the panel holds one takeaway")
+        if s.get("kind") in ("table", "code") and len(s.get("highlight") or []) > MAX_HIGHLIGHTS:
+            errors.append(f"{tag}: {len(s['highlight'])} highlights; point at the idea with at most "
+                          f"{MAX_HIGHLIGHTS}, the page's code walk explains each line")
+        for text in (s.get("narration"), (s.get("myth") or {}).get("narration")):
+            copied = _read_aloud(text, texts.get(s.get("lessonId"), ""))
+            if copied:
+                errors.append(f'{tag}: narration reads the page aloud ("{copied}"); explain it another way')
+    return errors
 
 
 def screen_text_errors(plan: dict, video_dir: Path) -> list[str]:
@@ -458,8 +595,8 @@ def screen_text_errors(plan: dict, video_dir: Path) -> list[str]:
         if s.get("kind") == "vector" and svg.is_file():
             drawn = re.sub(r"<[^>]+>", " ", svg.read_text(encoding="utf-8"))
             found.append((f"scene {n}: vector {s['vector']} text", drawn))
-    found += [(f"practise {e.get('lessonId')} topic {e.get('topic')}: tryIt", e.get("tryIt"))
-              for e in plan.get("practise") or []]
+    found += [(f"practise {e.get('lessonId')} topic {e.get('topic')}: {field}", e.get(field))
+              for e in plan.get("practise") or [] for field in ("tryIt", "question")]
     return [f"{where}: screen text must be English (Hindi only in the narration): {str(text).strip()[:60]!r}"
             for where, text in found if text and DEVANAGARI.search(str(text))]
 
@@ -595,6 +732,7 @@ def check_plan(plan: dict, video_dir: Path, figures: dict | None = None, texts: 
     errors += check_topics(scenes, topics)
     if parts is not None:
         errors += check_coverage(plan, parts)
+    errors += complement_errors(plan, parts or {}, texts or {})
     if practice is not None:
         skipped = {(k.get("lessonId"), k.get("topic")) for k in plan.get("skipTopics") or []}
         covered = {(s.get("lessonId"), s.get("topic")) for s in scenes} - skipped
@@ -633,7 +771,9 @@ def lesson_video_problems(video: dict, html_text: str, lesson_id: str, title: st
         (Path(tmp) / "video" / "vectors").mkdir(parents=True)
         for svg in Path(vectors_dir).glob(f"{lesson_id}-*.svg"):
             shutil.copy(svg, Path(tmp) / "video" / "vectors" / svg.name)
-        plan = {"version": 3, "explain": True, "course": title, "language": video.get("language") or DEFAULT_LANGUAGE,
+        plan = {"version": 3, "explain": True, "complement": True,
+                "clips": [dict(c, lessonId=lesson_id) for c in video.get("clips") or []],
+                "course": title, "language": video.get("language") or DEFAULT_LANGUAGE,
                 "voice": dict(DEFAULT_VOICE), "intro": {"title": title, "points": ["a", "b"], "narration": ""},
                 "scenes": video.get("scenes") or [],
                 "skipTopics": [dict(k, lessonId=lesson_id) for k in video.get("skipTopics") or []],
@@ -643,6 +783,13 @@ def lesson_video_problems(video: dict, html_text: str, lesson_id: str, title: st
                            lesson_topics(course), lesson_parts(course), lesson_practice(course))
     errors += [e for e in found if not e.startswith(COURSE_ONLY)]
     return errors
+
+
+def print_review_flags(flags: list[dict]) -> None:
+    """A writer that found the lesson itself unclear or wrong says so in `reviewFlags` instead of
+    changing it in the video; the owner reads these lines. They never fail the check."""
+    for f in flags:
+        print(f"REVIEW {f.get('lessonId')} section {f.get('topic')}: {f.get('issue', '')}")
 
 
 def main(argv=None) -> int:
@@ -656,12 +803,14 @@ def main(argv=None) -> int:
     ap.add_argument("--title", default="", help="check-lesson: the lesson title")
     ap.add_argument("--vectors", type=Path, help="check-lesson: folder of the lesson's vector SVGs")
     ap.add_argument("--lessons-dir", type=Path, help="merge: the workdir holding every <id>.video.json")
+    ap.add_argument("--previous", type=Path, help="scaffold: the course's old video plan.json, to revise it")
     a = ap.parse_args(argv)
     if a.command == "check-lesson":
-        errors = lesson_video_problems(load_json(a.video), a.html.read_text(encoding="utf-8"), a.lesson_id,
-                                       a.title, a.vectors)
+        video = load_json(a.video)
+        errors = lesson_video_problems(video, a.html.read_text(encoding="utf-8"), a.lesson_id, a.title, a.vectors)
         for e in errors:
             print("ERROR", e)
+        print_review_flags([dict(f, lessonId=a.lesson_id) for f in video.get("reviewFlags") or []])
         print("lesson video part OK" if not errors else f"{len(errors)} problem(s)")
         return 1 if errors else 0
     if a.images_dir is None:
@@ -674,7 +823,7 @@ def main(argv=None) -> int:
     if a.command == "scaffold":
         if not a.course:
             raise SystemExit("scaffold needs --course")
-        print(f"wrote {scaffold(a.images_dir, a.course)}")
+        print(f"wrote {scaffold(a.images_dir, a.course, a.previous)}")
         return 0
     plan = load_json(a.images_dir / "video" / "plan.json")
     course = a.course or (Path(plan["source"]) if plan.get("source") else None)
@@ -686,6 +835,7 @@ def main(argv=None) -> int:
     errors = check_plan(plan, a.images_dir / "video", figures, texts, topics, parts, practice)
     for e in errors:
         print("ERROR", e)
+    print_review_flags(plan.get("reviewFlags") or [])
     print("plan OK" if not errors else f"{len(errors)} problem(s)")
     return 1 if errors else 0
 

@@ -33,6 +33,7 @@ def filled_plan(tmp_path: Path) -> tuple[dict, Path, Path]:
     images, course = tmp_path / "images", make_course(tmp_path)
     plan = json.loads(storyplan.scaffold(images, course).read_text(encoding="utf-8"))
     plan["explain"] = False   # these fixtures test the other rules; the explain rules have their own tests
+    plan["complement"] = False   # so do the complement rules (test_complement.py)
     plan["language"] = "hi"   # this fixture's narration is Hinglish
     plan["intro"].update(points=["one", "two"], narration="Hello, इस video का intro.")
     plan["recap"].update(points=["a", "b", "c"], narration="Summary: data एक recorded observation है.")
@@ -506,8 +507,8 @@ def test_lesson_practice_reads_try_its_starter_and_tasks(tmp_path):
 def test_scaffold_adds_one_practise_entry_per_topic(tmp_path):
     images = tmp_path / "images"
     plan = json.loads(storyplan.scaffold(images, practice_course(tmp_path)).read_text(encoding="utf-8"))
-    assert plan["practise"] == [{"lessonId": "l1", "topic": 1, "tryIt": "", "task": None},
-                                {"lessonId": "l1", "topic": 2, "tryIt": "", "task": None}]
+    assert plan["practise"] == [{"lessonId": "l1", "topic": 1, "tryIt": "", "task": None, "question": ""},
+                                {"lessonId": "l1", "topic": 2, "tryIt": "", "task": None, "question": ""}]
 
 
 def test_check_practise_rules(tmp_path):
@@ -623,9 +624,15 @@ def lesson_part(topics=(1, 2), html=LESSON_HTML, lid="c-01"):
         for k in range(1, 4):
             scenes.append({"kind": "vector", "lessonId": lid, "topic": t, "title": f"{t} — part",
                            "vector": f"{lid}-t{t}-v{k}.svg", "narration": NARR, "keyIdea": "Counts come from data.",
-                           "terms": ["data"], "focus": [], "myth": None})
+                           "terms": ["data"], "focus": [], "myth": None,
+                           "purpose": "Shows how a count grows from records"})
+    clips = [{"topic": t, "objective": f"Topic {t} of {lid}: see why a count comes from records",
+              "pageHas": "The definition of a count and one worked example",
+              "adds": "An animated flow of records turning into a weekly count", "format": "process"} for t in topics]
     return {"lessonId": lid, "htmlSha256": hashlib.sha256(html.encode("utf-8")).hexdigest(), "language": "hi",
-            "scenes": scenes, "practise": [{"topic": t, "tryIt": "count one week", "task": None} for t in topics],
+            "scenes": scenes, "clips": clips,
+            "practise": [{"topic": t, "tryIt": "count one week", "task": None,
+                          "question": "Why does the weekly count change?"} for t in topics],
             "skipTopics": []}
 
 
@@ -633,7 +640,8 @@ def vectors(tmp_path, part):
     d = tmp_path / "video-vectors"
     d.mkdir(exist_ok=True)
     for s in part["scenes"]:
-        (d / s["vector"]).write_text(VEC, encoding="utf-8")
+        if s.get("vector"):
+            (d / s["vector"]).write_text(VEC, encoding="utf-8")
     return d
 
 

@@ -470,8 +470,9 @@ CONCEPTS: <CONCEPTS_PATH>
 **Video part (only when the orchestrator passes `VIDEO_PATH`).** After the lesson's gate passes,
 and never before, write this lesson's part of the story-video plan while the lesson is still in
 hand: `VIDEO_PATH` (`<workdir>/<id>.video.json`) holding `{"lessonId", "htmlSha256", "language":
-"hi", "scenes": [...], "practise": [{"topic", "tryIt", "task"}], "skipTopics": [{"topic",
-"reason"}]}`, and each vector SVG in `<workdir>/video-vectors/` named `<id>-t<topic>-<name>.svg`.
+"hi", "scenes": [...], "clips": [{"topic", "objective", "pageHas", "adds", "format"}], "practise":
+[{"topic", "tryIt", "task", "question"}], "skipTopics": [{"topic", "reason"}], "reviewFlags": [{"topic",
+"issue"}]}` (each scene also carries its `purpose`; `reviewFlags` only when the lesson looks wrong), and each vector SVG in `<workdir>/video-vectors/` named `<id>-t<topic>-<name>.svg`.
 Follow the "Video part" section of your rule pack (the story-video scene rules). `htmlSha256` is
 the SHA-256 of your final `<id>.html` bytes: compute it with Bash after the lesson is final, and
 rewrite the video part whenever you change the lesson. Run the GATE command with `--video` and
