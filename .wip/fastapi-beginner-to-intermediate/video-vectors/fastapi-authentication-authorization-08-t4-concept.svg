@@ -1,0 +1,28 @@
+<svg class="nerdit-anim" viewBox="0 0 480 360" role="img" aria-label="Neha posts a username and password to the login route, gets a token back, then sends that token to a protected route." xmlns="http://www.w3.org/2000/svg">
+  <g class="na-show" style="--d:0.2s">
+    <rect x="40" y="30" width="400" height="60" rx="12" fill="var(--bg-soft)" stroke="var(--orange)" stroke-width="2"/>
+    <text x="240" y="65" text-anchor="middle" font-size="17" fill="var(--orange)">Login route: username + password</text>
+  </g>
+  <g class="na-draw" style="--d:1.3s">
+    <path d="M240 90 L240 130" stroke="var(--nb)" stroke-width="2.5" fill="none" marker-end="url(#t4a)"/>
+  </g>
+  <g class="na-show" style="--d:1.6s">
+    <rect x="40" y="135" width="400" height="60" rx="12" fill="var(--white)" stroke="var(--nb)" stroke-width="2"/>
+    <text x="240" y="170" text-anchor="middle" font-size="17" fill="var(--nb)">Neha gets a Token back</text>
+  </g>
+  <g class="na-draw" style="--d:2.7s">
+    <path d="M240 195 L240 235" stroke="var(--nb)" stroke-width="2.5" fill="none" marker-end="url(#t4a)"/>
+  </g>
+  <g class="na-show" style="--d:3.0s">
+    <rect x="40" y="240" width="400" height="60" rx="12" fill="var(--white)" stroke="var(--green)" stroke-width="2"/>
+    <text x="240" y="275" text-anchor="middle" font-size="17" fill="var(--green)">Protected route runs</text>
+  </g>
+  <defs>
+    <marker id="t4a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--nb)"/>
+    </marker>
+  </defs>
+  <g class="na-pulse" style="--d:4.0s">
+    <text x="60" y="335" font-size="15" fill="var(--tx-m)">that token, checked by get current user</text>
+  </g>
+</svg>

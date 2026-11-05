@@ -1,0 +1,238 @@
+{
+  "lessonId": "fastapi-authentication-authorization-08",
+  "htmlSha256": "224f2ee0619b5f0536e89b8142e89cadd5b2ae158979717015a23a30f3db4aa8",
+  "language": "hi",
+  "scenes": [
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-authentication-authorization-08",
+      "topic": 1,
+      "title": "Authentication vs Authorization",
+      "vector": "fastapi-authentication-authorization-08-t1-concept.svg",
+      "keyIdea": "Authentication asks who; authorization asks what you can do",
+      "terms": ["authentication", "authorization"],
+      "focus": [],
+      "myth": null,
+      "narration": "Har request do sawaal se gujarta hai. Authentication yeh check karta hai ki kaun request bhej raha hai. Authorization yeh check karta hai ki jaani-pehchaani user kya kar sakta hai. Missing proof par seedha 401 milta hai. Phir bhi, jab role wrong ho, 403 milta hai, kyunki identity to known hai, par ijazat nahi."
+    },
+    {
+      "kind": "table",
+      "lessonId": "fastapi-authentication-authorization-08",
+      "topic": 1,
+      "title": "Authentication vs Authorization",
+      "table": 1,
+      "highlight": ["row:no token sent", "row:token OK, right role"],
+      "keyIdea": "401 means unknown; 403 means known but refused",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "Yeh table teen cases dikhata hai. Jab koi token bhi nahi bheja gaya, server seedha 401 bhejta hai, kyunki use pata hi nahi kaun hai. Jab token sahi hai par role galat hai, 403 aata hai, kyunki identity pata hai par ijazat nahi. Sahi token aur sahi role milte hi, 200 wapas aata hai."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-authentication-authorization-08",
+      "topic": 1,
+      "title": "Authentication vs Authorization",
+      "code": 1,
+      "highlight": ["line:4", "line:5", "line:10"],
+      "keyIdea": "A missing token always fails with 401 first",
+      "terms": [],
+      "focus": [],
+      "myth": {
+        "wrong": "missing token could return 403",
+        "right": "a missing token always returns 401 first",
+        "narration": "Kuch log sochte hain missing token bhi 403 de sakta hai. Asal mein, jab tak pehchaan hi nahi hai, status hamesha 401 hota hai, kabhi 403 nahi."
+      },
+      "narration": "get_profile function ek token parameter leta hai. Jab token None hota hai, yeh HTTPException raise karta hai, status code 401 ke saath. Except block isi exception ko pakad kar, status aur detail print karta hai. Output mein 401 aur Not authenticated dikhta hai, exactly jaise FastAPI khud deta."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-authentication-authorization-08",
+      "topic": 1,
+      "title": "Authentication vs Authorization",
+      "code": 2,
+      "highlight": ["line:4", "line:6", "line:7"],
+      "keyIdea": "A known role that is not admin gets 403, not 401",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "get_admin_report function role parameter leta hai. Agar role None hai, pehle wahi 401 aata hai. Par agar role maujood hai par admin nahi hai, 403 raise hota hai, kyunki identity pata hai par ijazat nahi. Jab role admin hota hai, function seedha report wapas deta hai."
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-authentication-authorization-08",
+      "topic": 2,
+      "title": "Never Store Plain-Text Passwords: Hash Them",
+      "vector": "fastapi-authentication-authorization-08-t2-concept.svg",
+      "keyIdea": "Hashing turns a password into a one-way string",
+      "terms": ["hash"],
+      "focus": [],
+      "myth": null,
+      "narration": "Neha ka password, neha-secret-123, yahaan plain text mein shuru hota hai. argon2 algorithm isse process karta hai. Hash ban jaata hai, jo argon2id se shuru hota hai. Neha ka real password kabhi bhi stored nahi hota, sirf yeh hash store hota hai."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-authentication-authorization-08",
+      "topic": 2,
+      "title": "Never Store Plain-Text Passwords: Hash Them",
+      "code": 1,
+      "highlight": ["line:3", "line:4", "line:7"],
+      "keyIdea": "verify() checks a guess without ever reversing the hash",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "PasswordHash.recommended() ek password_hash object banata hai, jo pure lesson mein reuse hota hai. hash() method, neha-secret-123 ko ek argon2 hash mein badal deta hai. verify() method sahi password ke liye True deta hai, aur galat guess ke liye False. Yeh wahi do kaam hain jo har real login system ko chahiye, bina kabhi real password dekhe."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-authentication-authorization-08",
+      "topic": 2,
+      "title": "Never Store Plain-Text Passwords: Hash Them",
+      "code": 2,
+      "highlight": ["line:2", "line:7", "line:10"],
+      "keyIdea": "check_login looks up a hash, then verifies the guess",
+      "terms": [],
+      "focus": [],
+      "myth": {
+        "wrong": "COUNSELLORS stores the real password somewhere",
+        "right": "COUNSELLORS only ever stores the hash, never the password",
+        "narration": "Kuch log sochte hain dictionary mein kahin real password bhi save hota hoga. Asal mein COUNSELLORS sirf hash store karta hai; real password kabhi bhi memory mein lambe samay tak nahi rehta."
+      },
+      "narration": "COUNSELLORS dictionary mein neha aur karan, dono ke hashed passwords store hote hain, kabhi plain text nahi. check_login function username se hash dhoondta hai, phir verify se guess check karta hai. Sahi password par True aata hai, galat guess par False. Yeh exact pattern, section 4 ke real login route mein phir use hota hai."
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-authentication-authorization-08",
+      "topic": 3,
+      "title": "Understanding a Bearer Token and a JWT",
+      "vector": "fastapi-authentication-authorization-08-t3-concept.svg",
+      "keyIdea": "A JWT is three base64 parts joined by dots",
+      "terms": ["JWT", "bearer token"],
+      "focus": [],
+      "myth": null,
+      "narration": "Bearer token ek JWT hota hai, jo Authorization header mein bheja jaata hai. Pehla hissa header hai, jo algorithm batata hai. Doosra hissa payload hai, jisme sub neha hota hai. Teesra hissa signature hai, jo sabse important hai. Signature ek changed letter se bhi breaks ho jaata hai."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-authentication-authorization-08",
+      "topic": 3,
+      "title": "Understanding a Bearer Token and a JWT",
+      "code": 1,
+      "highlight": ["line:5", "line:8", "line:11"],
+      "keyIdea": "jwt.encode signs; jwt.decode checks and returns the payload",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "jwt.encode, sub key neha ke saath, secret key se ek signed token banata hai. Token ko dot se split karne par, teen hisse milte hain: header, payload, aur signature. jwt.decode wahi secret key se signature check karta hai, phir payload wapas deta hai, sub neha ke saath."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-authentication-authorization-08",
+      "topic": 3,
+      "title": "Understanding a Bearer Token and a JWT",
+      "code": 2,
+      "highlight": ["line:3", "line:5", "line:8", "line:11"],
+      "keyIdea": "A different secret key can never verify the same token",
+      "terms": ["secret key"],
+      "focus": [],
+      "myth": {
+        "wrong": "any secret key can decode a valid-looking token",
+        "right": "only the exact signing secret key verifies the signature",
+        "narration": "Kuch log sochte hain koi bhi secret key token decode kar degi, jab tak token sahi dikhta hai. Asal mein, bilkul alag secret key se decode karte hi, InvalidSignatureError aata hai; signature kabhi match nahi karta."
+      },
+      "narration": "os.getenv secret key ko .env se padhta hai, warna dev-only fallback use karta hai, sirf is lesson ke liye. auth_header mein Bearer shabd token ke aage judta hai. Jab wahi token, bilkul alag secret key se decode karne ki koshish hoti hai, InvalidSignatureError aata hai, kyunki signature kabhi match nahi karta."
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-authentication-authorization-08",
+      "topic": 4,
+      "title": "Log In and Protect a Route",
+      "vector": "fastapi-authentication-authorization-08-t4-concept.svg",
+      "keyIdea": "The token signed at login is the same one checked later",
+      "terms": ["login route", "protected route"],
+      "focus": [],
+      "myth": null,
+      "narration": "Login route par, Neha apna username aur password bhejti hai. Server unhe check karta hai, aur Neha ko ek naya token milta hai, agle request ke liye. Agla kaam hai protected route: yeh route bina valid token ke kisi ko bhi andar aane nahi deta. Us token ko, get_current_user dependency, har baar dobara decode karke check karta hai, taaki sirf sahi, jaana-pehchaana counsellor hi route tak pahunch sake, koi aur nahi."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-authentication-authorization-08",
+      "topic": 4,
+      "title": "Log In and Protect a Route",
+      "code": 1,
+      "highlight": ["line:9", "line:10", "line:12", "line:13"],
+      "keyIdea": "A wrong password and a right one reach the same check",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "login function, COUNSELLORS dictionary mein username dhoondta hai. Galat password par, 401 raise hota hai, Incorrect username or password ke saath. Sahi password par, jwt.encode se ek naya token banta hai. Function access_token aur token_type, bearer, dono wapas deta hai."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-authentication-authorization-08",
+      "topic": 4,
+      "title": "Log In and Protect a Route",
+      "code": 2,
+      "highlight": ["line:3", "line:6", "line:16"],
+      "keyIdea": "An invalid token fails before any counsellor is looked up",
+      "terms": [],
+      "focus": [],
+      "myth": {
+        "wrong": "a garbage token still reaches the route's own code",
+        "right": "get_current_user raises 401 before the route itself ever runs",
+        "narration": "Kuch log sochte hain galat token ke saath bhi route ka khud ka code chal jaata hai. Asal mein get_current_user dependency, route se pehle hi chalta hai, aur garbage token par 401 raise karke rok deta hai."
+      },
+      "narration": "get_current_user, garbage token ke saath jwt.decode try karta hai, jo InvalidTokenError deta hai, phir 401 raise hota hai. Sahi token ke saath, payload se sub nikal kar, COUNSELLORS mein counsellor dhoonda jaata hai. current_user mein neha ka pura record mil jaata hai, username ke saath."
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-authentication-authorization-08",
+      "topic": 5,
+      "title": "Test the Login and Protected-Route Flow",
+      "vector": "fastapi-authentication-authorization-08-t5-concept.svg",
+      "keyIdea": "Testing only the happy path hides a route that never rejects",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "Yeh poora flow testing ke liye hai. Pehla case: no token, seedha 401 milta hai. Doosra case: Neha ka token, 200 deta hai, request safal ho jaata hai. Teesra case: ek expired token, ExpiredSignatureError raise karta hai. Aage, ek scope aur ek API key jaisi features, ek real project mein isi buniyaad par banti hain."
+    },
+    {
+      "kind": "table",
+      "lessonId": "fastapi-authentication-authorization-08",
+      "topic": 5,
+      "title": "Test the Login and Protected-Route Flow",
+      "table": 1,
+      "highlight": ["row:GET /enquiries/E3", "row:DELETE /enquiries/E3"],
+      "keyIdea": "Reading stays open; deleting needs Neha's token",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "GET request, bina kisi header ke, 200 deta hai, kyunki padhna sabke liye khula hai. Wahi DELETE request, bina token ke, 401 deta hai. Neha ka token Authorization header mein jodte hi, wahi DELETE request 200 deta hai, aur enquiry delete ho jaata hai."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-authentication-authorization-08",
+      "topic": 5,
+      "title": "Test the Login and Protected-Route Flow",
+      "code": 1,
+      "highlight": ["line:3", "line:7"],
+      "keyIdea": "An exp claim in the past raises ExpiredSignatureError",
+      "terms": [],
+      "focus": [],
+      "myth": {
+        "wrong": "an expired token still decodes, just with old data",
+        "right": "jwt.decode refuses an expired token outright, with ExpiredSignatureError",
+        "narration": "Kuch log sochte hain expired token bhi decode ho jaata hai, bas purana data deta hai. Asal mein jwt.decode use seedha reject karta hai, ExpiredSignatureError ke saath, payload kabhi wapas nahi aata."
+      },
+      "narration": "expired_token mein exp claim, saal 2020 ki date rakhta hai, yaani already expired. jwt.decode use check karte hi, ExpiredSignatureError raise hota hai. Yeh wahi check hai jo ek chori hue token ko bhi hamesha ke liye kaam karne se rokta hai. Scope aur API key jaisi features, ek real project isi buniyaad par aage banata hai."
+    }
+  ],
+  "practise": [
+    {"topic": 1, "tryIt": "predict status_for's three results", "task": null},
+    {"topic": 2, "tryIt": "fill in password_hash's hash call", "task": null},
+    {"topic": 3, "tryIt": "predict a token split on its dots", "task": null},
+    {"topic": 4, "tryIt": "fill in the Depends() call", "task": null},
+    {"topic": 5, "tryIt": "predict an is_expired check", "task": null}
+  ],
+  "skipTopics": []
+}

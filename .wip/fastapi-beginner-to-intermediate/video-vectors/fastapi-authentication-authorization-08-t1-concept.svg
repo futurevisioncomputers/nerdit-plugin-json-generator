@@ -1,0 +1,23 @@
+<svg class="nerdit-anim" viewBox="0 0 480 360" role="img" aria-label="Authentication checks who is asking and fails with 401; authorization checks what a known identity can do and fails with 403." xmlns="http://www.w3.org/2000/svg">
+  <g class="na-show" style="--d:0.2s">
+    <rect x="20" y="60" width="200" height="110" rx="14" fill="var(--bg-soft)" stroke="var(--nb)" stroke-width="2"/>
+    <text x="120" y="105" text-anchor="middle" font-size="22" fill="var(--nb)">Authentication</text>
+    <text x="120" y="135" text-anchor="middle" font-size="16" fill="var(--tx)">who is asking</text>
+  </g>
+  <g class="na-show" style="--d:1.4s">
+    <rect x="260" y="60" width="200" height="110" rx="14" fill="var(--bg-soft)" stroke="var(--orange)" stroke-width="2"/>
+    <text x="360" y="105" text-anchor="middle" font-size="22" fill="var(--orange)">Authorization</text>
+    <text x="360" y="135" text-anchor="middle" font-size="16" fill="var(--tx)">what they can do</text>
+  </g>
+  <g class="na-show" style="--d:2.6s">
+    <rect x="20" y="210" width="200" height="90" rx="14" fill="var(--white)" stroke="var(--bd)" stroke-width="1.5"/>
+    <text x="120" y="265" text-anchor="middle" font-size="30" fill="var(--nb)">401</text>
+  </g>
+  <g class="na-show" style="--d:3.4s">
+    <rect x="260" y="210" width="200" height="90" rx="14" fill="var(--white)" stroke="var(--bd)" stroke-width="1.5"/>
+    <text x="360" y="265" text-anchor="middle" font-size="30" fill="var(--orange)">403</text>
+  </g>
+  <g class="na-pulse" style="--d:4.2s">
+    <text x="240" y="335" text-anchor="middle" font-size="16" fill="var(--tx-m)">Known identity, wrong role</text>
+  </g>
+</svg>

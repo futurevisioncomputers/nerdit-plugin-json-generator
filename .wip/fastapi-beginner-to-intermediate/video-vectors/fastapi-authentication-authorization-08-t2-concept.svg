@@ -1,0 +1,26 @@
+<svg class="nerdit-anim" viewBox="0 0 480 360" role="img" aria-label="A plain-text password turns into an argon2 hash before it is stored; the plain text is never kept." xmlns="http://www.w3.org/2000/svg">
+  <g class="na-show" style="--d:0.2s">
+    <rect x="40" y="70" width="220" height="80" rx="14" fill="var(--white)" stroke="var(--orange)" stroke-width="2"/>
+    <text x="150" y="105" text-anchor="middle" font-size="18" fill="var(--orange)">Password</text>
+    <text x="150" y="130" text-anchor="middle" font-size="14" fill="var(--tx-m)">neha-secret-123</text>
+  </g>
+  <g class="na-draw" style="--d:1.4s">
+    <path d="M150 150 L150 210" stroke="var(--nb)" stroke-width="2.5" fill="none" marker-end="url(#t2arrow)"/>
+    <defs>
+      <marker id="t2arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0 0 L10 5 L0 10 z" fill="var(--nb)"/>
+      </marker>
+    </defs>
+  </g>
+  <g class="na-show" style="--d:1.8s">
+    <text x="170" y="195" font-size="14" fill="var(--nb)">argon2</text>
+  </g>
+  <g class="na-show" style="--d:2.4s">
+    <rect x="220" y="220" width="220" height="80" rx="14" fill="var(--white)" stroke="var(--green)" stroke-width="2"/>
+    <text x="330" y="255" text-anchor="middle" font-size="18" fill="var(--green)">Hash</text>
+    <text x="330" y="280" text-anchor="middle" font-size="13" fill="var(--tx-m)">argon2id ...</text>
+  </g>
+  <g class="na-pulse" style="--d:3.4s">
+    <text x="60" y="330" font-size="15" fill="var(--tx-m)">the real password is never stored</text>
+  </g>
+</svg>

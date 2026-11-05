@@ -1,0 +1,32 @@
+{
+  "teaches": [
+    "authentication",
+    "authorization",
+    "401",
+    "403",
+    "hash",
+    "PasswordHash",
+    "bearer token",
+    "JWT",
+    "PyJWT",
+    "jwt.encode()",
+    "jwt.decode()",
+    "secret key",
+    "OAuth2PasswordRequestForm",
+    "OAuth2PasswordBearer",
+    "get_current_user",
+    "expiry",
+    "scope",
+    "API key"
+  ],
+  "uses": [
+    "FastAPI",
+    "HTTPException",
+    "Depends",
+    "route",
+    "status code",
+    ".env",
+    "os.getenv",
+    "dependency"
+  ]
+}

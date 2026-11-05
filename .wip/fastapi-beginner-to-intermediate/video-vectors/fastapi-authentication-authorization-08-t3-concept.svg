@@ -1,0 +1,21 @@
+<svg class="nerdit-anim" viewBox="0 0 480 360" role="img" aria-label="A bearer token is sent as Bearer plus the token; a JWT inside it has three parts, header, payload and signature, joined by dots." xmlns="http://www.w3.org/2000/svg">
+  <g class="na-show" style="--d:0.2s">
+    <rect x="40" y="40" width="400" height="50" rx="10" fill="var(--bg-soft)" stroke="var(--bd)" stroke-width="1.5"/>
+    <text x="60" y="72" font-size="16" fill="var(--tx)">Bearer &lt;JWT&gt;</text>
+  </g>
+  <g class="na-show" style="--d:1.2s">
+    <rect x="40" y="120" width="400" height="50" rx="10" fill="var(--white)" stroke="var(--nb)" stroke-width="2"/>
+    <text x="60" y="152" font-size="15" fill="var(--nb)">header</text>
+  </g>
+  <g class="na-show" style="--d:2.0s">
+    <rect x="40" y="185" width="400" height="50" rx="10" fill="var(--white)" stroke="var(--orange)" stroke-width="2"/>
+    <text x="60" y="217" font-size="15" fill="var(--orange)">payload: sub neha</text>
+  </g>
+  <g class="na-show" style="--d:2.8s">
+    <rect x="40" y="250" width="400" height="50" rx="10" fill="var(--white)" stroke="var(--green)" stroke-width="2"/>
+    <text x="60" y="282" font-size="15" fill="var(--green)">signature</text>
+  </g>
+  <g class="na-pulse" style="--d:3.6s">
+    <text x="60" y="330" font-size="15" fill="var(--tx-m)">a changed letter breaks the signature</text>
+  </g>
+</svg>

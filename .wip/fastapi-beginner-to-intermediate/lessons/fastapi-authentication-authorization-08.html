@@ -1,0 +1,780 @@
+<div class="nerdit-wrapper nerdit-simple" style="counter-reset:practical-counter challenge-counter;">
+
+  <h1>🔐 Authentication and Authorization</h1>
+
+  <div class="nerdit-info-box"><strong>📘 Lesson Overview:</strong> Who is asking, and what are they allowed to do? You will hash a password with <code>pwdlib</code>, issue a JWT after login, and protect a route with it.</div>
+
+  <div class="nerdit-lesson-meta">
+    <span class="nerdit-meta-pill">⏱ 20 min</span>
+    <span class="nerdit-badge advanced">Advanced</span>
+  </div>
+
+  <div class="nerdit-figure" data-visual="course-map" style="max-width:440px">
+    <svg viewBox="0 0 360 78" role="img" aria-label="Course map: this lesson is the secure stage, third of five: setup, build, secure, scale, ship.">
+      <rect x="4" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="36" y="35" text-anchor="middle" fill="var(--tx-m)">Setup</text>
+      <rect x="76" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="108" y="35" text-anchor="middle" fill="var(--tx-m)">Build</text>
+      <rect x="148" y="14" width="64" height="32" rx="6" fill="var(--nb)" stroke="var(--nb)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="180" y="35" text-anchor="middle" fill="var(--white)">Secure</text>
+      <rect x="220" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="252" y="35" text-anchor="middle" fill="var(--tx-m)">Scale</text>
+      <rect x="292" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="324" y="35" text-anchor="middle" fill="var(--tx-m)">Ship</text>
+      <text class="nerdit-flow-text" x="180" y="68" text-anchor="middle" fill="var(--nb)">▲ you are here</text>
+    </svg>
+    <div class="nerdit-figure-caption">You are here: the first secure-stage lesson, after four build-stage lessons.</div>
+  </div>
+
+  <p>You split the app into routers in Lesson 7; now you add a login that protects them.</p>
+
+  <div class="nerdit-info-box nerdit-data-note"><strong>Data note:</strong> All enquiry and learner records shown in this lesson are synthetic, made for teaching. The two counsellor accounts are invented for this lesson. Future Vision Computer Institute's name is used with permission.</div>
+
+  <div class="nerdit-demo-table">
+    <div class="nerdit-demo-table-label">Demo Data — <code>enquiries</code> (6 rows), as in Lesson 1</div>
+    <table>
+      <thead><tr><th>enquiry_id</th><th>branch</th><th>course</th><th>follow_ups</th></tr></thead>
+      <tbody>
+        <tr><td>E1</td><td>Citylight</td><td>Python Professional</td><td>1</td></tr>
+        <tr><td>E2</td><td>Citylight</td><td>Office &amp; GenAI</td><td>3</td></tr>
+        <tr class="nerdit-spot"><td>E3</td><td>Pal</td><td>Business Analytics</td><td>1</td></tr>
+        <tr><td>E5</td><td>Vesu</td><td>Excel &amp; Power BI</td><td>1</td></tr>
+        <tr><td>E6</td><td>Pal</td><td>Python Professional</td><td>1</td></tr>
+        <tr><td>E7</td><td>Vesu</td><td>Business Analytics</td><td>4</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <section>
+    <h2 data-outline="1">1 — 🤔 Authentication vs Authorization</h2>
+
+    <p>Two different questions guard every route: who is asking, and what are they allowed to do? <strong>Authentication</strong> checks who sent the request — a password, a token, a certificate. <strong>Authorization</strong> checks what that known identity may do.</p>
+    <p>FastAPI answers each failure with its own status code. <code>401</code> means the server <b>does not know who is asking</b>; log in again. <code>403</code> means it knows exactly who you are, and still says no.</p>
+    <h3 class="nerdit-runhead">HTTPException(status_code=401) <span class="why">— no proof of identity at all</span></h3>
+    <p>This small example runs on its own, with no app behind it yet.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import HTTPException
+
+def get_profile(token):
+    if token is None:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    return {"token": token}
+
+try:
+    get_profile(None)
+except HTTPException as exc:
+    print(exc.status_code, exc.detail)</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>401 Not authenticated</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>if token is None:</code> there is no proof of identity to check.</li>
+      <li><code>raise HTTPException(status_code=401, detail="Not authenticated")</code> stops the function with a 401.</li>
+      <li><code>except HTTPException as exc:</code> catches it the same way FastAPI would for a real request.</li>
+    </ol>
+
+    <h3 class="nerdit-runhead">HTTPException(status_code=403) <span class="why">— known, but not allowed</span></h3>
+    <p>Change one thing from the run above: the caller now has an identity, just not the right one.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import HTTPException
+
+def get_admin_report(role):
+    if role is None:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    if role != "admin":
+        raise HTTPException(status_code=403, detail="Not allowed for this role")
+    return {"report": "ok"}
+
+try:
+    get_admin_report("guest")
+except HTTPException as exc:
+    print(exc.status_code, exc.detail)
+
+print(get_admin_report("admin"))</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>403 Not allowed for this role
+{'report': 'ok'}</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>if role is None:</code> still checks for a missing identity first.</li>
+      <li><code>if role != "admin":</code> runs only once an identity is known, and rejects the wrong one.</li>
+      <li><code>raise HTTPException(status_code=403, detail="Not allowed for this role")</code> is the second gate, not the first.</li>
+    </ol>
+
+    <div class="nerdit-figure" data-visual="decision-grid" data-world-derived="this lesson's own code: the two checks above, read as one decision table" style="max-width:400px">
+      <table class="nerdit-vtable nerdit-grid">
+        <thead><tr><th>case</th><th>①</th><th>②</th><th>status</th></tr></thead>
+        <tbody>
+          <tr><td>no token sent</td><td class="nerdit-chk first">✗</td><td class="nerdit-chk skip">–</td><td class="nerdit-cell-bad">401</td></tr>
+          <tr><td>token OK, wrong role</td><td class="nerdit-chk ok">✓</td><td class="nerdit-chk first">✗</td><td class="nerdit-cell-bad">403</td></tr>
+          <tr><td>token OK, right role</td><td class="nerdit-chk ok">✓</td><td class="nerdit-chk ok">✓</td><td class="nerdit-cell-good">200</td></tr>
+        </tbody>
+      </table>
+      <p class="nerdit-vlegend">① proves who is asking · ② the role fits this route<br>✓ passes · ✗ first failed check · – not checked</p>
+      <div class="nerdit-figure-caption">401 means the server cannot tell who you are; 403 means it can, and still refuses.</div>
+    </div>
+
+    <div class="nerdit-tip"><div><strong>Tip:</strong> Never send <code>403</code> before you have even checked for a token. A missing token is always <code>401</code> first.</div></div>
+
+    <div class="nerdit-predict">
+      <div class="nerdit-predict-head">🤔 Try It — Predict the output</div>
+      <pre data-lang="python"><code>def status_for(token, role):
+    if token is None:
+        return 401
+    if role != "counsellor":
+        return 403
+    return 200
+
+print(status_for(None, "counsellor"))
+print(status_for("tok-1", "guest"))
+print(status_for("tok-1", "counsellor"))</code></pre>
+      <details class="nerdit-predict-answer">
+        <summary>Show answer</summary>
+        <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>401
+403
+200</code></pre></div>
+        <p>No token gives <code>401</code> first. A token with the wrong role gives <code>403</code>. Only the right role reaches <code>200</code>.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="2">2 — 🔄 Never Store Plain-Text Passwords: Hash Them</h2>
+
+    <p>A <strong>hash</strong> turns a password into a fixed string that cannot be turned back into the original. Storing the real password instead means <b>one leaked database exposes every account</b>, everywhere that password was reused.</p>
+    <p>Checking a login never reverses the hash. It hashes the new guess the same way and compares the two hashes. <code>pwdlib</code> picks a strong, modern hash (<code>argon2</code>) so you never choose the algorithm yourself.</p>
+    <p>Hash a password the moment an account is created. Never log it, print it, or store it anywhere in plain text, not even for a day.</p>
+
+    <div class="nerdit-figure" data-visual="diagram" style="max-width:360px">
+      <svg viewBox="0 0 360 230" role="img" aria-label="A plain-text password turns into an argon2 hash before it is stored; the plain text itself is never saved." style="max-width:380px">
+        <text class="nerdit-flow-text" x="180" y="20" text-anchor="middle" fill="var(--tx-m)">before — typed once at signup</text>
+        <rect x="40" y="30" width="280" height="40" rx="8" fill="var(--white)" stroke="var(--orange)" stroke-width="1.5"/>
+        <text class="nerdit-flow-text" x="180" y="55" text-anchor="middle" fill="var(--orange)">neha-secret-123</text>
+        <path class="nerdit-flow-edge" d="M180 70 V98" marker-end="url(#authz8-arrow-hash)"/>
+        <text class="nerdit-flow-text" x="180" y="92" text-anchor="middle" fill="var(--nb)" font-size="12">password_hash.hash()</text>
+        <text class="nerdit-flow-text" x="180" y="128" text-anchor="middle" fill="var(--tx-m)">after — stored in COUNSELLORS</text>
+        <rect x="20" y="138" width="320" height="40" rx="8" fill="var(--white)" stroke="var(--green)" stroke-width="1.5"/>
+        <text class="nerdit-flow-text" x="180" y="163" text-anchor="middle" fill="var(--green)" font-size="13">$argon2id$v=19$...</text>
+        <text class="nerdit-flow-text" x="180" y="205" text-anchor="middle" fill="var(--tx-m)" font-size="12">The plain text is gone; only verify() can check a new guess.</text>
+        <defs>
+          <marker id="authz8-arrow-hash" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" fill="var(--nb-mid)"/>
+          </marker>
+        </defs>
+      </svg>
+      <div class="nerdit-figure-caption">Hashing only runs one way: check a guess against it, but never recover the original text.</div>
+    </div>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: Hashing Neha's Counsellor Password</h3>
+    <p>Future Vision keeps two counsellor accounts for this lesson, Neha and Karan, each with its own password.</p>
+
+    <h3 class="nerdit-runhead">PasswordHash.recommended() <span class="why">— hash a password, then check a guess</span></h3>
+    <p>The same <code>password_hash</code> object both hashes and checks, so the two steps always agree.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from pwdlib import PasswordHash
+
+password_hash = PasswordHash.recommended()
+hashed = password_hash.hash("neha-secret-123")
+
+print(hashed.startswith("$argon2id$"))
+print(password_hash.verify("neha-secret-123", hashed))
+print(password_hash.verify("wrong-guess", hashed))</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>True
+True
+False</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>password_hash = PasswordHash.recommended()</code> picks argon2, the current best default.</li>
+      <li><code>hashed = password_hash.hash("neha-secret-123")</code> turns the real password into a stored hash.</li>
+      <li><code>print(password_hash.verify("neha-secret-123", hashed))</code> checks a guess without ever reversing <code>hashed</code>.</li>
+    </ol>
+
+    <h3 class="nerdit-runhead">COUNSELLORS <span class="why">— one hashed password per counsellor</span></h3>
+    <p>A small dict stands in for a users table: this lesson keeps it in memory, not in a database.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>COUNSELLORS = {
+    "neha": password_hash.hash("neha-secret-123"),
+    "karan": password_hash.hash("karan-secret-456"),
+}
+
+def check_login(username, password):
+    hashed = COUNSELLORS.get(username)
+    if hashed is None:
+        return False
+    return password_hash.verify(password, hashed)
+
+print(check_login("neha", "neha-secret-123"))
+print(check_login("neha", "wrong-guess"))
+print(check_login("karan", "karan-secret-456"))</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>True
+False
+True</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>"neha": password_hash.hash("neha-secret-123"),</code> stores a hash, never the real password.</li>
+      <li><code>hashed = COUNSELLORS.get(username)</code> returns <code>None</code> for a username that was never created.</li>
+      <li><code>return password_hash.verify(password, hashed)</code> is the only check a real login ever needs.</li>
+    </ol>
+
+    <div class="nerdit-fillblank" data-answer="hash">
+      <div class="nerdit-fillblank-head">✏️ Try It — Fill in the blank</div>
+      <p>Complete the call that turns a new counsellor's password into a stored hash:</p>
+      <pre data-lang="text"><code>password_hash.<input class="nerdit-blank" size="6" aria-label="your answer">("karan-secret-456")</code></pre>
+      <button class="nerdit-check-btn" onclick="nerditCheckBlank(this)">Check</button>
+      <span class="nerdit-check-msg" aria-live="polite"></span>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="3 6">3 — 🔍 Understanding a Bearer Token and a JWT</h2>
+
+    <p>Once a password is checked, the server needs a way to remember you for the next request. A <strong>bearer token</strong> is a string a client sends in the <code>Authorization</code> header; whoever holds it is treated as that user.</p>
+    <p>A <strong>JWT</strong> (JSON Web Token) is one common shape for that string: three base64 parts joined by dots. The header names the algorithm, the payload carries plain <b>claims like a username</b>, and the signature proves neither part changed.</p>
+    <p><code>PyJWT</code> builds and checks this signature for you. The signature is made with a <strong>secret key</strong>, a value only your server knows. It must never sit in code you commit to Git.</p>
+
+    <div class="nerdit-figure" data-visual="diagram" style="max-width:380px">
+      <svg viewBox="0 0 360 230" role="img" aria-label="A JWT has three parts joined by dots: the header names the algorithm, the payload carries claims such as sub, and the signature proves neither part changed.">
+        <rect x="10" y="10" width="340" height="46" rx="8" fill="var(--white)" stroke="var(--nb)" stroke-width="1.5"/>
+        <text class="nerdit-flow-text" x="24" y="38" font-size="11" fill="var(--nb)">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9</text>
+        <text class="nerdit-flow-text" x="180" y="66" text-anchor="middle" fill="var(--tx-m)" font-size="12">① header — which algorithm signed this</text>
+        <rect x="10" y="80" width="340" height="46" rx="8" fill="var(--white)" stroke="var(--orange)" stroke-width="1.5"/>
+        <text class="nerdit-flow-text" x="24" y="108" font-size="12" fill="var(--orange)">eyJzdWIiOiJuZWhhIn0</text>
+        <text class="nerdit-flow-text" x="180" y="136" text-anchor="middle" fill="var(--tx-m)" font-size="12">② payload — claims, here just sub</text>
+        <rect x="10" y="150" width="340" height="46" rx="8" fill="var(--white)" stroke="var(--green)" stroke-width="1.5"/>
+        <text class="nerdit-flow-text" x="24" y="178" font-size="10" fill="var(--green)">XW4MoVFw4Ms2HvP3gpLFV8Ox6IPDBNBSO7Uh88mMGxk</text>
+        <text class="nerdit-flow-text" x="180" y="206" text-anchor="middle" fill="var(--tx-m)" font-size="12">③ signature — proves ① and ② are untouched</text>
+      </svg>
+      <div class="nerdit-figure-caption">The three parts join with dots, header.payload.signature. Change one character and the signature stops matching.</div>
+    </div>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: Signing a Token for Neha</h3>
+    <p>The payload only needs one claim for this lesson: <code>sub</code>, short for subject, holding the counsellor's username.</p>
+
+    <h3 class="nerdit-runhead">jwt.encode() / jwt.decode() <span class="why">— sign a token, then read it back</span></h3>
+    <p>Encoding and decoding with the same secret key always agree on the payload inside.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>import jwt
+
+SECRET_KEY = "fvc-dev-only-secret-change-me-in-prod"
+
+token = jwt.encode({"sub": "neha"}, SECRET_KEY, algorithm="HS256")
+print(token)
+
+header, payload, signature = token.split(".")
+print(len(header), len(payload), len(signature))
+
+decoded = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+print(decoded)</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJuZWhhIn0.XW4MoVFw4Ms2HvP3gpLFV8Ox6IPDBNBSO7Uh88mMGxk
+36 19 43
+{'sub': 'neha'}</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>token = jwt.encode({"sub": "neha"}, SECRET_KEY, algorithm="HS256")</code> signs the payload with the secret key.</li>
+      <li><code>header, payload, signature = token.split(".")</code> splits the token at its two dots.</li>
+      <li><code>decoded = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])</code> checks the signature, then returns the payload.</li>
+    </ol>
+
+    <h3 class="nerdit-runhead">os.getenv("SECRET_KEY") <span class="why">— keep the real key out of your code</span></h3>
+    <p>Lesson 1's .env file is the right home for this value. A wrong secret key cannot verify a real token at all.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>import os
+
+SECRET_KEY = os.getenv("SECRET_KEY", "fvc-dev-only-secret-change-me-in-prod")
+
+auth_header = f"Bearer {token}"
+print(auth_header.split()[0])
+
+scheme, _, received = auth_header.partition(" ")
+try:
+    jwt.decode(received, "a-completely-different-secret-key-value", algorithms=["HS256"])
+except jwt.InvalidTokenError as exc:
+    print(type(exc).__name__)</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>Bearer
+InvalidSignatureError</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>SECRET_KEY = os.getenv("SECRET_KEY", "fvc-dev-only-secret-change-me-in-prod")</code> reads .env first, with a dev-only fallback.</li>
+      <li><code>auth_header = f"Bearer {token}"</code> is the exact header shape a client sends.</li>
+      <li><code>scheme, _, received = auth_header.partition(" ")</code> splits the word <code>Bearer</code> from the token itself.</li>
+      <li><code>except jwt.InvalidTokenError as exc:</code> catches the wrong-secret case, among others.</li>
+    </ol>
+
+    <div class="nerdit-warning-block"><div class="nerdit-warning-label">Warning — never commit a real secret key</div><p>The fallback string above is a placeholder for this lesson only. A real project sets <code>SECRET_KEY</code> in .env and never writes the real value into a file Git tracks.</p></div>
+
+    <div class="nerdit-predict">
+      <div class="nerdit-predict-head">🤔 Try It — Predict the output</div>
+      <pre data-lang="python"><code>token = "abc.def.ghi"
+header, payload, signature = token.split(".")
+print(header)
+print(payload)
+print(signature)</code></pre>
+      <details class="nerdit-predict-answer">
+        <summary>Show answer</summary>
+        <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>abc
+def
+ghi</code></pre></div>
+        <p>A JWT is always three parts split on its two dots, in header, payload, signature order.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="4 5">4 — 🔗 Log In and Protect a Route</h2>
+
+    <p>A <strong>login route</strong> checks a username and a password, then hands back a token. <code>OAuth2PasswordRequestForm</code> reads those two fields from a submitted form, with no Pydantic model needed.</p>
+    <p>Checking that form against <code>COUNSELLORS</code> and signing a token is the whole login route. A <strong>protected route</strong> then needs the opposite check on every later request: is a valid token attached?</p>
+    <p><code>OAuth2PasswordBearer</code> pulls the token out of the <code>Authorization</code> header for you. A dependency named <code>get_current_user</code> decodes it and hands back the matching counsellor, or raises <code>401</code>.</p>
+
+    <div class="nerdit-figure" data-visual="diagram" style="max-width:380px">
+      <svg viewBox="0 0 360 280" role="img" aria-label="A counsellor posts a username and password to /token; the server checks the password hash and signs a JWT; later requests send that token in the Authorization header; get_current_user decodes it and the route runs.">
+        <rect x="20" y="8" width="320" height="44" rx="8" fill="var(--bg-soft)" stroke="var(--orange)" stroke-width="1.5"/>
+        <text class="nerdit-flow-text" x="180" y="28" text-anchor="middle" fill="var(--orange)" font-size="12">① POST /token:</text>
+        <text class="nerdit-flow-text" x="180" y="44" text-anchor="middle" fill="var(--orange)" font-size="12">username + password</text>
+        <path class="nerdit-flow-edge" d="M180 52 V76" marker-end="url(#authz8-arrow-seq)"/>
+        <rect x="20" y="80" width="320" height="44" rx="8" fill="var(--white)" stroke="var(--nb)" stroke-width="1.5"/>
+        <text class="nerdit-flow-text" x="180" y="106" text-anchor="middle" font-size="12">② verify() the hash, then jwt.encode()</text>
+        <path class="nerdit-flow-edge" d="M180 124 V148" marker-end="url(#authz8-arrow-seq)"/>
+        <rect x="20" y="152" width="320" height="44" rx="8" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+        <text class="nerdit-flow-text" x="180" y="178" text-anchor="middle" font-size="12">③ Authorization: Bearer &lt;token&gt;</text>
+        <path class="nerdit-flow-edge" d="M180 196 V220" marker-end="url(#authz8-arrow-seq)"/>
+        <rect x="20" y="224" width="320" height="48" rx="8" fill="var(--white)" stroke="var(--green)" stroke-width="1.5"/>
+        <text class="nerdit-flow-text" x="180" y="252" text-anchor="middle" fill="var(--green)" font-size="12">④ get_current_user() decodes it, route runs</text>
+        <defs>
+          <marker id="authz8-arrow-seq" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" fill="var(--nb-mid)"/>
+          </marker>
+        </defs>
+      </svg>
+      <div class="nerdit-figure-caption">The token signed in step ② is the same one checked in step ④ — no database lookup needed each time.</div>
+    </div>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: A Login Route for Future Vision's Counsellors</h3>
+    <p>Only a logged-in counsellor may change Future Vision's enquiry and learner records, from Lesson 6 and 7.</p>
+
+    <h3 class="nerdit-runhead">OAuth2PasswordRequestForm <span class="why">— read username and password from a login form</span></h3>
+    <p>A wrong password still reaches the same check as a correct one; only the result differs.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import HTTPException
+from fastapi.security import OAuth2PasswordRequestForm
+
+COUNSELLORS = {
+    "neha": {"username": "neha", "hashed_password": password_hash.hash("neha-secret-123")},
+}
+
+def login(form_data):
+    counsellor = COUNSELLORS.get(form_data.username)
+    if counsellor is None or not password_hash.verify(form_data.password, counsellor["hashed_password"]):
+        raise HTTPException(status_code=401, detail="Incorrect username or password")
+    token = jwt.encode({"sub": counsellor["username"]}, SECRET_KEY, algorithm="HS256")
+    return {"access_token": token, "token_type": "bearer"}
+
+try:
+    login(OAuth2PasswordRequestForm(username="neha", password="wrong-guess"))
+except HTTPException as exc:
+    print(exc.status_code, exc.detail)
+
+result = login(OAuth2PasswordRequestForm(username="neha", password="neha-secret-123"))
+print(result["token_type"])
+print(result["access_token"])</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>401 Incorrect username or password
+bearer
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJuZWhhIn0.XW4MoVFw4Ms2HvP3gpLFV8Ox6IPDBNBSO7Uh88mMGxk</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>counsellor = COUNSELLORS.get(form_data.username)</code> looks up the username the form carried.</li>
+      <li><code>if counsellor is None or not password_hash.verify(form_data.password, counsellor["hashed_password"]):</code> covers both a bad username and a bad password in one check.</li>
+      <li><code>token = jwt.encode({"sub": counsellor["username"]}, SECRET_KEY, algorithm="HS256")</code> signs a token only once the password is right.</li>
+      <li><code>return {"access_token": token, "token_type": "bearer"}</code> is the exact shape FastAPI's docs page expects back.</li>
+    </ol>
+
+    <h3 class="nerdit-runhead">Depends(get_current_user) <span class="why">— the check every protected route shares</span></h3>
+    <p>This dependency is the only place that trusts a token; every protected route just asks for its result.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>def get_current_user(token):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    counsellor = COUNSELLORS.get(payload.get("sub"))
+    if counsellor is None:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    return counsellor
+
+try:
+    get_current_user("garbage-token")
+except HTTPException as exc:
+    print(exc.status_code, exc.detail)
+
+current_user = get_current_user(result["access_token"])
+print(current_user["username"])</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>401 Invalid or expired token
+neha</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])</code> fails with <code>InvalidTokenError</code> on a garbage string.</li>
+      <li><code>counsellor = COUNSELLORS.get(payload.get("sub"))</code> looks up the username the token itself carries.</li>
+      <li><code>current_user = get_current_user(result["access_token"])</code> reuses the real token from the run above.</li>
+    </ol>
+
+    <p>Save the full project as main.py, with the login route, <code>get_current_user</code>, and the two routes it protects:</p>
+    <div class="nerdit-run nerdit-program" data-run="offline" data-file="main.py">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>import os
+
+import jwt
+from fastapi import Depends, FastAPI, HTTPException
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from pwdlib import PasswordHash
+
+SECRET_KEY = os.getenv("SECRET_KEY", "fvc-dev-only-secret-change-me-in-prod")
+ALGORITHM = "HS256"
+
+password_hash = PasswordHash.recommended()
+
+COUNSELLORS = {
+    "neha": {"username": "neha", "hashed_password": password_hash.hash("neha-secret-123")},
+    "karan": {"username": "karan", "hashed_password": password_hash.hash("karan-secret-456")},
+}
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+app = FastAPI()
+
+ENQUIRIES = [
+    {"enquiry_id": "E1", "branch": "Citylight", "course": "Python Professional", "follow_ups": 1},
+    {"enquiry_id": "E2", "branch": "Citylight", "course": "Office &amp; GenAI", "follow_ups": 3},
+    {"enquiry_id": "E3", "branch": "Pal", "course": "Business Analytics", "follow_ups": 1},
+    {"enquiry_id": "E5", "branch": "Vesu", "course": "Excel &amp; Power BI", "follow_ups": 1},
+    {"enquiry_id": "E6", "branch": "Pal", "course": "Python Professional", "follow_ups": 1},
+    {"enquiry_id": "E7", "branch": "Vesu", "course": "Business Analytics", "follow_ups": 4},
+]
+
+
+@app.post("/token")
+def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    counsellor = COUNSELLORS.get(form_data.username)
+    if counsellor is None or not password_hash.verify(form_data.password, counsellor["hashed_password"]):
+        raise HTTPException(status_code=401, detail="Incorrect username or password",
+                             headers={"WWW-Authenticate": "Bearer"})
+    token = jwt.encode({"sub": counsellor["username"]}, SECRET_KEY, algorithm=ALGORITHM)
+    return {"access_token": token, "token_type": "bearer"}
+
+
+def get_current_user(token: str = Depends(oauth2_scheme)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid or expired token",
+                             headers={"WWW-Authenticate": "Bearer"})
+    counsellor = COUNSELLORS.get(payload.get("sub"))
+    if counsellor is None:
+        raise HTTPException(status_code=401, detail="Invalid or expired token",
+                             headers={"WWW-Authenticate": "Bearer"})
+    return counsellor
+
+
+@app.get("/enquiries/{enquiry_id}")
+def get_enquiry(enquiry_id: str):
+    for row in ENQUIRIES:
+        if row["enquiry_id"] == enquiry_id:
+            return row
+    raise HTTPException(status_code=404, detail="Enquiry not found")
+
+
+@app.delete("/enquiries/{enquiry_id}")
+def delete_enquiry(enquiry_id: str, current_user: dict = Depends(get_current_user)):
+    for row in ENQUIRIES:
+        if row["enquiry_id"] == enquiry_id:
+            ENQUIRIES.remove(row)
+            return {"deleted": enquiry_id, "by": current_user["username"]}
+    raise HTTPException(status_code=404, detail="Enquiry not found")
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=8000)</code></pre>
+      </div>
+      <script type="text/plain" class="nerdit-check">import warnings
+warnings.filterwarnings("ignore")
+from fastapi.testclient import TestClient
+
+client = TestClient(app)
+print(client.get("/enquiries/E3").json())
+print(client.delete("/enquiries/E3").status_code)
+login_response = client.post("/token", data={"username": "neha", "password": "neha-secret-123"})
+token = login_response.json()["access_token"]
+print(client.delete("/enquiries/E3", headers={"Authorization": f"Bearer {token}"}).json())</script>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>{'enquiry_id': 'E3', 'branch': 'Pal', 'course': 'Business Analytics', 'follow_ups': 1}
+401
+{'deleted': 'E3', 'by': 'neha'}</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk nerdit-walk-full">
+      <li><code>import os</code> starts the imports: <code>jwt</code>, <code>FastAPI</code>, <code>PasswordHash</code>.</li>
+      <li><code>COUNSELLORS = {</code> holds both hashes, from section 2.</li>
+      <li><code>ENQUIRIES = [</code> is the same six rows from Lesson 1.</li>
+      <li><code>@app.post("/token")</code> is section 4's login route, now on a real path.</li>
+      <li><code>def get_current_user(token: str = Depends(oauth2_scheme)):</code> starts the shared dependency.</li>
+      <li><code>raise HTTPException(status_code=401, detail="Invalid or expired token",</code> is the second failure, no matching counsellor.</li>
+      <li><code>def get_enquiry(enquiry_id: str):</code> stays public; no login needed.</li>
+      <li><code>@app.delete("/enquiries/{enquiry_id}")</code> is the one route that adds <code>Depends(get_current_user)</code>.</li>
+      <li><code>if row["enquiry_id"] == enquiry_id:</code> runs inside <code>delete_enquiry</code> this time.</li>
+    </ol>
+
+    <p>Save the file, activate your venv, then run it:</p>
+    <div class="nerdit-terminal"><span class="nerdit-prompt">$ </span><span class="nerdit-cmd">uvicorn main:app --reload</span>
+<span class="nerdit-out">INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)</span>
+<span class="nerdit-comment"># Open http://127.0.0.1:8000/docs</span></div>
+
+    <div class="nerdit-fillblank" data-answer="Depends">
+      <div class="nerdit-fillblank-head">✏️ Try It — Fill in the blank</div>
+      <p>Complete the parameter that makes a route ask for <code>get_current_user</code>'s result:</p>
+      <pre data-lang="text"><code>current_user: dict = <input class="nerdit-blank" size="8" aria-label="your answer">(get_current_user)</code></pre>
+      <button class="nerdit-check-btn" onclick="nerditCheckBlank(this)">Check</button>
+      <span class="nerdit-check-msg" aria-live="polite"></span>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="7">5 — 🔍 Test the Login and Protected-Route Flow</h2>
+
+    <p>A login system has two paths worth checking: the request that should fail, and the one that should succeed. Testing only the happy path hides a route that <b>never actually rejects anyone</b>.</p>
+    <p>Because <code>get_current_user</code> depends on <code>OAuth2PasswordBearer(tokenUrl="token")</code>, the <code>/docs</code> page already knows which route issues tokens. An <b>Authorize</b> button appears, so you never paste a token by hand.</p>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: Testing Neha's Login End to End</h3>
+    <p>Section 4's main.py is running; enquiry <code>E3</code> is still in the list.</p>
+
+    <h3 class="nerdit-runhead">jwt.decode() on an Expired Token <span class="why">— the unhappy path a real attacker would meet</span></h3>
+    <p>A token that outlived its welcome should fail the same way a wrong password does.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from datetime import datetime, UTC
+
+expired_token = jwt.encode({"sub": "neha", "exp": datetime(2020, 1, 1, tzinfo=UTC)}, SECRET_KEY, algorithm="HS256")
+
+try:
+    jwt.decode(expired_token, SECRET_KEY, algorithms=["HS256"])
+except jwt.ExpiredSignatureError as exc:
+    print(type(exc).__name__, exc)</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>ExpiredSignatureError Signature has expired</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>expired_token = jwt.encode({"sub": "neha", "exp": datetime(2020, 1, 1, tzinfo=UTC)}, SECRET_KEY, algorithm="HS256")</code> signs a token that already expired.</li>
+      <li><code>except jwt.ExpiredSignatureError as exc:</code> is the one new error an <code>exp</code> claim brings.</li>
+    </ol>
+
+    <p>The docs page can test the happy path too, without a line of Python.</p>
+
+    <script type="application/json" class="nerdit-screen">
+{"id": "authz8-docs-authorize", "app": "Swagger UI", "layout": "app",
+ "goal": "Open Authorize and sign in as Neha",
+ "path": ["/docs"],
+ "panel": [{"kind": "button", "label": "Authorize"}, {"kind": "field", "label": "username", "value": "neha"},
+           {"kind": "field", "label": "password", "value": "neha-secret-123"}],
+ "steps": [{"do": "click", "path": ["Authorize"]}],
+ "alt": "Swagger UI's Authorize button, with username and password fields shown below it for Neha's login.",
+ "takeaway": "OAuth2PasswordBearer lets the docs page log in for you and attach the token to every request after.",
+ "misconception": "You must copy the access_token out of the response and paste it into each request by hand.",
+ "check": {"question": "What request does clicking Authorize send?",
+           "answer": "A POST to /token with the typed username and password",
+           "reasoning": "tokenUrl=\"token\" tells Swagger UI exactly which route issues the token for this scheme."}}
+    </script>
+    <p>Click <b>Authorize</b>, type Neha's username and password, then Authorize again. The docs page now holds her token.</p>
+
+    <script type="application/json" class="nerdit-screen">
+{"id": "authz8-docs-delete", "app": "Swagger UI", "layout": "app",
+ "goal": "Delete enquiry E3 once authorized as Neha",
+ "path": ["/docs"],
+ "panel": [{"kind": "button", "label": "Try it out"}, {"kind": "field", "label": "enquiry_id", "value": "E3"},
+           {"kind": "button", "label": "Execute"}],
+ "steps": [{"do": "click", "path": ["Try it out"]}, {"do": "click", "path": ["Execute"]}],
+ "alt": "Swagger UI's DELETE enquiries route, with enquiry_id set to E3, answering 200 after Execute.",
+ "takeaway": "Every protected route reuses the same stored token; you never authorize twice in one session.",
+ "misconception": "Clicking Execute before Authorize would still work, since the route is already open.",
+ "check": {"question": "What would this same request return before clicking Authorize?",
+           "answer": "401",
+           "reasoning": "get_current_user raises 401 the moment no bearer token is attached to the request."}}
+    </script>
+    <p>Click Try it out, then Execute. Enquiry <code>E3</code> is deleted and the response answers 200.</p>
+
+    <div class="nerdit-figure" data-visual="value-table" data-world-derived="section 4's own code: main.py's hidden check calling the running app" style="max-width:400px">
+      <table class="nerdit-vtable">
+        <thead><tr><th>request</th><th>Authorization header</th><th>status</th></tr></thead>
+        <tbody>
+          <tr><td>GET /enquiries/E3</td><td>none</td><td class="nerdit-cell-good">200</td></tr>
+          <tr class="nerdit-spot"><td>DELETE /enquiries/E3</td><td>none</td><td class="nerdit-cell-bad">401</td></tr>
+          <tr><td>DELETE /enquiries/E3</td><td>Bearer &lt;neha's token&gt;</td><td class="nerdit-cell-good">200</td></tr>
+        </tbody>
+      </table>
+      <div class="nerdit-figure-caption">Reading an enquiry stays open to anyone; deleting one needs Neha's token.</div>
+    </div>
+
+    <div class="nerdit-tip"><div><strong>Tip:</strong> This lesson's two counsellors share one role, so a real request here never returns 403. A second role, checked inside <code>get_current_user</code>, would.</div></div>
+
+    <h3 class="nerdit-runhead" data-outline="8">What a Production System Still Needs</h3>
+    <p>This login works, but a real deployment needs more. A token's <b>expiry</b> claim, shown above, is only the start.</p>
+    <p>A real system also offers a <b>scope</b> on each token, limiting what it can do. It also supports an <b>API key</b> for another service calling in, instead of a human logging in.</p>
+
+    <details class="nerdit-deeper">
+      <summary>Go deeper</summary>
+      <p>A refresh token lets a client get a new access token without logging in again. A revocation list lets the server cancel one early, before it expires on its own. OAuth2 scopes limit what one token can do, listed by name. An API key is usually a long random string, checked against a stored list. It needs no username or password at all.</p>
+    </details>
+
+    <div class="nerdit-predict">
+      <div class="nerdit-predict-head">🤔 Try It — Predict the output</div>
+      <pre data-lang="python"><code>import time
+
+issued_at = time.time() - 120
+expires_after = 60
+
+def is_expired(issued_at, expires_after):
+    return time.time() - issued_at > expires_after
+
+print(is_expired(issued_at, expires_after))</code></pre>
+      <details class="nerdit-predict-answer">
+        <summary>Show answer</summary>
+        <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>True</code></pre></div>
+        <p>The token was issued 120 seconds ago, longer than the 60-second limit, so it counts as expired.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2>📌 Quick Reference</h2>
+    <div class="nerdit-cheatsheet">
+      <table>
+        <thead><tr><th>Keyword</th><th>What it does</th><th>Tiny example</th></tr></thead>
+        <tbody>
+          <tr><td><code>401</code></td><td>No valid proof of identity</td><td>missing or bad token</td></tr>
+          <tr><td><code>403</code></td><td>Known identity, action not allowed</td><td>wrong role</td></tr>
+          <tr><td><code>PasswordHash.hash()</code></td><td>Turns a password into a stored hash</td><td><code>password_hash.hash(pw)</code></td></tr>
+          <tr><td><code>PasswordHash.verify()</code></td><td>Checks a guess against a stored hash</td><td><code>password_hash.verify(pw, hashed)</code></td></tr>
+          <tr><td><code>jwt.encode()</code></td><td>Signs a payload into a JWT</td><td><code>jwt.encode({"sub": "neha"}, key, algorithm="HS256")</code></td></tr>
+          <tr><td><code>jwt.decode()</code></td><td>Checks the signature, returns the payload</td><td><code>jwt.decode(token, key, algorithms=["HS256"])</code></td></tr>
+          <tr><td><code>OAuth2PasswordRequestForm</code></td><td>Reads username and password from a login form</td><td><code>Depends()</code></td></tr>
+          <tr><td><code>OAuth2PasswordBearer</code></td><td>Pulls a bearer token from the Authorization header</td><td><code>OAuth2PasswordBearer(tokenUrl="token")</code></td></tr>
+          <tr><td><code>os.getenv("SECRET_KEY")</code></td><td>Reads the signing key from <code>.env</code></td><td>never a literal string in production</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>🧠 Practice</h2>
+    <div class="nerdit-practical">
+      <div class="nerdit-task">Task 1: Write <code>needs_login(action)</code> that returns <code>True</code> for <code>"create"</code>, <code>"update"</code> and <code>"delete"</code>, and <code>False</code> for <code>"read"</code>. Test it on <code>"delete"</code> and <code>"read"</code>.
+        <details class="nerdit-solution">
+          <summary>Show solution</summary>
+          <pre data-lang="python"><code>def needs_login(action):
+    return action in ("create", "update", "delete")
+
+print(needs_login("delete"))
+print(needs_login("read"))</code></pre>
+          <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>True
+False</code></pre></div>
+        </details>
+      </div>
+      <div class="nerdit-task">Task 2: Write <code>status_for(has_token, has_role)</code> that returns <code>401</code> when <code>has_token</code> is <code>False</code>, <code>403</code> when it is <code>True</code> but <code>has_role</code> is <code>False</code>, and <code>200</code> otherwise. Test all three cases.
+        <details class="nerdit-solution">
+          <summary>Show solution</summary>
+          <pre data-lang="python"><code>def status_for(has_token, has_role):
+    if not has_token:
+        return 401
+    if not has_role:
+        return 403
+    return 200
+
+print(status_for(False, False))
+print(status_for(True, False))
+print(status_for(True, True))</code></pre>
+          <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>401
+403
+200</code></pre></div>
+        </details>
+      </div>
+      <div class="nerdit-task">Task 3 (challenge): Write <code>looks_like_jwt(token)</code> that returns <code>True</code> only when <code>token</code> has exactly two dots. Test it on <code>"abc.def.ghi"</code> and <code>"not-a-token"</code>.
+        <details class="nerdit-solution">
+          <summary>Show solution</summary>
+          <pre data-lang="python"><code>def looks_like_jwt(token):
+    return token.count(".") == 2
+
+print(looks_like_jwt("abc.def.ghi"))
+print(looks_like_jwt("not-a-token"))</code></pre>
+          <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>True
+False</code></pre></div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+</div>
+<script>
+(function(){
+  if (typeof window.nerditCheckBlank !== "function") {
+    window.nerditCheckBlank = function(btn){
+      var box = btn.closest('.nerdit-fillblank');
+      var input = box.querySelector('.nerdit-blank');
+      var msg = box.querySelector('.nerdit-check-msg');
+      var accepted = (box.getAttribute('data-answer') || '').split('|');
+      var got = (input.value || '').trim().toLowerCase();
+      var ok = accepted.some(function(a){ return a.trim().toLowerCase() === got; });
+      msg.textContent = ok ? '✅ Correct!' : '❌ Not yet — try again.';
+      msg.className = 'nerdit-check-msg ' + (ok ? 'ok' : 'no');
+      input.classList.toggle('ok', ok);
+      input.classList.toggle('no', !ok);
+    };
+  }
+})();
+</script>

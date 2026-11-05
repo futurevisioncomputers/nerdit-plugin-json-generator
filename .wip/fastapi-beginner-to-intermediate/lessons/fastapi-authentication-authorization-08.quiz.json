@@ -1,0 +1,66 @@
+{
+  "lessonQuestions": [
+    {
+      "correctOptionIndex": 0,
+      "options": [
+        "403",
+        "401",
+        "200",
+        "404"
+      ],
+      "text": "`status_for(token, role)` returns 401 when `token` is `None`, 403 when `role != \"counsellor\"`, and 200 otherwise. What does `status_for(\"tok-1\", \"guest\")` return?"
+    },
+    {
+      "correctOptionIndex": 0,
+      "options": [
+        "InvalidSignatureError",
+        "KeyError",
+        "ValueError",
+        "ExpiredSignatureError"
+      ],
+      "text": "A token signed with one secret key is passed to `jwt.decode(received, \"a-completely-different-secret-key-value\", algorithms=[\"HS256\"])`. What does PyJWT raise?"
+    },
+    {
+      "correctOptionIndex": 0,
+      "options": [
+        "401",
+        "403",
+        "404",
+        "200"
+      ],
+      "text": "In `main.py`, `GET /enquiries/{enquiry_id}` has no `Depends(get_current_user)`, but `DELETE /enquiries/{enquiry_id}` does. Calling `DELETE /enquiries/E3` with no `Authorization` header returns what status?"
+    }
+  ],
+  "assessmentQuestions": [
+    {
+      "correctOptionIndex": 0,
+      "options": [
+        "Authentication checks who is asking; authorization checks what that identity is allowed to do",
+        "Authentication checks what you are allowed to do; authorization checks who you are",
+        "Authentication and authorization both check the same thing, in a different order",
+        "Authorization always runs before authentication on every request"
+      ],
+      "text": "In this lesson's terms, what is the real difference between authentication and authorization?"
+    },
+    {
+      "correctOptionIndex": 0,
+      "options": [
+        "One leaked database exposes every account where that password was reused",
+        "Plain-text passwords take up noticeably more disk space",
+        "FastAPI refuses to start if a route reads a plain password",
+        "A plain-text password becomes case-sensitive the first time it is used"
+      ],
+      "text": "The lesson warns against storing a plain-text password instead of its hash. What risk does it name?"
+    },
+    {
+      "correctOptionIndex": 0,
+      "options": [
+        "jwt.decode() raises ExpiredSignatureError",
+        "jwt.decode() silently returns an empty payload",
+        "jwt.decode() raises InvalidSignatureError",
+        "jwt.decode() returns the payload unchanged, since exp is just a normal claim"
+      ],
+      "text": "A token's payload is `{\"sub\": \"neha\", \"exp\": datetime(2020, 1, 1, tzinfo=UTC)}`. What happens when `jwt.decode()` checks it today?"
+    }
+  ]
+}
