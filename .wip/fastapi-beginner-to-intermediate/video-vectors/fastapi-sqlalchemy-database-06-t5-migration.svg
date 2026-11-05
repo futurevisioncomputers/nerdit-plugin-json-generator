@@ -1,0 +1,26 @@
+<svg class="nerdit-anim" viewBox="0 0 480 360" role="img" aria-label="A migration carries an old table shape to a new one, without losing its rows." font-family="Segoe UI, sans-serif">
+  <g class="na-show" style="--d:0s">
+    <rect x="40" y="40" width="400" height="100" rx="12" fill="var(--bg-soft)" stroke="var(--bd)" stroke-width="2"/>
+    <text x="240" y="90" text-anchor="middle" font-size="24" font-weight="700" fill="var(--tx)">old table shape</text>
+    <text x="240" y="120" text-anchor="middle" font-size="15" fill="var(--tx-m)">rows already saved</text>
+  </g>
+  <g class="na-draw" style="--d:1.3s">
+    <path d="M240 142 L240 188" stroke="var(--bd)" stroke-width="3" fill="none" marker-end="url(#fsd06t5b-arrow)"/>
+  </g>
+  <g class="na-show" style="--d:1.8s">
+    <rect x="40" y="190" width="400" height="60" rx="10" fill="var(--bg-soft)" stroke="var(--orange)" stroke-width="2"/>
+    <text x="240" y="227" text-anchor="middle" font-size="20" font-weight="700" fill="var(--orange)">Alembic migration</text>
+  </g>
+  <g class="na-draw" style="--d:2.4s">
+    <path d="M240 252 L240 288" stroke="var(--bd)" stroke-width="3" fill="none" marker-end="url(#fsd06t5b-arrow)"/>
+  </g>
+  <g class="na-show" style="--d:2.8s">
+    <rect x="40" y="290" width="400" height="60" rx="10" fill="var(--bg-soft)" stroke="var(--green)" stroke-width="2"/>
+    <text x="240" y="327" text-anchor="middle" font-size="20" font-weight="700" fill="var(--green)">new table shape</text>
+  </g>
+  <defs>
+    <marker id="fsd06t5b-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--nb)"/>
+    </marker>
+  </defs>
+</svg>

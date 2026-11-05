@@ -1,0 +1,27 @@
+<svg class="nerdit-anim" viewBox="0 0 480 360" role="img" aria-label="A request opens one session, uses it, then the session closes when the route ends." font-family="Segoe UI, sans-serif">
+  <g class="na-show" style="--d:0s">
+    <rect x="40" y="20" width="400" height="90" rx="12" fill="var(--bg-soft)" stroke="var(--nb)" stroke-width="2"/>
+    <text x="240" y="65" text-anchor="middle" font-size="22" font-weight="700" fill="var(--nb)">request arrives</text>
+    <text x="240" y="92" text-anchor="middle" font-size="14" fill="var(--tx-m)">one call to a route</text>
+  </g>
+  <g class="na-draw" style="--d:1.1s">
+    <path d="M240 112 L240 148" stroke="var(--bd)" stroke-width="3" fill="none" marker-end="url(#fsd06t2-arrow)"/>
+  </g>
+  <g class="na-show" style="--d:1.5s">
+    <rect x="40" y="150" width="400" height="90" rx="12" fill="var(--bg-soft)" stroke="var(--orange)" stroke-width="2"/>
+    <text x="240" y="195" text-anchor="middle" font-size="22" font-weight="700" fill="var(--orange)">session opens</text>
+    <text x="240" y="222" text-anchor="middle" font-size="14" fill="var(--tx-m)">the route reads or writes rows</text>
+  </g>
+  <g class="na-draw" style="--d:2.6s">
+    <path d="M240 242 L240 278" stroke="var(--bd)" stroke-width="3" fill="none" marker-end="url(#fsd06t2-arrow)"/>
+  </g>
+  <g class="na-show" style="--d:3.0s">
+    <rect x="40" y="280" width="400" height="70" rx="12" fill="var(--bg-soft)" stroke="var(--green)" stroke-width="2"/>
+    <text x="240" y="322" text-anchor="middle" font-size="22" font-weight="700" fill="var(--green)">session closes</text>
+  </g>
+  <defs>
+    <marker id="fsd06t2-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--nb)"/>
+    </marker>
+  </defs>
+</svg>

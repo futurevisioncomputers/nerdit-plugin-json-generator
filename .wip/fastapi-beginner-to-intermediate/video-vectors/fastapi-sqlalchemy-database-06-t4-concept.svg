@@ -1,0 +1,20 @@
+<svg class="nerdit-anim" viewBox="0 0 480 360" role="img" aria-label="PUT replaces every field of a row; delete removes the row for good." font-family="Segoe UI, sans-serif">
+  <g class="na-show" style="--d:0s">
+    <rect x="40" y="40" width="400" height="110" rx="12" fill="var(--bg-soft)" stroke="var(--orange)" stroke-width="2"/>
+    <text x="240" y="92" text-anchor="middle" font-size="24" font-weight="700" fill="var(--orange)">update every field</text>
+    <text x="240" y="124" text-anchor="middle" font-size="15" fill="var(--tx-m)">PUT replaces the whole row</text>
+  </g>
+  <g class="na-draw" style="--d:1.3s">
+    <path d="M240 152 L240 198" stroke="var(--bd)" stroke-width="3" fill="none" marker-end="url(#fsd06t4-arrow)"/>
+  </g>
+  <g class="na-show" style="--d:1.8s">
+    <rect x="40" y="200" width="400" height="120" rx="12" fill="var(--bg-soft)" stroke="var(--green)" stroke-width="2"/>
+    <text x="240" y="255" text-anchor="middle" font-size="24" font-weight="700" fill="var(--green)">delete the row</text>
+    <text x="240" y="288" text-anchor="middle" font-size="15" fill="var(--tx-m)">gone from the table for good</text>
+  </g>
+  <defs>
+    <marker id="fsd06t4-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--nb)"/>
+    </marker>
+  </defs>
+</svg>

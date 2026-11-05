@@ -1,0 +1,666 @@
+<div class="nerdit-wrapper nerdit-simple" style="counter-reset:practical-counter challenge-counter;">
+
+  <h1>🗄️ Database Integration with SQLAlchemy</h1>
+
+  <div class="nerdit-info-box"><strong>📘 Lesson Overview:</strong> Every list you built so far lives in memory and disappears the moment you restart the server. This lesson connects FastAPI to a real SQLite database with <code>SQLAlchemy</code>, so you build create, read, update and delete endpoints that keep their data.</div>
+
+  <div class="nerdit-lesson-meta">
+    <span class="nerdit-meta-pill">⏱ 20 min</span>
+    <span class="nerdit-badge beginner">Beginner</span>
+  </div>
+
+  <div class="nerdit-figure" data-visual="course-map" style="max-width:440px">
+    <svg viewBox="0 0 360 78" role="img" aria-label="Course map: this lesson is the build stage, second of five: setup, build, secure, scale, ship.">
+      <rect x="4" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="36" y="35" text-anchor="middle" fill="var(--tx-m)">Setup</text>
+      <rect x="76" y="14" width="64" height="32" rx="6" fill="var(--nb)" stroke="var(--nb)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="108" y="35" text-anchor="middle" fill="var(--white)">Build</text>
+      <rect x="148" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="180" y="35" text-anchor="middle" fill="var(--tx-m)">Secure</text>
+      <rect x="220" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="252" y="35" text-anchor="middle" fill="var(--tx-m)">Scale</text>
+      <rect x="292" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="324" y="35" text-anchor="middle" fill="var(--tx-m)">Ship</text>
+      <text class="nerdit-flow-text" x="108" y="68" text-anchor="middle" fill="var(--nb)">▲ you are here</text>
+    </svg>
+    <div class="nerdit-figure-caption">You are here: build stage, giving your API a real database instead of memory-only lists.</div>
+  </div>
+
+  <div class="nerdit-info-box nerdit-data-note"><strong>Data note:</strong> All learner records shown in this lesson are synthetic, made for teaching. Future Vision Computer Institute's name is used with permission.</div>
+
+  <div class="nerdit-demo-table">
+    <div class="nerdit-demo-table-label">Demo Data — <code>learners</code> (5 rows), as in Lesson 5</div>
+    <table>
+      <thead><tr><th>learner_id</th><th>branch</th><th>age</th><th>weekly_study_hours</th></tr></thead>
+      <tbody>
+        <tr><td>L1</td><td>Vesu</td><td>24</td><td>9.3</td></tr>
+        <tr><td>L2</td><td>Citylight</td><td>27</td><td>4.1</td></tr>
+        <tr><td>L3</td><td>Citylight</td><td>22</td><td>9.1</td></tr>
+        <tr><td>L4</td><td>Vesu</td><td>24</td><td>11.7</td></tr>
+        <tr><td>L5</td><td>Pal</td><td>23</td><td>7.4</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <section>
+    <h2 data-outline="1 2 3">1 — 🔗 Connect to a Database with SQLAlchemy</h2>
+
+    <p>How does a Python object turn into a row a database can store? An <strong>ORM</strong> (object-relational mapper) maps a Python class to a table. You then <b>read and write rows as plain objects</b>, instead of writing SQL by hand. <code>SQLAlchemy</code> is the ORM FastAPI projects use most.</p>
+    <p>An <strong>engine</strong> is the object that knows how to reach one database. It holds the file path or server address, and the driver that speaks its language. You build it once, with <code>create_engine()</code>, and every later piece of code reuses it.</p>
+    <p>A mapped class inherits from <strong>DeclarativeBase</strong>, a small base class SQLAlchemy ships with. Each typed attribute on that class becomes one column, and the class itself becomes one table.</p>
+
+    <pre class="nerdit-map"><span class="nerdit-map-label">Python class → database table</span>class Learner(Base)   <b>→</b> table learners
+learner_id: Mapped[str] <b>→</b> column learner_id, text
+age: Mapped[int]        <b>→</b> column age, whole number</pre>
+
+    <p>Reach for an engine and a mapped class the moment a route's data must survive a restart. A list in memory is fine only while you are still sketching the shape of the data.</p>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: Mapping Future Vision's Learners Table</h3>
+    <p>Future Vision's learner progress sheet, as in Lesson 5, is about to outgrow a plain list. A <code>Learner</code> row needs a database table, not a Python list that forgets itself on every restart.</p>
+
+    <p>Activate your venv from Lesson 1, then add SQLAlchemy to this project:</p>
+    <div class="nerdit-terminal"><span class="nerdit-prompt">$ </span><span class="nerdit-cmd">pip install sqlalchemy</span>
+<span class="nerdit-prompt">$ </span><span class="nerdit-cmd">mkdir fastapi-sqlalchemy-database</span>
+<span class="nerdit-prompt">$ </span><span class="nerdit-cmd">cd fastapi-sqlalchemy-database</span>
+<span class="nerdit-comment"># your terminal prompt now shows the new folder</span></div>
+
+    <h3 class="nerdit-runhead">Learner(Base) <span class="why">— Map One Class to One Table</span></h3>
+    <p><code>create_engine</code> points at a SQLite file; <code>DeclarativeBase</code> turns <code>Learner</code> into a real table.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from sqlalchemy import create_engine, String, Integer, Float
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+engine = create_engine("sqlite:///:memory:")
+
+class Base(DeclarativeBase):
+    pass
+
+class Learner(Base):
+    __tablename__ = "learners"
+    learner_id: Mapped[str] = mapped_column(String, primary_key=True)
+    branch: Mapped[str] = mapped_column(String)
+    age: Mapped[int] = mapped_column(Integer)
+    weekly_study_hours: Mapped[float] = mapped_column(Float)
+
+Base.metadata.create_all(engine)
+print(Learner.__tablename__)</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>learners</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>engine = create_engine("sqlite:///:memory:")</code> opens one connection point this whole file reuses.</li>
+      <li><code>class Learner(Base):</code> maps this class to a table, because it inherits from <code>Base</code>.</li>
+      <li><code>learner_id: Mapped[str] = mapped_column(String, primary_key=True)</code> makes <code>learner_id</code> the column SQLite looks rows up by.</li>
+      <li><code>Base.metadata.create_all(engine)</code> creates the real <code>learners</code> table in the database.</li>
+    </ol>
+
+    <div class="nerdit-figure" data-visual="value-table" data-world-derived="learners entity: L1's row, shown as attribute, column type and sample value" style="max-width:400px">
+      <table class="nerdit-vtable">
+        <thead><tr><th>attribute</th><th>column type</th><th>L1's value</th></tr></thead>
+        <tbody>
+          <tr class="nerdit-spot"><td><code>learner_id</code></td><td>String, primary key</td><td>L1</td></tr>
+          <tr><td><code>branch</code></td><td>String</td><td>Vesu</td></tr>
+          <tr><td><code>age</code></td><td>Integer</td><td>24</td></tr>
+          <tr><td><code>weekly_study_hours</code></td><td>Float</td><td>9.3</td></tr>
+        </tbody>
+      </table>
+      <div class="nerdit-figure-caption">Each <code>Mapped[...]</code> attribute becomes one column; L1's row holds one value per column.</div>
+    </div>
+
+    <div class="nerdit-fillblank" data-answer="Base">
+      <div class="nerdit-fillblank-head">✏️ Try It — Fill in the blank</div>
+      <p>Complete the class line so <code>Learner</code> inherits from the declarative base class:</p>
+      <pre data-lang="python"><code>class Base:
+    pass
+
+class Learner(<input class="nerdit-blank" size="6" aria-label="your answer">):
+    pass
+
+print(Learner.__bases__[0].__name__)</code></pre>
+      <button class="nerdit-check-btn" onclick="nerditCheckBlank(this)">Check</button>
+      <span class="nerdit-check-msg" aria-live="polite"></span>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="4">2 — 🔄 Give Each Request Its Own Session</h2>
+
+    <p>An engine can hold many connections at once, so a route must never share one connection with another request. A <strong>Session</strong> is a short-lived workspace for one request's database work. It tracks what you add or change, then sends it.</p>
+    <p><code>sessionmaker(bind=engine)</code> builds a factory that hands out a fresh <code>Session</code> whenever you call it. You used <code>yield</code> for setup and cleanup in Lesson 5. <code>get_db</code> is the real job that pattern was built for.</p>
+    <p>FastAPI calls <strong>get_db</strong> through <code>Depends()</code> for every request. It opens one <code>Session</code> and hands it to your route. Then it <b>closes that once the route ends</b>, even if the route raises an error.</p>
+
+    <div class="nerdit-figure" data-visual="diagram" style="max-width:400px">
+      <svg viewBox="0 0 320 300" role="img" aria-label="get_db opens a Session when a request arrives, the route uses it, then FastAPI closes it after the route returns.">
+        <rect x="40" y="8" width="240" height="46" rx="8" fill="var(--bg-soft)" stroke="var(--nb)" stroke-width="1.5"/>
+        <text class="nerdit-flow-text" x="160" y="36" text-anchor="middle">① Request arrives</text>
+        <path class="nerdit-flow-edge" d="M160 54 V74" marker-end="url(#fsd06-arrow-a)"/>
+        <rect x="20" y="78" width="280" height="46" rx="8" fill="var(--white)" stroke="var(--orange)" stroke-width="1.5"/>
+        <text class="nerdit-flow-text" x="160" y="106" text-anchor="middle" fill="var(--orange)">② get_db() opens a Session</text>
+        <path class="nerdit-flow-edge" d="M160 124 V144" marker-end="url(#fsd06-arrow-a)"/>
+        <rect x="20" y="148" width="280" height="46" rx="8" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+        <text class="nerdit-flow-text" x="160" y="176" text-anchor="middle">③ The route reads or writes rows</text>
+        <path class="nerdit-flow-edge" d="M160 194 V214" marker-end="url(#fsd06-arrow-a)"/>
+        <rect x="20" y="218" width="280" height="46" rx="8" fill="var(--white)" stroke="var(--green)" stroke-width="1.5"/>
+        <text class="nerdit-flow-text" x="160" y="246" text-anchor="middle" fill="var(--green)">④ finally: db.close()</text>
+        <defs>
+          <marker id="fsd06-arrow-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" fill="var(--nb-mid)"/>
+          </marker>
+        </defs>
+      </svg>
+      <div class="nerdit-figure-caption">One Session opens for the request and closes right after, even if the route raises an error.</div>
+    </div>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: Loading Future Vision's First Two Learners</h3>
+    <p>L1 and L2, from the demo data above, need to go into the real table first. Only then can any route read them back.</p>
+
+    <h3 class="nerdit-runhead">get_db() <span class="why">— One Session, Opened and Closed Around the Work</span></h3>
+    <p><code>db.add_all</code> stages both rows; <code>db.commit()</code> writes them for real.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from sqlalchemy.orm import sessionmaker
+
+SessionLocal = sessionmaker(bind=engine)
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+db = next(get_db())
+db.add_all([Learner(learner_id="L1", branch="Vesu", age=24, weekly_study_hours=9.3),
+            Learner(learner_id="L2", branch="Citylight", age=27, weekly_study_hours=4.1)])
+db.commit()
+print(db.query(Learner).count())</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>2</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>SessionLocal = sessionmaker(bind=engine)</code> builds the factory, once, bound to the one engine.</li>
+      <li><code>def get_db():</code> is the dependency a route will call through <code>Depends()</code>.</li>
+      <li><code>db = next(get_db())</code> runs <code>get_db</code> up to its <code>yield</code>, exactly like FastAPI does.</li>
+      <li><code>db.commit()</code> saves both staged rows to the database.</li>
+    </ol>
+
+    <div class="nerdit-tip"><div><strong>Tip:</strong> Call <code>next(gen, None)</code> after you finish with a session you opened by hand, so its <code>finally</code> block really runs and closes it.</div></div>
+
+    <div class="nerdit-predict">
+      <div class="nerdit-predict-head">🤔 Try It — Predict the output</div>
+      <pre data-lang="python"><code>def connection():
+    print("open")
+    try:
+        yield "db"
+    finally:
+        print("close")
+
+gen = connection()
+value = next(gen)
+next(gen, None)
+print(value)</code></pre>
+      <details class="nerdit-predict-answer">
+        <summary>Show answer</summary>
+        <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>open
+close
+db</code></pre></div>
+        <p>The first <code>next()</code> runs up to <code>yield</code>; the second finishes the function, so <code>finally</code> prints <code>close</code> before the stored value prints.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="5 6">3 — ➕ Create and Read Learners</h2>
+
+    <p>A route needs a shape for the data it accepts before it can save anything. A <strong>Pydantic schema</strong>, as in Lesson 3, describes the fields a new record must have. The route turns that schema into a mapped row with <code>Learner(**payload.model_dump())</code>.</p>
+    <p>Reading one record by its key is the simplest query a session offers: <code>db.get(Learner, learner_id)</code> returns the row or <code>None</code>. Reading every record uses <code>db.query(Learner).all()</code>, which returns every mapped row as a Python list.</p>
+    <p>Call the create route before the read routes; a row has to exist before anything can find it.</p>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: Adding and Finding Future Vision's Learners</h3>
+    <p>Future Vision's admissions team wants to enrol a new learner, L3001 from Vesu, then look that learner up again.</p>
+
+    <h3 class="nerdit-runhead">@app.post("/learners") <span class="why">— Save a New Learner</span></h3>
+    <p>Calling <code>create_learner</code> directly, with a session from <code>get_db</code>, shows exactly what FastAPI does for a real <code>POST</code> request.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import FastAPI, Depends
+from pydantic import BaseModel
+app = FastAPI()
+class LearnerIn(BaseModel):
+    learner_id: str
+    branch: str
+    age: int
+    weekly_study_hours: float
+@app.post("/learners")
+def create_learner(payload: LearnerIn, db=Depends(get_db)):
+    db.add(Learner(**payload.model_dump()))
+    db.commit()
+    return payload
+db = next(get_db())
+new = LearnerIn(learner_id="L3001", branch="Vesu", age=22, weekly_study_hours=9.3)
+print(create_learner(new, db))</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>learner_id='L3001' branch='Vesu' age=22 weekly_study_hours=9.3</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>class LearnerIn(BaseModel):</code> is the shape a new learner's request body must match.</li>
+      <li><code>def create_learner(payload: LearnerIn, db=Depends(get_db)):</code> runs <code>get_db</code> first, as in section 2.</li>
+      <li><code>db.add(Learner(**payload.model_dump()))</code> turns the schema into a mapped row and stages it.</li>
+      <li><code>print(create_learner(new, db))</code> shows the same data FastAPI would send back as JSON.</li>
+    </ol>
+
+    <h3 class="nerdit-runhead">@app.get("/learners/{learner_id}") <span class="why">— Read One, Then Read All</span></h3>
+    <p><code>db.get</code> returns <code>None</code> for a missing key, so a missing learner raises a 404 instead of crashing.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import HTTPException
+@app.get("/learners/{learner_id}")
+def get_learner(learner_id: str, db=Depends(get_db)):
+    learner = db.get(Learner, learner_id)
+    if learner is None:
+        raise HTTPException(status_code=404, detail="Learner not found")
+    return learner.branch
+@app.get("/learners")
+def list_learners(db=Depends(get_db)):
+    return [row.learner_id for row in db.query(Learner).all()]
+db = next(get_db())
+print(get_learner("L1", db))
+print(list_learners(db))</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>Vesu
+['L1', 'L2', 'L3001']</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>learner = db.get(Learner, learner_id)</code> looks the row up by its primary key.</li>
+      <li><code>raise HTTPException(status_code=404, detail="Learner not found")</code> is the same error pattern as Lesson 4.</li>
+      <li><code>return [row.learner_id for row in db.query(Learner).all()]</code> turns every row into one id.</li>
+      <li><code>print(list_learners(db))</code> shows L3001 from the run above, alongside L1 and L2.</li>
+    </ol>
+
+    <div class="nerdit-predict">
+      <div class="nerdit-predict-head">🤔 Try It — Predict the output</div>
+      <pre data-lang="python"><code>rows = [{"id": "L1"}, {"id": "L2"}, {"id": "L3"}]
+print([r["id"] for r in rows])</code></pre>
+      <details class="nerdit-predict-answer">
+        <summary>Show answer</summary>
+        <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>['L1', 'L2', 'L3']</code></pre></div>
+        <p>The list comprehension pulls <code>"id"</code> out of every dict, the same way <code>list_learners</code> pulls <code>learner_id</code> out of every row.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="7 8">4 — ✏️ Update and Delete a Learner</h2>
+
+    <p>A <strong><code>PUT</code></strong> request replaces a whole record: the body you send becomes the new row, field for field. This differs from a form that only changes one box. Every required field must arrive, even the ones that are not changing.</p>
+    <p>Deleting removes a row for good. The route loads the record first, so a missing <code>learner_id</code> still gets a clear 404 instead of a silent no-op.</p>
+    <p>Load the record, check it exists, then act. That order keeps both routes from working on a learner that is not there.</p>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: Moving L2 to the Pal Branch</h3>
+    <p>L2 is transferring from Citylight to Pal, and later leaves the institute altogether.</p>
+
+    <h3 class="nerdit-runhead">@app.put("/learners/{learner_id}") <span class="why">— Overwrite Every Field</span></h3>
+    <p>Each line copies one field from the request onto the stored row, so nothing keeps its old value by accident.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>class LearnerUpdate(BaseModel):
+    branch: str
+    age: int
+    weekly_study_hours: float
+@app.put("/learners/{learner_id}")
+def update_learner(learner_id: str, payload: LearnerUpdate, db=Depends(get_db)):
+    learner = db.get(Learner, learner_id)
+    if learner is None:
+        raise HTTPException(status_code=404, detail="Learner not found")
+    learner.branch = payload.branch
+    learner.age = payload.age
+    learner.weekly_study_hours = payload.weekly_study_hours
+    db.commit()
+    return learner.branch
+db = next(get_db())
+updated = LearnerUpdate(branch="Pal", age=28, weekly_study_hours=5.0)
+print(update_learner("L2", updated, db))</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>Pal</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>learner = db.get(Learner, learner_id)</code> loads the row, the same call as section 3's read route.</li>
+      <li><code>learner.branch = payload.branch</code> overwrites the field directly on the mapped object.</li>
+      <li><code>db.commit()</code> saves every changed field in one write.</li>
+    </ol>
+
+    <div class="nerdit-compare">
+      <div class="nerdit-compare-bad">
+        <div class="nerdit-compare-head">Wrong — a partial body sent to PUT</div>
+        <pre data-lang="json"><code>{"branch": "Pal"}</code></pre>
+      </div>
+      <div class="nerdit-compare-good">
+        <div class="nerdit-compare-head">Right — the whole record sent to PUT</div>
+        <pre data-lang="json"><code>{"branch": "Pal", "age": 28,
+ "weekly_study_hours": 5.0}</code></pre>
+      </div>
+    </div>
+    <p>A partial body like this is rejected before your route ever runs. Every field in <code>LearnerUpdate</code> is required, so FastAPI answers with status code 422, the same error from Lesson 4. The fix is simple: always send every field on a <code>PUT</code>.</p>
+
+    <h3 class="nerdit-runhead">@app.delete("/learners/{learner_id}") <span class="why">— Remove the Row</span></h3>
+    <p><code>db.delete</code> only stages the removal; <code>db.commit()</code> still has to run it.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>@app.delete("/learners/{learner_id}")
+def delete_learner(learner_id: str, db=Depends(get_db)):
+    learner = db.get(Learner, learner_id)
+    if learner is None:
+        raise HTTPException(status_code=404, detail="Learner not found")
+    db.delete(learner)
+    db.commit()
+    return {"deleted": learner_id}
+db = next(get_db())
+print(delete_learner("L2", db))
+print(list_learners(db))</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>{'deleted': 'L2'}
+['L1', 'L3001']</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>db.delete(learner)</code> stages the row for removal.</li>
+      <li><code>return {"deleted": learner_id}</code> confirms which id is gone.</li>
+      <li><code>print(list_learners(db))</code> shows L2 missing from section 3's list.</li>
+    </ol>
+
+    <div class="nerdit-fillblank" data-answer="new_data">
+      <div class="nerdit-fillblank-head">✏️ Try It — Fill in the blank</div>
+      <p>A <code>PUT</code> replaces the whole record. Complete the line so <code>record</code> becomes exactly <code>new_data</code>, not a mix of both:</p>
+      <pre data-lang="python"><code>record = {"branch": "Vesu", "age": 24}
+new_data = {"branch": "Pal", "age": 28}
+record = <input class="nerdit-blank" size="10" aria-label="your answer">
+print(record)</code></pre>
+      <button class="nerdit-check-btn" onclick="nerditCheckBlank(this)">Check</button>
+      <span class="nerdit-check-msg" aria-live="polite"></span>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="9 10">5 — 🔍 Test Your API, Then Add Real Migrations</h2>
+
+    <p>The docs page from Lesson 1 can run every route here, with no script to write. Each gets a <strong>Try it out</strong> form.</p>
+    <p>A real table keeps changing after launch: a new column, a renamed one. A <strong>migration</strong> is a small script that carries an existing table to its new shape, without losing its rows.</p>
+    <p><code>Alembic</code> writes and runs these scripts. <code>Base.metadata.create_all()</code> only builds a table that does not exist yet, so a migration does the rest.</p>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: Testing and Growing Future Vision's Learner API</h3>
+    <p>Sections 1 to 4 now live in one file, ready to run.</p>
+
+    <div class="nerdit-run nerdit-program" data-run="offline" data-file="main.py">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import FastAPI, Depends, HTTPException
+from pydantic import BaseModel
+from sqlalchemy import create_engine, String, Integer, Float
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
+
+engine = create_engine("sqlite:///./learners.db")
+
+class Base(DeclarativeBase):
+    pass
+
+class Learner(Base):
+    __tablename__ = "learners"
+    learner_id: Mapped[str] = mapped_column(String, primary_key=True)
+    branch: Mapped[str] = mapped_column(String)
+    age: Mapped[int] = mapped_column(Integer)
+    weekly_study_hours: Mapped[float] = mapped_column(Float)
+
+Base.metadata.create_all(engine)
+SessionLocal = sessionmaker(bind=engine)
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+class LearnerIn(BaseModel):
+    learner_id: str
+    branch: str
+    age: int
+    weekly_study_hours: float
+
+class LearnerUpdate(BaseModel):
+    branch: str
+    age: int
+    weekly_study_hours: float
+
+app = FastAPI()
+
+@app.post("/learners")
+def create_learner(payload: LearnerIn, db=Depends(get_db)):
+    db.add(Learner(**payload.model_dump()))
+    db.commit()
+    return payload
+
+@app.get("/learners/{learner_id}")
+def get_learner(learner_id: str, db=Depends(get_db)):
+    learner = db.get(Learner, learner_id)
+    if learner is None:
+        raise HTTPException(status_code=404, detail="Learner not found")
+    return learner.branch
+
+@app.get("/learners")
+def list_learners(db=Depends(get_db)):
+    return [row.learner_id for row in db.query(Learner).all()]
+
+@app.put("/learners/{learner_id}")
+def update_learner(learner_id: str, payload: LearnerUpdate, db=Depends(get_db)):
+    learner = db.get(Learner, learner_id)
+    if learner is None:
+        raise HTTPException(status_code=404, detail="Learner not found")
+    learner.branch = payload.branch
+    learner.age = payload.age
+    learner.weekly_study_hours = payload.weekly_study_hours
+    db.commit()
+    return learner.branch
+
+@app.delete("/learners/{learner_id}")
+def delete_learner(learner_id: str, db=Depends(get_db)):
+    learner = db.get(Learner, learner_id)
+    if learner is None:
+        raise HTTPException(status_code=404, detail="Learner not found")
+    db.delete(learner)
+    db.commit()
+    return {"deleted": learner_id}
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=8000)</code></pre>
+      </div>
+      <script type="text/plain" class="nerdit-check">import warnings
+warnings.filterwarnings("ignore")
+
+from fastapi.testclient import TestClient
+
+client = TestClient(app)
+r1 = client.post("/learners", json={"learner_id": "L1", "branch": "Vesu", "age": 24, "weekly_study_hours": 9.3})
+print(r1.status_code, r1.json())
+r2 = client.put("/learners/L1", json={"branch": "Pal"})
+print(r2.status_code)
+r3 = client.put("/learners/L1", json={"branch": "Pal", "age": 25, "weekly_study_hours": 10.0})
+print(r3.status_code, r3.json())
+print(client.get("/learners").json())
+print(client.delete("/learners/L1").json())</script>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>200 {'learner_id': 'L1', 'branch': 'Vesu', 'age': 24, 'weekly_study_hours': 9.3}
+422
+200 Pal
+['L1']
+{'deleted': 'L1'}</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk nerdit-walk-full">
+      <li><code>from fastapi import FastAPI, Depends, HTTPException</code> brings in every name this file needs, plus <code>engine = create_engine("sqlite:///./learners.db")</code> from section 1.</li>
+      <li><code>class Base(DeclarativeBase):</code> is section 1's base class.</li>
+      <li><code>class Learner(Base):</code> maps the same four columns from section 1.</li>
+      <li><code>Base.metadata.create_all(engine)</code> creates the table, then builds section 2's session factory.</li>
+      <li><code>def get_db():</code> is section 2's per-request session, unchanged.</li>
+      <li><code>class LearnerIn(BaseModel):</code> is section 3's create schema.</li>
+      <li><code>class LearnerUpdate(BaseModel):</code> is section 4's update schema.</li>
+      <li><code>app = FastAPI()</code> starts the app every route registers onto.</li>
+      <li><code>@app.post("/learners")</code> is section 3's create route.</li>
+      <li><code>@app.get("/learners/{learner_id}")</code> is section 3's read-one route.</li>
+      <li><code>@app.get("/learners")</code> is section 3's read-all route.</li>
+      <li><code>@app.put("/learners/{learner_id}")</code> is section 4's update route.</li>
+      <li><code>learner.branch = payload.branch</code> starts the same field overwrites from section 4.</li>
+      <li><code>@app.delete("/learners/{learner_id}")</code> is section 4's delete route.</li>
+      <li><code>if __name__ == "__main__":</code> starts the server when you run this file directly.</li>
+    </ol>
+
+    <p>Save this file as main.py, activate your venv and run it, then open <code>/docs</code>:</p>
+    <div class="nerdit-terminal"><span class="nerdit-prompt">$ </span><span class="nerdit-cmd">uvicorn main:app --reload</span>
+<span class="nerdit-out">INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)</span>
+<span class="nerdit-comment"># Open http://127.0.0.1:8000/docs and try POST /learners</span></div>
+
+    <script type="application/json" class="nerdit-screen">
+{"id": "fsd06-docs-create", "app": "Swagger UI", "layout": "app",
+ "goal": "Try the POST /learners route from the docs page",
+ "path": ["/docs"],
+ "panel": [{"kind": "item", "text": "POST /learners"},
+           {"kind": "button", "label": "Try it out"},
+           {"kind": "button", "label": "Execute"}],
+ "steps": [{"do": "click", "path": ["POST /learners"]},
+           {"do": "click", "path": ["Try it out"]},
+           {"do": "click", "path": ["Execute"]}],
+ "alt": "Swagger UI listing POST /learners, with Try it out and Execute buttons below it.",
+ "takeaway": "The docs page sends a real POST request, with an editable body, and no script to write.",
+ "misconception": "You must write a Python script to test a POST route.",
+ "check": {"question": "What must you click before Execute becomes active?", "answer": "Try it out",
+           "reasoning": "Try it out opens the editable request form that Execute then sends."}}
+    </script>
+    <p>Click <code>POST /learners</code>, then Try it out, then Execute. A real request goes out with the sample body filled in. The other routes work the same way.</p>
+
+    <p>A real project rarely drops and rebuilds its table like this. Instead, it installs <code>Alembic</code> to compare your <code>Base</code> classes against the live database.</p>
+    <div class="nerdit-terminal"><span class="nerdit-prompt">$ </span><span class="nerdit-cmd">pip install alembic</span>
+<span class="nerdit-prompt">$ </span><span class="nerdit-cmd">alembic init alembic</span>
+<span class="nerdit-prompt">$ </span><span class="nerdit-cmd">alembic revision --autogenerate -m "add learners table"</span>
+<span class="nerdit-out">  Generating alembic/versions/3f1a9c2b_add_learners_table.py ... done</span>
+<span class="nerdit-prompt">$ </span><span class="nerdit-cmd">alembic upgrade head</span>
+<span class="nerdit-out">  Running upgrade  -&gt; 3f1a9c2b, add learners table</span></div>
+    <p><code>alembic revision --autogenerate</code> writes the script by comparing your models to the database. <code>alembic upgrade head</code> then runs it, keeping existing rows untouched.</p>
+
+    <div class="nerdit-predict">
+      <div class="nerdit-predict-head">🤔 Try It — Predict the output</div>
+      <pre data-lang="python"><code>def find(rows, key):
+    for row in rows:
+        if row["id"] == key:
+            return row
+    return None
+
+print(find([{"id": "L1"}, {"id": "L2"}], "L9"))</code></pre>
+      <details class="nerdit-predict-answer">
+        <summary>Show answer</summary>
+        <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>None</code></pre></div>
+        <p>No row matches <code>"L9"</code>, so the loop returns <code>None</code>. <code>db.get</code> returns the same value for a missing learner, which becomes a 404.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2>📌 Quick Reference</h2>
+    <div class="nerdit-cheatsheet">
+      <table>
+        <thead><tr><th>Keyword</th><th>What it does</th><th>Tiny example</th></tr></thead>
+        <tbody>
+          <tr><td><code>create_engine()</code></td><td>Opens one connection point to a database file</td><td><code>create_engine("sqlite:///./learners.db")</code></td></tr>
+          <tr><td><code>DeclarativeBase</code></td><td>Base class that maps a Python class to a table</td><td><code>class Base(DeclarativeBase): pass</code></td></tr>
+          <tr><td><code>mapped_column()</code></td><td>Marks one attribute as one column</td><td><code>age: Mapped[int] = mapped_column(Integer)</code></td></tr>
+          <tr><td><code>sessionmaker()</code></td><td>Builds a factory for fresh <code>Session</code>s</td><td><code>SessionLocal = sessionmaker(bind=engine)</code></td></tr>
+          <tr><td><code>get_db</code></td><td>Opens a <code>Session</code> per request, then closes it</td><td><code>db=Depends(get_db)</code></td></tr>
+          <tr><td><code>db.get()</code></td><td>Reads one row by its primary key, or <code>None</code></td><td><code>db.get(Learner, "L1")</code></td></tr>
+          <tr><td><code>PUT</code></td><td>Replaces the whole record, every field</td><td><code>@app.put("/learners/{learner_id}")</code></td></tr>
+          <tr><td>migration</td><td>A script that carries a live table to a new shape</td><td><code>alembic upgrade head</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>🧠 Practice</h2>
+    <div class="nerdit-practical">
+      <div class="nerdit-task">Task 1: Write <code>find_learner(rows, learner_id)</code> that returns the dict whose <code>"learner_id"</code> matches, or <code>None</code>. Test it on <code>[{"learner_id": "L1", "branch": "Vesu"}, {"learner_id": "L2", "branch": "Pal"}]</code> with <code>"L2"</code>.
+        <details class="nerdit-solution">
+          <summary>Show solution</summary>
+          <pre data-lang="python"><code>def find_learner(rows, learner_id):
+    for row in rows:
+        if row["learner_id"] == learner_id:
+            return row
+    return None
+
+rows = [{"learner_id": "L1", "branch": "Vesu"}, {"learner_id": "L2", "branch": "Pal"}]
+print(find_learner(rows, "L2"))</code></pre>
+          <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>{'learner_id': 'L2', 'branch': 'Pal'}</code></pre></div>
+        </details>
+      </div>
+      <div class="nerdit-task">Task 2: Write <code>replace_learner(rows, learner_id, new_data)</code> that returns a new list where the dict matching <code>learner_id</code> is replaced entirely by <code>new_data</code>, like a <code>PUT</code>. Test it on <code>[{"learner_id": "L1", "branch": "Vesu", "age": 24}, {"learner_id": "L2", "branch": "Pal", "age": 28}]</code>, replacing <code>"L2"</code> with <code>{"learner_id": "L2", "branch": "Citylight", "age": 30}</code>.
+        <details class="nerdit-solution">
+          <summary>Show solution</summary>
+          <pre data-lang="python"><code>def replace_learner(rows, learner_id, new_data):
+    return [new_data if row["learner_id"] == learner_id else row for row in rows]
+
+rows = [{"learner_id": "L1", "branch": "Vesu", "age": 24},
+        {"learner_id": "L2", "branch": "Pal", "age": 28}]
+print(replace_learner(rows, "L2", {"learner_id": "L2", "branch": "Citylight", "age": 30}))</code></pre>
+          <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>[{'learner_id': 'L1', 'branch': 'Vesu', 'age': 24}, {'learner_id': 'L2', 'branch': 'Citylight', 'age': 30}]</code></pre></div>
+        </details>
+      </div>
+      <div class="nerdit-task">Task 3 (challenge): Write <code>remove_learner(rows, learner_id)</code> that returns a new list with the matching dict removed, like a <code>DELETE</code>. Test it on <code>[{"learner_id": "L1", "branch": "Vesu"}, {"learner_id": "L2", "branch": "Pal"}]</code>, removing <code>"L1"</code>.
+        <details class="nerdit-solution">
+          <summary>Show solution</summary>
+          <pre data-lang="python"><code>def remove_learner(rows, learner_id):
+    return [row for row in rows if row["learner_id"] != learner_id]
+
+rows = [{"learner_id": "L1", "branch": "Vesu"}, {"learner_id": "L2", "branch": "Pal"}]
+print(remove_learner(rows, "L1"))</code></pre>
+          <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>[{'learner_id': 'L2', 'branch': 'Pal'}]</code></pre></div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+</div>
+<script>
+(function(){
+  if (typeof window.nerditCheckBlank !== "function") {
+    window.nerditCheckBlank = function(btn){
+      var box = btn.closest('.nerdit-fillblank');
+      var input = box.querySelector('.nerdit-blank');
+      var msg = box.querySelector('.nerdit-check-msg');
+      var accepted = (box.getAttribute('data-answer') || '').split('|');
+      var got = (input.value || '').trim().toLowerCase();
+      var ok = accepted.some(function(a){ return a.trim().toLowerCase() === got; });
+      msg.textContent = ok ? '✅ Correct!' : '❌ Not yet — try again.';
+      msg.className = 'nerdit-check-msg ' + (ok ? 'ok' : 'no');
+      input.classList.toggle('ok', ok);
+      input.classList.toggle('no', !ok);
+    };
+  }
+})();
+</script>

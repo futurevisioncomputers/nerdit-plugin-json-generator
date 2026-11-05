@@ -1,0 +1,33 @@
+{
+  "teaches": [
+    "ORM",
+    "engine",
+    "create_engine()",
+    "DeclarativeBase",
+    "Mapped",
+    "mapped_column()",
+    "Session",
+    "sessionmaker()",
+    "get_db",
+    "db.get()",
+    "db.query()",
+    "db.commit()",
+    "db.delete()",
+    "PUT",
+    "migration",
+    "Alembic"
+  ],
+  "uses": [
+    "Pydantic",
+    "BaseModel",
+    "Depends",
+    "HTTPException",
+    "FastAPI",
+    "route",
+    "yield",
+    "TestClient",
+    "model_dump()",
+    "SQLite",
+    "status code"
+  ]
+}

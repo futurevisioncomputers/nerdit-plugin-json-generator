@@ -1,0 +1,190 @@
+{
+  "lessonId": "fastapi-sqlalchemy-database-06",
+  "htmlSha256": "6096be928027fc21ebb2ec1527fd3fceb484fc908218f5ec1fb79a190aeef426",
+  "language": "hi",
+  "scenes": [
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-sqlalchemy-database-06",
+      "topic": 1,
+      "title": "A Class Becomes a Table",
+      "vector": "fastapi-sqlalchemy-database-06-t1-concept.svg",
+      "keyIdea": "SQLAlchemy maps a Python class to a real database table",
+      "terms": ["ORM", "engine"],
+      "focus": [],
+      "myth": null,
+      "narration": "FastAPI ko ek real database se jodna hai, sirf memory ki list se nahi. SQLAlchemy jaisa ORM, Python class ko seedha database se jodta hai. Pehle ek engine banate hain, jo SQLite file ka raasta batata hai. Phir Learner class likhi jaati hai, jisme har attribute ek type ke saath hota hai. Yeh class seedhe learners table ban jaati hai, bina ek line SQL likhe."
+    },
+    {
+      "kind": "table",
+      "lessonId": "fastapi-sqlalchemy-database-06",
+      "topic": 1,
+      "title": "Learner's Attributes, One Column Each",
+      "table": 1,
+      "highlight": ["row:learner_id"],
+      "keyIdea": "Each Mapped attribute becomes one column in the learners table",
+      "terms": ["DeclarativeBase"],
+      "focus": [],
+      "myth": null,
+      "narration": "Yeh table dikhata hai ki Learner class ka har attribute ek column banta hai. Learner, DeclarativeBase ko inherit karta hai, isi se yeh table ban paata hai. learner_id row primary key hai, jo har row ko unique banata hai, jaise branch, age aur weekly_study_hours bhi apna column paate hain."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-sqlalchemy-database-06",
+      "topic": 1,
+      "title": "create_engine and the Mapped Columns",
+      "code": 1,
+      "highlight": ["line:3", "line:8", "line:10", "line:15"],
+      "keyIdea": "create_engine plus DeclarativeBase builds the real table",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "Is poori file mein, sabse pehle engine SQLite file se connect karta hai, ek baar banaya aur baar baar reuse hota hai. `class Base(DeclarativeBase):` pehla kadam hai, jisse Learner ek mapped class ban jaata hai. Har column apne type ke saath likha gaya hai, jaise age ek Integer hai aur branch ek String. Jab table create hoti hai aur naam print karte hain, output learners aata hai, poori table ka naam."
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-sqlalchemy-database-06",
+      "topic": 2,
+      "title": "One Session, Opened and Closed",
+      "vector": "fastapi-sqlalchemy-database-06-t2-concept.svg",
+      "keyIdea": "get_db opens a Session for the request and closes it right after",
+      "terms": ["Session", "get_db"],
+      "focus": [],
+      "myth": null,
+      "narration": "Ek engine ek saath kai connections handle kar sakta hai, isliye har request ko apna khud ka database kaam karne ke liye jagah chahiye. Jab bhi ek request arrives, get_db function call hota hai, jo ek fresh Session opens karta hai. Route us Session se rows padhta ya likhta hai, jaise ek learner add karna ya dhoondna. Aakhir mein, chahe route me error ho ya na ho, session closes ho jaata hai, try aur finally block ke andar, jaise Lesson 5 mein yield seekha tha."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-sqlalchemy-database-06",
+      "topic": 2,
+      "title": "sessionmaker and get_db, Loading L1 and L2",
+      "code": 1,
+      "highlight": ["line:3", "line:4", "line:10", "line:13"],
+      "keyIdea": "yield pauses get_db until the route finishes using the Session",
+      "terms": [],
+      "focus": [],
+      "myth": {
+        "wrong": "get_db returns a Session like a normal function",
+        "right": "get_db uses yield, so it pauses, then cleans up after",
+        "narration": "Kuch log sochte hain get_db bas ek normal function hai jo Session return karta hai. Asal mein, `yield` ke wajah se yeh function pause hota hai, Session de deta hai, aur route khatam hone ke baad finally block me khud close ho jaata hai."
+      },
+      "narration": "sessionmaker, engine se bandha hua ek factory banata hai jo har baar ek fresh Session deti hai. get_db us factory se Session leta hai, `yield` se route ko de deta hai, aur baad mein use band kar deta hai. Phir hum do purani rows, L1 branch Vesu se aur L2 branch Citylight se, add_all se stage karte hain aur commit se database mein save karte hain. Count print karne par 2 aata hai, kyonki abhi sirf do rows hain."
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-sqlalchemy-database-06",
+      "topic": 3,
+      "title": "Create a Row, Then Read It Back",
+      "vector": "fastapi-sqlalchemy-database-06-t3-concept.svg",
+      "keyIdea": "A Pydantic schema shapes the body; db.get or db.query reads it back",
+      "terms": ["Pydantic schema"],
+      "focus": [],
+      "myth": null,
+      "narration": "Ek nayi learner add karne ke liye, pehle ek Pydantic schema batata hai ki request body mein kaunse fields hone chahiye, aur unke types kya hain. Route us schema ko ek Learner row mein badalta hai, aur commit se create a row hota hai, real database mein, memory mein nahi. Phir usi learner ko read it back karte hain, ek learner_id se ya poori list se, bina kisi data khoye."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-sqlalchemy-database-06",
+      "topic": 3,
+      "title": "The Create Route, Called Directly",
+      "code": 1,
+      "highlight": ["line:4", "line:10", "line:11", "line:16"],
+      "keyIdea": "create_learner stages the row, then commits it for real",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "`class LearnerIn(BaseModel):` body ka shape fix karta hai, chaar fields ke saath. create_learner us payload ko Learner row mein badal kar db.add se stage karta hai, phir db.commit se save karta hai. Naya learner L3001, branch Vesu ke saath, print hone par wahi data dikhata hai jo bheja gaya tha."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-sqlalchemy-database-06",
+      "topic": 3,
+      "title": "db.get for One, db.query for All",
+      "code": 2,
+      "highlight": ["line:4", "line:6", "line:10", "line:13"],
+      "keyIdea": "db.get returns None for a missing key; db.query(...).all() lists every row",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "get_learner ek learner_id se db.get karta hai, aur jab row na mile to 404 status code deta hai, crash nahi hota. list_learners har row ko db.query se nikaal kar sirf learner_id ki ek list banata hai, poori row nahi. L1 ka branch Vesu print hota hai, aur list mein L1, L2, L3001 teeno aa jaate hain, jo abhi tak create aur load hue hain."
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-sqlalchemy-database-06",
+      "topic": 4,
+      "title": "PUT Replaces the Whole Row",
+      "vector": "fastapi-sqlalchemy-database-06-t4-concept.svg",
+      "keyIdea": "PUT overwrites every field; delete removes the row for good",
+      "terms": ["PUT"],
+      "focus": [],
+      "myth": null,
+      "narration": "Jab learner ka data badalna ho, ek PUT request bheji jaati hai, jo update every field karti hai, sirf ek nahi. Route pehle row load karta hai, phir branch, age aur weekly_study_hours, teeno fields ko naye payload se overwrite karta hai. Jab learner institute chhod deta hai, delete the row se woh hamesha ke liye hat jaata hai."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-sqlalchemy-database-06",
+      "topic": 4,
+      "title": "update_learner Overwrites L2",
+      "code": 1,
+      "highlight": ["line:7", "line:10", "line:13"],
+      "keyIdea": "Every field is copied from the payload, so none keeps its old value",
+      "terms": [],
+      "focus": [],
+      "myth": {
+        "wrong": "Sending just {\"branch\": \"Pal\"} updates only the branch",
+        "right": "LearnerUpdate needs every field, so a partial body gets 422",
+        "narration": "Bahut log sochte hain sirf branch bhejne se sirf branch badlega, jaise ek form. Asal mein `LearnerUpdate` ke teeno fields chahiye, age aur weekly_study_hours bhi, isliye partial body par FastAPI 422 status code wapas deta hai, route chalne se pehle hi."
+      },
+      "narration": "update_learner pehle `db.get(Learner, learner_id)` se row load karta hai, 404 agar na mile. Phir teeno fields, branch, age aur weekly_study_hours, naye payload se overwrite hote hain. L2 ka branch ab Pal print hota hai, Citylight se badal kar."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-sqlalchemy-database-06",
+      "topic": 4,
+      "title": "delete_learner Removes L2",
+      "code": 2,
+      "highlight": ["line:6", "line:8", "line:11"],
+      "keyIdea": "db.delete stages the removal; db.commit makes it real",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "delete_learner bhi pehle row dhoondta hai, warna 404 deta hai. Phir `db.delete(learner)` row ko stage karta hai, aur db.commit se woh database se hat jaata hai. Print karne par deleted L2 aata hai, aur list mein sirf L1 aur L3001 reh jaate hain."
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-sqlalchemy-database-06",
+      "topic": 5,
+      "title": "Try It Out, Then Execute",
+      "vector": "fastapi-sqlalchemy-database-06-t5-docs.svg",
+      "keyIdea": "The docs page sends a real request with no script to write",
+      "terms": ["Try it out"],
+      "focus": [],
+      "myth": null,
+      "narration": "FastAPI apne aap ek interactive docs page banata hai, jahan har route ek row jaisa dikhta hai. Paanch routes bane hain, create, read, update aur delete, sabko yahaan test kiya ja sakta hai, bina koi script likhe. Try it out button par click karke, request body edit karke, phir click Execute karne se a real request bhej jaati hai, sample body ke saath pehle se bhara hua. POST, GET, PUT aur DELETE, sab isi tarah test ho jaate hain, ek hi page se."
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-sqlalchemy-database-06",
+      "topic": 5,
+      "title": "Alembic Carries Rows to a New Shape",
+      "vector": "fastapi-sqlalchemy-database-06-t5-migration.svg",
+      "keyIdea": "A migration changes a live table's shape without losing its rows",
+      "terms": ["migration"],
+      "focus": [],
+      "myth": {
+        "wrong": "create_all() updates a table that already has rows",
+        "right": "create_all() only builds a table that does not exist yet",
+        "narration": "Kuch log sochte hain `Base.metadata.create_all()` baar baar chalane se table update ho jaata hai. Asal mein yeh sirf naya table banata hai; jo table pehle se hai, wahan kuch nahi badalta, isliye ek real migration chahiye hota hai."
+      },
+      "narration": "Launch ke baad bhi table ka old table shape badal sakta hai, jaise ek naya column ya ek column ka naam badalna. Ek migration ek chhota script hai jo us purane shape ko naye shape mein le jaata hai, bina ek bhi row khoye. Alembic migration likhne aur chalane ka kaam karta hai, aapke models ko live database se compare karke, aur sirf farak ka script banata hai."
+    }
+  ],
+  "practise": [
+    {"topic": 1, "tryIt": "fill in the base class for Learner", "task": null},
+    {"topic": 2, "tryIt": "predict what connection() prints", "task": null},
+    {"topic": 3, "tryIt": "predict the id list comprehension", "task": null},
+    {"topic": 4, "tryIt": "fill in how PUT replaces a whole record", "task": null},
+    {"topic": 5, "tryIt": "predict what find() returns for L9", "task": null}
+  ],
+  "skipTopics": []
+}

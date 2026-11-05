@@ -1,0 +1,66 @@
+{
+  "lessonQuestions": [
+    {
+      "correctOptionIndex": 0,
+      "options": [
+        "Raises an HTTPException with status_code 404",
+        "Returns an empty string",
+        "Creates a new row with that id",
+        "Crashes the whole app with no response"
+      ],
+      "text": "`db.get(Learner, learner_id)` returns `None` when no row matches. What does `get_learner` do next?"
+    },
+    {
+      "correctOptionIndex": 2,
+      "options": [
+        "200, because branch alone is enough to update",
+        "404, because L2 does not exist",
+        "422, because age and weekly_study_hours are missing",
+        "500, because the server crashes"
+      ],
+      "text": "A client sends `{\"branch\": \"Pal\"}` as the body of a `PUT /learners/L2` request, but `LearnerUpdate` requires `branch`, `age` and `weekly_study_hours`. What status code comes back?"
+    },
+    {
+      "correctOptionIndex": 1,
+      "options": [
+        "It would still be saved, because db.get already wrote it",
+        "It would stay only on the Python object in memory, never reaching the database",
+        "SQLAlchemy would raise an error immediately",
+        "FastAPI would commit it automatically on the next request"
+      ],
+      "text": "`update_learner` loads the row with `db.get`, copies every field from `payload` onto it, then calls `db.commit()`. If you skipped `db.commit()`, what would happen to the change?"
+    }
+  ],
+  "assessmentQuestions": [
+    {
+      "correctOptionIndex": 0,
+      "options": [
+        "Nothing; it leaves the existing table and its rows untouched",
+        "Drops the table and rebuilds it empty",
+        "Adds a new column for every attribute, even unchanged ones",
+        "Raises an error because the table already exists"
+      ],
+      "text": "`Base.metadata.create_all(engine)` runs once, right after `Learner` is defined. What does it do if the `learners` table already exists?"
+    },
+    {
+      "correctOptionIndex": 0,
+      "options": [
+        "db.get reads one row by its primary key or None; db.query(...).all() reads every row as a list",
+        "db.get only works inside a route; db.query works anywhere",
+        "db.query is faster because it skips the primary key index",
+        "db.get writes a new row if none matches; db.query never writes"
+      ],
+      "text": "Both `db.get(Learner, learner_id)` and `db.query(Learner).all()` read from the `learners` table. What is the real difference between them?"
+    },
+    {
+      "correctOptionIndex": 0,
+      "options": [
+        "create_all only creates tables that do not exist yet; it never changes one that is already there",
+        "create_all deletes every row before adding the column",
+        "create_all only works with SQLite, never a real server",
+        "create_all requires Alembic to be installed first"
+      ],
+      "text": "After a table already has real rows, you add a new column to the `Learner` class. Why does the lesson reach for Alembic instead of calling `Base.metadata.create_all(engine)` again?"
+    }
+  ]
+}
