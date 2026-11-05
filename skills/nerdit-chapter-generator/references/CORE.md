@@ -1196,6 +1196,7 @@ Six primitives plus the interactive blocks. Nothing else gets a box.
 | Excel sheet | `nerdit-xl-sheet` + `data-grid` (runners/excel.md) | as needed |
 | Excel formula runner | `nerdit-xl` + `nerdit-xl-input` + `nerditRunExcel` (runners/excel.md) | ≤1 per lesson |
 | Excel pivot builder | `nerdit-xl-pivotbox` + `nerditPivotChanged` (runners/excel.md) | ≤1 per lesson |
+| Experiment | `nerdit-sim`: the learner changes an input and sees the rule decide (references/sim.md, read only when you add one) | ≤1 per lesson, only where "change ___, see ___" teaches |
 | Cheatsheet | `nerdit-cheatsheet` (v8) | exactly 1, closing section |
 | Practice | `nerdit-practical` + `nerdit-solution` (v8) | 2–3 tasks |
 

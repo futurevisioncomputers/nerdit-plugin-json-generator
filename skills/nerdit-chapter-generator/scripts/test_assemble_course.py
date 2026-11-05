@@ -29,6 +29,11 @@ def test_detect_assets_covers_all_four_engines():
     assert detect_assets("uses nerdit-plot-runner.js") == ["/nerdit-plot-runner.js"]
 
 
+def test_detect_assets_finds_the_experiment_renderer():
+    # Owner, 2026-11-05: a lesson with a nerdit-sim loads /nerdit-sim.js like a runner.
+    assert detect_assets('<script src="/nerdit-sim.js"></script>') == ["/nerdit-sim.js"]
+
+
 def test_detect_assets_url_prefix_is_site_root():
     assert all(u.startswith("/nerdit-") for u in detect_assets("nerdit-sql-runner.js"))
 

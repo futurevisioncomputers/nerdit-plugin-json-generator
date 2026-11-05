@@ -46,6 +46,10 @@ Before writing anything:
   lesson genuinely needs a different one, read that fragment before using it.
 - `RUNNER: none` means no live runner — practice comes from `nerdit-predict` and
   `nerdit-fillblank` only.
+- **Experiment (owner, 2026-11-05).** When one section's idea is best learned by changing an
+  input and watching the rule decide (two ways on one input, a rule that passes or fails, a
+  process that stops), add one `nerdit-sim`: read `references/sim.md` first, and only then.
+  At most one per lesson; most lessons have none. The gate runs its model on every case.
 - **Python and plot lessons:** read `runners/python.md` §Lesson data and §Rules even when the
   runner is `plot`. Data comes from one `nerdit-dataset` block (at most 40 KB, self-contained,
   copied from the course world). Every Try It starter stands alone; run lines build in page

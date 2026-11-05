@@ -700,6 +700,7 @@ def verify_code_accuracy(rep: Report, out: dict, new_course: bool = False) -> No
     answers, quiz) stay in check_python_outputs / check_quiz."""
     # Lazy imports: these modules import this one's DOM helpers.
     from check_code_prose import check_lesson as code_prose, repeat_problems
+    from check_sims import check_lesson as sim_problems
     from check_modern_code import lesson_code, scan
     from practice_files import name_problems, read_spec
     r_fails, r_warns = repeat_problems(out.get("lessons", []), new_course)
@@ -712,6 +713,8 @@ def verify_code_accuracy(rep: Report, out: dict, new_course: bool = False) -> No
         lid, html = lesson.get("id", "?"), lesson.get("content", "")
         for problem in code_prose(html):
             rep.check(False, f"{lid}: prose-code: {problem}")
+        for problem in sim_problems(html):
+            rep.check(False, f"{lid}: sim: {problem}")
         for i, code in enumerate(lesson_code(html), 1):
             for hit in scan(code, new_course):
                 rep.check(False, f"{lid}: modern: block {i} line {hit['line']}: {hit['found']} -> {hit['instead']}")

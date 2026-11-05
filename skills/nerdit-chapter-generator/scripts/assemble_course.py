@@ -33,7 +33,7 @@ from titlecase import fix_headings, title_case
 ASSET_URL_BASE = ""
 ENGINE_FILES = [
     "nerdit-plot-runner.js", "nerdit-excel-engine.js",
-    "nerdit-sql-runner.js", "nerdit-python-runner.js",
+    "nerdit-sql-runner.js", "nerdit-python-runner.js", "nerdit-sim.js",
 ]
 
 # Firestore hard-caps a single document at 1,048,576 bytes. The whole course object
