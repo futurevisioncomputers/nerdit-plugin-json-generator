@@ -17,13 +17,16 @@ def test_skill_md_names_only_scripts_that_exist():
 
 def test_writer_knows_refresh_mode_and_voice():
     writer = (ROOT / "agents" / "nerdit-lesson-writer.md").read_text(encoding="utf-8")
-    assert "## Refresh mode" in writer and "references/voice.md" in writer and "data-visual" in writer
+    modes = (HERE.parent / "references" / "writer-modes.md").read_text(encoding="utf-8")
+    assert "references/writer-modes.md" in writer and "SOURCE_PATH" in writer
+    assert "## Refresh mode" in modes and "## Reform mode" in modes and "## Refresh mode" not in writer
+    assert "references/voice.md" in writer and "data-visual" in writer + modes
 
 
 def test_writer_trim_rule_matches_the_refresh_guard():
     # check_refresh.py fails a trim that seeds a view, trigger or computed table;
     # the writer and CORE.md must say the same, or the writer keeps tripping the guard.
-    writer = (ROOT / "agents" / "nerdit-lesson-writer.md").read_text(encoding="utf-8")
+    writer = (HERE.parent / "references" / "writer-modes.md").read_text(encoding="utf-8")
     core = (HERE.parent / "references" / "CORE.md").read_text(encoding="utf-8")
     trim = " ".join(writer.split("- `trim`", 1)[1].split("\n\n", 1)[0].split())
     assert "Never seed a view, a trigger or a computed table" in trim
@@ -33,7 +36,7 @@ def test_writer_trim_rule_matches_the_refresh_guard():
 
 
 def test_plugin_version_is_3_14_0():
-    assert json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))["version"] == "3.19.0"
+    assert json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))["version"] == "3.20.0"
 
 
 def test_skill_md_matches_the_v11_figure_rules():

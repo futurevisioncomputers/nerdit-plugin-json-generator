@@ -115,3 +115,34 @@ def test_video_flag_appends_only_the_scene_rules(tmp_path):
     assert "One topic per clip" in text and "practise" in text
     assert "Voice and B-roll" not in text and "## Video part (only when VIDEO_PATH is given)" in text
     assert "One topic per clip" not in rp.build(tmp_path, "code", False).read_text(encoding="utf-8")
+
+
+def test_runner_flag_packs_voice_runner_and_deprecated(tmp_path):
+    path = rp.build(tmp_path, "code", False, core=CORE, figures=FIGURES, runner="python")
+    assert path.name == "rules-code-python.md"
+    text = path.read_text(encoding="utf-8")
+    for name in ("voice.md", "runners/python.md", "deprecated.md"):
+        assert f"# Included in full: references/{name}" in text
+    assert rp.VOICE.read_text(encoding="utf-8").strip() in text
+    assert "Do not open those files again" in text
+    assert "runners/sql.md" not in text
+
+
+def test_plot_runner_also_packs_python_and_spreadsheet_excel_skips_deprecated(tmp_path):
+    plot = rp.build(tmp_path, "code", False, core=CORE, figures=FIGURES, runner="plot").read_text(encoding="utf-8")
+    assert "references/runners/plot.md" in plot and "references/runners/python.md" in plot
+    excel = rp.build(tmp_path, "spreadsheet", False, core=CORE, figures=FIGURES, runner="excel")
+    text = excel.read_text(encoding="utf-8")
+    assert "references/runners/excel.md" in text and "references/deprecated.md" not in text
+
+
+def test_runner_none_packs_only_voice_and_unknown_runner_is_refused(tmp_path):
+    text = rp.build(tmp_path, "visual", False, core=CORE, figures=FIGURES, runner="none").read_text(encoding="utf-8")
+    assert "references/voice.md" in text and "references/runners/" not in text
+    with pytest.raises(ValueError):
+        rp.build(tmp_path, "code", False, core=CORE, figures=FIGURES, runner="cobol")
+
+
+def test_no_runner_flag_keeps_the_old_pack(tmp_path):
+    text = rp.build(tmp_path, "code", False, core=CORE, figures=FIGURES).read_text(encoding="utf-8")
+    assert "Included in full" not in text

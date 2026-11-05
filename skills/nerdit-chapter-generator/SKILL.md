@@ -325,10 +325,13 @@ usage limit that hits mid-course then stops at most one group, and the next sess
 the files already on disk instead of re-reading every running writer.
 
 **Rule pack (saves tokens on every writer):** before spawning, run once per course
-`python scripts/rules_pack.py --preset <preset> --out <workdir>`, and once more with `--project`
-when the course has a capstone. It prints the pack path. Each writer reads that one file instead
-of CORE.md and figures.md in full (about 36% fewer characters for a code course) and opens only
-the figure templates it draws. Give the capstone lesson the `-project` pack.
+`python scripts/rules_pack.py --preset <preset> --runner <RUNNER> --out <workdir>`, and once more
+with `--project` when the course has a capstone. It prints the pack path. Each writer reads that
+one file instead of CORE.md, figures.md, voice.md, its runner fragment and deprecated.md (about
+30% fewer characters for a Python course, and one read instead of five), and opens only the
+figure templates it draws. Give the capstone lesson the `-project` pack. Always pass `--runner`
+(use `none` for no runner): without it the pack holds only CORE.md and figures.md, and the
+writer must open the other files itself.
 
 **Video part (when the course gets a video, Step 1.7):** build the packs with `--video` too, pass
 each writer `VIDEO_PATH = <workdir>/<id>.video.json` and add `--video` to its GATE command. The
@@ -602,6 +605,15 @@ Step 4c has already decided everything mechanical. Spawn `nerdit-qa-validator` a
 assembled `<workdir>/course-<chaptername>_output.json` for the rest — the checks that need a
 reader, not a parser. Always pass the input JSON path (it needs lesson order) and the
 `<workdir>` (for each lesson's `<id>.concepts.json`).
+
+**Digest first (saves about a third of the validator's input):** before spawning, run
+
+    python scripts/qa_digest.py --course <workdir>/course-<chaptername>_output.json --out <workdir>/_digest
+
+and pass `DIGEST_DIR = <workdir>/_digest`. Each `<id>.md` holds the lesson as plain text: every
+heading, paragraph, table, code block, figure label and caption, `<details>` answer, practice
+spec and question with its marked answer. Only tag attributes, styles, SVG geometry and helper
+scripts are gone, and Step 4c already judged those. Re-run it after any regeneration.
 
 What the agent owns, and nothing else:
 

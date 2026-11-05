@@ -20,6 +20,14 @@ The input file is required for the input-mirroring checks and the concept-sequen
 the workdir is required for the concept-manifest check. If either was not provided, skip
 the checks that need it and say so in one line.
 
+**Read the digests, not the course JSON.** When the prompt gives `DIGEST_DIR`, read
+`<DIGEST_DIR>/<id>.md` for each lesson instead of the lesson's `content` in the course JSON. A
+digest is that lesson as plain text: headings, prose, tables, every code block, every word
+drawn in a figure (labels, markers ① ② ③, `aria-label`), captions, `<details>` answers, the
+practice-files spec, and its lesson and assessment questions with the marked answer. Each
+`nerdit-*` component is named on its own line in page order. Open the course JSON's raw HTML
+for a lesson only when a check needs exact markup the digest does not carry; say which check.
+
 ## What you own — and what you must not touch
 
 `scripts/verify_course.py` runs before you (skill Step 4c) and has already decided every

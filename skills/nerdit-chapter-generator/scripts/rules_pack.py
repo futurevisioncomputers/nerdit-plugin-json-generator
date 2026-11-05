@@ -3,6 +3,10 @@
 
     python rules_pack.py --preset code [--project] --out <workdir>
 
+With --runner it also packs voice.md, that runner's fragment and (code or data) deprecated.md,
+so a writer makes one read instead of four or five; the file is then
+rules-<preset>[-project]-<runner>[-video].md.
+
 Writes <workdir>/_rules/rules-<preset>[-project].md and one file per figure template in
 <workdir>/_rules/figures/<nn>-<name>.md. The orchestrator names the pack on the writer prompt's
 RULES: line, so every writer reads ~60% of the two files instead of all of them.
@@ -26,6 +30,10 @@ from pathlib import Path
 REFS = Path(__file__).resolve().parent.parent / "references"
 CORE = REFS / "CORE.md"
 FIGURES = REFS / "figures.md"
+VOICE = REFS / "voice.md"
+DEPRECATED = REFS / "deprecated.md"
+RUNNERS = REFS / "runners"
+DATA_RUNNERS = ("python", "plot", "sql")
 STORY_SKILL = Path(__file__).resolve().parents[2] / "nerdit-story-video" / "SKILL.md"
 PRESETS = ("code", "spreadsheet", "visual", "quantitative", "conversational")
 HEADING = re.compile(r"^(#{1,6}) ")
@@ -92,10 +100,27 @@ def video_rules(skill: str | None = None) -> str:
     return skill[start + len("<!-- video-pack:start -->"):end].strip("\n")
 
 
+def extras(preset: str, runner: str | None) -> list[tuple[str, Path]]:
+    """The small reference files a writer would otherwise open one by one: voice.md always, the
+    course's runner fragment (plot also takes python.md, whose §Lesson data and §Rules it follows),
+    and deprecated.md for a code course or a data runner."""
+    files = [("voice.md", VOICE)]
+    if runner and runner != "none":
+        for name in (["python", "plot"] if runner == "plot" else [runner]):
+            path = RUNNERS / f"{name}.md"
+            if not path.is_file():
+                raise ValueError(f"unknown runner {runner!r}: {path} does not exist")
+            files.append((f"runners/{name}.md", path))
+    if preset == "code" or runner in DATA_RUNNERS:
+        files.append(("deprecated.md", DEPRECATED))
+    return files
+
+
 def build(workdir: Path, preset: str, project: bool, core: str | None = None, figures: str | None = None,
-          video: bool = False) -> Path:
+          video: bool = False, runner: str | None = None) -> Path:
     if preset not in PRESETS:
         raise ValueError(f"unknown preset {preset!r}; one of {', '.join(PRESETS)}")
+    added = extras(preset, runner) if runner else []
     core = CORE.read_text(encoding="utf-8") if core is None else core
     figures = FIGURES.read_text(encoding="utf-8") if figures is None else figures
     folder = Path(workdir) / "_rules"
@@ -105,17 +130,25 @@ def build(workdir: Path, preset: str, project: bool, core: str | None = None, fi
         (folder / "figures" / f"{stem}.md").write_text(body, encoding="utf-8")
     index = "\n".join(f"- {body.splitlines()[0][3:]} → `{(folder / 'figures' / f'{stem}.md').as_posix()}`"
                       for stem, body in templates)
-    head = (f"<!-- Rule pack: CORE.md + figures.md for the {preset} preset"
+    also = "".join(f" + {name}" for name, _ in added)
+    head = (f"<!-- Rule pack: CORE.md + figures.md{also} for the {preset} preset"
             f"{' (capstone chapter)' if project else ''}. Section numbers are CORE.md's and figures.md's. -->\n\n")
+    if added:
+        head += ("**This pack already holds " + ", ".join(f"`{name}`" for name, _ in added)
+                 + " in full (end of file). Do not open those files again.**\n\n")
     text = (head + core_pack(core, preset, project) + "\n---\n\n" + rules
             + "\n## Figure templates — read only the one you draw\n\n"
               "`figures.md §N` means the template file below. Copy its markup and swap the labels.\n\n"
             + index + "\n")
+    for name, path in added:
+        text += (f"\n---\n\n# Included in full: references/{name}\n\n"
+                 + path.read_text(encoding="utf-8").strip() + "\n")
     if video:
         text += ("\n## Video part (only when VIDEO_PATH is given)\n\n"
                  "From nerdit-story-video SKILL.md §1. Write it after the lesson's gate passes.\n\n"
                  + video_rules() + "\n")
-    path = folder / f"rules-{preset}{'-project' if project else ''}{'-video' if video else ''}.md"
+    tail = f"-{runner}" if runner else ""
+    path = folder / f"rules-{preset}{'-project' if project else ''}{tail}{'-video' if video else ''}.md"
     path.write_text(text, encoding="utf-8")
     return path
 
@@ -126,15 +159,20 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--project", action="store_true", help="the capstone chapter: keep CORE.md §8b")
     ap.add_argument("--out", required=True, help="the course work folder")
     ap.add_argument("--video", action="store_true", help="add the story-video scene rules for VIDEO_PATH")
+    ap.add_argument("--runner", default=None,
+                    help="the course RUNNER (python, sql, excel, plot or none): also packs voice.md, "
+                         "that runner's fragment and, for code or data, deprecated.md")
     args = ap.parse_args(argv)
     try:
-        path = build(Path(args.out), args.preset, args.project, video=args.video)
+        path = build(Path(args.out), args.preset, args.project, video=args.video, runner=args.runner)
     except (OSError, ValueError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
     size = len(path.read_text(encoding="utf-8"))
     full = len(CORE.read_text(encoding="utf-8")) + len(FIGURES.read_text(encoding="utf-8"))
-    print(f"wrote {path} ({size:,} chars; CORE.md + figures.md are {full:,})")
+    if args.runner:
+        full += sum(len(p.read_text(encoding="utf-8")) for _, p in extras(args.preset, args.runner))
+    print(f"wrote {path} ({size:,} chars; the files it replaces are {full:,})")
     return 0
 
 
