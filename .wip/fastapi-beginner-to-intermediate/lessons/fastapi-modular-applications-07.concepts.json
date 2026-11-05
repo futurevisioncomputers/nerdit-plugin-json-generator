@@ -1,0 +1,24 @@
+{
+  "teaches": [
+    "module",
+    "package",
+    "__init__.py",
+    "APIRouter",
+    "router.routes",
+    "include_router()",
+    "prefix",
+    "tags"
+  ],
+  "uses": [
+    "FastAPI",
+    "route",
+    "Depends",
+    "HTTPException",
+    "get_db",
+    "Learner",
+    "yield",
+    "BaseModel",
+    "Uvicorn",
+    "status code"
+  ]
+}

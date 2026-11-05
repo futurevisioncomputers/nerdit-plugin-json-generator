@@ -1,0 +1,647 @@
+<div class="nerdit-wrapper nerdit-simple" style="counter-reset:practical-counter challenge-counter;">
+
+  <h1>🧩 Modular Application Development</h1>
+
+  <div class="nerdit-info-box"><strong>📘 Lesson Overview:</strong> How do you keep a FastAPI project readable once it has dozens of routes? You will split a growing app into a <code>routers</code> package, build one <code>APIRouter</code> for enquiries and one for learners, wire both into <code>main.py</code> with <code>include_router</code>, and run the project from the right folder.</div>
+
+  <div class="nerdit-lesson-meta">
+    <span class="nerdit-meta-pill">⏱ 20 min</span>
+    <span class="nerdit-badge beginner">Beginner</span>
+  </div>
+
+  <div class="nerdit-figure" data-visual="course-map" style="max-width:440px">
+    <svg viewBox="0 0 360 78" role="img" aria-label="Course map: this lesson is the build stage, second of five: setup, build, secure, scale, ship.">
+      <rect x="4" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="36" y="35" text-anchor="middle" fill="var(--tx-m)">Setup</text>
+      <rect x="76" y="14" width="64" height="32" rx="6" fill="var(--nb)" stroke="var(--nb)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="108" y="35" text-anchor="middle" fill="var(--white)">Build</text>
+      <rect x="148" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="180" y="35" text-anchor="middle" fill="var(--tx-m)">Secure</text>
+      <rect x="220" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="252" y="35" text-anchor="middle" fill="var(--tx-m)">Scale</text>
+      <rect x="292" y="14" width="64" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+      <text class="nerdit-flow-text" x="324" y="35" text-anchor="middle" fill="var(--tx-m)">Ship</text>
+      <text class="nerdit-flow-text" x="108" y="68" text-anchor="middle" fill="var(--nb)">▲ you are here</text>
+    </svg>
+    <div class="nerdit-figure-caption">You are here: the last build-stage lesson, turning one growing file into a small project.</div>
+  </div>
+
+  <div class="nerdit-info-box nerdit-data-note"><strong>Data note:</strong> All enquiry and learner records shown in this lesson are synthetic, made for teaching. Future Vision Computer Institute's name is used with permission.</div>
+
+  <div class="nerdit-demo-table">
+    <div class="nerdit-demo-table-label">Demo Data — <code>enquiries</code> (6 rows), as in Lesson 1</div>
+    <table>
+      <thead><tr><th>enquiry_id</th><th>branch</th><th>course</th><th>follow_ups</th></tr></thead>
+      <tbody>
+        <tr><td>E1</td><td>Citylight</td><td>Python Professional</td><td>1</td></tr>
+        <tr><td>E2</td><td>Citylight</td><td>Office &amp; GenAI</td><td>3</td></tr>
+        <tr><td>E3</td><td>Pal</td><td>Business Analytics</td><td>1</td></tr>
+        <tr><td>E5</td><td>Vesu</td><td>Excel &amp; Power BI</td><td>1</td></tr>
+        <tr><td>E6</td><td>Pal</td><td>Python Professional</td><td>1</td></tr>
+        <tr><td>E7</td><td>Vesu</td><td>Business Analytics</td><td>4</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <section>
+    <h2 data-outline="1 2">1 — 🔍 Why Split an Application Into Files</h2>
+
+    <p>One file keeps growing every time you add a route, until scrolling past yesterday's code takes longer than writing today's. A <strong>module</strong> is one Python file. Splitting a big app into several modules keeps each one focused on one job. It is like one spreadsheet tab per topic, instead of one giant tab.</p>
+    <p>Python groups related modules into a <strong>package</strong>: a folder that holds an <code>__init__.py</code> file. That file can stay completely empty. <b>Its only job is to mark the folder</b> as one importable unit. Without it, Python treats the folder as a pile of loose scripts, not a package.</p>
+    <p>Reach for a package once a project has more than two or three groups of routes. A single small app with five routes rarely needs one yet.</p>
+
+    <div class="nerdit-figure" data-visual="diagram" style="max-width:380px">
+      <svg viewBox="0 0 360 260" role="img" aria-label="The project folder holds main.py and a routers package; the routers package holds __init__.py, enquiries.py and learners.py.">
+        <rect x="8" y="8" width="344" height="244" rx="10" fill="var(--bg-soft)" stroke="var(--nb)" stroke-width="1.5"/>
+        <text class="nerdit-flow-text" x="24" y="32" fill="var(--nb)">fastapi-modular-app/</text>
+        <rect x="24" y="44" width="312" height="32" rx="6" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+        <text class="nerdit-flow-text" x="40" y="65" fill="var(--tx)">main.py</text>
+        <rect x="24" y="86" width="312" height="150" rx="8" fill="var(--white)" stroke="var(--orange)" stroke-width="1.5"/>
+        <text class="nerdit-flow-text" x="40" y="110" fill="var(--orange)">routers/ — a package</text>
+        <rect x="40" y="122" width="280" height="30" rx="6" fill="var(--bg-soft)" stroke="var(--bd-soft)" stroke-width="1"/>
+        <text class="nerdit-flow-text" x="56" y="142" fill="var(--tx-m)">__init__.py</text>
+        <rect x="40" y="158" width="280" height="30" rx="6" fill="var(--bg-soft)" stroke="var(--bd-soft)" stroke-width="1"/>
+        <text class="nerdit-flow-text" x="56" y="178" fill="var(--tx)">enquiries.py</text>
+        <rect x="40" y="194" width="280" height="30" rx="6" fill="var(--bg-soft)" stroke="var(--bd-soft)" stroke-width="1"/>
+        <text class="nerdit-flow-text" x="56" y="214" fill="var(--tx)">learners.py</text>
+      </svg>
+      <div class="nerdit-figure-caption"><code>main.py</code> sits beside the <code>routers</code> package; <code>__init__.py</code> marks that folder as one unit Python can import.</div>
+    </div>
+
+    <p>Create this layout once, before writing any router. The folder name can be anything; <code>routers</code> is the name this lesson, and most FastAPI projects, use.</p>
+    <div class="nerdit-terminal"><span class="nerdit-prompt">$ </span><span class="nerdit-cmd">mkdir fastapi-modular-app</span>
+<span class="nerdit-prompt">$ </span><span class="nerdit-cmd">cd fastapi-modular-app</span>
+<span class="nerdit-prompt">$ </span><span class="nerdit-cmd">mkdir routers</span>
+<span class="nerdit-prompt">$ </span><span class="nerdit-cmd">type nothing &gt; routers/__init__.py</span>
+<span class="nerdit-comment"># macOS/Linux: touch routers/__init__.py</span></div>
+
+    <div class="nerdit-tip"><div><strong>Tip:</strong> An empty <code>__init__.py</code> is normal. Add code to it only when a package needs to run setup the moment it is imported.</div></div>
+
+    <div class="nerdit-fillblank" data-answer="__init__">
+      <div class="nerdit-fillblank-head">✏️ Try It — Fill in the blank</div>
+      <p>Complete the filename that turns the <code>routers</code> folder into a package:</p>
+      <pre data-lang="text"><code>routers/<input class="nerdit-blank" size="9" aria-label="your answer">.py</code></pre>
+      <button class="nerdit-check-btn" onclick="nerditCheckBlank(this)">Check</button>
+      <span class="nerdit-check-msg" aria-live="polite"></span>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="3">2 — ➕ Create the Enquiries Router</h2>
+
+    <p>Every route still needs a place to live once it moves out of <code>main.py</code>. An <strong>APIRouter</strong> is a small object that collects a related group of routes. It works like <code>FastAPI()</code> does, but <b>meant to sit in its own file</b>. You decorate functions on it with <code>@router.get()</code>, exactly as you decorated <code>app</code> in earlier lessons.</p>
+    <p>A router does nothing on its own until something else plugs it into the real app. Until then, it only <b>remembers which function answers which path</b>, in a plain list called <code>router.routes</code>.</p>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: Giving Enquiries Their Own Router</h3>
+    <p>Future Vision's enquiry list, the same rows from Lesson 1, is moving out of <code>main.py</code> into its own file, <code>routers/enquiries.py</code>.</p>
+
+    <h3 class="nerdit-runhead">APIRouter() <span class="why">— collect routes before main.py even exists</span></h3>
+    <p>This file builds its own <code>router</code>, with no <code>app</code> in sight. FastAPI only needs the object later, in Lesson section 4.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import APIRouter
+
+enquiries_router = APIRouter()
+ENQUIRIES = [
+    {"enquiry_id": "E1", "branch": "Citylight", "course": "Python Professional", "follow_ups": 1},
+    {"enquiry_id": "E3", "branch": "Pal", "course": "Business Analytics", "follow_ups": 1},
+]
+
+@enquiries_router.get("/")
+def list_enquiries():
+    return ENQUIRIES
+
+@enquiries_router.get("/{enquiry_id}")
+def get_enquiry(enquiry_id: str):
+    for row in ENQUIRIES:
+        if row["enquiry_id"] == enquiry_id:
+            return row
+    return {"error": "not found"}
+
+print([route.path for route in enquiries_router.routes])</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>['/', '/{enquiry_id}']</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>enquiries_router = APIRouter()</code> creates a router with no routes registered yet.</li>
+      <li><code>@enquiries_router.get("/")</code> registers a path on the router, not on an app.</li>
+      <li><code>for row in ENQUIRIES:</code> scans the list the same way Lesson 1's route did.</li>
+      <li><code>print([route.path for route in enquiries_router.routes])</code> lists the router's own paths, with no prefix yet.</li>
+    </ol>
+
+    <div class="nerdit-figure" data-visual="value-table" data-world-derived="section 2's own code: each decorator call mapped to the path it stores in router.routes" style="max-width:380px">
+      <table class="nerdit-vtable">
+        <thead><tr><th>decorator</th><th>path stored in <code>routes</code></th></tr></thead>
+        <tbody>
+          <tr><td><code>@enquiries_router.get("/")</code></td><td>/</td></tr>
+          <tr class="nerdit-spot"><td><code>@enquiries_router.get("/{enquiry_id}")</code></td><td>/{enquiry_id}</td></tr>
+        </tbody>
+      </table>
+      <div class="nerdit-figure-caption">A router stores the plain path it was given; nothing is prefixed until it is included.</div>
+    </div>
+
+    <div class="nerdit-predict">
+      <div class="nerdit-predict-head">🤔 Try It — Predict the output</div>
+      <pre data-lang="python"><code>class Router:
+    def __init__(self):
+        self.routes = []
+    def get(self, path):
+        def wrap(fn):
+            self.routes.append(path)
+            return fn
+        return wrap
+
+router = Router()
+
+@router.get("/")
+def list_all():
+    return []
+
+@router.get("/{item_id}")
+def get_one(item_id):
+    return {}
+
+print(router.routes)</code></pre>
+      <details class="nerdit-predict-answer">
+        <summary>Show answer</summary>
+        <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>['/', '/{item_id}']</code></pre></div>
+        <p>Each call to <code>router.get()</code> appends its <code>path</code> to the list, the same way the real <code>APIRouter</code> builds <code>routes</code>.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="4">3 — ➕ Create the Learners Router</h2>
+
+    <p>A second router can carry a completely different kind of setup from the first. Nothing stops one router from reading an in-memory list while another talks to a real database. Each file only has to answer its own group of routes.</p>
+    <p>Keeping that setup inside the router's own file means <code>routers/learners.py</code> can change its database code without anyone touching <code>routers/enquiries.py</code>. The two files <b>never need to know</b> about each other.</p>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: Reusing Lesson 6's Learner Table</h3>
+    <p>The <code>Learner</code> model and <code>get_db</code> dependency from Lesson 6 move into <code>routers/learners.py</code>, unchanged.</p>
+
+    <div class="nerdit-demo-table">
+      <div class="nerdit-demo-table-label">Demo Data — <code>learners</code> (5 rows), as in Lesson 6</div>
+      <table>
+        <thead><tr><th>learner_id</th><th>branch</th><th>age</th><th>weekly_study_hours</th></tr></thead>
+        <tbody>
+          <tr><td>L1</td><td>Vesu</td><td>24</td><td>9.3</td></tr>
+          <tr><td>L2</td><td>Citylight</td><td>27</td><td>4.1</td></tr>
+          <tr><td>L3</td><td>Citylight</td><td>22</td><td>9.1</td></tr>
+          <tr><td>L4</td><td>Vesu</td><td>24</td><td>11.7</td></tr>
+          <tr><td>L5</td><td>Pal</td><td>23</td><td>7.4</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="nerdit-runhead">learners_router = APIRouter() <span class="why">— a router with its own database setup</span></h3>
+    <p>Everything above <code>learners_router</code> is Lesson 6's code, now living in one file instead of inside <code>main.py</code>.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import create_engine, String, Integer, Float
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
+
+engine = create_engine("sqlite:///./learners.db")
+
+class Base(DeclarativeBase):
+    pass
+
+class Learner(Base):
+    __tablename__ = "learners"
+    learner_id: Mapped[str] = mapped_column(String, primary_key=True)
+    branch: Mapped[str] = mapped_column(String)
+    age: Mapped[int] = mapped_column(Integer)
+    weekly_study_hours: Mapped[float] = mapped_column(Float)
+
+Base.metadata.create_all(engine)
+SessionLocal = sessionmaker(bind=engine)
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+learners_router = APIRouter()
+
+@learners_router.get("/{learner_id}")
+def get_learner(learner_id: str, db=Depends(get_db)):
+    learner = db.get(Learner, learner_id)
+    if learner is None:
+        raise HTTPException(status_code=404, detail="Learner not found")
+    return learner.branch
+
+print([route.path for route in learners_router.routes])</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>['/{learner_id}']</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>engine = create_engine("sqlite:///./learners.db")</code> is the same setup Lesson 6 built, now kept in this file alone.</li>
+      <li><code>learners_router = APIRouter()</code> is a second router, separate from section 2's.</li>
+      <li><code>def get_learner(learner_id: str, db=Depends(get_db)):</code> uses this file's own <code>get_db</code>, the same pattern as Lesson 6.</li>
+      <li><code>print([route.path for route in learners_router.routes])</code> shows this router only knows its own one path.</li>
+    </ol>
+
+    <div class="nerdit-figure" data-visual="diagram" style="max-width:380px">
+      <svg viewBox="0 0 360 170" role="img" aria-label="enquiries_router reads an in-memory list; learners_router reads a database through a Session. Each router owns its own setup.">
+        <rect x="8" y="10" width="164" height="150" rx="10" fill="var(--white)" stroke="var(--bd)" stroke-width="1.5"/>
+        <text class="nerdit-flow-text" x="24" y="34" fill="var(--tx)">enquiries_router</text>
+        <text class="nerdit-flow-text" x="24" y="60" font-size="13" fill="var(--tx-m)">reads a plain list</text>
+        <text class="nerdit-flow-text" x="24" y="80" font-size="13" fill="var(--tx-m)">(ENQUIRIES)</text>
+        <rect x="188" y="10" width="164" height="150" rx="10" fill="var(--white)" stroke="var(--orange)" stroke-width="1.5"/>
+        <text class="nerdit-flow-text" x="204" y="34" fill="var(--orange)">learners_router</text>
+        <text class="nerdit-flow-text" x="204" y="60" font-size="13" fill="var(--tx-m)">reads a database</text>
+        <text class="nerdit-flow-text" x="204" y="80" font-size="13" fill="var(--tx-m)">through get_db</text>
+      </svg>
+      <div class="nerdit-figure-caption">Two routers, two unrelated setups: changing one never touches the other's file.</div>
+    </div>
+
+    <div class="nerdit-predict">
+      <div class="nerdit-predict-head">🤔 Try It — Predict the output</div>
+      <pre data-lang="python"><code>class Router:
+    def __init__(self, name):
+        self.name = name
+        self.data = []
+
+enquiries = Router("enquiries")
+learners = Router("learners")
+enquiries.data.append("L1")
+print(enquiries.data, learners.data)</code></pre>
+      <details class="nerdit-predict-answer">
+        <summary>Show answer</summary>
+        <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>['L1'] []</code></pre></div>
+        <p>Each <code>Router</code> instance owns its own <code>data</code> list, so changing one never changes the other.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="5 6">4 — 🔗 Connect the Routers in main.py</h2>
+
+    <p>How do two separate router files become one working API? <code>app.include_router()</code> is that join: it takes a <strong>prefix</strong>, text FastAPI glues onto the front of every route in that router.</p>
+    <p><code>app.include_router()</code> takes a router object and <b>copies its routes onto the real app</b>. It works as if you had written those routes there yourself. <strong>Tags</strong> group those same routes under one heading in the interactive docs. A growing API then reads like a short list of sections, not one long list.</p>
+
+    <h3 class="nerdit-runhead">app.include_router(prefix=, tags=) <span class="why">— turn two routers into one API</span></h3>
+    <p>Both routers from sections 2 and 3 plug into the same <code>app</code> here, each with its own prefix.</p>
+    <div class="nerdit-run" data-run="offline">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import FastAPI
+
+app = FastAPI()
+app.include_router(enquiries_router, prefix="/enquiries", tags=["enquiries"])
+app.include_router(learners_router, prefix="/learners", tags=["learners"])
+
+paths = [prefix + route.path for prefix, rtr in [("/enquiries", enquiries_router), ("/learners", learners_router)] for route in rtr.routes]
+print(paths)</code></pre>
+      </div>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>['/enquiries/', '/enquiries/{enquiry_id}', '/learners/{learner_id}']</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk">
+      <li><code>app.include_router(enquiries_router, prefix="/enquiries", tags=["enquiries"])</code> copies section 2's routes onto app, prefixed.</li>
+      <li><code>app.include_router(learners_router, prefix="/learners", tags=["learners"])</code> does the same for section 3's router.</li>
+      <li><code>paths = [prefix + route.path for prefix, rtr in [("/enquiries", enquiries_router), ("/learners", learners_router)] for route in rtr.routes]</code> joins each prefix onto its router's own paths by hand.</li>
+      <li><code>print(paths)</code> shows every path with its prefix already joined on.</li>
+    </ol>
+
+    <div class="nerdit-figure" data-visual="diagram" data-world-derived="section 4's own code: two routers joining one app, each with its own prefix" style="max-width:380px">
+      <svg viewBox="0 0 360 170" role="img" aria-label="enquiries_router and learners_router each include into app with their own prefix, becoming one API.">
+        <rect x="8" y="14" width="140" height="40" rx="8" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+        <text class="nerdit-flow-text" x="24" y="38" font-size="13">enquiries_router</text>
+        <rect x="8" y="110" width="140" height="40" rx="8" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+        <text class="nerdit-flow-text" x="24" y="134" font-size="13">learners_router</text>
+        <path class="nerdit-flow-edge" d="M148 34 H200" marker-end="url(#fma07-arrow-b)"/>
+        <path class="nerdit-flow-edge" d="M148 130 H200" marker-end="url(#fma07-arrow-b)"/>
+        <rect x="204" y="62" width="148" height="40" rx="8" fill="var(--bg-soft)" stroke="var(--green)" stroke-width="1.5"/>
+        <text class="nerdit-flow-text" x="220" y="86" fill="var(--green)" font-size="13">app, one API</text>
+        <text class="nerdit-flow-text" x="60" y="70" font-size="12" fill="var(--orange)">prefix="/enquiries"</text>
+        <text class="nerdit-flow-text" x="60" y="166" font-size="12" fill="var(--orange)">prefix="/learners"</text>
+        <defs>
+          <marker id="fma07-arrow-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" fill="var(--nb-mid)"/>
+          </marker>
+        </defs>
+      </svg>
+      <div class="nerdit-figure-caption">include_router() copies each router's routes onto app, with its own prefix joined on.</div>
+    </div>
+
+    <div class="nerdit-compare">
+      <div class="nerdit-compare-bad">
+        <div class="nerdit-compare-head">Wrong — the prefix written twice</div>
+        <pre data-lang="python"><code>@enquiries_router.get("/enquiries/{enquiry_id}")
+...
+app.include_router(enquiries_router,
+                    prefix="/enquiries")
+# answers at /enquiries/enquiries/{enquiry_id}</code></pre>
+      </div>
+      <div class="nerdit-compare-good">
+        <div class="nerdit-compare-head">Right — the router never repeats the prefix</div>
+        <pre data-lang="python"><code>@enquiries_router.get("/{enquiry_id}")
+...
+app.include_router(enquiries_router,
+                    prefix="/enquiries")
+# answers at /enquiries/{enquiry_id}</code></pre>
+      </div>
+    </div>
+    <p>The wrong version answers at <code>/enquiries/enquiries/{enquiry_id}</code>, doubled, because <code>include_router</code> adds its own prefix on top of whatever the router already has. A plain <code>/{enquiry_id}</code> inside the router leaves that job to the prefix alone.</p>
+
+    <div class="nerdit-fillblank" data-answer="prefix">
+      <div class="nerdit-fillblank-head">✏️ Try It — Fill in the blank</div>
+      <p>Complete the keyword argument that turns <code>/</code> into <code>/learners/</code> once the router is included:</p>
+      <pre data-lang="text"><code>app.include_router(learners_router, <input class="nerdit-blank" size="8" aria-label="your answer">="/learners")</code></pre>
+      <button class="nerdit-check-btn" onclick="nerditCheckBlank(this)">Check</button>
+      <span class="nerdit-check-msg" aria-live="polite"></span>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-outline="7">5 — 🔍 Run the Modular Project and Trace a Request</h2>
+
+    <p>Running a multi-file project is almost the same as running one file, with one extra rule. You still start <strong>Uvicorn</strong> and point it at the app object. Run the command from the folder that holds <code>main.py</code>, never from inside <code>routers/</code>.</p>
+    <p>Python looks for the <code>routers</code> package from the folder you ran the command in. From the wrong folder, that import fails, and the server never starts.</p>
+
+    <h3 class="nerdit-casehead">🌟 Case Study: Future Vision's Split Project, Running for Real</h3>
+    <p>Sections 2 to 4 now live in their own files. Running <code>main.py</code> from the project's root folder brings enquiries and learners back under one address.</p>
+
+    <div class="nerdit-run nerdit-program" data-run="offline" data-file="main.py">
+      <div class="nerdit-in">
+        <span class="nerdit-tag">You type</span>
+        <pre data-lang="python"><code>from fastapi import FastAPI
+from routers import enquiries, learners
+
+app = FastAPI()
+app.include_router(enquiries.router, prefix="/enquiries", tags=["enquiries"])
+app.include_router(learners.router, prefix="/learners", tags=["learners"])
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=8000)</code></pre>
+      </div>
+      <div class="nerdit-in nerdit-file" data-file="routers/__init__.py">
+        <span class="nerdit-tag">routers/__init__.py</span>
+        <pre data-lang="python"><code># routers/__init__.py: an empty file is enough to mark this folder as a package</code></pre>
+      </div>
+      <div class="nerdit-in nerdit-file" data-file="routers/enquiries.py">
+        <span class="nerdit-tag">routers/enquiries.py</span>
+        <pre data-lang="python"><code>from fastapi import APIRouter
+
+router = APIRouter()
+
+ENQUIRIES = [
+    {"enquiry_id": "E1", "branch": "Citylight", "course": "Python Professional", "follow_ups": 1},
+    {"enquiry_id": "E2", "branch": "Citylight", "course": "Office &amp; GenAI", "follow_ups": 3},
+    {"enquiry_id": "E3", "branch": "Pal", "course": "Business Analytics", "follow_ups": 1},
+    {"enquiry_id": "E5", "branch": "Vesu", "course": "Excel &amp; Power BI", "follow_ups": 1},
+    {"enquiry_id": "E6", "branch": "Pal", "course": "Python Professional", "follow_ups": 1},
+    {"enquiry_id": "E7", "branch": "Vesu", "course": "Business Analytics", "follow_ups": 4},
+]
+
+@router.get("/")
+def list_enquiries():
+    return ENQUIRIES
+
+@router.get("/{enquiry_id}")
+def get_enquiry(enquiry_id: str):
+    for row in ENQUIRIES:
+        if row["enquiry_id"] == enquiry_id:
+            return row
+    return {"error": "not found"}</code></pre>
+      </div>
+      <div class="nerdit-in nerdit-file" data-file="routers/learners.py">
+        <span class="nerdit-tag">routers/learners.py</span>
+        <pre data-lang="python"><code>from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from sqlalchemy import create_engine, String, Integer, Float
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
+
+engine = create_engine("sqlite:///./learners.db")
+
+class Base(DeclarativeBase):
+    pass
+
+class Learner(Base):
+    __tablename__ = "learners"
+    learner_id: Mapped[str] = mapped_column(String, primary_key=True)
+    branch: Mapped[str] = mapped_column(String)
+    age: Mapped[int] = mapped_column(Integer)
+    weekly_study_hours: Mapped[float] = mapped_column(Float)
+
+Base.metadata.create_all(engine)
+SessionLocal = sessionmaker(bind=engine)
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+class LearnerIn(BaseModel):
+    learner_id: str
+    branch: str
+    age: int
+    weekly_study_hours: float
+
+router = APIRouter()
+
+@router.post("/")
+def create_learner(payload: LearnerIn, db=Depends(get_db)):
+    db.add(Learner(**payload.model_dump()))
+    db.commit()
+    return payload
+
+@router.get("/{learner_id}")
+def get_learner(learner_id: str, db=Depends(get_db)):
+    learner = db.get(Learner, learner_id)
+    if learner is None:
+        raise HTTPException(status_code=404, detail="Learner not found")
+    return learner.branch</code></pre>
+      </div>
+      <script type="text/plain" class="nerdit-check">import warnings
+warnings.filterwarnings("ignore")
+
+from fastapi.testclient import TestClient
+
+client = TestClient(app)
+new = {"learner_id": "L1", "branch": "Vesu", "age": 24, "weekly_study_hours": 9.3}
+print(client.post("/learners/", json=new).json())
+print(client.get("/learners/L1").json())
+print(client.get("/enquiries/E3").json())
+paths = [p + r.path for p, rtr in [("/enquiries", enquiries.router), ("/learners", learners.router)] for r in rtr.routes]
+print(paths)</script>
+      <div class="nerdit-out">
+        <span class="nerdit-tag">Python shows</span>
+        <pre><code>{'learner_id': 'L1', 'branch': 'Vesu', 'age': 24, 'weekly_study_hours': 9.3}
+Vesu
+{'enquiry_id': 'E3', 'branch': 'Pal', 'course': 'Business Analytics', 'follow_ups': 1}
+['/enquiries/', '/enquiries/{enquiry_id}', '/learners/', '/learners/{learner_id}']</code></pre>
+      </div>
+    </div>
+    <ol class="nerdit-codewalk nerdit-walk-full">
+      <li><code>from fastapi import FastAPI</code> is the only FastAPI import <code>main.py</code> still needs.</li>
+      <li><code>from routers import enquiries, learners</code> pulls in both files as modules, the layout section 1 built for.</li>
+      <li><code>app = FastAPI()</code> starts the one real app every router plugs into.</li>
+      <li><code>app.include_router(enquiries.router, prefix="/enquiries", tags=["enquiries"])</code> is section 4's call, now wired to the real file.</li>
+      <li><code>app.include_router(learners.router, prefix="/learners", tags=["learners"])</code> does the same for the learners file.</li>
+      <li><code>if __name__ == "__main__":</code> starts the server only when you run this file directly.</li>
+    </ol>
+
+    <p>Save the four files from section 1's layout. Activate your venv, then run <code>main.py</code> from the project's root folder:</p>
+    <div class="nerdit-terminal"><span class="nerdit-prompt">$ </span><span class="nerdit-cmd">uvicorn main:app --reload</span>
+<span class="nerdit-out">INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)</span>
+<span class="nerdit-comment"># Open http://127.0.0.1:8000/docs</span></div>
+
+    <div class="nerdit-compare">
+      <div class="nerdit-compare-bad">
+        <div class="nerdit-compare-head">Wrong — run from inside routers/</div>
+        <pre data-lang="text"><code>$ cd fastapi-modular-app/routers
+$ uvicorn main:app --reload
+ModuleNotFoundError: No module named 'main'</code></pre>
+      </div>
+      <div class="nerdit-compare-good">
+        <div class="nerdit-compare-head">Right — run from the project's root folder</div>
+        <pre data-lang="text"><code>$ cd fastapi-modular-app
+$ uvicorn main:app --reload
+INFO:     Uvicorn running on http://127.0.0.1:8000</code></pre>
+      </div>
+    </div>
+    <p>Uvicorn looks for <code>main.py</code> starting from your current folder. From inside <code>routers/</code>, there is no <code>main.py</code> to find. The fix is one <code>cd</code> back to the project's root before starting the server.</p>
+
+    <script type="application/json" class="nerdit-screen">
+{"id": "fma07-docs-tags", "app": "Swagger UI", "layout": "app",
+ "goal": "See enquiries and learners grouped by tags in the docs",
+ "path": ["/docs"],
+ "panel": [{"kind": "item", "text": "enquiries"}, {"kind": "item", "text": "/enquiries/"},
+           {"kind": "item", "text": "/enquiries/{enquiry_id}"}, {"kind": "item", "text": "learners"},
+           {"kind": "item", "text": "/learners/"}, {"kind": "item", "text": "/learners/{learner_id}"}],
+ "steps": [{"do": "click", "path": ["enquiries"]}, {"do": "click", "path": ["learners"]}],
+ "alt": "Swagger UI with two groups, enquiries and learners, each listing its own routes.",
+ "takeaway": "tags group a router's routes under one heading, so the docs page mirrors the file layout.",
+ "misconception": "Every route from every file shows up in one long, unsorted list.",
+ "check": {"question": "Why do enquiries and learners appear as two separate groups?",
+           "answer": "Each router was included with its own tags",
+           "reasoning": "tags=[\"enquiries\"] and tags=[\"learners\"] group the routes exactly where each router was included."}}
+    </script>
+    <p>Open <code>/docs</code>. The routes sit under two headings, <b>enquiries</b> and <b>learners</b>, one per router's <code>tags</code>.</p>
+
+    <div class="nerdit-figure" data-visual="diagram" style="max-width:380px">
+      <svg viewBox="0 0 360 230" role="img" aria-label="A request for GET /enquiries/E3 arrives at main.py, which routes it to routers/enquiries.py, whose function returns the row.">
+        <rect x="40" y="8" width="280" height="40" rx="8" fill="var(--bg-soft)" stroke="var(--nb)" stroke-width="1.5"/>
+        <text class="nerdit-flow-text" x="180" y="33" text-anchor="middle">① GET /enquiries/E3 arrives</text>
+        <path class="nerdit-flow-edge" d="M180 48 V68" marker-end="url(#fma07-arrow-a)"/>
+        <rect x="20" y="72" width="320" height="40" rx="8" fill="var(--white)" stroke="var(--orange)" stroke-width="1.5"/>
+        <text class="nerdit-flow-text" x="180" y="97" text-anchor="middle" fill="var(--orange)">② main.py's app matches the /enquiries prefix</text>
+        <path class="nerdit-flow-edge" d="M180 112 V132" marker-end="url(#fma07-arrow-a)"/>
+        <rect x="20" y="136" width="320" height="40" rx="8" fill="var(--white)" stroke="var(--bd)" stroke-width="1"/>
+        <text class="nerdit-flow-text" x="180" y="161" text-anchor="middle">③ routers/enquiries.py's get_enquiry runs</text>
+        <path class="nerdit-flow-edge" d="M180 176 V196" marker-end="url(#fma07-arrow-a)"/>
+        <rect x="40" y="200" width="280" height="26" rx="8" fill="var(--white)" stroke="var(--green)" stroke-width="1.5"/>
+        <text class="nerdit-flow-text" x="180" y="218" text-anchor="middle" fill="var(--green)">④ the matching row comes back</text>
+        <defs>
+          <marker id="fma07-arrow-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" fill="var(--nb-mid)"/>
+          </marker>
+        </defs>
+      </svg>
+      <div class="nerdit-figure-caption">main.py only matches the prefix; the file that owns that router answers the request.</div>
+    </div>
+
+    <div class="nerdit-predict">
+      <div class="nerdit-predict-head">🤔 Try It — Predict the output</div>
+      <pre data-lang="python"><code>print("1: routers/enquiries.py loaded")
+print("2: routers/learners.py loaded")
+print("3: main.py creates app and includes both routers")</code></pre>
+      <details class="nerdit-predict-answer">
+        <summary>Show answer</summary>
+        <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>1: routers/enquiries.py loaded
+2: routers/learners.py loaded
+3: main.py creates app and includes both routers</code></pre></div>
+        <p><code>from routers import enquiries, learners</code> loads both files before <code>app</code> exists, in the order they are named.</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <h2>📌 Quick Reference</h2>
+    <div class="nerdit-cheatsheet">
+      <table>
+        <thead><tr><th>Keyword</th><th>What it does</th><th>Tiny example</th></tr></thead>
+        <tbody>
+          <tr><td>module</td><td>One Python file</td><td><code>routers/enquiries.py</code></td></tr>
+          <tr><td>package</td><td>A folder of modules, marked with <code>__init__.py</code></td><td><code>routers/__init__.py</code></td></tr>
+          <tr><td><code>APIRouter()</code></td><td>Collects routes before an app exists</td><td><code>router = APIRouter()</code></td></tr>
+          <tr><td><code>router.routes</code></td><td>The paths a router has registered so far</td><td><code>[r.path for r in router.routes]</code></td></tr>
+          <tr><td><code>include_router()</code></td><td>Copies a router's routes onto the real app</td><td><code>app.include_router(router)</code></td></tr>
+          <tr><td><code>prefix</code></td><td>Text joined onto the front of every route in a router</td><td><code>prefix="/learners"</code></td></tr>
+          <tr><td><code>tags</code></td><td>Groups a router's routes in the docs page</td><td><code>tags=["learners"]</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2>🧠 Practice</h2>
+    <div class="nerdit-practical">
+      <div class="nerdit-task">Task 1: Write <code>join_prefix(prefix, path)</code> that returns <code>prefix + path</code>. Test it on <code>prefix="/learners"</code> and <code>path="/{learner_id}"</code>.
+        <details class="nerdit-solution">
+          <summary>Show solution</summary>
+          <pre data-lang="python"><code>def join_prefix(prefix, path):
+    return prefix + path
+
+print(join_prefix("/learners", "/{learner_id}"))</code></pre>
+          <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>/learners/{learner_id}</code></pre></div>
+        </details>
+      </div>
+      <div class="nerdit-task">Task 2: Write <code>router_paths(routes, prefix)</code> that returns a new list with <code>prefix</code> joined onto every path in <code>routes</code>. Test it on <code>routes=["/", "/{enquiry_id}"]</code> and <code>prefix="/enquiries"</code>.
+        <details class="nerdit-solution">
+          <summary>Show solution</summary>
+          <pre data-lang="python"><code>def router_paths(routes, prefix):
+    return [prefix + path for path in routes]
+
+print(router_paths(["/", "/{enquiry_id}"], "/enquiries"))</code></pre>
+          <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>['/enquiries/', '/enquiries/{enquiry_id}']</code></pre></div>
+        </details>
+      </div>
+      <div class="nerdit-task">Task 3 (challenge): Write <code>group_by_tag(routers)</code> that takes a dict like <code>{"enquiries": ["/", "/{enquiry_id}"], "learners": ["/{learner_id}"]}</code> and returns how many routes each tag has, as a dict.
+        <details class="nerdit-solution">
+          <summary>Show solution</summary>
+          <pre data-lang="python"><code>def group_by_tag(routers):
+    return {tag: len(routes) for tag, routes in routers.items()}
+
+routers = {"enquiries": ["/", "/{enquiry_id}"], "learners": ["/{learner_id}"]}
+print(group_by_tag(routers))</code></pre>
+          <div class="nerdit-out"><span class="nerdit-tag">Python shows</span><pre><code>{'enquiries': 2, 'learners': 1}</code></pre></div>
+        </details>
+      </div>
+    </div>
+  </section>
+
+</div>
+<script>
+(function(){
+  if (typeof window.nerditCheckBlank !== "function") {
+    window.nerditCheckBlank = function(btn){
+      var box = btn.closest('.nerdit-fillblank');
+      var input = box.querySelector('.nerdit-blank');
+      var msg = box.querySelector('.nerdit-check-msg');
+      var accepted = (box.getAttribute('data-answer') || '').split('|');
+      var got = (input.value || '').trim().toLowerCase();
+      var ok = accepted.some(function(a){ return a.trim().toLowerCase() === got; });
+      msg.textContent = ok ? '✅ Correct!' : '❌ Not yet — try again.';
+      msg.className = 'nerdit-check-msg ' + (ok ? 'ok' : 'no');
+      input.classList.toggle('ok', ok);
+      input.classList.toggle('no', !ok);
+    };
+  }
+})();
+</script>

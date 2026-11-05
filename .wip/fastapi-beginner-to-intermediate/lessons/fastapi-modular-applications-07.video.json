@@ -1,0 +1,158 @@
+{
+  "lessonId": "fastapi-modular-applications-07",
+  "htmlSha256": "dfc53ce885d2d3f17c2546d797eba8ffe7371abfb7dc7e8ce4c1c4bbfb099c86",
+  "language": "hi",
+  "scenes": [
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-modular-applications-07",
+      "topic": 1,
+      "title": "One File Splits Into Many",
+      "vector": "fastapi-modular-applications-07-t1-concept.svg",
+      "keyIdea": "A big app splits into small modules, one job each",
+      "terms": ["module"],
+      "focus": [],
+      "myth": null,
+      "narration": "Jab FastAPI app badhta hai, saare routes ek hi main.py file mein jama hote jaate hain, aur yeh file har route ke saath lambi hoti jaati hai. Ek module matlab ek Python file hai. Bade app ko chhote modules mein todne se, har file sirf ek hi job karti hai, jaise ek spreadsheet mein alag alag tabs hote hain. Is lesson mein, enquiries aur learners ke liye alag routers folder banta hai, jahaan har file apna ek hi kaam karta hai. Yeh split, aage nayi features add karna bhi kaafi aasaan banata hai."
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-modular-applications-07",
+      "topic": 1,
+      "title": "An Empty File Marks a Package",
+      "vector": "fastapi-modular-applications-07-t1-package.svg",
+      "keyIdea": "An empty marker file turns a folder into one package",
+      "terms": ["package"],
+      "focus": [],
+      "myth": {
+        "wrong": "the marker file must always hold setup code",
+        "right": "an empty marker file still marks the package",
+        "narration": "Kuch log sochte hain yeh marker file mein hamesha kuch setup code likhna zaroori hota hai, jaise ek class ya function. Asal mein, yeh file khaali rehkar bhi apna kaam kar deti hai: routers folder ek importable package ban jaata hai, bina ek bhi line code ke."
+      },
+      "narration": "Routers folder ko ek package banane ke liye, usmein ek empty marker file honi chahiye. Yeh file khaali reh sakti hai, kyonki iska kaam sirf Python ko batana hai. Python is folder ko ek importable package maan leta hai, alag alag loose scripts ka dhaasha nahi. Is lesson mein, routers folder ko yahi ek file milegi."
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-modular-applications-07",
+      "topic": 2,
+      "title": "A Router Collects Routes on Its Own",
+      "vector": "fastapi-modular-applications-07-t2-concept.svg",
+      "keyIdea": "APIRouter builds a routes list before any app exists",
+      "terms": ["APIRouter"],
+      "focus": [],
+      "myth": null,
+      "narration": "Jab ek route file alag honi hoti hai, FastAPI() ki jagah APIRouter() use hota hai. Yeh ek naya router object hai jo related routes collect karta hai, bina kisi app ke zaroorat ke. Har @router.get() call ek naya path, uski list of routes mein add kar deta hai, bilkul waise hi jaise app par decorator lagate the. Future Vision ka enquiries file isi tarah apna router banata hai, jisme abhi koi prefix nahi hai. Yeh router baad mein hi, kisi real app se judega."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-modular-applications-07",
+      "topic": 2,
+      "title": "enquiries_router.routes Prints Its Paths",
+      "code": 1,
+      "highlight": ["line:3", "line:9", "line:13", "line:20"],
+      "keyIdea": "Each @router.get() call appends one path to routes",
+      "terms": [],
+      "focus": [],
+      "myth": {
+        "wrong": "router.routes already shows the final /enquiries/ prefix",
+        "right": "the prefix is added later, by include_router in main.py",
+        "narration": "Kuch log sochte hain router ke routes mein already slash enquiries prefix dikhta hai. Asal mein abhi tak koi prefix nahi joda gaya; woh baad mein, main.py mein include_router se judta hai. Yeh fark section 4 mein saaf dikhega."
+      },
+      "narration": "enquiries_router mein do routes register hote hain, ek sabhi enquiries ke liye aur ek enquiry_id se dhoondhne ke liye. Jab print karte hain router ke routes, output aata hai slash, aur slash enquiry_id, bina kisi prefix ke, kyonki yeh file abhi tak kisi app se judi nahi hai. Yeh exactly waisa hi output hai jo section 2 ki figure mein pehle dikhaya gaya tha."
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-modular-applications-07",
+      "topic": 3,
+      "title": "Two Routers, Two Different Setups",
+      "vector": "fastapi-modular-applications-07-t3-concept.svg",
+      "keyIdea": "Each router can own completely different setup code",
+      "terms": [],
+      "focus": [],
+      "myth": null,
+      "narration": "The enquiries file sirf ek plain Python list padhta hai, jaise Lesson 1 mein bana tha. The learners file alag hai: yeh ek dependency ke through ek real database padhta hai, jaise Lesson 6 mein seekha tha. Dono files ek hi project mein rehte hain, lekin ek doosre ke kaam mein kabhi dakhal nahi dete, har file apni setup khud rakhta hai. Isi tarah, kal koi teesra router bina kisi dusre file ko badle add kiya ja sakta hai."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-modular-applications-07",
+      "topic": 3,
+      "title": "learners_router Keeps Lesson 6's Setup",
+      "code": 1,
+      "highlight": ["line:5", "line:27", "line:29", "line:36"],
+      "keyIdea": "learners_router carries its own engine, model and get_db",
+      "terms": [],
+      "focus": [],
+      "myth": {
+        "wrong": "every router in a project must share one database file",
+        "right": "a router only carries the setup it personally needs",
+        "narration": "Kuch log sochte hain project ke saare routers ek hi database file share karte hain. Asal mein, har router ko sirf wahi setup chahiye jiski use ko zaroorat hai; enquiries_router ko to database ki zaroorat hi nahi padti."
+      },
+      "narration": "Yeh file Lesson 6 ka engine, Learner class aur get_db waisa hi rakhta hai, bas ab routers/learners.py ke andar. learners_router apna ek route register karta hai, learner_id se dhoondhne ke liye. Print karne par router ke routes mein sirf slash learner_id dikhta hai, kyonki yeh file enquiries ke baare mein kuch nahi jaanti. Yeh wahi get_db pattern hai jo Lesson 6 mein likha gaya tha."
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-modular-applications-07",
+      "topic": 4,
+      "title": "One Join Turns Two Files Into One App",
+      "vector": "fastapi-modular-applications-07-t4-concept.svg",
+      "keyIdea": "include_router copies each router's routes, with its own prefix",
+      "terms": ["prefix", "tags"],
+      "focus": [],
+      "myth": null,
+      "narration": "Do alag router files ek kaam karta app banane ke liye, include_router use hota hai. Yeh ek router object leta hai aur uske saare routes, real app par copy kar deta hai. Ek prefix text hai jo FastAPI har route ke aage jod deta hai. Tags un routes ko docs page par group karte hain, aur dono mil kar ek hi app, one API ban jaate hain."
+    },
+    {
+      "kind": "code",
+      "lessonId": "fastapi-modular-applications-07",
+      "topic": 4,
+      "title": "Two Routers Plug Into One app",
+      "code": 1,
+      "highlight": ["line:4", "line:5", "line:7", "line:8"],
+      "keyIdea": "Each router's paths get its own prefix joined on by hand",
+      "terms": [],
+      "focus": [],
+      "myth": {
+        "wrong": "writing the prefix inside the router too causes no harm",
+        "right": "a doubled prefix answers at a wrong, repeated path",
+        "narration": "Kuch log sochte hain router ke andar bhi prefix likhna koi problem nahi karta. Asal mein, yeh prefix ko doubled kar deta hai, aur route galat, dohraaye hue path par jawaab deta hai, jaise slash enquiries slash enquiries. Sahi fix bas ek line hatana hai."
+      },
+      "narration": "Section 2 aur section 3 ke dono routers, yahaan ek hi app mein include hote hain, apne apne prefix ke saath. Har router ke routes list ko haath se prefix ke saath jodkar print karte hain. Output mein slash enquiries, slash enquiries slash enquiry_id, aur slash learners slash learner_id, teeno paths apne prefix ke saath dikhte hain. Yeh wahi list hai jo ek real app bhi apne andar rakhta hai."
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-modular-applications-07",
+      "topic": 5,
+      "title": "A Request Travels Through Three Files",
+      "vector": "fastapi-modular-applications-07-t5-concept.svg",
+      "keyIdea": "main.py matches the prefix; the router file answers",
+      "terms": ["Uvicorn"],
+      "focus": [],
+      "myth": null,
+      "narration": "Modular project chalaane ke liye bhi Uvicorn hi use hota hai, app object ki taraf point karte hue. Ek request jab aati hai, main.py us prefix se match karta hai, jaise slash enquiries. Phir woh file jisne woh router banaya, routers slash enquiries dot py, asli jawaab deti hai, matching row wapas aata hai, exactly jaise section 4 mein dikha tha. Future Vision ka poora enquiries aur learners API isi tarah ek saath milkar chalta hai."
+    },
+    {
+      "kind": "vector",
+      "lessonId": "fastapi-modular-applications-07",
+      "topic": 5,
+      "title": "cd Back to the Project's Root Folder",
+      "vector": "fastapi-modular-applications-07-t5-folder.svg",
+      "keyIdea": "Run uvicorn from the folder that holds main.py",
+      "terms": [],
+      "focus": [],
+      "myth": {
+        "wrong": "uvicorn main:app works from inside the routers folder",
+        "right": "run it from the project's root folder instead",
+        "narration": "Kuch log sochte hain uvicorn command kisi bhi folder se chal sakta hai. Asal mein, routers folder ke andar se chalane par ModuleNotFoundError aata hai; sahi root folder se chalana zaroori hai, taaki main.py sahi se mil jaaye."
+      },
+      "narration": "Uvicorn hamesha us project ke root folder se chalaana chahiye, jahaan main.py khud rehta hai. Routers folder ke andar se command chalane par, Python ko routers package hi nahi milta, aur server kabhi start nahi hota. Isliye terminal mein ek simple cd command se root folder par wapas aana zaroori hai. Yeh ek chhoti si galti hai, lekin pehli baar har naye learner ko confuse kar deti hai."
+    }
+  ],
+  "practise": [
+    {"topic": 1, "tryIt": "complete __init__.py's filename", "task": null},
+    {"topic": 2, "tryIt": "predict a mock router's registered paths", "task": null},
+    {"topic": 3, "tryIt": "predict two routers' own, separate data", "task": null},
+    {"topic": 4, "tryIt": "predict a joined prefix and path", "task": null},
+    {"topic": 5, "tryIt": "predict the module-load print order", "task": null}
+  ],
+  "skipTopics": []
+}

@@ -1,0 +1,20 @@
+<svg class="nerdit-anim" viewBox="0 0 480 360" role="img" aria-label="Run uvicorn from the project's root folder, where main.py lives, never from inside the routers folder." font-family="Segoe UI, sans-serif">
+  <g class="na-show" style="--d:0s">
+    <rect x="40" y="40" width="400" height="110" rx="12" fill="var(--bg-soft)" stroke="var(--green)" stroke-width="2"/>
+    <text x="240" y="90" text-anchor="middle" font-size="20" font-weight="700" fill="var(--green)">the project root folder</text>
+    <text x="240" y="120" text-anchor="middle" font-size="15" fill="var(--tx-m)">where main.py lives: run uvicorn here</text>
+  </g>
+  <g class="na-draw" style="--d:1.4s">
+    <path d="M240 152 L240 198" stroke="var(--bd)" stroke-width="3" fill="none" marker-end="url(#fma07t5b-arrow)"/>
+  </g>
+  <g class="na-show" style="--d:1.9s">
+    <rect x="40" y="200" width="400" height="110" rx="12" fill="var(--white)" stroke="var(--bd)" stroke-width="2"/>
+    <text x="240" y="250" text-anchor="middle" font-size="20" font-weight="700" fill="var(--tx)">the routers folder</text>
+    <text x="240" y="280" text-anchor="middle" font-size="15" fill="var(--tx-m)">never run uvicorn here</text>
+  </g>
+  <defs>
+    <marker id="fma07t5b-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--nb)"/>
+    </marker>
+  </defs>
+</svg>

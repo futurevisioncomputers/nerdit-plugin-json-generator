@@ -1,0 +1,16 @@
+<svg class="nerdit-anim" viewBox="0 0 480 360" role="img" aria-label="enquiries_router reads a plain list; learners_router reads a database through get_db. Each router owns its own setup." font-family="Segoe UI, sans-serif">
+  <g class="na-show" style="--d:0s">
+    <rect x="30" y="40" width="200" height="200" rx="12" fill="var(--white)" stroke="var(--bd)" stroke-width="2"/>
+    <text x="130" y="100" text-anchor="middle" font-size="18" font-weight="700" fill="var(--tx)">the enquiries file</text>
+    <text x="130" y="140" text-anchor="middle" font-size="15" fill="var(--tx-m)">reads a plain list</text>
+  </g>
+  <g class="na-show" style="--d:1.2s">
+    <rect x="250" y="40" width="200" height="200" rx="12" fill="var(--white)" stroke="var(--orange)" stroke-width="2"/>
+    <text x="350" y="100" text-anchor="middle" font-size="18" font-weight="700" fill="var(--orange)">the learners file</text>
+    <text x="350" y="140" text-anchor="middle" font-size="15" fill="var(--tx-m)">reads a database</text>
+    <text x="350" y="166" text-anchor="middle" font-size="15" fill="var(--tx-m)">through a dependency</text>
+  </g>
+  <g class="na-show" style="--d:2.2s">
+    <text x="240" y="300" text-anchor="middle" font-size="16" fill="var(--green)">each router owns its own setup</text>
+  </g>
+</svg>

@@ -1,0 +1,66 @@
+{
+  "lessonQuestions": [
+    {
+      "correctOptionIndex": 0,
+      "options": [
+        "['/enquiries/', '/enquiries/{enquiry_id}']",
+        "['/', '/{enquiry_id}']",
+        "['/enquiries/enquiries/', '/enquiries/enquiries/{enquiry_id}']",
+        "['/enquiries']"
+      ],
+      "text": "`enquiries_router.routes` lists `['/', '/{enquiry_id}']` before it is included. After `app.include_router(enquiries_router, prefix=\"/enquiries\", tags=[\"enquiries\"])`, which paths does `app.routes` add for this router?"
+    },
+    {
+      "correctOptionIndex": 0,
+      "options": [
+        "cd back to the project's root folder, where main.py sits, then run the command again",
+        "Reinstall fastapi with pip",
+        "Rename main.py to app.py",
+        "Delete routers/__init__.py"
+      ],
+      "text": "A learner runs `uvicorn main:app --reload` from inside the `routers` folder and sees `ModuleNotFoundError: No module named 'main'`. What fixes it?"
+    },
+    {
+      "correctOptionIndex": 0,
+      "options": [
+        "/enquiries/enquiries/{enquiry_id}",
+        "/enquiries/{enquiry_id}",
+        "/{enquiry_id}",
+        "FastAPI raises an error at startup"
+      ],
+      "text": "A route is written as `@enquiries_router.get(\"/enquiries/{enquiry_id}\")` inside the router, then included with `app.include_router(enquiries_router, prefix=\"/enquiries\")`. What URL actually answers?"
+    }
+  ],
+  "assessmentQuestions": [
+    {
+      "correctOptionIndex": 0,
+      "options": [
+        "['/billing/{invoice_id}']",
+        "['/{invoice_id}']",
+        "['/billing']",
+        "['/billing/billing/{invoice_id}']"
+      ],
+      "text": "`billing_router` has one route, `@billing_router.get(\"/{invoice_id}\")`. After `app.include_router(billing_router, prefix=\"/billing\", tags=[\"billing\"])`, what does `[r.path for r in app.routes if r.path.startswith(\"/billing\")]` give?"
+    },
+    {
+      "correctOptionIndex": 0,
+      "options": [
+        "Only how the routes are grouped under headings on the /docs page",
+        "The URL prefix each route answers at",
+        "Which HTTP methods each route accepts",
+        "The status code FastAPI returns on success"
+      ],
+      "text": "Two routers are included with `tags=[\"enquiries\"]` and `tags=[\"learners\"]`. What do these tags change in the final app?"
+    },
+    {
+      "correctOptionIndex": 0,
+      "options": [
+        "A module is one .py file; a package is a folder of modules marked with __init__.py",
+        "A module runs on the server; a package only runs in the browser",
+        "A module holds routes; a package holds Pydantic models",
+        "A package is a module that has already been tested"
+      ],
+      "text": "In this lesson's project, what is the real difference between a module and a package?"
+    }
+  ]
+}

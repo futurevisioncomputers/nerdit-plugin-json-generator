@@ -1,0 +1,32 @@
+<svg class="nerdit-anim" viewBox="0 0 480 360" role="img" aria-label="A request for GET /enquiries/E3 arrives at main.py, which matches the prefix, then routers/enquiries.py answers." font-family="Segoe UI, sans-serif">
+  <g class="na-show" style="--d:0s">
+    <rect x="50" y="10" width="380" height="60" rx="10" fill="var(--bg-soft)" stroke="var(--nb)" stroke-width="2"/>
+    <text x="240" y="46" text-anchor="middle" font-size="18">a request arrives</text>
+  </g>
+  <g class="na-draw" style="--d:1.0s">
+    <path d="M240 72 L240 102" stroke="var(--bd)" stroke-width="3" fill="none" marker-end="url(#fma07t5-arrow)"/>
+  </g>
+  <g class="na-show" style="--d:1.4s">
+    <rect x="50" y="104" width="380" height="60" rx="10" fill="var(--white)" stroke="var(--orange)" stroke-width="2"/>
+    <text x="240" y="140" text-anchor="middle" font-size="18" fill="var(--orange)">main.py matches the prefix</text>
+  </g>
+  <g class="na-draw" style="--d:2.4s">
+    <path d="M240 166 L240 196" stroke="var(--bd)" stroke-width="3" fill="none" marker-end="url(#fma07t5-arrow)"/>
+  </g>
+  <g class="na-show" style="--d:2.8s">
+    <rect x="50" y="198" width="380" height="60" rx="10" fill="var(--white)" stroke="var(--bd)" stroke-width="2"/>
+    <text x="240" y="234" text-anchor="middle" font-size="18">routers/enquiries.py answers</text>
+  </g>
+  <g class="na-draw" style="--d:3.8s">
+    <path d="M240 260 L240 290" stroke="var(--bd)" stroke-width="3" fill="none" marker-end="url(#fma07t5-arrow)"/>
+  </g>
+  <g class="na-show" style="--d:4.2s">
+    <rect x="90" y="292" width="300" height="56" rx="10" fill="var(--bg-soft)" stroke="var(--green)" stroke-width="2"/>
+    <text x="240" y="326" text-anchor="middle" font-size="18" fill="var(--green)">the matching row comes back</text>
+  </g>
+  <defs>
+    <marker id="fma07t5-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--nb)"/>
+    </marker>
+  </defs>
+</svg>
