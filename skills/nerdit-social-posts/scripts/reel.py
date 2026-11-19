@@ -13,10 +13,22 @@ import source
 
 FPS = 30
 CTA_SECONDS = 2.0
+# A soft generated chord under the voice (owner, 2026-11-19: music under the narration; no licensed track).
+# One chord per theme, so the sound changes with the look.
+PADS = {"navy": (220.0, 277.18, 329.63), "violet": (174.61, 220.0, 261.63), "light": (261.63, 329.63, 392.0),
+        "ember": (164.81, 196.0, 246.94), "forest": (196.0, 246.94, 293.66)}
+
+
+def _pad(freqs: tuple, length: float) -> str:
+    a, b, c = freqs
+    expr = (f"0.05*sin(2*PI*{a}*t)*(0.7+0.3*sin(2*PI*0.25*t))+0.035*sin(2*PI*{b}*t)*(0.7+0.3*sin(2*PI*0.21*t))"
+            f"+0.03*sin(2*PI*{c}*t)")
+    return (f"aevalsrc='{expr}':s=48000:d={length:.3f},lowpass=f=900,afade=t=in:d=1,"
+            f"afade=t=out:st={max(length - 1.2, 0):.3f}:d=1.2,aformat=channel_layouts=stereo,volume=0.5")
 
 
 def reel_command(ff: str, clip: Path, back: Path, front: Path, cues: list[tuple[Path, float, float]], cta: Path,
-                 length: float, out: Path) -> list[str]:
+                 length: float, out: Path, pad: tuple = PADS["navy"]) -> list[str]:
     t = f"{length:.3f}"
     still = lambda p: ["-loop", "1", "-framerate", str(FPS), "-t", t, "-i", str(p)]  # noqa: E731
     cmd = [ff, "-y", "-loglevel", "error"] + still(back) + ["-i", str(clip)] + still(front)
@@ -31,7 +43,11 @@ def reel_command(ff: str, clip: Path, back: Path, front: Path, cues: list[tuple[
         label = f"c{i}"
     graph.append(f"[{label}][{3 + len(cues)}:v]overlay=0:0:enable='gte(t,{max(length - CTA_SECONDS, 0):.3f})',"
                  "format=yuv420p[v]")
-    return cmd + ["-filter_complex", ";".join(graph), "-map", "[v]", "-map", "1:a", "-t", t, "-r", str(FPS),
+    # The voice over the pad; the pad ducks while the voice speaks. 48 kHz stereo, as Reels prefer.
+    graph += ["[1:a]aresample=48000,aformat=channel_layouts=stereo,asplit=2[voice][key]", _pad(pad, length) + "[pad]",
+              "[pad][key]sidechaincompress=threshold=0.03:ratio=6:attack=30:release=500[duck]",
+              "[voice][duck]amix=inputs=2:duration=first:normalize=0[a]"]
+    return cmd + ["-filter_complex", ";".join(graph), "-map", "[v]", "-map", "[a]", "-t", t, "-r", str(FPS),
                   "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-pix_fmt", "yuv420p",
                   "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", str(out)]
 
@@ -96,5 +112,5 @@ def make_reel(src: dict, item: dict, hook: str, out_dir: Path, tl: dict | None =
 
     mp4 = out_dir / f"{item['id']}.mp4"
     subprocess.run(reel_command(ff, src["video"] / clip["file"], work / "back.png", work / "front.png", timed,
-                                work / "cta.png", length, mp4), check=True)
+                                work / "cta.png", length, mp4, PADS[theme]), check=True)
     return mp4, cover
