@@ -196,3 +196,9 @@ def test_cheat_and_compare_cards():
 def test_a_predict_block_without_a_question_asks_what_it_prints():
     page = slide_html({"kind": "predict-q", "question": "", "code": "print(1)", "lang": "python"}, look(), 2, 4)
     assert "What does this print?" in page
+
+
+def test_diagram_slides_skip_the_layout_marks():
+    svg = '<svg viewBox="0 0 10 10"><rect width="10" height="10"/></svg>'
+    page = slide_html({"kind": "diagram", "svg": svg, "label": "A diagram"}, navy_look("split"), 3, 6)
+    assert "width:14px;height:1060px" not in page

@@ -329,8 +329,8 @@ def _layout_marks(t: dict, layout: str, n: int) -> str:
     return ""
 
 
-def _slide_frame(t: dict, st: dict, layout: str, n: int, total: int, inner: str) -> str:
-    return (_background(t, st, SLIDE_W, SLIDE_H) + _layout_marks(t, layout, n)
+def _slide_frame(t: dict, st: dict, layout: str, n: int, total: int, inner: str, marks: bool = True) -> str:
+    return (_background(t, st, SLIDE_W, SLIDE_H) + (_layout_marks(t, layout, n) if marks else "")
             + _logo((64, 60, 190, 66))
             + f"<div class='abs' style='right:64px;top:74px;color:{t['muted']};font-size:30px;font-weight:700'>{n}/{total}</div>"
             + inner + _motif(t, st, SLIDE_W, SLIDE_H))  # decorations on top
@@ -517,7 +517,7 @@ def slide_html(slide: dict, look, n: int, total: int) -> str:
         inner = _teaching(slide, t, label, wrap)
     else:
         raise DrawError(f"unknown slide kind {kind!r}")
-    return _page(_slide_frame(t, st, layout, n, total, inner), SLIDE_W, SLIDE_H,
+    return _page(_slide_frame(t, st, layout, n, total, inner, marks=kind != "diagram"), SLIDE_W, SLIDE_H,
                  extra_css=figure_css() if kind == "diagram" else "", st=st, layout=layout)
 
 
