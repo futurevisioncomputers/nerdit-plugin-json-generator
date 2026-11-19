@@ -80,6 +80,7 @@ def test_predict_compare_and_cheatsheet():
     b = lesson_blocks(FLASK)
     p = b["topics"][1]["predict"][0]
     assert p["question"] == "Flask is imported as above. What does this print?" and p["output"] == "Flask"
+    assert p["outTag"] == "Python shows"
     assert p["code"] == "site = Flask(__name__)\nprint(type(site).__name__)"
     assert p["explanation"].startswith("The variable name does not matter.")
     c = b["topics"][2]["compare"][0]

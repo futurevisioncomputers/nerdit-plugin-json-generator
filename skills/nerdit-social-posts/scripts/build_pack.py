@@ -22,6 +22,7 @@ import packcheck
 import reel
 import slides
 import source
+import teach
 from captions import fill_links
 from dayplan import day_plan
 
@@ -56,6 +57,38 @@ def used_topics(workdir: Path, pack_id: str) -> set:
     return used
 
 
+def _sources(slides: list[dict]) -> set:
+    return {(x["source"]["lessonId"], x["source"]["kind"], x["source"]["index"]) for x in slides if x.get("source")}
+
+
+def add_teaching(src: dict, items: list[dict], used: set) -> None:
+    """Teaching carousels (else the key-idea carousel), cheat-sheet Stories on a lesson's first day, and
+    Wrong vs right (else cheat sheet) LinkedIn cards. Items are in posting order."""
+    last, cheat_done, story_seen = None, set(), set()
+    for it in items:
+        if it["format"] == "carousel":
+            tc = teach.teaching_carousel(src, it, used, last)
+            it["slides"] = tc["slides"] if tc else slides.default_slides(src, it)
+            if tc:
+                last = tc["format"]
+                used |= _sources(tc["slides"])
+        elif it["format"] == "story" and it["lessonId"] not in story_seen:
+            story_seen.add(it["lessonId"])
+            card = teach.story_card(src, it, True, used)
+            if card:
+                it["card"] = card
+                used |= _sources([card])
+                cheat_done.add(it["lessonId"])
+    for it in items:
+        if it["format"] == "feed":
+            card = teach.feed_card(src, it, used, it["lessonId"] in cheat_done)
+            if card:
+                it["card"] = card
+                used |= _sources([card])
+                if card["kind"] == "cheat":
+                    cheat_done.add(it["lessonId"])
+
+
 def plan_pack(workdir: Path, start: date, days: int, url: str, course_id: str | None = None, pad: bool = True) -> dict:
     """The draft pack. `url` is the live course page; `course_id` the live course's id when known (the admin
     import gives a course a new id, so the JSON's id is only a fallback; the server also finds it by URL)."""
@@ -69,9 +102,8 @@ def plan_pack(workdir: Path, start: date, days: int, url: str, course_id: str | 
         it["title"] = _clip_title(src, it)
         if it["format"] == "reel":
             it["hook"] = reel_hook(src, it)
-        if it["format"] == "carousel":
-            it["slides"] = slides.default_slides(src, it)
         it["captions"] = {p: "" for p in it["platforms"]}
+    add_teaching(src, items, teach.used_blocks(workdir, pack_id))
     n_days = len({it["date"] for it in items})
     return {"version": 1, "packId": pack_id, "courseId": course_id or src["course"]["id"],
             "courseUrl": url, "start": start.isoformat(), "days": n_days, "pad": pad,

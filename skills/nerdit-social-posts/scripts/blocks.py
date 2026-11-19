@@ -141,6 +141,7 @@ def _predict(node: Node, index: int) -> dict:
     return {"kind": "predict", "index": index, "question": _text(next(iter(_direct(node, _tag("p"))), None)),
             "lang": (pre.attrs.get("data-lang") if pre else "") or "", "code": _code(pre),
             "output": _code(_first(_first(answer, _cls("nerdit-out")), _tag("pre"))),
+            "outTag": _text(_first(_first(answer, _cls("nerdit-out")), _cls("nerdit-tag"))),
             "explanation": " ".join(_text(p) for p in _find(answer, _tag("p"))) if answer is not None else ""}
 
 
