@@ -434,7 +434,7 @@ def _teaching(slide: dict, t: dict, label, wrap: str) -> str:
         f"<div style='color:{colour};font-size:{px}px;line-height:1.3;margin-top:24px'>{_fit(text, field, per, lines)}</div>"
         if text else "")
     if kind == "predict-q":
-        q = _fit(slide["question"], "question", 34, 4)
+        q = _fit(slide["question"] or "What does this print?", "question", 34, 4)   # some blocks show only code
         return (wrap + "justify-content:center'>" + label("Guess the output")
                 + f"<div class='h fit' style='color:{t['ink']};font-size:42px;font-weight:800;line-height:1.2;max-height:210px;"
                   f"margin-bottom:26px'>{q}</div>" + _code_panel(slide["code"], slide.get("lang", ""), t)

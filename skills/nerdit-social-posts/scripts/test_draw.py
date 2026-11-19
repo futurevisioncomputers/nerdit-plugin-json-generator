@@ -191,3 +191,8 @@ def test_cheat_and_compare_cards():
     compare = {"bad": {"head": "Mistake", "code": "x", "lang": "python", "reason": "r1"}, "good": {"head": "Fix", "code": "y", "lang": "python", "reason": "r2"}}
     page = compare_card_html(compare, look(), 1350)
     assert "Mistake" in page and "Fix" in page and "r2" in page
+
+
+def test_a_predict_block_without_a_question_asks_what_it_prints():
+    page = slide_html({"kind": "predict-q", "question": "", "code": "print(1)", "lang": "python"}, look(), 2, 4)
+    assert "What does this print?" in page
