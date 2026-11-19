@@ -1,0 +1,23 @@
+{
+  "name": "y2k-candy",
+  "inspiration": "2026 trend round-up (G2 'Top 9 Graphic Design Trends 2026', Picsart 'Design trends 2026', Adobe Express 'Graphic design trends 2026'): Y2K and retro nostalgia: candy colours, playful type. General idea only; no creator's design copied.",
+  "palette": {
+    "bg": "#2a0845",
+    "bg2": "#4b2a86",
+    "panel": "#3a1460",
+    "ink": "#ffffff",
+    "muted": "#f0dcff",
+    "accent": "#ff7ad9",
+    "chip": "#ffd23f",
+    "chipInk": "#2a0845",
+    "codeBg": "#14031f",
+    "codeInk": "#fbeaff"
+  },
+  "fonts": {
+    "head": "Trebuchet MS",
+    "body": "Verdana",
+    "code": "Consolas"
+  },
+  "background": "shapes",
+  "motif": "stickers"
+}

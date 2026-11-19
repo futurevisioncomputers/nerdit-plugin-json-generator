@@ -1,0 +1,23 @@
+{
+  "name": "newsprint",
+  "inspiration": "2026 trend round-up (G2 'Top 9 Graphic Design Trends 2026', Picsart 'Design trends 2026', Adobe Express 'Graphic design trends 2026'): editorial and magazine layouts: serif headlines, black and red. General idea only; no creator's design copied.",
+  "palette": {
+    "bg": "#f7f5f0",
+    "bg2": "#ece8df",
+    "panel": "#ffffff",
+    "ink": "#111111",
+    "muted": "#3d3d3d",
+    "accent": "#c81e36",
+    "chip": "#111111",
+    "chipInk": "#f7f5f0",
+    "codeBg": "#151515",
+    "codeInk": "#f2f2f2"
+  },
+  "fonts": {
+    "head": "Georgia",
+    "body": "Constantia",
+    "code": "Consolas"
+  },
+  "background": "flat",
+  "motif": "highlight"
+}

@@ -1,0 +1,23 @@
+{
+  "name": "midnight-chrome",
+  "inspiration": "2026 trend round-up (G2 'Top 9 Graphic Design Trends 2026', Picsart 'Design trends 2026', Adobe Express 'Graphic design trends 2026'): chrome and 3D type moods, cool metallic light on dark. General idea only; no creator's design copied.",
+  "palette": {
+    "bg": "#0a0a12",
+    "bg2": "#1b1d2e",
+    "panel": "#161827",
+    "ink": "#f5f7ff",
+    "muted": "#c3c8e0",
+    "accent": "#9ae6ff",
+    "chip": "#9ae6ff",
+    "chipInk": "#0a0a12",
+    "codeBg": "#05060c",
+    "codeInk": "#e6ecff"
+  },
+  "fonts": {
+    "head": "Bahnschrift",
+    "body": "Segoe UI",
+    "code": "Consolas"
+  },
+  "background": "grid",
+  "motif": "highlight"
+}

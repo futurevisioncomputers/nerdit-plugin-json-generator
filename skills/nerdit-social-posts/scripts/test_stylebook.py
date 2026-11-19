@@ -19,7 +19,8 @@ def navy() -> dict:
 
 def test_seed_styles_are_valid():
     styles = load_styles(STYLES)
-    assert len(styles) >= 5 and all(style_errors(s) == [] for s in styles)
+    assert len(styles) >= 12 and all(style_errors(s) == [] for s in styles)
+    assert len({s["background"] for s in styles}) == 5 and len({s["motif"] for s in styles}) == 5
 
 
 def test_low_contrast_style_is_refused():

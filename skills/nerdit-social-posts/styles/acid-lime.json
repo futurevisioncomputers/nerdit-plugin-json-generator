@@ -1,0 +1,23 @@
+{
+  "name": "acid-lime",
+  "inspiration": "2026 trend round-up (G2 'Top 9 Graphic Design Trends 2026', Picsart 'Design trends 2026', Adobe Express 'Graphic design trends 2026'): maximalist bold colour, loud headline type. General idea only; no creator's design copied.",
+  "palette": {
+    "bg": "#0f1a07",
+    "bg2": "#1f3a0c",
+    "panel": "#18290b",
+    "ink": "#f4ffe0",
+    "muted": "#d9f0b0",
+    "accent": "#c6ff3d",
+    "chip": "#c6ff3d",
+    "chipInk": "#0f1a07",
+    "codeBg": "#070d03",
+    "codeInk": "#eaffc7"
+  },
+  "fonts": {
+    "head": "Arial Black",
+    "body": "Arial Nova",
+    "code": "Consolas"
+  },
+  "background": "shapes",
+  "motif": "arrows"
+}

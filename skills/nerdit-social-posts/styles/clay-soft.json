@@ -1,0 +1,23 @@
+{
+  "name": "clay-soft",
+  "inspiration": "2026 trend round-up (G2 'Top 9 Graphic Design Trends 2026', Picsart 'Design trends 2026', Adobe Express 'Graphic design trends 2026'): muted earthy tones and soft clay-like surfaces. General idea only; no creator's design copied.",
+  "palette": {
+    "bg": "#f3ebe4",
+    "bg2": "#e7d8cc",
+    "panel": "#fbf6f2",
+    "ink": "#2b211b",
+    "muted": "#5a4a40",
+    "accent": "#b4552f",
+    "chip": "#2b211b",
+    "chipInk": "#f3ebe4",
+    "codeBg": "#2b211b",
+    "codeInk": "#f6eee8"
+  },
+  "fonts": {
+    "head": "Georgia Pro",
+    "body": "Candara",
+    "code": "Consolas"
+  },
+  "background": "flat",
+  "motif": "underline"
+}

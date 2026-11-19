@@ -29,6 +29,18 @@ without Reels.
 
 ## Steps
 
+0. **Trend refresh** (once a month, and whenever `plan` says "No fresh looks left"). Owner's rule:
+   never the same design twice, always new inspiration. Look at every image in
+   `~/.nerdit-social/inspiration/` (posts the owner saved because they liked them) and, if you can
+   browse, at current design-trend round-ups for social posts. From the general ideas only (colour
+   mood, layout structure, type feel, texture) write 5–10 new files in `styles/`, one style each:
+   `name`, `inspiration` (what it came from), `palette` (bg, bg2, panel, ink, muted, accent, chip,
+   chipInk, codeBg, codeInk), `fonts` (head, body, code: installed fonts only, see
+   `stylebook.FONTS`), `background` (flat, gradient, grain, grid, shapes) and `motif` (none,
+   stickers, arrows, highlight, underline). Never copy a creator's layout, art, characters, text or
+   brand. Check them: `python -c "import stylebook as s; [print(x['name'], s.style_errors(x)) for x in s.load_styles('../styles')]"`
+   from `scripts/` must print an empty list for each. New styles appear in the next pilot for the
+   owner's OK.
 1. **Plan.** `python scripts/build_pack.py plan <workdir> --url COURSE_PAGE [--course-id ID] [--start YYYY-MM-DD] [--days 10]`
    `--url` is the live course page, `https://nerdit.in/course/<slug>/preview`. The admin import gives
    a course a new id and slug, so never build it from the JSON: ask the owner, or find the course's
@@ -65,6 +77,19 @@ without Reels.
    `pack.json` from it) and run build again.
 5. **Hand over.** Tell the owner the folder to import: Admin → Social posts → Import social pack →
    choose `<packdir>`. Nothing is posted until they approve it there.
+
+## Teaching posts and looks
+
+- For each topic the plan takes the lesson's own blocks, word for word: **Guess the output**
+  (question + code, then the answer), **Wrong vs right** (mistake and fix), **Data → code → result**
+  (the data table, the code, its output) as carousels, and the lesson's **Cheat sheet** as a Story
+  card (once per course) or LinkedIn card. Do not edit their code, outputs, tables or lesson
+  sentences: `pilot` and `build` check every drawn word against the lesson and stop on any change.
+  You write only the cover hooks and the captions. A topic without a usable block keeps the
+  key-idea carousel and the picture card.
+- Every post gets a look (style × layout family: stack, split, bleed, editorial, bignumber) that
+  no earlier pack of any course has used; two posts in a row never share a style or a layout. The
+  record is `~/.nerdit-social/style-history.json`; do not edit it.
 
 ## Caption rules (the checker enforces each)
 

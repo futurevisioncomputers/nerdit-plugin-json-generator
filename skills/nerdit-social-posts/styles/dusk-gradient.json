@@ -1,0 +1,23 @@
+{
+  "name": "dusk-gradient",
+  "inspiration": "2026 trend round-up (G2 'Top 9 Graphic Design Trends 2026', Picsart 'Design trends 2026', Adobe Express 'Graphic design trends 2026'): deep sunset gradients with warm highlights. General idea only; no creator's design copied.",
+  "palette": {
+    "bg": "#9c2a50",
+    "bg2": "#3f1859",
+    "panel": "#5a2160",
+    "ink": "#ffffff",
+    "muted": "#ffe3ef",
+    "accent": "#ffd36e",
+    "chip": "#ffd36e",
+    "chipInk": "#3a0f2e",
+    "codeBg": "#1c0a22",
+    "codeInk": "#ffeef6"
+  },
+  "fonts": {
+    "head": "Segoe UI Black",
+    "body": "Segoe UI",
+    "code": "Consolas"
+  },
+  "background": "gradient",
+  "motif": "underline"
+}

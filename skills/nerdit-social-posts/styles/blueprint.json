@@ -1,0 +1,23 @@
+{
+  "name": "blueprint",
+  "inspiration": "2026 trend round-up (G2 'Top 9 Graphic Design Trends 2026', Picsart 'Design trends 2026', Adobe Express 'Graphic design trends 2026'): technical drawing look: grid paper, annotation arrows. General idea only; no creator's design copied.",
+  "palette": {
+    "bg": "#0b3d91",
+    "bg2": "#082c69",
+    "panel": "#0d4aa8",
+    "ink": "#ffffff",
+    "muted": "#d6e4ff",
+    "accent": "#ffd166",
+    "chip": "#ffd166",
+    "chipInk": "#0b2350",
+    "codeBg": "#061a3d",
+    "codeInk": "#eaf1ff"
+  },
+  "fonts": {
+    "head": "Bahnschrift",
+    "body": "Segoe UI",
+    "code": "Consolas"
+  },
+  "background": "grid",
+  "motif": "arrows"
+}

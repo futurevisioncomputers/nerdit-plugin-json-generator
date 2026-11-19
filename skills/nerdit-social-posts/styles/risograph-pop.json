@@ -1,0 +1,23 @@
+{
+  "name": "risograph-pop",
+  "inspiration": "2026 trend round-up (G2 'Top 9 Graphic Design Trends 2026', Picsart 'Design trends 2026', Adobe Express 'Graphic design trends 2026'): paper textures and print-made looks; warm bold colour. General idea only; no creator's design copied.",
+  "palette": {
+    "bg": "#fff4e0",
+    "bg2": "#ffe3c2",
+    "panel": "#fffaf2",
+    "ink": "#1f1300",
+    "muted": "#4a3a24",
+    "accent": "#d63c26",
+    "chip": "#1f1300",
+    "chipInk": "#fff4e0",
+    "codeBg": "#1f1300",
+    "codeInk": "#fff4e0"
+  },
+  "fonts": {
+    "head": "Rockwell Nova",
+    "body": "Corbel",
+    "code": "Consolas"
+  },
+  "background": "grain",
+  "motif": "stickers"
+}
