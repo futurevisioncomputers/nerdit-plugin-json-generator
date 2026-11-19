@@ -69,7 +69,8 @@ def _quiz(src: dict, item: dict) -> dict | None:
     topic_text = " ".join([title] + [s.get("keyIdea", "") for s in scenes] + [t for s in scenes for t in s.get("terms") or []])
     words = {w for w in re.findall(r"[a-z_]{4,}", topic_text.lower())}
     score = lambda q: len(words & set(re.findall(r"[a-z_]{4,}", " ".join([q["text"], *map(str, q["options"])]).lower())))  # noqa: E731
-    return max(fitting, key=score)    # max keeps the first of equals, so the rotation still breaks ties
+    best = max(fitting, key=score)    # max keeps the first of equals, so the rotation still breaks ties
+    return best if score(best) else None   # a question about another topic would confuse this carousel
 
 
 def default_slides(src: dict, item: dict) -> list[dict]:

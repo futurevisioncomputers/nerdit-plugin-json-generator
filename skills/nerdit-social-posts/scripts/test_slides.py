@@ -97,3 +97,13 @@ def test_quiz_prefers_a_question_about_the_carousels_topic(tmp_path):
     path.write_text(json.dumps(course), encoding="utf-8")
     quiz = next(s for s in default_slides(load_source(wd), ITEM) if s["kind"] == "quiz")
     assert quiz["question"] == "Where should the project folder keep its packages?"
+
+
+def test_an_off_topic_question_is_left_out(tmp_path):
+    wd = write_workdir(tmp_path)
+    path = wd / "course-demo_output.json"
+    course = json.loads(path.read_text(encoding="utf-8"))
+    course["lessons"][0]["questions"] = [{"id": "q9", "text": "Which HTTP verb reads data?",
+                                          "options": ["GET", "POST", "PUT", "DELETE"], "correctOptionIndex": 0}]
+    path.write_text(json.dumps(course), encoding="utf-8")
+    assert "quiz" not in [s["kind"] for s in default_slides(load_source(wd), ITEM)]

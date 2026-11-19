@@ -29,7 +29,7 @@ def write_workdir(root: Path, name: str = "demo", topics: int = 2) -> Path:
               "lessons": [{"id": "demo-01", "title": "Getting Started", "content": LESSON_HTML, "duration": "10 min",
                            "questions": QUESTIONS}]}
     (wd / f"course-{name}_output.json").write_text(json.dumps(course), encoding="utf-8")
-    scenes = [scene("demo-01", t, f"Topic {t}", f"Key idea {t}", ["project folder"]) for t in range(1, topics + 1)]
+    scenes = [scene("demo-01", t, f"Topic {t}", f"Key idea {t}", ["project folder", "venv"]) for t in range(1, topics + 1)]
     plan = {"version": 1, "course": "Demo Course", "source": str(wd / f"course-{name}_output.json"),
             "intro": {"title": "Demo", "points": ["a"], "narration": "x"}, "scenes": scenes,
             "recap": {"points": ["a"], "narration": "x"},
