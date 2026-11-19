@@ -69,3 +69,9 @@ def test_reserve_replaces_this_packs_entries_and_round_trips(tmp_path, monkeypat
     save_history(history_path(), h)
     assert history_path() == tmp_path / "style-history.json" and load_history(history_path()) == h
     assert load_history(tmp_path / "missing.json") == {"looks": []}
+
+
+def test_code_panels_must_be_dark_for_the_token_colours():
+    s = navy()
+    light_code = {**s, "palette": {**s["palette"], "codeBg": "#f8fafc", "codeInk": "#0b1f3a"}}
+    assert "codeBg must be dark: code colours are tuned for dark panels" in style_errors(light_code)

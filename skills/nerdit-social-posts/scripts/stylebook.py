@@ -64,6 +64,8 @@ def style_errors(style: dict) -> list[str]:
         errors.append(f"background must be one of {', '.join(BACKGROUNDS)}")
     if style["motif"] not in MOTIFS:
         errors.append(f"motif must be one of {', '.join(MOTIFS)}")
+    if HEX.match(str(palette.get("codeBg", ""))) and _luminance(palette["codeBg"]) > 0.2:
+        errors.append("codeBg must be dark: code colours are tuned for dark panels")
     for fg, bg in (("ink", "bg"), ("ink", "bg2"), ("codeInk", "codeBg"), ("chipInk", "chip")):
         if HEX.match(str(palette.get(fg, ""))) and HEX.match(str(palette.get(bg, ""))):
             ratio = contrast(palette[fg], palette[bg])

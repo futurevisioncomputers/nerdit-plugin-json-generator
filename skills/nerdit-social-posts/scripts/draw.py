@@ -185,6 +185,7 @@ def _page(body: str, w: int, h: int, transparent: bool = False, extra_css: str =
             f":root{{--head:{_font(fonts['head'])};--body:{_font(fonts['body'])};--code:{_font(fonts['code'])}}}"
             "*{box-sizing:border-box}body{font-family:var(--body);position:relative}"
             ".h{font-family:var(--head)}.mono{font-family:var(--code)}"
+            ".tk-kw{color:#c792ea}.tk-str{color:#c3e88d}.tk-num{color:#f78c6c}.tk-com{color:#8b98b0;font-style:italic}"
             ".abs{position:absolute}.fit{overflow:hidden}"
             f"{look_css}{extra_css}</style></head><body class='{classes}'>{body}{FIT_JS}</body></html>")
 
@@ -335,6 +336,131 @@ def _slide_frame(t: dict, st: dict, layout: str, n: int, total: int, inner: str)
             + inner + _motif(t, st, SLIDE_W, SLIDE_H))  # decorations on top
 
 
+# ---- Teaching slides: real code, output and tables from the lesson (data-first posts) ----
+
+SAMPLE_LABEL = "Sample data from the course"
+CODE_LINES, CODE_CHARS, OUT_LINES = 12, 46, 14
+CODE_PX, OUT_PX = 30, 26        # floors: code and output are never shrunk below these
+TEACH_KINDS = {"predict-q", "predict-a", "wrong", "right", "data", "code", "output"}
+PY_KEYWORDS = {"False", "None", "True", "and", "as", "assert", "async", "await", "break", "class", "continue", "def",
+               "del", "elif", "else", "except", "finally", "for", "from", "global", "if", "import", "in", "is", "lambda",
+               "nonlocal", "not", "or", "pass", "raise", "return", "try", "while", "with", "yield", "print"}
+_TOKENS = re.compile(r"(?P<com>#[^\n]*)|(?P<str>\"\"\"[\s\S]*?\"\"\"|'\'\'[\s\S]*?'\'\'|\"(?:\\.|[^\"\\\n])*\"|'(?:\\.|[^'\\\n])*')"
+                     r"|(?P<num>\b\d+(?:\.\d+)?\b)|(?P<word>[A-Za-z_]\w*)")
+
+
+def highlight(code: str, lang: str) -> str:
+    """Code as escaped HTML with keyword, string, number and comment spans (python, json, bash/shell)."""
+    lang = (lang or "").lower()
+    if lang not in ("python", "json", "bash", "shell", "sh"):
+        return html.escape(code)
+    out, pos = [], 0
+    line_start = True
+    for m in _TOKENS.finditer(code):
+        gap = code[pos:m.start()]
+        out.append(html.escape(gap))
+        if "\n" in gap:
+            line_start = not gap.rsplit("\n", 1)[1].strip()
+        kind, text = m.lastgroup, m.group()
+        if kind == "word":
+            keyword = (lang == "python" and text in PY_KEYWORDS) or (lang == "json" and text in ("true", "false", "null")) \
+                or (lang in ("bash", "shell", "sh") and line_start)
+            kind = "kw" if keyword else None
+        elif kind == "com" and lang == "json":
+            kind = None
+        out.append(f"<span class='tk-{kind}'>{html.escape(text)}</span>" if kind else html.escape(text))
+        line_start = False
+        pos = m.end()
+    out.append(html.escape(code[pos:]))
+    return "".join(out)
+
+
+def code_ok(code: str) -> bool:
+    lines = code.split("\n")
+    return bool(code.strip()) and len(lines) <= CODE_LINES and all(len(l) <= CODE_CHARS for l in lines)
+
+
+def fit_output(text: str) -> str | None:
+    """The output as drawn: None when a line is too wide; long output keeps its first rows and ends in "…"."""
+    lines = text.split("\n")
+    if not text.strip() or any(len(l) > CODE_CHARS for l in lines):
+        return None
+    return "\n".join(lines if len(lines) <= OUT_LINES else lines[:OUT_LINES - 1] + ["…"])
+
+
+def fit_table(headers: list, rows: list) -> tuple[list, list]:
+    """At most 5 columns and 6 rows; whole trailing columns and rows cut, marked "…"."""
+    cut = lambda cells: list(cells[:5]) + (["…"] if len(cells) > 5 else [])  # noqa: E731
+    body = [cut(r) for r in rows[:6]]
+    if len(rows) > 6:
+        body.append(["…"] + [""] * (len(body[0]) - 1 if body else 0))
+    return cut(headers), body
+
+
+def _code_panel(code: str, lang: str, t: dict, edge: str | None = None) -> str:
+    if not code_ok(code):
+        raise DrawError(f"code too big for a slide ({CODE_LINES} lines, {CODE_CHARS} characters a line): {code[:40]!r}")
+    border = f"border-left:10px solid {edge};" if edge else ""
+    return (f"<pre class='code mono' style='margin:0;background:{t['codeBg']};color:{t['codeInk']};font-size:{CODE_PX}px;"
+            f"line-height:1.4;padding:26px 30px;border-radius:20px;white-space:pre;overflow:hidden;{border}'>"
+            f"{highlight(code, lang)}</pre>")
+
+
+def _output_panel(text: str, t: dict) -> str:
+    shown = fit_output(text)
+    if shown is None:
+        raise DrawError(f"output too wide for a slide ({CODE_CHARS} characters a line)")
+    return (f"<pre class='code mono' style='margin:0;background:{t['codeBg']};color:{t['codeInk']};font-size:{OUT_PX}px;"
+            f"line-height:1.35;padding:24px 28px;border-radius:20px;white-space:pre;overflow:hidden'>{html.escape(shown)}</pre>")
+
+
+def _table_html(headers: list, rows: list, t: dict) -> str:
+    headers, rows = fit_table(headers, rows)
+    cell = f"padding:10px 14px;font-size:{OUT_PX}px;line-height:1.25;text-align:left;vertical-align:top"
+    head = "".join(f"<th style='{cell};background:{t['chip']};color:{t['chipInk']};font-weight:800'>"
+                   f"{html.escape(_english(str(h), 'table'))}</th>" for h in headers)
+    body = "".join("<tr>" + "".join(f"<td style='{cell};color:{t['ink']};border-bottom:2px solid {t['muted']}33'>"
+                                    f"{html.escape(_english(str(c), 'table'))}</td>" for c in r) + "</tr>" for r in rows)
+    return f"<table style='border-collapse:collapse;width:100%;background:{t['panel']}'><tr>{head}</tr>{body}</table>"
+
+
+def _sample(t: dict, on: bool) -> str:
+    return f"<div style='color:{t['muted']};font-size:24px;margin-top:22px'>{SAMPLE_LABEL}</div>" if on else ""
+
+
+def _teaching(slide: dict, t: dict, label, wrap: str) -> str:
+    kind = slide["kind"]
+    prose = lambda text, field, per, lines, px, colour: (  # noqa: E731
+        f"<div style='color:{colour};font-size:{px}px;line-height:1.3;margin-top:24px'>{_fit(text, field, per, lines)}</div>"
+        if text else "")
+    if kind == "predict-q":
+        q = _fit(slide["question"], "question", 34, 4)
+        return (wrap + "justify-content:center'>" + label("Guess the output")
+                + f"<div class='h fit' style='color:{t['ink']};font-size:42px;font-weight:800;line-height:1.2;max-height:210px;"
+                  f"margin-bottom:26px'>{q}</div>" + _code_panel(slide["code"], slide.get("lang", ""), t)
+                + f"<div style='color:{t['muted']};font-size:30px;margin-top:26px'>Comment your answer, then swipe &rarr;</div></div>")
+    if kind == "predict-a":
+        return (wrap + "justify-content:center'>" + label("Answer", RIGHT)
+                + f"<div style='color:{t['muted']};font-size:28px;font-weight:700;margin-bottom:12px'>"
+                  f"{html.escape(_english(slide.get('outTag') or 'Output', 'output label'))}</div>"
+                + _output_panel(slide["output"], t) + prose(slide.get("explanation", ""), "explanation", 40, 5, 32, t["ink"]) + "</div>")
+    if kind in ("wrong", "right"):
+        colour, mark = (WRONG, "&#10007; Wrong") if kind == "wrong" else (RIGHT, "&#10003; Right")
+        return (wrap + "justify-content:center'>" + label(mark, colour)
+                + f"<div class='h fit' style='color:{t['ink']};font-size:40px;font-weight:800;line-height:1.2;max-height:150px;"
+                  f"margin-bottom:24px'>{_fit(slide.get('head', ''), 'head', 34, 2)}</div>"
+                + _code_panel(slide["code"], slide.get("lang", ""), t, colour)
+                + prose(slide.get("reason", ""), "reason", 40, 4, 32, t["ink"]) + "</div>")
+    if kind == "data":
+        caption = prose(slide.get("caption", ""), "caption", 46, 3, 28, t["muted"])
+        return (wrap + "justify-content:center'>" + label("Meet the data") + _table_html(slide["headers"], slide["rows"], t)
+                + caption + _sample(t, slide.get("sample", False)) + "</div>")
+    if kind == "code":
+        return wrap + "justify-content:center'>" + label("You type") + _code_panel(slide["code"], slide.get("lang", ""), t) + "</div>"
+    return (wrap + "justify-content:center'>" + label(html.escape(_english(slide.get("outTag") or "Output", "output label")))
+            + _output_panel(slide["output"], t) + _sample(t, slide.get("sample", False)) + "</div>")
+
+
 def slide_html(slide: dict, look, n: int, total: int) -> str:
     t, st, layout = resolve(look)
     kind = slide["kind"]
@@ -387,6 +513,8 @@ def slide_html(slide: dict, look, n: int, total: int) -> str:
                    f"Share it with a friend who is learning</div>"
                  + f"<div style='background:{t['chip']};color:{t['chipInk']};font-size:42px;font-weight:800;"
                    f"padding:18px 40px;border-radius:999px;margin-top:44px'>nerdit.in</div></div>")
+    elif kind in TEACH_KINDS:
+        inner = _teaching(slide, t, label, wrap)
     else:
         raise DrawError(f"unknown slide kind {kind!r}")
     return _page(_slide_frame(t, st, layout, n, total, inner), SLIDE_W, SLIDE_H,
@@ -419,6 +547,42 @@ def card_html(card: dict, look, height: int) -> str:
               f"color:{t['muted']};font-size:32px;font-weight:700'>Free lesson &middot; nerdit.in</div>")
     return _page(body, SLIDE_W, height, extra_css=figure_css() if card.get("picture", {}) and card["picture"].get("svg") else "",
                  st=st, layout=layout)
+
+
+def _card_frame(t: dict, st: dict, height: int, title: str, inner: str) -> str:
+    top = 250 if height == REEL_H else 170          # Stories: keep clear of the top bar
+    return (_background(t, st, SLIDE_W, height) + _logo((64, top - 110, 190, 66))
+            + f"<div class='abs' style='left:72px;top:{top}px;width:936px'>"
+              f"<div class='h' style='color:{t['ink']};font-size:64px;font-weight:900;line-height:1.05'>{title}</div>{inner}</div>"
+            + f"<div class='abs' style='left:72px;top:{height - (330 if height == REEL_H else 120)}px;background:{t['chip']};"
+              f"color:{t['chipInk']};font-size:32px;font-weight:800;padding:12px 28px;border-radius:999px'>Save this &middot; nerdit.in</div>"
+            + _motif(t, st, SLIDE_W, height))
+
+
+def cheat_html(cheat: dict, look, height: int) -> str:
+    """The lesson's cheat sheet as one card to save: term, what it does, tiny example (at most 6 rows)."""
+    t, st, layout = resolve(look)
+    rows = ""
+    for row in cheat["rows"][:6]:
+        term, what, example = (list(row) + ["", "", ""])[:3]
+        rows += (f"<div style='margin-top:26px;padding:20px 24px;background:{t['panel']};border-radius:20px'>"
+                 f"<div style='color:{t['accent']};font-size:32px;font-weight:800'>{_fit(term, 'term', 40, 1)}</div>"
+                 f"<div style='color:{t['ink']};font-size:{OUT_PX + 2}px;margin-top:4px'>{_fit(what, 'meaning', 52, 2)}</div>"
+                 + (f"<div class='mono' style='color:{t['codeInk']};background:{t['codeBg']};font-size:{OUT_PX}px;margin-top:10px;"
+                    f"padding:8px 14px;border-radius:12px;white-space:pre;overflow:hidden'>{html.escape(_english(example, 'example'))}</div>"
+                    if example else "") + "</div>")
+    return _page(_card_frame(t, st, height, "Cheat sheet", rows), SLIDE_W, height, st=st, layout=layout)
+
+
+def compare_card_html(compare: dict, look, height: int) -> str:
+    """Wrong and right in one image: the mistake above, the fix below (code needs the full width)."""
+    t, st, layout = resolve(look)
+    side = lambda s, colour, mark: (  # noqa: E731
+        f"<div style='margin-top:26px'><div style='color:{colour};font-size:30px;font-weight:800'>{mark} "
+        f"{_fit(s.get('head', ''), 'head', 40, 2)}</div><div style='margin-top:12px'>"
+        f"{_code_panel(s['code'], s.get('lang', ''), t, colour)}</div></div>")
+    inner = side(compare["bad"], WRONG, "&#10007;") + side(compare["good"], RIGHT, "&#10003;")
+    return _page(_card_frame(t, st, height, "Wrong vs right", inner), SLIDE_W, height, st=st, layout=layout)
 
 
 def shoot(pages: list[tuple[str, Path, int, int, bool]]) -> None:
