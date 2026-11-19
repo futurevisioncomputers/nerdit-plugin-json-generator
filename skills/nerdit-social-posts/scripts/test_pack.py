@@ -229,3 +229,13 @@ def test_no_fresh_looks_stops_plan(tmp_path, capsys):
                                             for s in styles for l in LAYOUTS]})
     assert build_pack.main(["plan", str(write_workdir(tmp_path)), "--start", "2026-11-19", "--url", LIVE_URL]) == 1
     assert "run the trend refresh" in capsys.readouterr().out
+
+
+def test_pilot_covers_every_format():
+    car = lambda iid, kind: {"id": iid, "format": "carousel", "slides": [{"kind": "cover"}, {"kind": kind}, {"kind": "cta"}]}  # noqa: E731
+    items = [{"id": "d01-reel", "format": "reel"}, car("d01-carousel", "predict-q"), {"id": "d01-story", "format": "story", "card": {"kind": "cheat"}},
+             {"id": "d02-reel", "format": "reel"}, {"id": "d02-story", "format": "story"}, car("d03-carousel", "idea"),
+             car("d05-carousel", "wrong"), car("d06-carousel", "predict-q"), {"id": "d04-feed", "format": "feed", "card": {"kind": "compare"}},
+             {"id": "d05-feed", "format": "feed"}]
+    assert [i["id"] for i in build_pack.pilot_items(items)] == [
+        "d01-reel", "d01-carousel", "d01-story", "d03-carousel", "d05-carousel", "d04-feed"]

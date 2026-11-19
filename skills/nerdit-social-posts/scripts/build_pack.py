@@ -122,9 +122,30 @@ def plan_pack(workdir: Path, start: date, days: int, url: str, course_id: str | 
             "items": items}
 
 
+CAROUSEL_KIND = {"predict-q": "predict", "wrong": "compare", "data": "run"}
+
+
+def _pilot_key(item: dict):
+    fmt = item["format"]
+    if fmt == "reel":
+        return ("reel",)
+    if fmt == "carousel":
+        slides = item.get("slides") or []
+        return ("carousel", CAROUSEL_KIND.get(slides[1]["kind"] if len(slides) > 1 else "", "key-idea"))
+    card = (item.get("card") or {}).get("kind")
+    return (fmt, card) if card else None          # picture cards are not new: not in the pilot
+
+
 def pilot_items(items: list[dict]) -> list[dict]:
-    first = lambda fmt: next((i for i in items if i["format"] == fmt), None)  # noqa: E731
-    return [i for i in (first("reel"), first("carousel")) if i]
+    """One of each kind of post the pack has: the first Reel, the first carousel of each format, the first
+    teaching Story card and the first teaching feed card, in posting order."""
+    seen, out = set(), []
+    for item in items:
+        key = _pilot_key(item)
+        if key and key not in seen:
+            seen.add(key)
+            out.append(item)
+    return out
 
 
 def render_items(src: dict, plan: dict, items: list[dict], out_dir: Path) -> list[dict]:
