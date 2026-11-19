@@ -44,7 +44,7 @@ def reel_command(ff: str, clip: Path, back: Path, front: Path, cues: list[tuple[
     graph.append(f"[{label}][{3 + len(cues)}:v]overlay=0:0:enable='gte(t,{max(length - CTA_SECONDS, 0):.3f})',"
                  "format=yuv420p[v]")
     # The voice over the pad; the pad ducks while the voice speaks. 48 kHz stereo, as Reels prefer.
-    graph += ["[1:a]aresample=48000,aformat=channel_layouts=stereo,asplit=2[voice][key]", _pad(pad, length) + "[pad]",
+    graph += ["[1:a]aresample=48000,aformat=channel_layouts=mono,pan=stereo|c0=c0|c1=c0,asplit=2[voice][key]", _pad(pad, length) + "[pad]",
               "[pad][key]sidechaincompress=threshold=0.03:ratio=6:attack=30:release=500[duck]",
               "[voice][duck]amix=inputs=2:duration=first:normalize=0[a]"]
     return cmd + ["-filter_complex", ";".join(graph), "-map", "[v]", "-map", "[a]", "-t", t, "-r", str(FPS),

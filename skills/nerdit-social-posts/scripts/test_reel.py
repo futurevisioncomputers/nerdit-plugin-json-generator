@@ -53,3 +53,15 @@ def test_reel_from_a_synthetic_clip_is_1080x1920_with_audio(tmp_path):
     assert info["size"] == (1080, 1920) and info["fps"] == 30 and info["audio"] and 2.9 <= info["seconds"] <= 3.1
     err = subprocess.run([FF, "-hide_banner", "-i", str(out)], capture_output=True, text=True).stderr
     assert "48000 Hz" in err and "stereo" in err
+
+
+def max_volume(path: Path) -> float:
+    import re
+    err = subprocess.run([FF, "-hide_banner", "-i", str(path), "-af", "volumedetect", "-vn", "-f", "null", "-"],
+                         capture_output=True, text=True).stderr
+    return float(re.search(r"max_volume: (-?\d+(?:\.\d+)?) dB", err)[1])
+
+
+def test_voice_keeps_its_loudness_in_the_reel(tmp_path):
+    out = run_synthetic_reel(tmp_path)
+    assert abs(max_volume(out) - max_volume(tmp_path / "c.mp4")) < 1.5
