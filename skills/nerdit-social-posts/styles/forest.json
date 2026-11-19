@@ -1,0 +1,23 @@
+{
+  "name": "forest",
+  "inspiration": "Original NerdIT theme (social pack, 2026-11-18)",
+  "palette": {
+    "bg": "#065f46",
+    "bg2": "#022c22",
+    "panel": "#04402f",
+    "ink": "#ffffff",
+    "muted": "#d1fae5",
+    "accent": "#6ee7b7",
+    "chip": "#34d399",
+    "chipInk": "#022c22",
+    "codeBg": "#0b1220",
+    "codeInk": "#e2e8f0"
+  },
+  "fonts": {
+    "head": "Segoe UI",
+    "body": "Segoe UI",
+    "code": "Consolas"
+  },
+  "background": "gradient",
+  "motif": "none"
+}

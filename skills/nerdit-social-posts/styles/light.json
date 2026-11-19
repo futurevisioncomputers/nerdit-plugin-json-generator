@@ -1,0 +1,23 @@
+{
+  "name": "light",
+  "inspiration": "Original NerdIT theme (social pack, 2026-11-18)",
+  "palette": {
+    "bg": "#f8fafc",
+    "bg2": "#dbe4ef",
+    "panel": "#ffffff",
+    "ink": "#0b1f3a",
+    "muted": "#1e293b",
+    "accent": "#0f766e",
+    "chip": "#0f766e",
+    "chipInk": "#ffffff",
+    "codeBg": "#0f172a",
+    "codeInk": "#e2e8f0"
+  },
+  "fonts": {
+    "head": "Segoe UI",
+    "body": "Segoe UI",
+    "code": "Consolas"
+  },
+  "background": "gradient",
+  "motif": "none"
+}

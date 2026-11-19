@@ -1,0 +1,23 @@
+{
+  "name": "ember",
+  "inspiration": "Original NerdIT theme (social pack, 2026-11-18)",
+  "palette": {
+    "bg": "#292524",
+    "bg2": "#0c0a09",
+    "panel": "#1c1917",
+    "ink": "#ffffff",
+    "muted": "#e7e5e4",
+    "accent": "#fdba74",
+    "chip": "#f97316",
+    "chipInk": "#1c1917",
+    "codeBg": "#0b1220",
+    "codeInk": "#e2e8f0"
+  },
+  "fonts": {
+    "head": "Segoe UI",
+    "body": "Segoe UI",
+    "code": "Consolas"
+  },
+  "background": "gradient",
+  "motif": "none"
+}

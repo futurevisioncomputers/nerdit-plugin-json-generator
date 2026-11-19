@@ -1,0 +1,23 @@
+{
+  "name": "violet",
+  "inspiration": "Original NerdIT theme (social pack, 2026-11-18)",
+  "palette": {
+    "bg": "#4c1d95",
+    "bg2": "#14002b",
+    "panel": "#2e0f5c",
+    "ink": "#ffffff",
+    "muted": "#ede9fe",
+    "accent": "#d8b4fe",
+    "chip": "#c084fc",
+    "chipInk": "#1e0638",
+    "codeBg": "#0b1220",
+    "codeInk": "#e2e8f0"
+  },
+  "fonts": {
+    "head": "Segoe UI",
+    "body": "Segoe UI",
+    "code": "Consolas"
+  },
+  "background": "gradient",
+  "motif": "none"
+}

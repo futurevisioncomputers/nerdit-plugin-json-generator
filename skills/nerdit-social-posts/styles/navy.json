@@ -1,0 +1,23 @@
+{
+  "name": "navy",
+  "inspiration": "Original NerdIT theme (social pack, 2026-11-18)",
+  "palette": {
+    "bg": "#003b6c",
+    "bg2": "#001b33",
+    "panel": "#0a2a4d",
+    "ink": "#ffffff",
+    "muted": "#e2e8f0",
+    "accent": "#5eead4",
+    "chip": "#14b8a6",
+    "chipInk": "#001b33",
+    "codeBg": "#0b1220",
+    "codeInk": "#e2e8f0"
+  },
+  "fonts": {
+    "head": "Segoe UI",
+    "body": "Segoe UI",
+    "code": "Consolas"
+  },
+  "background": "gradient",
+  "motif": "none"
+}
