@@ -9,10 +9,10 @@ from pathlib import Path
 
 from PIL import Image
 
+import source  # noqa: F401  puts story-video's scripts on sys.path
 import storyplan
 from captions import caption_errors, unknown_numbers
 from dayplan import ALLOWED_PLATFORMS
-import source
 
 SIZES = {"story": (1080, 1920), "feed": (1080, 1350), "carousel": (1080, 1350), "cover": (1080, 1920)}
 MAX_SLIDES, MIN_SLIDES = 10, 2

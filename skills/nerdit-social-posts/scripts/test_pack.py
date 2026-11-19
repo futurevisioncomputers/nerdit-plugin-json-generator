@@ -239,3 +239,11 @@ def test_pilot_covers_every_format():
              {"id": "d05-feed", "format": "feed"}]
     assert [i["id"] for i in build_pack.pilot_items(items)] == [
         "d01-reel", "d01-carousel", "d01-story", "d03-carousel", "d05-carousel", "d04-feed"]
+
+
+def test_every_module_imports_on_its_own():
+    import subprocess, sys
+    here = Path(__file__).resolve().parent
+    for name in ("packcheck", "slides", "teach", "blocks", "stylebook", "draw", "captions", "reel", "cues", "build_pack"):
+        r = subprocess.run([sys.executable, "-c", f"import {name}"], cwd=here, capture_output=True, text=True)
+        assert r.returncode == 0, f"{name}: {r.stderr.strip().splitlines()[-1]}"
