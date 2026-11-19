@@ -122,6 +122,11 @@ def card_spec(src: dict, item: dict) -> dict:
 
 
 def make_card(src: dict, item: dict, height: int, out_dir: Path) -> Path:
+    """The item's teaching card (cheat sheet or Wrong vs right) when the plan gave it one, else the picture card."""
     out = Path(out_dir) / f"{item['id']}.jpg"
-    draw.shoot([(draw.card_html(card_spec(src, item), draw.look_for(item), height), out, draw.SLIDE_W, height, False)])
+    card, look = item.get("card") or {}, draw.look_for(item)
+    doc = (draw.cheat_html(card, look, height) if card.get("kind") == "cheat"
+           else draw.compare_card_html(card, look, height) if card.get("kind") == "compare"
+           else draw.card_html(card_spec(src, item), look, height))
+    draw.shoot([(doc, out, draw.SLIDE_W, height, False)])
     return out

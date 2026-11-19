@@ -23,6 +23,7 @@ import reel
 import slides
 import source
 import teach
+from blocks import lesson_blocks
 from captions import fill_links
 from dayplan import day_plan
 
@@ -186,7 +187,9 @@ def main(argv=None) -> int:
     src = source.load_source(packdir.parents[1])
     texts = packcheck.lesson_texts(packdir.parents[1])
     todo = pilot_items(plan["items"]) if a.cmd == "pilot" else plan["items"]
-    written = packcheck.plan_text_errors(todo, texts)      # before drawing: cheap to fix in pack-plan.json
+    blocks = {lid: lesson_blocks(lesson["content"]) for lid, lesson in src["lessons"].items()}
+    written = packcheck.plan_text_errors(todo, texts) + packcheck.source_errors(todo, blocks, packdir.parents[1])
+    # (checked before drawing: cheap to fix in pack-plan.json)
     if written:
         return _report(written)
     if a.cmd == "pilot":

@@ -149,3 +149,45 @@ def test_build_stops_when_the_video_timeline_drifted(tmp_path, monkeypatch):
     monkeypatch.setattr(cues, "checked_timeline", drift)
     with pytest.raises(SystemExit, match="does not match"):
         build_pack.render_items({}, {"courseUrl": URL}, [{"id": "d01-reel", "format": "reel"}], tmp_path / "out")
+
+
+# ---- word-for-word checker and new cards (data-first plan, Task 6) ----
+from blocks import lesson_blocks  # noqa: E402
+from test_blocks import FLASK  # noqa: E402
+
+
+def planned(tmp_path):
+    from test_teach import ITEM_T1, ITEM_T2, src_with
+    import teach
+    src = src_with(tmp_path, FLASK)
+    car = {**ITEM_T1, "slides": teach.teaching_carousel(src, ITEM_T1, set(), None)["slides"]}
+    feed = {**ITEM_T2, "id": "d02-feed", "format": "feed", "card": teach.feed_card(src, ITEM_T2, set(), False)}
+    return src, [car, feed], {"demo-01": lesson_blocks(FLASK)}
+
+
+def test_untouched_plan_passes_the_word_for_word_check(tmp_path):
+    from packcheck import source_errors
+    _, items, blocks = planned(tmp_path)
+    assert source_errors(items, blocks) == []
+
+
+def test_edited_code_and_edited_card_are_caught(tmp_path):
+    from packcheck import source_errors
+    _, items, blocks = planned(tmp_path)
+    items[0]["slides"][1]["code"] += "\nprint('extra')"
+    items[1]["card"]["good"]["reason"] = "Invented reason."
+    assert source_errors(items, blocks) == ["d01-carousel: slide 2: text not found in demo-01 predict 0",
+                                            "d02-feed: card: text not found in demo-01 compare 0"]
+
+
+def test_make_card_draws_the_cheat_and_compare_cards(tmp_path, monkeypatch):
+    import draw
+    import slides as slides_mod
+    src, items, _ = planned(tmp_path)
+    shot = []
+    monkeypatch.setattr(draw, "shoot", lambda pages: shot.extend(pages))
+    slides_mod.make_card(src, {**items[1], "style": "navy", "layout": "stack"}, 1350, tmp_path)
+    cheat = {**items[1], "id": "d03-story", "format": "story", "style": "ember", "layout": "split",
+             "card": {"kind": "cheat", "headers": ["Keyword"], "rows": [["route", "Links a URL", "@app.route"]], "source": {}}}
+    slides_mod.make_card(src, cheat, 1920, tmp_path)
+    assert "Wrong vs right" in shot[0][0] and "Cheat sheet" in shot[1][0] and shot[1][3] == 1920

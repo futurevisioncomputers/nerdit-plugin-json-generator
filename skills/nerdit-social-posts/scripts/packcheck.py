@@ -89,6 +89,67 @@ def plan_text_errors(items: list[dict], texts: dict) -> list[str]:
     return out
 
 
+def _norm(text) -> str:
+    return " ".join(str(text).split())
+
+
+def _block(blocks: dict, ref: dict):
+    lesson = blocks.get(ref.get("lessonId"), {})
+    if ref.get("kind") == "cheatsheet":
+        return lesson.get("cheatsheet")
+    for topic in lesson.get("topics", {}).values():
+        for b in topic.get(ref.get("kind"), []):
+            if b.get("index") == ref.get("index"):
+                return b
+    return None
+
+
+def _corpus(block) -> str:
+    """Every string in a block, joined: what a drawn line may be taken from."""
+    if isinstance(block, dict):
+        return " ".join(_corpus(v) for k, v in block.items() if k not in ("kind", "index", "reads", "lang"))
+    if isinstance(block, list):
+        return " ".join(_corpus(v) for v in block)
+    return _norm(block) if isinstance(block, str) else ""
+
+
+def _drawn(s: dict) -> list[str]:
+    """The lesson words a slide or card draws (cover, closing slide and generated captions excluded)."""
+    kind = s.get("kind")
+    fields = {"predict-q": ("question", "code"), "predict-a": ("output", "explanation"), "wrong": ("head", "code", "reason"),
+              "right": ("head", "code", "reason"), "code": ("code",), "output": ("output",)}.get(kind, ())
+    texts = [s.get(f, "") for f in fields]
+    if kind in ("data", "cheat"):
+        texts += list(s.get("headers", [])) + [c for r in s.get("rows", []) for c in r]
+        if kind == "data" and s.get("source", {}).get("kind") == "spot":
+            texts.append(s.get("caption", ""))
+    if kind == "compare":
+        texts += [s[side].get(f, "") for side in ("bad", "good") for f in ("head", "code", "reason")]
+    return [t for t in texts if _norm(t)]
+
+
+def source_errors(items: list[dict], blocks_by_lesson: dict, workdir: Path | None = None) -> list[str]:
+    """Every table, code and output a post draws must be word for word in its source block (or CSV)."""
+    import teach
+    out = []
+    for it in items:
+        parts = [(f"slide {n}", s) for n, s in enumerate(it.get("slides") or [], 1)]
+        if it.get("card"):
+            parts.append(("card", it["card"]))
+        for where, s in parts:
+            ref = s.get("source")
+            if not ref:
+                continue
+            if ref.get("kind") == "csv":
+                head = teach.csv_head(Path(workdir), ref["index"]) if workdir else None
+                corpus = _corpus(list(head)) if head else ""
+            else:
+                corpus = _corpus(_block(blocks_by_lesson, ref))
+            if not corpus or any(_norm(t) not in corpus for t in _drawn(s)):
+                out.append(f"{it['id']}: {where}: text not found in {ref.get('lessonId')} {ref.get('kind')} {ref.get('index')}")
+    return out
+
+
 def _file_problems(it: dict, packdir: Path) -> list[str]:
     import reel
     iid, fmt = it["id"], it["format"]
