@@ -19,6 +19,11 @@ PADS = {"navy": (220.0, 277.18, 329.63), "violet": (174.61, 220.0, 261.63), "lig
         "ember": (164.81, 196.0, 246.94), "forest": (196.0, 246.94, 293.66)}
 
 
+def pad_for(style_name: str) -> tuple:
+    """The style's chord: the five original themes have their own; any other style borrows one by name."""
+    return PADS.get(style_name) or list(PADS.values())[sum(map(ord, style_name)) % len(PADS)]
+
+
 def _pad(freqs: tuple, length: float) -> str:
     a, b, c = freqs
     expr = (f"0.05*sin(2*PI*{a}*t)*(0.7+0.3*sin(2*PI*0.25*t))+0.035*sin(2*PI*{b}*t)*(0.7+0.3*sin(2*PI*0.21*t))"
@@ -87,17 +92,17 @@ def make_reel(src: dict, item: dict, hook: str, out_dir: Path, tl: dict | None =
     tl = tl or cue_mod.checked_timeline(src)
     clip = _clip(src, item["clipKey"])
     _, length = source.reel_window(clip, cue_mod.scene_ends(tl, clip))
-    theme, layout = item["theme"], item["layout"]
+    look = draw.look_for(item)
 
-    layers = draw.reel_layers(hook, theme, layout)
+    layers = draw.reel_layers(hook, look, None)
     pages = [(layers["back"], work / "back.png", 1080, 1920, False), (layers["front"], work / "front.png", 1080, 1920, True),
-             (draw.cta_html(theme), work / "cta.png", 1080, 1920, True)]
+             (draw.cta_html(look), work / "cta.png", 1080, 1920, True)]
     timed = []
     for i, c in enumerate(cue_mod.cues_from_timeline(tl, src["plan"], clip)):
         if c["start"] >= length:
             continue
         try:
-            doc = draw.cue_html(c, theme)
+            doc = draw.cue_html(c, look)
         except draw.DrawError as e:
             print(f"  {item['id']}: cue skipped: {e}")
             continue
@@ -112,10 +117,10 @@ def make_reel(src: dict, item: dict, hook: str, out_dir: Path, tl: dict | None =
     subprocess.run([ff, "-y", "-loglevel", "error", "-ss", f"{at:.3f}", "-i", str(src["video"] / clip["file"]),
                     "-frames:v", "1", "-q:v", "2", str(frame)], check=True)
     cover = out_dir / f"{item['id']}-cover.jpg"
-    pages.append((draw.cover_html(hook, frame, theme), cover, 1080, 1920, False))
+    pages.append((draw.cover_html(hook, frame, look), cover, 1080, 1920, False))
     draw.shoot(pages)
 
     mp4 = out_dir / f"{item['id']}.mp4"
     subprocess.run(reel_command(ff, src["video"] / clip["file"], work / "back.png", work / "front.png", timed,
-                                work / "cta.png", length, mp4, PADS[theme] if pad else None), check=True)
+                                work / "cta.png", length, mp4, pad_for(look["name"]) if pad else None), check=True)
     return mp4, cover

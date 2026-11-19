@@ -72,3 +72,9 @@ def test_without_the_pad_the_reel_carries_only_the_voice():
     graph = cmd[cmd.index("-filter_complex") + 1]
     assert "aevalsrc" not in graph and "amix" not in graph and "[1:a]" in graph
     assert cmd[cmd.index("-map", cmd.index("-map") + 1) + 1] == "[a]"
+
+
+def test_every_style_gets_a_pad_chord():
+    from reel import pad_for
+    assert pad_for("navy") == PADS["navy"]
+    assert pad_for("risograph-sunrise") in PADS.values() and pad_for("risograph-sunrise") == pad_for("risograph-sunrise")

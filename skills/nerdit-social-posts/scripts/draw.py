@@ -6,6 +6,7 @@ Story cards 1080x1920, feed cards 1080x1350. All on-screen text is English.
 """
 import base64
 import html
+import json
 import re
 from pathlib import Path
 
@@ -13,6 +14,8 @@ import source  # noqa: F401  puts story-video's scripts on sys.path
 from dayplan import THEMES
 
 ASSETS = Path(__file__).resolve().parents[1] / "assets"
+STYLE_DIR = Path(__file__).resolve().parents[1] / "styles"
+FALLBACK_FONTS = {"head": "Segoe UI", "body": "Segoe UI", "code": "Consolas"}
 REEL_W, REEL_H = 1080, 1920
 SLIDE_W, SLIDE_H = 1080, 1350
 FONT = '"Segoe UI","Nirmala UI",sans-serif'
@@ -32,6 +35,94 @@ WRONG, RIGHT = "#ef4444", "#22c55e"
 
 class DrawError(ValueError):
     """Text that would not fit its box, or that is not English."""
+
+
+# ---- Looks: a style (../styles/<name>.json) in one of the layout families ----
+
+def style_from_theme(name: str) -> dict:
+    """A library style by name; an old theme name without a style file is converted."""
+    path = STYLE_DIR / f"{name}.json"
+    if path.is_file():
+        return json.loads(path.read_text(encoding="utf-8"))
+    t = THEMES[name]
+    palette = {k: t[k] for k in ("bg", "bg2", "panel", "ink", "muted", "accent", "chip", "chipInk")}
+    return {"name": name, "inspiration": "", "palette": {**palette, "codeBg": "#0b1220", "codeInk": "#e2e8f0"},
+            "fonts": dict(FALLBACK_FONTS), "background": "gradient", "motif": "none"}
+
+
+def look_for(item: dict) -> dict:
+    """The look an item is drawn in: its style (or, for packs planned before styles, its theme) and layout."""
+    return {**style_from_theme(item.get("style") or item.get("theme") or "navy"), "layout": item.get("layout") or "stack"}
+
+
+def resolve(look) -> tuple[dict, dict, str]:
+    """(colours, style, layout) for a look dict or an old theme name."""
+    st = style_from_theme(look) if isinstance(look, str) else look
+    layout = "stack" if isinstance(look, str) else look.get("layout") or "stack"
+    return {**st["palette"], "stroke": st["palette"].get("muted", "#ffffff")}, st, layout
+
+
+def reel_frame(layout: str | None) -> str:
+    """Reels keep their fixed safe areas: every layout family maps to one of the two frame layouts."""
+    return "split" if layout in ("split", "editorial") else "stack"
+
+
+def _font(name: str) -> str:
+    return f'"{name}","Segoe UI","Nirmala UI",sans-serif'
+
+
+def layout_css(layout: str, t: dict) -> str:
+    """Moves the slide's content box for each layout family (the box has class 'wrap')."""
+    return {
+        "split": ".layout-split .wrap{left:150px!important;width:850px!important}",
+        "bleed": (".layout-bleed .wrap{left:40px!important;width:1000px!important;top:160px!important;"
+                  f"height:1120px!important;padding:48px;background:{t['panel']}}}"),
+        "editorial": ".layout-editorial .wrap{justify-content:flex-start!important;top:250px!important}"
+                     ".layout-editorial .h{letter-spacing:-0.02em}",
+        "bignumber": ".layout-bignumber .wrap{top:330px!important;height:940px!important}",
+    }.get(layout, "")
+
+
+def motif_css(motif: str, t: dict) -> str:
+    return {
+        "highlight": (f".motif-highlight .h{{text-decoration:underline;text-decoration-thickness:.38em;"
+                      f"text-decoration-color:{t['accent']}66;text-underline-offset:-.28em;text-decoration-skip-ink:none}}"),
+        "underline": (f".motif-underline .h{{text-decoration:underline;text-decoration-thickness:7px;"
+                      f"text-decoration-color:{t['accent']};text-underline-offset:14px}}"),
+    }.get(motif, "")
+
+
+def _motif(t: dict, st: dict, w: int, h: int) -> str:
+    """Drawn decorations for the sticker and arrow motifs (highlight and underline are CSS)."""
+    motif = st.get("motif", "none")
+    if motif == "stickers":
+        return (f"<div class='abs' style='right:64px;top:132px;transform:rotate(8deg);background:{t['chip']};"
+                f"color:{t['chipInk']};font-size:30px;font-weight:800;padding:8px 20px;border-radius:14px'>&lt;/&gt;</div>"
+                f"<div class='abs' style='right:150px;top:150px;transform:rotate(-10deg);color:{t['accent']};"
+                f"font-size:44px'>&#9733;</div>")
+    if motif == "arrows":
+        return (f"<svg class='abs' style='left:52px;bottom:118px' width='190' height='120' viewBox='0 0 190 120'>"
+                f"<path d='M12 104 C 60 22, 124 18, 172 58' stroke='{t['accent']}' stroke-width='8' fill='none' stroke-linecap='round'/>"
+                f"<path d='M150 36 L174 60 L144 70' stroke='{t['accent']}' stroke-width='8' fill='none' stroke-linecap='round' "
+                f"stroke-linejoin='round'/></svg>")
+    return ""
+
+
+def _background(t: dict, st: dict, w: int, h: int, inner: str = "") -> str:
+    kind = st.get("background", "gradient")
+    base = f"<rect width='{w}' height='{h}' fill='{t['bg'] if kind == 'flat' else 'url(#g)'}'/>"
+    extra = ""
+    if kind == "grain":
+        extra = ("<filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/>"
+                 "<feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.09 0'/></filter>"
+                 f"<rect width='{w}' height='{h}' filter='url(#n)'/>")
+    elif kind == "grid":
+        extra = (f"<pattern id='grid' width='60' height='60' patternUnits='userSpaceOnUse'><path d='M60 0H0V60' fill='none' "
+                 f"stroke='{t['ink']}' stroke-opacity='0.08' stroke-width='2'/></pattern><rect width='{w}' height='{h}' fill='url(#grid)'/>")
+    elif kind == "shapes":
+        extra = (f"<circle cx='{w * 0.9:.0f}' cy='{h * 0.1:.0f}' r='{w * 0.3:.0f}' fill='{t['accent']}' fill-opacity='0.13'/>"
+                 f"<circle cx='{w * 0.06:.0f}' cy='{h * 0.92:.0f}' r='{w * 0.24:.0f}' fill='{t['chip']}' fill-opacity='0.11'/>")
+    return _gradient_svg(t, w, h, base + extra + inner, cls=f"bg-{kind}")
 
 
 def fits(text: str, per_line: int, lines: int) -> bool:
@@ -82,19 +173,27 @@ FIT_JS = ("<script>for(const e of document.querySelectorAll('.fit')){let s=parse
           "</script>")
 
 
-def _page(body: str, w: int, h: int, transparent: bool = False, extra_css: str = "") -> str:
+def _page(body: str, w: int, h: int, transparent: bool = False, extra_css: str = "", st: dict | None = None,
+          layout: str | None = None) -> str:
     bg = "background:transparent" if transparent else "background:#000"
+    fonts = (st or {}).get("fonts") or FALLBACK_FONTS
+    t = {**(st or style_from_theme("navy"))["palette"]}
+    classes = f"layout-{layout} motif-{(st or {}).get('motif', 'none')}" if layout else ""
+    look_css = (layout_css(layout, t) + motif_css((st or {}).get("motif", "none"), t)) if layout else ""
     return ("<!doctype html><html><head><meta charset='utf-8'><style>"
             f"html,body{{margin:0;width:{w}px;height:{h}px;overflow:hidden;{bg}}}"
-            f"*{{box-sizing:border-box}}body{{font-family:{FONT};position:relative}}"
+            f":root{{--head:{_font(fonts['head'])};--body:{_font(fonts['body'])};--code:{_font(fonts['code'])}}}"
+            "*{box-sizing:border-box}body{font-family:var(--body);position:relative}"
+            ".h{font-family:var(--head)}.mono{font-family:var(--code)}"
             ".abs{position:absolute}.fit{overflow:hidden}"
-            f"{extra_css}</style></head><body>{body}{FIT_JS}</body></html>")
+            f"{look_css}{extra_css}</style></head><body class='{classes}'>{body}{FIT_JS}</body></html>")
 
 
-def _gradient_svg(t: dict, w: int, h: int, inner: str = "") -> str:
-    return (f"<svg class='abs' style='left:0;top:0' width='{w}' height='{h}' viewBox='0 0 {w} {h}'>"
+def _gradient_svg(t: dict, w: int, h: int, inner: str = "", cls: str = "", flat: bool = False) -> str:
+    end = t["bg"] if flat else t["bg2"]
+    return (f"<svg class='abs {cls}' style='left:0;top:0' width='{w}' height='{h}' viewBox='0 0 {w} {h}'>"
             f"<defs><linearGradient id='g' x1='0' y1='0' x2='0' y2='{h}' gradientUnits='userSpaceOnUse'>"
-            f"<stop offset='0' stop-color='{t['bg']}'/><stop offset='1' stop-color='{t['bg2']}'/></linearGradient></defs>"
+            f"<stop offset='0' stop-color='{t['bg']}'/><stop offset='1' stop-color='{end}'/></linearGradient></defs>"
             f"{inner}</svg>")
 
 
@@ -105,14 +204,15 @@ def _logo(box: tuple, plate: str = "#ffffff") -> str:
             f"<img src='{logo_uri()}' style='max-width:100%;max-height:100%'></div>")
 
 
-def reel_layers(hook: str, theme: str, layout: str) -> dict[str, str]:
-    t = THEMES[theme]
+def reel_layers(hook: str, look, layout: str | None = None) -> dict[str, str]:
+    t, st, own = resolve(look)
+    layout = reel_frame(layout or own)
+    flat = st.get("background") == "flat"
     text = _fit(hook, "hook", HOOK_CHARS, HOOK_LINES)
     vx, vy, vw, vh = VIDEO_BOX
     glow = (f"<rect x='{vx - 16}' y='{vy - 16}' width='{vw + 32}' height='{vh + 32}' rx='{RADIUS + 12}' "
             f"fill='{t['panel']}' opacity='0.55'/>")
-    back = _page(_gradient_svg(t, REEL_W, REEL_H, f"<rect width='{REEL_W}' height='{REEL_H}' fill='url(#g)'/>{glow}"),
-                 REEL_W, REEL_H)
+    back = _page(_background(t, st, REEL_W, REEL_H, glow), REEL_W, REEL_H, st=st)
     # The four corners outside a rounded rectangle, painted with the same gradient as `back`.
     corners = (f"<path fill='url(#g)' fill-rule='evenodd' d='M{vx} {vy}h{vw}v{vh}h-{vw}z "
                f"M{vx + RADIUS} {vy}h{vw - 2 * RADIUS}a{RADIUS} {RADIUS} 0 0 1 {RADIUS} {RADIUS}v{vh - 2 * RADIUS}"
@@ -124,20 +224,20 @@ def reel_layers(hook: str, theme: str, layout: str) -> dict[str, str]:
                    f"stroke='{t['accent']}' stroke-width='6'/>")
         hook_html = (f"<div class='abs' style='left:{hx}px;top:{hy}px;width:{hw}px;height:{hh}px;display:flex;"
                      f"align-items:center'><div style='border-left:10px solid {t['accent']};padding-left:26px;width:100%'>"
-                     f"<div class='fit' style='color:{t['ink']};font-size:54px;font-weight:800;line-height:1.15;"
+                     f"<div class='fit h' style='color:{t['ink']};font-size:54px;font-weight:800;line-height:1.15;"
                      f"max-height:{hh}px;text-align:left'>{text}</div></div></div>")
     else:
         outline = ""
         hook_html = (f"<div class='abs' style='left:{hx}px;top:{hy}px;width:{hw}px;height:{hh}px;display:flex;"
-                     f"align-items:center;justify-content:center'><div class='fit' style='color:{t['ink']};"
+                     f"align-items:center;justify-content:center'><div class='fit h' style='color:{t['ink']};"
                      f"font-size:54px;font-weight:800;line-height:1.15;max-height:{hh}px;text-align:center'>{text}</div></div>")
-    front = _page(_gradient_svg(t, REEL_W, REEL_H, corners + outline) + _logo(LOGO_BOX) + hook_html,
-                  REEL_W, REEL_H, transparent=True)
+    front = _page(_gradient_svg(t, REEL_W, REEL_H, corners + outline, flat=flat) + _logo(LOGO_BOX) + hook_html,
+                  REEL_W, REEL_H, transparent=True, st=st)
     return {"back": back, "front": front}
 
 
-def cue_html(cue: dict, theme: str) -> str:
-    t = THEMES[theme]
+def cue_html(cue: dict, look) -> str:
+    t, st, _ = resolve(look)
     x, y, w, h = CAPTION_BOX
     kind = cue["kind"]
     if kind == "idea":
@@ -159,27 +259,27 @@ def cue_html(cue: dict, theme: str) -> str:
                 f"height:{h - 110}px;margin-top:8px'>{text}</div></div>")
     else:
         raise DrawError(f"unknown cue kind {kind!r}")
-    return _page(body, REEL_W, REEL_H, transparent=True)
+    return _page(body, REEL_W, REEL_H, transparent=True, st=st)
 
 
-def cta_html(theme: str) -> str:
-    t = THEMES[theme]
+def cta_html(look) -> str:
+    t, st, _ = resolve(look)
     x, y, w, h = CTA_BOX
     return _page(f"<div class='abs' style='left:{x}px;top:{y}px;width:{w}px;height:{h}px;background:{t['chip']};"
                  f"color:{t['chipInk']};border-radius:999px;display:flex;align-items:center;justify-content:center;"
                  f"font-size:46px;font-weight:800;box-shadow:0 10px 30px rgba(0,0,0,.35)'>{CTA_TEXT}</div>",
-                 REEL_W, REEL_H, transparent=True)
+                 REEL_W, REEL_H, transparent=True, st=st)
 
 
-def cover_html(hook: str, frame: Path, theme: str) -> str:
+def cover_html(hook: str, frame: Path, look) -> str:
     """The Reel's cover: kept inside the grid's centre crop (y 240-1680)."""
-    t = THEMES[theme]
+    t, st, _ = resolve(look)
     text = _fit(hook, "hook", HOOK_CHARS, HOOK_LINES)
     vx, _, vw, vh = VIDEO_BOX
     vy = 760
-    body = (_gradient_svg(t, REEL_W, REEL_H, f"<rect width='{REEL_W}' height='{REEL_H}' fill='url(#g)'/>")
+    body = (_background(t, st, REEL_W, REEL_H)
             + _logo((440, 300, 200, 72))
-            + f"<div class='abs fit' style='left:90px;top:410px;width:900px;height:300px;display:flex;align-items:center;"
+            + f"<div class='abs fit h' style='left:90px;top:410px;width:900px;height:300px;display:flex;align-items:center;"
               f"justify-content:center;text-align:center;color:{t['ink']};font-size:68px;font-weight:800;line-height:1.12'>"
               f"{text}</div>"
             + f"<img class='abs' src='{data_uri(frame)}' style='left:{vx}px;top:{vy}px;width:{vw}px;height:{vh}px;"
@@ -187,7 +287,7 @@ def cover_html(hook: str, frame: Path, theme: str) -> str:
             + f"<div class='abs' style='left:0;top:1420px;width:{REEL_W}px;text-align:center'><span style='background:"
               f"{t['chip']};color:{t['chipInk']};font-size:40px;font-weight:800;padding:14px 34px;border-radius:999px'>"
               f"Free lesson &middot; nerdit.in</span></div>")
-    return _page(body, REEL_W, REEL_H)
+    return _page(body, REEL_W, REEL_H, st=st)
 
 
 _FIGURE_CSS = None
@@ -217,24 +317,35 @@ def _picture(picture: dict | None, x: int, y: int, w: int, h: int) -> str:
     return f"<img class='abs' src='{data_uri(Path(picture['img']))}' style='{box};object-fit:cover'>"
 
 
-def _slide_frame(t: dict, n: int, total: int, inner: str) -> str:
-    return (_gradient_svg(t, SLIDE_W, SLIDE_H, f"<rect width='{SLIDE_W}' height='{SLIDE_H}' fill='url(#g)'/>")
+def _layout_marks(t: dict, layout: str, n: int) -> str:
+    if layout == "split":
+        return f"<div class='abs' style='left:80px;top:190px;width:14px;height:1060px;border-radius:7px;background:{t['accent']}'></div>"
+    if layout == "editorial":
+        return f"<div class='abs' style='left:80px;top:205px;width:920px;height:4px;background:{t['ink']};opacity:.85'></div>"
+    if layout == "bignumber":
+        return (f"<div class='abs h' style='left:66px;top:118px;font-size:230px;font-weight:900;line-height:1;"
+                f"color:{t['accent']};opacity:.28'>{n:02d}</div>")
+    return ""
+
+
+def _slide_frame(t: dict, st: dict, layout: str, n: int, total: int, inner: str) -> str:
+    return (_background(t, st, SLIDE_W, SLIDE_H) + _layout_marks(t, layout, n)
             + _logo((64, 60, 190, 66))
             + f"<div class='abs' style='right:64px;top:74px;color:{t['muted']};font-size:30px;font-weight:700'>{n}/{total}</div>"
-            + inner)
+            + inner + _motif(t, st, SLIDE_W, SLIDE_H))  # decorations on top
 
 
-def slide_html(slide: dict, theme: str, n: int, total: int) -> str:
-    t = THEMES[theme]
+def slide_html(slide: dict, look, n: int, total: int) -> str:
+    t, st, layout = resolve(look)
     kind = slide["kind"]
     label = lambda s, c=None: (f"<div style='color:{c or t['accent']};font-size:34px;font-weight:800;"  # noqa: E731
                                f"letter-spacing:3px;text-transform:uppercase;margin-bottom:22px'>{s}</div>")
-    wrap = "<div class='abs' style='left:80px;top:190px;width:920px;height:1060px;display:flex;flex-direction:column;"
+    wrap = "<div class='abs wrap' style='left:80px;top:190px;width:920px;height:1060px;display:flex;flex-direction:column;"
     if kind == "cover":
         hook = _fit(slide["hook"], "cover hook", 18, 4)
         course = html.escape(_english(slide.get("course", ""), "course title"))
         inner = (wrap + "justify-content:center'>" + label("Free lesson")
-                 + f"<div class='fit' style='color:{t['ink']};font-size:88px;font-weight:800;line-height:1.08;"
+                 + f"<div class='fit h' style='color:{t['ink']};font-size:88px;font-weight:800;line-height:1.08;"
                    f"max-height:520px'>{hook}</div>"
                  + f"<div style='color:{t['muted']};font-size:36px;margin-top:34px'>{course}</div></div>"
                  + f"<div class='abs' style='right:64px;bottom:64px;background:{t['chip']};color:{t['chipInk']};"
@@ -243,7 +354,7 @@ def slide_html(slide: dict, theme: str, n: int, total: int) -> str:
         text = _fit(slide["text"], "slide text", 22, 6)
         title = html.escape(_english(slide.get("title", ""), "slide title"))
         inner = (wrap + "justify-content:center'>" + label(f"{n - 1:02d} &middot; {title}" if title else f"{n - 1:02d}")
-                 + f"<div class='fit' style='color:{t['ink']};font-size:68px;font-weight:800;line-height:1.15;"
+                 + f"<div class='fit h' style='color:{t['ink']};font-size:68px;font-weight:800;line-height:1.15;"
                    f"max-height:820px'>{text}</div></div>")
     elif kind == "diagram":
         cap = _fit(slide.get("label", ""), "diagram label", 40, 2)
@@ -257,7 +368,7 @@ def slide_html(slide: dict, theme: str, n: int, total: int) -> str:
                        f"<b style='color:{t['accent']}'>{'ABCD'[i]}</b>&nbsp; {_fit(o, 'quiz option', 34, 2)}</div>"
                        for i, o in enumerate(slide["options"]))
         inner = (wrap + "justify-content:center'>" + label("Quick check")
-                 + f"<div class='fit' style='color:{t['ink']};font-size:44px;font-weight:800;line-height:1.18;"
+                 + f"<div class='fit h' style='color:{t['ink']};font-size:44px;font-weight:800;line-height:1.18;"
                    f"max-height:250px'>{q}</div>{opts}"
                  + f"<div style='color:{t['muted']};font-size:30px;margin-top:26px'>Answer on the next slide &rarr;</div></div>")
     elif kind == "answer":
@@ -270,7 +381,7 @@ def slide_html(slide: dict, theme: str, n: int, total: int) -> str:
     elif kind == "cta":
         text = _fit(slide.get("text") or "Full lesson free at nerdit.in", "cta", 22, 3)
         inner = (wrap + "justify-content:center;align-items:flex-start'>"
-                 + f"<div class='fit' style='color:{t['ink']};font-size:80px;font-weight:800;line-height:1.1;"
+                 + f"<div class='fit h' style='color:{t['ink']};font-size:80px;font-weight:800;line-height:1.1;"
                    f"max-height:420px'>{text}</div>"
                  + f"<div style='color:{t['muted']};font-size:40px;margin-top:30px'>Save this for later &middot; "
                    f"Share it with a friend who is learning</div>"
@@ -278,12 +389,13 @@ def slide_html(slide: dict, theme: str, n: int, total: int) -> str:
                    f"padding:18px 40px;border-radius:999px;margin-top:44px'>nerdit.in</div></div>")
     else:
         raise DrawError(f"unknown slide kind {kind!r}")
-    return _page(_slide_frame(t, n, total, inner), SLIDE_W, SLIDE_H, extra_css=figure_css() if kind == "diagram" else "")
+    return _page(_slide_frame(t, st, layout, n, total, inner), SLIDE_W, SLIDE_H,
+                 extra_css=figure_css() if kind == "diagram" else "", st=st, layout=layout)
 
 
-def card_html(card: dict, theme: str, height: int) -> str:
+def card_html(card: dict, look, height: int) -> str:
     """Story (height 1920) or feed (1350) card: picture, title, what you'll learn, small logo."""
-    t = THEMES[theme]
+    t, st, layout = resolve(look)
     top = 250 if height == REEL_H else 56          # Stories: keep clear of the top bar
     pic_h = 544
     has_pic = bool(card.get("picture"))
@@ -291,12 +403,12 @@ def card_html(card: dict, theme: str, height: int) -> str:
     course = html.escape(_english(card.get("course", ""), "course title"))
     topics = "".join(f"<li style='margin-top:14px'>{_fit(x, 'topic', 40, 2)}</li>" for x in card.get("topics", [])[:4])
     text_top = top + (pic_h + 40 if has_pic else 80)
-    body = (_gradient_svg(t, SLIDE_W, height, f"<rect width='{SLIDE_W}' height='{height}' fill='url(#g)'/>")
+    body = (_background(t, st, SLIDE_W, height) + _motif(t, st, SLIDE_W, height)
             + _picture(card.get("picture"), 56, top, 968, pic_h)
             + f"<div class='abs' style='left:72px;top:{text_top}px;width:936px'>"
               f"<div style='color:{t['accent']};font-size:30px;font-weight:800;letter-spacing:2px;"
               f"text-transform:uppercase'>{course}</div>"
-              f"<div class='fit' style='color:{t['ink']};font-size:58px;font-weight:800;line-height:1.12;"
+              f"<div class='fit h' style='color:{t['ink']};font-size:58px;font-weight:800;line-height:1.12;"
               f"max-height:200px;margin-top:10px'>{title}</div>"
             + (f"<div style='color:{t['muted']};font-size:30px;font-weight:700;margin-top:30px'>What you'll learn</div>"
                f"<ul style='color:{t['ink']};font-size:36px;line-height:1.25;margin:0;padding-left:36px'>{topics}</ul>"
@@ -305,7 +417,8 @@ def card_html(card: dict, theme: str, height: int) -> str:
             + _logo((72, height - (330 if height == REEL_H else 130), 190, 66))
             + f"<div class='abs' style='right:72px;top:{height - (318 if height == REEL_H else 118)}px;"
               f"color:{t['muted']};font-size:32px;font-weight:700'>Free lesson &middot; nerdit.in</div>")
-    return _page(body, SLIDE_W, height, extra_css=figure_css() if card.get("picture", {}) and card["picture"].get("svg") else "")
+    return _page(body, SLIDE_W, height, extra_css=figure_css() if card.get("picture", {}) and card["picture"].get("svg") else "",
+                 st=st, layout=layout)
 
 
 def shoot(pages: list[tuple[str, Path, int, int, bool]]) -> None:

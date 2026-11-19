@@ -93,3 +93,48 @@ def test_shoot_writes_png_of_the_right_size(tmp_path):
     out = tmp_path / "back.png"
     shoot([(reel_layers("Activate first", "violet", "split")["back"], out, 1080, 1920, False)])
     assert Image.open(out).size == (1080, 1920)
+
+
+# ---- looks: a style in one of the layout families (data-first plan, Task 3) ----
+from draw import look_for, reel_frame, style_from_theme  # noqa: E402
+from stylebook import LAYOUTS  # noqa: E402
+
+
+def navy_look(layout: str = "stack", **over) -> dict:
+    return {**style_from_theme("navy"), **over, "layout": layout}
+
+
+@pytest.mark.parametrize("layout", LAYOUTS)
+def test_every_layout_draws_cover_idea_and_cta(layout):
+    for slide in ({"kind": "cover", "hook": "Guess the output", "course": "Flask"},
+                  {"kind": "idea", "text": "Routes link a URL to a view"}, {"kind": "cta"}):
+        assert f"layout-{layout}" in slide_html(slide, navy_look(layout), 1, 3)
+
+
+def test_style_fonts_and_background_reach_the_page():
+    look = navy_look("editorial", fonts={"head": "Georgia", "body": "Corbel", "code": "Consolas"}, background="grid")
+    page = slide_html({"kind": "idea", "text": "x"}, look, 2, 4)
+    assert "Georgia" in page and "Corbel" in page and "bg-grid" in page
+
+
+def test_each_motif_leaves_a_mark():
+    for motif in ("stickers", "arrows", "highlight", "underline"):
+        assert f"motif-{motif}" in slide_html({"kind": "cta"}, navy_look("stack", motif=motif), 3, 3)
+
+
+def test_reel_frame_layout_is_stack_or_split():
+    assert {reel_frame(l) for l in LAYOUTS} == {"stack", "split"}
+    assert "Activate first" in reel_layers("Activate first", navy_look("bignumber"), None)["front"]
+
+
+def test_look_for_reads_the_items_style_or_its_old_theme():
+    assert look_for({"style": "ember", "layout": "bleed"})["palette"]["bg"] == "#292524"
+    assert look_for({"style": "ember", "layout": "bleed"})["layout"] == "bleed"
+    assert look_for({"theme": "violet", "layout": "split"})["layout"] == "split"
+
+
+@pytest.mark.skipif(not chromium_available(), reason="no Chromium")
+def test_bignumber_layout_shoots_at_slide_size(tmp_path):
+    out = tmp_path / "s.jpg"
+    shoot([(slide_html({"kind": "idea", "text": "Routes link a URL"}, navy_look("bignumber"), 2, 5), out, 1080, 1350, False)])
+    assert Image.open(out).size == (1080, 1350)

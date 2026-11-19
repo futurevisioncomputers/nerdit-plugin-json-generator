@@ -100,7 +100,7 @@ def default_slides(src: dict, item: dict) -> list[dict]:
 
 def make_carousel(src: dict, item: dict, slides: list[dict], out_dir: Path) -> list[Path]:
     out = [Path(out_dir) / f"{item['id']}-{i:02d}.jpg" for i in range(1, len(slides) + 1)]
-    draw.shoot([(draw.slide_html(s, item["theme"], i, len(slides)), path, draw.SLIDE_W, draw.SLIDE_H, False)
+    draw.shoot([(draw.slide_html(s, draw.look_for(item), i, len(slides)), path, draw.SLIDE_W, draw.SLIDE_H, False)
                 for i, (s, path) in enumerate(zip(slides, out), 1)])
     return out
 
@@ -123,5 +123,5 @@ def card_spec(src: dict, item: dict) -> dict:
 
 def make_card(src: dict, item: dict, height: int, out_dir: Path) -> Path:
     out = Path(out_dir) / f"{item['id']}.jpg"
-    draw.shoot([(draw.card_html(card_spec(src, item), item["theme"], height), out, draw.SLIDE_W, height, False)])
+    draw.shoot([(draw.card_html(card_spec(src, item), draw.look_for(item), height), out, draw.SLIDE_W, height, False)])
     return out
