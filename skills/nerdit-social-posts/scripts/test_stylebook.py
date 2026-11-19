@@ -76,3 +76,8 @@ def test_code_panels_must_be_dark_for_the_token_colours():
     s = navy()
     light_code = {**s, "palette": {**s["palette"], "codeBg": "#f8fafc", "codeInk": "#0b1f3a"}}
     assert "codeBg must be dark: code colours are tuned for dark panels" in style_errors(light_code)
+
+
+def test_a_pack_uses_every_layout_family():
+    looks = pick_looks(items(10), load_styles(STYLES), {"looks": []}, "p1")
+    assert {l for _, l in looks} == set(LAYOUTS)

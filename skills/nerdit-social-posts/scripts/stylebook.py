@@ -99,15 +99,18 @@ def pick_looks(items: list[dict], styles: list[dict], history: dict, pack_id: st
         raise NoFreshLooks(len(items), len(fresh))
     picked: list[tuple[str, str]] = []
     uses = {s: 0 for s in names}
+    layout_uses = {l: 0 for l in LAYOUTS}
     for _ in items:
         recent = {s for s, _ in picked[-RECENT:]}
         last_layout = picked[-1][1] if picked else None
         options = [(s, l) for s, l in fresh if (s, l) not in picked and s not in recent and l != last_layout]
         if not options:
             raise NoFreshLooks(len(items), len(fresh))
-        choice = min(options, key=lambda o: (uses[o[0]], names.index(o[0]), LAYOUTS.index(o[1])))
+        # least-used style first, then least-used layout, so a pack shows every layout family
+        choice = min(options, key=lambda o: (uses[o[0]], layout_uses[o[1]], names.index(o[0]), LAYOUTS.index(o[1])))
         picked.append(choice)
         uses[choice[0]] += 1
+        layout_uses[choice[1]] += 1
     return picked
 
 
