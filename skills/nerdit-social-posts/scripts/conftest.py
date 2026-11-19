@@ -46,3 +46,15 @@ def write_workdir(root: Path, name: str = "demo", topics: int = 2) -> Path:
                   "start": t, "end": t + 12.0, "file": f"clip-{topics + 2:02d}-demo-01-recap.mp4"})
     (vid / "clips.json").write_text(json.dumps(clips), encoding="utf-8")
     return wd
+
+
+def synthetic_mp4(path: Path, width: int, height: int, seconds: float) -> Path:
+    """A small H.264 + AAC test video (lavfi), for checks that need a real file."""
+    import subprocess
+    import imageio_ffmpeg
+    ff = imageio_ffmpeg.get_ffmpeg_exe()
+    subprocess.run([ff, "-y", "-loglevel", "error", "-f", "lavfi", "-i",
+                    f"testsrc2=size={width}x{height}:rate=30:duration={seconds}", "-f", "lavfi", "-i",
+                    f"sine=frequency=440:duration={seconds}", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac",
+                    "-shortest", str(path)], check=True)
+    return path
