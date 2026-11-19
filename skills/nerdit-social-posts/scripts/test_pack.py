@@ -191,3 +191,41 @@ def test_make_card_draws_the_cheat_and_compare_cards(tmp_path, monkeypatch):
              "card": {"kind": "cheat", "headers": ["Keyword"], "rows": [["route", "Links a URL", "@app.route"]], "source": {}}}
     slides_mod.make_card(src, cheat, 1920, tmp_path)
     assert "Wrong vs right" in shot[0][0] and "Cheat sheet" in shot[1][0] and shot[1][3] == 1920
+
+
+# ---- looks in the pack (data-first plan, Task 7) ----
+from stylebook import LAYOUTS, history_path, load_history, load_styles, save_history  # noqa: E402
+
+
+def looks_of(packdir: Path) -> set:
+    plan = json.loads((packdir / "pack-plan.json").read_text(encoding="utf-8"))
+    return {(i["style"], i["layout"]) for i in plan["items"]}
+
+
+def test_every_item_gets_a_style_and_layout_and_no_theme(tmp_path):
+    plan = json.loads((run_plan(write_workdir(tmp_path), "2026-11-19", 2) / "pack-plan.json").read_text(encoding="utf-8"))
+    assert all(i["style"] and i["layout"] in LAYOUTS and "theme" not in i for i in plan["items"])
+    looks = [(i["style"], i["layout"]) for i in plan["items"]]
+    assert len(set(looks)) == len(looks) and all(a[0] != b[0] and a[1] != b[1] for a, b in zip(looks, looks[1:]))
+
+
+def test_two_packs_never_share_a_look(tmp_path):
+    first = run_plan(write_workdir(tmp_path / "a"), "2026-11-19", 2)
+    second = run_plan(write_workdir(tmp_path / "b", name="demo2"), "2026-11-19", 2)
+    assert looks_of(first) and not (looks_of(first) & looks_of(second))
+
+
+def test_force_replan_frees_its_own_looks(tmp_path):
+    wd = write_workdir(tmp_path)
+    packdir = run_plan(wd, "2026-11-19", 2)
+    run_plan(wd, "2026-11-19", 2, "--force")
+    items = json.loads((packdir / "pack-plan.json").read_text(encoding="utf-8"))["items"]
+    assert len(load_history(history_path())["looks"]) == len(items)
+
+
+def test_no_fresh_looks_stops_plan(tmp_path, capsys):
+    styles = load_styles(Path(__file__).resolve().parents[1] / "styles")
+    save_history(history_path(), {"looks": [{"style": s["name"], "layout": l, "packId": "old", "itemId": "x"}
+                                            for s in styles for l in LAYOUTS]})
+    assert build_pack.main(["plan", str(write_workdir(tmp_path)), "--start", "2026-11-19", "--url", LIVE_URL]) == 1
+    assert "run the trend refresh" in capsys.readouterr().out

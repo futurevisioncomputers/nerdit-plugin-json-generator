@@ -2,6 +2,14 @@
 import json
 from pathlib import Path
 
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def private_style_history(tmp_path, monkeypatch):
+    """Tests never touch the owner's real look history (~/.nerdit-social)."""
+    monkeypatch.setenv("NERDIT_SOCIAL_HOME", str(tmp_path / "social-home"))
+
 LESSON_HTML = (
     "<div class='nerdit-wrapper'><h2>1 — Make a Project Folder</h2><p>Each project gets its own venv.</p>"
     '<div class="nerdit-figure" data-nerdit-img="fig-demo-1"><svg viewBox="0 0 200 100" role="img" aria-label="Two folders">'

@@ -22,6 +22,7 @@ import packcheck
 import reel
 import slides
 import source
+import stylebook
 import teach
 from blocks import lesson_blocks
 from captions import fill_links
@@ -29,7 +30,7 @@ from dayplan import day_plan
 
 IST = timezone(timedelta(hours=5, minutes=30))
 ITEM_KEYS = ("id", "date", "time", "format", "platforms", "title", "media", "cover", "captions", "lessonId", "topic",
-             "theme", "layout")
+             "style", "layout")
 
 
 def _clip_title(src: dict, item: dict) -> str:
@@ -90,7 +91,16 @@ def add_teaching(src: dict, items: list[dict], used: set) -> None:
                     cheat_done.add(it["lessonId"])
 
 
-def plan_pack(workdir: Path, start: date, days: int, url: str, course_id: str | None = None, pad: bool = True) -> dict:
+def assign_looks(items: list[dict], pack_id: str, history: dict) -> None:
+    """A never-used style x layout per item, in posting order (raises stylebook.NoFreshLooks)."""
+    styles = stylebook.load_styles(draw.STYLE_DIR)
+    for it, (style, layout) in zip(items, stylebook.pick_looks(items, styles, history, pack_id)):
+        it.pop("theme", None)
+        it["style"], it["layout"] = style, layout
+
+
+def plan_pack(workdir: Path, start: date, days: int, url: str, course_id: str | None = None, pad: bool = True,
+              history: dict | None = None) -> dict:
     """The draft pack. `url` is the live course page; `course_id` the live course's id when known (the admin
     import gives a course a new id, so the JSON's id is only a fallback; the server also finds it by URL)."""
     src = source.load_source(workdir)
@@ -105,6 +115,7 @@ def plan_pack(workdir: Path, start: date, days: int, url: str, course_id: str | 
             it["hook"] = reel_hook(src, it)
         it["captions"] = {p: "" for p in it["platforms"]}
     add_teaching(src, items, teach.used_blocks(workdir, pack_id))
+    assign_looks(items, pack_id, stylebook.load_history(stylebook.history_path()) if history is None else history)
     n_days = len({it["date"] for it in items})
     return {"version": 1, "packId": pack_id, "courseId": course_id or src["course"]["id"],
             "courseUrl": url, "start": start.isoformat(), "days": n_days, "pad": pad,
@@ -169,7 +180,11 @@ def main(argv=None) -> int:
     a = ap.parse_args(argv)
 
     if a.cmd == "plan":
-        plan = plan_pack(a.workdir, a.start, a.days, a.url, a.course_id, pad=not a.no_pad)
+        try:
+            plan = plan_pack(a.workdir, a.start, a.days, a.url, a.course_id, pad=not a.no_pad)
+        except stylebook.NoFreshLooks as e:
+            print(f"No fresh looks left ({e}): run the trend refresh (SKILL.md step 0) to add new styles.")
+            return 1
         packdir = Path(a.workdir).resolve() / "social-pack" / plan["packId"]
         target = packdir / "pack-plan.json"
         if target.exists() and not a.force:
@@ -177,6 +192,9 @@ def main(argv=None) -> int:
             return 1
         packdir.mkdir(parents=True, exist_ok=True)
         target.write_text(json.dumps(plan, ensure_ascii=False, indent=2), encoding="utf-8")
+        path = stylebook.history_path()          # the looks are now taken, for every course's later packs
+        stylebook.save_history(path, stylebook.reserve_looks(stylebook.load_history(path), plan["packId"],
+                                                             [(i["id"], i["style"], i["layout"]) for i in plan["items"]]))
         print(f"wrote {target}: {len(plan['items'])} items over {plan['days']} days")
         return 0
 
