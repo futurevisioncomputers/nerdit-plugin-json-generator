@@ -78,8 +78,11 @@ def test_check_reports_wrong_image_size_missing_file_and_bad_platform(tmp_path):
     assert "d01-story: d01-story.jpg is 1080x1080; expected 1080x1920" in problems
 
 
-def run_plan(wd: Path, start: str, days: int) -> Path:
-    assert build_pack.main(["plan", str(wd), "--start", start, "--days", str(days)]) == 0
+LIVE_URL = "https://nerdit.in/course/demo-course-1794042260740/preview"
+
+
+def run_plan(wd: Path, start: str, days: int, *extra: str) -> Path:
+    assert build_pack.main(["plan", str(wd), "--start", start, "--days", str(days), "--url", LIVE_URL, *extra]) == 0
     return wd / "social-pack" / f"{wd.name}-{start}"
 
 
@@ -87,7 +90,7 @@ def test_plan_writes_a_draft_with_hooks_and_empty_captions(tmp_path):
     packdir = run_plan(write_workdir(tmp_path), "2026-11-19", 3)
     plan = json.loads((packdir / "pack-plan.json").read_text(encoding="utf-8"))
     assert plan["packId"] == "demo-2026-11-19" and plan["courseId"] == "course-demo-1" and plan["days"] == 2
-    assert plan["courseUrl"] == "https://nerdit.in/course/course-demo-1/preview"
+    assert plan["courseUrl"] == LIVE_URL
     reel = next(i for i in plan["items"] if i["id"] == "d01-reel")
     assert reel["hook"] == "Key idea 1" and reel["title"] == "Topic 1"
     assert reel["captions"] == {"instagram": "", "facebook": ""}
@@ -98,7 +101,17 @@ def test_plan_writes_a_draft_with_hooks_and_empty_captions(tmp_path):
 def test_plan_never_overwrites_the_agents_edits(tmp_path):
     wd = write_workdir(tmp_path)
     run_plan(wd, "2026-11-19", 2)
-    assert build_pack.main(["plan", str(wd), "--start", "2026-11-19", "--days", "2"]) == 1
+    assert build_pack.main(["plan", str(wd), "--start", "2026-11-19", "--days", "2", "--url", LIVE_URL]) == 1
+
+
+def test_plan_needs_the_live_course_url(tmp_path):
+    with pytest.raises(SystemExit):
+        build_pack.main(["plan", str(write_workdir(tmp_path)), "--start", "2026-11-19"])
+
+
+def test_plan_takes_the_live_course_id(tmp_path):
+    packdir = run_plan(write_workdir(tmp_path), "2026-11-19", 2, "--course-id", "pbcJxuHrLEYBxfvn34zn")
+    assert json.loads((packdir / "pack-plan.json").read_text(encoding="utf-8"))["courseId"] == "pbcJxuHrLEYBxfvn34zn"
 
 
 def test_pilot_items_are_the_first_reel_and_the_first_carousel():

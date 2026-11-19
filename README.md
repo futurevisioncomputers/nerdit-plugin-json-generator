@@ -136,3 +136,15 @@ JSON exported from the admin for an existing course).
 4. Admin → Import JSON + Images: the with-images JSON and the `images/upload/` folder.
 
 Tests: `cd skills/nerdit-lesson-illustrator/scripts && PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q`
+
+## Social pack (nerdit-social-posts)
+
+Turns a course folder (with the `nerdit-story-video` topic clips) into a pack of Reels, carousels,
+Story/feed cards and platform captions for the next 10 days, made on your PC.
+
+1. `plan` — writes `social-pack/<name>-<start>/pack-plan.json`; the agent writes hooks and captions.
+2. `pilot` — the first Reel and carousel, for the owner's OK.
+3. `build` — every item plus `pack.json`, checked.
+4. Admin → Social posts → Import social pack: choose the pack folder. Nothing posts until approved.
+
+Tests: `cd skills/nerdit-social-posts/scripts && PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q`

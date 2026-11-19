@@ -60,10 +60,16 @@ def _quiz(src: dict, item: dict) -> dict | None:
     if not qs:
         return None
     start = (int(item.get("topic") or 1) - 1) % len(qs)     # different topics of a lesson ask different questions
-    for q in qs[start:] + qs[:start]:
-        if question_fits(q):
-            return q
-    return None
+    fitting = [q for q in qs[start:] + qs[:start] if question_fits(q)]
+    if not fitting:
+        return None
+    # Prefer the question that shares the most words with this topic (its terms, key ideas and title).
+    scenes = _scenes(src, item["lessonId"], item["topic"])
+    title = next((c["title"] for c in src["clips"] if c["key"] == item.get("clipKey")), "")
+    topic_text = " ".join([title] + [s.get("keyIdea", "") for s in scenes] + [t for s in scenes for t in s.get("terms") or []])
+    words = {w for w in re.findall(r"[a-z_]{4,}", topic_text.lower())}
+    score = lambda q: len(words & set(re.findall(r"[a-z_]{4,}", " ".join([q["text"], *map(str, q["options"])]).lower())))  # noqa: E731
+    return max(fitting, key=score)    # max keeps the first of equals, so the rotation still breaks ties
 
 
 def default_slides(src: dict, item: dict) -> list[dict]:

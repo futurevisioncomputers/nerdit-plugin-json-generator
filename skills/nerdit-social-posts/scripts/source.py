@@ -40,14 +40,16 @@ def load_source(workdir: Path) -> dict:
                                  "questions": l.get("questions") or []}
                for l in storyplan.course_lessons(course_path)}
     clips = [c for c in storyplan.load_json(video / "clips.json") if c.get("place") == "topic"]
+    plan = storyplan.load_json(video / "plan.json")
     return {
         "name": course_path.name[len("course-"):-len("_output.json")],
-        "course": {"id": course.get("id", ""), "title": course.get("title", "")},
+        # The JSON's title can be empty (set later in the admin); the video plan carries it too.
+        "course": {"id": course.get("id", ""), "title": course.get("title") or plan.get("course", "")},
         "course_path": course_path,
         "images": images,
         "video": video,
         "lessons": lessons,
-        "plan": storyplan.load_json(video / "plan.json"),
+        "plan": plan,
         "clips": clips,
         "figures": storyplan.lesson_figures(course_path, images),
     }

@@ -1,6 +1,6 @@
 """The social pack, step by step (run from anywhere; paths are arguments):
 
-  python build_pack.py plan  <workdir> [--start YYYY-MM-DD] [--days 10] [--url URL] [--force]
+  python build_pack.py plan  <workdir> --url COURSE_PAGE [--course-id ID] [--start YYYY-MM-DD] [--days 10] [--force]
       -> <workdir>/social-pack/<name>-<start>/pack-plan.json   (the agent edits hooks, slides, captions)
   python build_pack.py pilot <packdir>   -> <packdir>/pilot/: the first Reel and the first carousel
   python build_pack.py build <packdir>   -> every item's media + pack.json, then the checks
@@ -30,10 +30,6 @@ ITEM_KEYS = ("id", "date", "time", "format", "platforms", "title", "media", "cov
              "theme", "layout")
 
 
-def default_url(course_id: str) -> str:
-    return f"https://nerdit.in/course/{course_id}/preview"
-
-
 def _clip_title(src: dict, item: dict) -> str:
     return next((c["title"] for c in src["clips"] if c["key"] == item["clipKey"]), "")
 
@@ -48,7 +44,9 @@ def reel_hook(src: dict, item: dict) -> str:
     return ""
 
 
-def plan_pack(workdir: Path, start: date, days: int, url: str | None) -> dict:
+def plan_pack(workdir: Path, start: date, days: int, url: str, course_id: str | None = None) -> dict:
+    """The draft pack. `url` is the live course page; `course_id` the live course's id when known (the admin
+    import gives a course a new id, so the JSON's id is only a fallback; the server also finds it by URL)."""
     src = source.load_source(workdir)
     items = day_plan(src, start, days)
     for it in items:
@@ -59,8 +57,8 @@ def plan_pack(workdir: Path, start: date, days: int, url: str | None) -> dict:
             it["slides"] = slides.default_slides(src, it)
         it["captions"] = {p: "" for p in it["platforms"]}
     n_days = len({it["date"] for it in items})
-    return {"version": 1, "packId": f"{src['name']}-{start.isoformat()}", "courseId": src["course"]["id"],
-            "courseUrl": url or default_url(src["course"]["id"]), "start": start.isoformat(), "days": n_days,
+    return {"version": 1, "packId": f"{src['name']}-{start.isoformat()}", "courseId": course_id or src["course"]["id"],
+            "courseUrl": url, "start": start.isoformat(), "days": n_days,
             "items": items}
 
 
@@ -113,14 +111,15 @@ def main(argv=None) -> int:
     p_plan.add_argument("--start", type=date.fromisoformat,
                         default=(datetime.now(IST) + timedelta(days=1)).date())
     p_plan.add_argument("--days", type=int, default=10)
-    p_plan.add_argument("--url")
+    p_plan.add_argument("--url", required=True, help="the live course page, e.g. https://nerdit.in/course/<slug>/preview")
+    p_plan.add_argument("--course-id", help="the live course's id (admin); else the JSON's id")
     p_plan.add_argument("--force", action="store_true", help="replace an existing pack-plan.json")
     for name in ("pilot", "build", "check"):
         sub.add_parser(name).add_argument("packdir", type=Path)
     a = ap.parse_args(argv)
 
     if a.cmd == "plan":
-        plan = plan_pack(a.workdir, a.start, a.days, a.url)
+        plan = plan_pack(a.workdir, a.start, a.days, a.url, a.course_id)
         packdir = Path(a.workdir).resolve() / "social-pack" / plan["packId"]
         target = packdir / "pack-plan.json"
         if target.exists() and not a.force:

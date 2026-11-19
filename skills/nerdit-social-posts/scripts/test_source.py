@@ -36,3 +36,17 @@ def test_reel_window_keeps_whole_clip_up_to_90s():
 
 def test_reel_window_cuts_long_clip_at_last_scene_end_before_90():
     assert reel_window({"start": 0.0, "end": 130.0}, [40.0, 88.5, 101.0, 130.0]) == (0.0, 88.5)
+
+
+def test_empty_course_title_falls_back_to_the_video_plan_title(tmp_path):
+    import json
+    wd = write_workdir(tmp_path)
+    path = wd / "course-demo_output.json"
+    course = json.loads(path.read_text(encoding="utf-8"))
+    course["title"] = ""
+    path.write_text(json.dumps(course), encoding="utf-8")
+    plan_path = wd / "images" / "video" / "plan.json"
+    plan = json.loads(plan_path.read_text(encoding="utf-8"))
+    plan["course"] = "Demo: From the Video"
+    plan_path.write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    assert load_source(wd)["course"]["title"] == "Demo: From the Video"
