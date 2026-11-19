@@ -251,17 +251,17 @@ def slide_html(slide: dict, theme: str, n: int, total: int) -> str:
                  f"font-size:40px;font-weight:700;line-height:1.2'>{cap}</div>"
                  + _picture({"svg": slide["svg"]}, 80, 310, 920, 940))
     elif kind == "quiz":
-        q = _fit(slide["question"], "quiz question", 34, 3)
+        q = _fit(slide["question"], "quiz question", 34, 4)
         opts = "".join(f"<div style='background:{t['panel']};color:{t['ink']};border:3px solid {t['stroke']}55;"
                        f"border-radius:20px;padding:16px 24px;font-size:36px;font-weight:600;margin-top:16px'>"
                        f"<b style='color:{t['accent']}'>{'ABCD'[i]}</b>&nbsp; {_fit(o, 'quiz option', 34, 2)}</div>"
                        for i, o in enumerate(slide["options"]))
         inner = (wrap + "justify-content:center'>" + label("Quick check")
-                 + f"<div class='fit' style='color:{t['ink']};font-size:50px;font-weight:800;line-height:1.18;"
-                   f"max-height:200px'>{q}</div>{opts}"
+                 + f"<div class='fit' style='color:{t['ink']};font-size:44px;font-weight:800;line-height:1.18;"
+                   f"max-height:250px'>{q}</div>{opts}"
                  + f"<div style='color:{t['muted']};font-size:30px;margin-top:26px'>Answer on the next slide &rarr;</div></div>")
     elif kind == "answer":
-        q = _fit(slide["question"], "quiz question", 34, 3)
+        q = _fit(slide["question"], "quiz question", 34, 4)
         a = _fit(slide["answer"], "answer", 34, 2)
         inner = (wrap + "justify-content:center'>" + label("Answer", RIGHT)
                  + f"<div style='color:{t['muted']};font-size:38px;line-height:1.25'>{q}</div>"
