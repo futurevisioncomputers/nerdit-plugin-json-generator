@@ -10,7 +10,7 @@ from pathlib import Path
 from PIL import Image
 
 import storyplan
-from captions import caption_errors
+from captions import caption_errors, unknown_numbers
 from dayplan import ALLOWED_PLATFORMS
 import source
 
@@ -73,6 +73,20 @@ def check_items(manifest: dict, packdir: Path, texts: dict) -> list[str]:
                 caps += [f"{iid}: {e}" for e in caption_errors(p, fmt, text, lesson, it, manifest.get("courseUrl", ""))]
     ids = [f"{i}: id used twice" for i in dup]
     return counts + ids + dates + platforms + files + caps
+
+
+def plan_text_errors(items: list[dict], texts: dict) -> list[str]:
+    """Every number in a hook or a written slide line must be in the lesson (lesson-made slides are not checked)."""
+    out = []
+    for it in items:
+        lesson = texts.get(it.get("lessonId", ""), "")
+        if it.get("hook"):
+            out += [f"{it['id']}: hook: {n} is not in the lesson" for n in unknown_numbers(it["hook"], lesson)]
+        for i, s in enumerate(it.get("slides") or [], 1):
+            for field in ("hook", "text"):
+                if s.get("kind") in ("cover", "idea", "cta") and s.get(field):
+                    out += [f"{it['id']}: slide {i}: {n} is not in the lesson" for n in unknown_numbers(s[field], lesson)]
+    return out
 
 
 def _file_problems(it: dict, packdir: Path) -> list[str]:

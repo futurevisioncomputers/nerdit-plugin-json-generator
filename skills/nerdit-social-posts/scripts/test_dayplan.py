@@ -53,3 +53,8 @@ def test_themes_layouts_and_platform_tables():
     for fmt in FORMATS:
         assert set(PLATFORMS[fmt]) <= set(ALLOWED_PLATFORMS[fmt])
     assert ALLOWED_PLATFORMS["reel"] == ["instagram", "facebook"]
+
+
+def test_topics_used_by_an_earlier_pack_are_skipped():
+    items = day_plan(src_with_topics(12), date(2026, 11, 18), 3, skip={("l01", 1), ("l01", 2)})
+    assert [i["topic"] for i in items if i["format"] == "reel"] == [3, 4, 5]

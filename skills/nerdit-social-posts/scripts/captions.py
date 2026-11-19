@@ -25,6 +25,13 @@ def fill_links(text: str, course_url: str, platform: str, item: dict) -> str:
     return text.replace("{link}", utm_link(course_url, platform, item))
 
 
+def unknown_numbers(text: str, lesson_text: str) -> list[str]:
+    """Numbers in `text` that the lesson does not contain (years 20xx and digits in links and hashtags are not claims)."""
+    plain = HASHTAG.sub(" ", URL.sub(" ", text))
+    known = {n.rstrip("%") for n in NUMBER.findall(lesson_text)}
+    return [n for n in dict.fromkeys(NUMBER.findall(plain)) if not YEAR.match(n) and n.rstrip("%") not in known]
+
+
 def _first_sentence_is_question(text: str) -> bool:
     end = re.search(r"[.!?\n]", text.strip())
     return bool(end) and end.group() == "?"
@@ -58,9 +65,5 @@ def caption_errors(platform: str, fmt: str, text: str, lesson_text: str, item: d
     if p == "linkedin" and DEVANAGARI.search(text):
         errors.append("linkedin: English only (no Devanagari)")
     # Every number must come from the lesson (no invented results); years and link digits are not claims.
-    plain = HASHTAG.sub(" ", URL.sub(" ", text))
-    known = {n.rstrip("%") for n in NUMBER.findall(lesson_text)}
-    for n in dict.fromkeys(NUMBER.findall(plain)):
-        if not YEAR.match(n) and n.rstrip("%") not in known:
-            errors.append(f"{p}: {n} is not in the lesson")
+    errors += [f"{p}: {n} is not in the lesson" for n in unknown_numbers(text, lesson_text)]
     return errors

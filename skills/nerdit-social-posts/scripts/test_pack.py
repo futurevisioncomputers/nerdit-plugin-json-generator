@@ -118,3 +118,34 @@ def test_pilot_items_are_the_first_reel_and_the_first_carousel():
     items = [{"id": "d01-feed", "format": "feed"}, {"id": "d01-reel", "format": "reel"},
              {"id": "d02-reel", "format": "reel"}, {"id": "d03-carousel", "format": "carousel"}]
     assert [i["id"] for i in build_pack.pilot_items(items)] == ["d01-reel", "d03-carousel"]
+
+
+def test_numbers_in_hooks_and_slides_must_come_from_the_lesson():
+    from packcheck import plan_text_errors
+    items = [{"id": "d01-reel", "format": "reel", "lessonId": "demo-01", "hook": "Install in 40 seconds"},
+             {"id": "d02-carousel", "format": "carousel", "lessonId": "demo-01",
+              "slides": [{"kind": "cover", "hook": "pip installs 2 packages"}, {"kind": "idea", "text": "Saves 3 hours"}]}]
+    assert plan_text_errors(items, {"demo-01": "pip installs 2 packages here."}) == [
+        "d01-reel: hook: 40 is not in the lesson", "d02-carousel: slide 2: 3 is not in the lesson"]
+
+
+def test_plan_can_leave_the_pad_out(tmp_path):
+    packdir = run_plan(write_workdir(tmp_path), "2026-11-19", 2, "--no-pad")
+    assert json.loads((packdir / "pack-plan.json").read_text(encoding="utf-8"))["pad"] is False
+
+
+def test_a_second_pack_continues_where_the_first_stopped(tmp_path):
+    wd = write_workdir(tmp_path, topics=4)
+    first = json.loads((run_plan(wd, "2026-11-19", 2) / "pack-plan.json").read_text(encoding="utf-8"))
+    second = json.loads((run_plan(wd, "2026-11-21", 2) / "pack-plan.json").read_text(encoding="utf-8"))
+    assert first["pad"] is True
+    assert {i["topic"] for i in first["items"]} == {1, 2} and {i["topic"] for i in second["items"]} == {3, 4}
+
+
+def test_build_stops_when_the_video_timeline_drifted(tmp_path, monkeypatch):
+    import cues
+    def drift(src):
+        raise SystemExit("the story video does not match its plan")
+    monkeypatch.setattr(cues, "checked_timeline", drift)
+    with pytest.raises(SystemExit, match="does not match"):
+        build_pack.render_items({}, {"courseUrl": URL}, [{"id": "d01-reel", "format": "reel"}], tmp_path / "out")

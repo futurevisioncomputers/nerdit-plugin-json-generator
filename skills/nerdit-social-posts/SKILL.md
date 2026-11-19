@@ -39,7 +39,10 @@ without Reels.
    existing one (`--force` replaces it).
    Per day: a Reel (19:00) and a Story card (10:00) on Instagram + Facebook; Tuesday and Friday a
    carousel (13:00, Instagram + LinkedIn); Monday, Wednesday, Thursday a LinkedIn feed card (09:30).
-   One topic per day, in course order, never repeated. Times are IST.
+   One topic per day, in course order, never repeated; a later pack for the same course skips the
+   topics earlier packs used, so it continues the course. Times are IST. Reels carry the clip's
+   narration with a soft background pad that ducks under the voice; `--no-pad` (or `"pad": false`
+   in `pack-plan.json`) leaves the narration alone.
 2. **Write the words** in `pack-plan.json`. Change only `hook`, `slides[].text`/`hook`, and
    `captions`. Leave ids, dates, times, formats and themes as they are. `platforms` may only change
    when the owner asks (reel and story: instagram, facebook; carousel and feed: any of instagram,
@@ -56,8 +59,9 @@ without Reels.
    cover and the slides, and wait for their OK. Apply what they ask and run the pilot again.
    Only then go on.
 4. **Build.** `python scripts/build_pack.py build <packdir>` draws every item (about 40 s per Reel),
-   writes `pack.json` and runs the checks. Fix every `PROBLEM` line it prints and run it again
-   (or `python scripts/build_pack.py check <packdir>` after a caption-only fix to `pack.json`).
+   writes `pack.json` and runs the checks. Numbers in hooks and slide lines are checked against the
+   lesson before anything is drawn. Fix every `PROBLEM` line in `pack-plan.json` (build rewrites
+   `pack.json` from it) and run build again.
 5. **Hand over.** Tell the owner the folder to import: Admin → Social posts → Import social pack →
    choose `<packdir>`. Nothing is posted until they approve it there.
 

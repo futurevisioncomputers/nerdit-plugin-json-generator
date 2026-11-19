@@ -42,10 +42,12 @@ def layout_for(day: int) -> str:
     return LAYOUTS[day % len(LAYOUTS)]
 
 
-def day_plan(src: dict, start: date, days: int = 10) -> list[dict]:
-    """Items for up to `days` days, one topic clip each; fewer days when the course has fewer topics."""
+def day_plan(src: dict, start: date, days: int = 10, skip: set | frozenset = frozenset()) -> list[dict]:
+    """Items for up to `days` days, one topic clip each; fewer days when the course has fewer topics.
+    `skip`: (lessonId, topic) pairs an earlier pack already used, so a new pack continues the course."""
     items = []
-    for i, clip in enumerate(src["clips"][:days]):
+    fresh = [c for c in src["clips"] if (c["lessonId"], c["topic"]) not in skip]
+    for i, clip in enumerate(fresh[:days]):
         day = start + timedelta(days=i)
         formats = ["reel", "story"]
         if day.weekday() in CAROUSEL_DAYS:

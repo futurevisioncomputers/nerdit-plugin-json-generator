@@ -20,7 +20,8 @@ DEVANAGARI = re.compile("[ऀ-ॿ]")
 def course_timeline(src: dict) -> dict:
     """The story video's timeline, rebuilt from plan.json and the audio word files."""
     plan, vid = src["plan"], src["video"]
-    course = Path(plan["source"]) if plan.get("source") else src.get("course_path")
+    # The plan names the course file the video was built from; if it moved, use the workdir's course.
+    course = Path(plan["source"]) if plan.get("source") and Path(plan["source"]).is_file() else src.get("course_path")
     practice = storyplan.lesson_practice(course) if course and Path(course).is_file() else None
     return timeline.build(plan, build_video.clip_info(vid / "audio", plan),
                           storyplan.practise_cards(plan, practice) if practice else None,
@@ -76,9 +77,15 @@ def cues_from_timeline(tl: dict, plan: dict, clip: dict) -> list[dict]:
     return out
 
 
-def clip_cues(src: dict) -> dict[str, list[dict]]:
+def checked_timeline(src: dict) -> dict:
+    """The rebuilt timeline, or SystemExit when it no longer matches clips.json (cues would land off the words)."""
     tl = course_timeline(src)
     errors = timeline_errors(tl, src)
     if errors:
         raise SystemExit("the story video does not match its plan:\n" + "\n".join(errors))
+    return tl
+
+
+def clip_cues(src: dict) -> dict[str, list[dict]]:
+    tl = checked_timeline(src)
     return {c["key"]: cues_from_timeline(tl, src["plan"], c) for c in src["clips"]}

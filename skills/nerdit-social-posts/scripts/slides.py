@@ -16,9 +16,11 @@ CTA_TEXT = "Full lesson free at nerdit.in"
 
 
 def question_fits(q: dict) -> bool:
-    """The question in at most 4 lines and each of its 4 options in at most 2 (34 characters a line)."""
+    """The question in at most 4 lines and each of its 4 options in at most 2 (34 characters a line),
+    with a valid answer index (else the answer slide could show a wrong option as correct)."""
     options = list(q.get("options") or [])
-    return (len(options) == 4 and _english_fit(q.get("text", ""), 34, 4)
+    index = q.get("correctOptionIndex")
+    return (len(options) == 4 and isinstance(index, int) and not isinstance(index, bool) and 0 <= index < 4 and _english_fit(q.get("text", ""), 34, 4)
             and all(_english_fit(str(o), 34, 2) for o in options))
 
 
@@ -92,7 +94,7 @@ def default_slides(src: dict, item: dict) -> list[dict]:
         slides.append({"kind": "diagram", **picture})
     if quiz:
         slides += [{"kind": "quiz", "question": quiz["text"], "options": list(quiz["options"])},
-                   {"kind": "answer", "question": quiz["text"], "answer": quiz["options"][quiz.get("correctOptionIndex", 0)]}]
+                   {"kind": "answer", "question": quiz["text"], "answer": quiz["options"][quiz["correctOptionIndex"]]}]
     return slides + [{"kind": "cta", "text": CTA_TEXT}]
 
 

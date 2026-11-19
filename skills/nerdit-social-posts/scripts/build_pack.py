@@ -1,6 +1,6 @@
 """The social pack, step by step (run from anywhere; paths are arguments):
 
-  python build_pack.py plan  <workdir> --url COURSE_PAGE [--course-id ID] [--start YYYY-MM-DD] [--days 10] [--force]
+  python build_pack.py plan  <workdir> --url COURSE_PAGE [--course-id ID] [--start YYYY-MM-DD] [--days 10] [--no-pad] [--force]
       -> <workdir>/social-pack/<name>-<start>/pack-plan.json   (the agent edits hooks, slides, captions)
   python build_pack.py pilot <packdir>   -> <packdir>/pilot/: the first Reel and the first carousel
   python build_pack.py build <packdir>   -> every item's media + pack.json, then the checks
@@ -44,11 +44,27 @@ def reel_hook(src: dict, item: dict) -> str:
     return ""
 
 
-def plan_pack(workdir: Path, start: date, days: int, url: str, course_id: str | None = None) -> dict:
+def used_topics(workdir: Path, pack_id: str) -> set:
+    """(lessonId, topic) pairs in the course's other packs (pack.json, else pack-plan.json)."""
+    used = set()
+    for d in sorted((Path(workdir) / "social-pack").glob("*/")):
+        if d.name == pack_id:
+            continue
+        f = d / "pack.json" if (d / "pack.json").is_file() else d / "pack-plan.json"
+        if f.is_file():
+            used |= {(i.get("lessonId"), i.get("topic")) for i in json.loads(f.read_text(encoding="utf-8")).get("items", [])}
+    return used
+
+
+def plan_pack(workdir: Path, start: date, days: int, url: str, course_id: str | None = None, pad: bool = True) -> dict:
     """The draft pack. `url` is the live course page; `course_id` the live course's id when known (the admin
     import gives a course a new id, so the JSON's id is only a fallback; the server also finds it by URL)."""
     src = source.load_source(workdir)
-    items = day_plan(src, start, days)
+    pack_id = f"{src['name']}-{start.isoformat()}"
+    skip = used_topics(workdir, pack_id)
+    if skip:
+        print(f"skipping {len(skip)} topic(s) used by earlier packs")
+    items = day_plan(src, start, days, skip)
     for it in items:
         it["title"] = _clip_title(src, it)
         if it["format"] == "reel":
@@ -57,8 +73,8 @@ def plan_pack(workdir: Path, start: date, days: int, url: str, course_id: str | 
             it["slides"] = slides.default_slides(src, it)
         it["captions"] = {p: "" for p in it["platforms"]}
     n_days = len({it["date"] for it in items})
-    return {"version": 1, "packId": f"{src['name']}-{start.isoformat()}", "courseId": course_id or src["course"]["id"],
-            "courseUrl": url, "start": start.isoformat(), "days": n_days,
+    return {"version": 1, "packId": pack_id, "courseId": course_id or src["course"]["id"],
+            "courseUrl": url, "start": start.isoformat(), "days": n_days, "pad": pad,
             "items": items}
 
 
@@ -70,13 +86,13 @@ def pilot_items(items: list[dict]) -> list[dict]:
 def render_items(src: dict, plan: dict, items: list[dict], out_dir: Path) -> list[dict]:
     """Draw every item's media into out_dir; return the manifest items."""
     out_dir.mkdir(parents=True, exist_ok=True)
-    tl = cues.course_timeline(src) if any(i["format"] == "reel" for i in items) else None
+    tl = cues.checked_timeline(src) if any(i["format"] == "reel" for i in items) else None
     made = []
     for it in items:
         print(f"  {it['id']} ({it['format']})", flush=True)
         entry = dict(it)
         if it["format"] == "reel":
-            mp4, cover = reel.make_reel(src, it, it["hook"], out_dir, tl)
+            mp4, cover = reel.make_reel(src, it, it["hook"], out_dir, tl, pad=plan.get("pad", True))
             entry["media"], entry["cover"] = [mp4.name], cover.name
         elif it["format"] == "carousel":
             entry["media"] = [p.name for p in slides.make_carousel(src, it, it["slides"], out_dir)]
@@ -114,12 +130,13 @@ def main(argv=None) -> int:
     p_plan.add_argument("--url", required=True, help="the live course page, e.g. https://nerdit.in/course/<slug>/preview")
     p_plan.add_argument("--course-id", help="the live course's id (admin); else the JSON's id")
     p_plan.add_argument("--force", action="store_true", help="replace an existing pack-plan.json")
+    p_plan.add_argument("--no-pad", action="store_true", help="Reels carry the narration only, no background pad")
     for name in ("pilot", "build", "check"):
         sub.add_parser(name).add_argument("packdir", type=Path)
     a = ap.parse_args(argv)
 
     if a.cmd == "plan":
-        plan = plan_pack(a.workdir, a.start, a.days, a.url, a.course_id)
+        plan = plan_pack(a.workdir, a.start, a.days, a.url, a.course_id, pad=not a.no_pad)
         packdir = Path(a.workdir).resolve() / "social-pack" / plan["packId"]
         target = packdir / "pack-plan.json"
         if target.exists() and not a.force:
@@ -136,9 +153,13 @@ def main(argv=None) -> int:
     plan = _read_plan(packdir)
     src = source.load_source(packdir.parents[1])
     texts = packcheck.lesson_texts(packdir.parents[1])
+    todo = pilot_items(plan["items"]) if a.cmd == "pilot" else plan["items"]
+    written = packcheck.plan_text_errors(todo, texts)      # before drawing: cheap to fix in pack-plan.json
+    if written:
+        return _report(written)
     if a.cmd == "pilot":
         out = packdir / "pilot"
-        items = render_items(src, plan, pilot_items(plan["items"]), out)
+        items = render_items(src, plan, todo, out)
         print(f"pilot written to {out}")
         return _report(packcheck.check_items({**plan, "items": items}, out, texts))
     items = render_items(src, plan, plan["items"], packdir)

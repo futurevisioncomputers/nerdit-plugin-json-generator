@@ -65,3 +65,23 @@ def test_timeline_mismatch_is_reported():
 
 def test_matching_timeline_has_no_errors():
     assert timeline_errors(TL, src_with_clip(file="clip-03-demo-01-t2.mp4", start=100.0)) == []
+
+
+def test_checked_timeline_stops_when_the_video_drifted(monkeypatch):
+    import cues
+    monkeypatch.setattr(cues, "course_timeline", lambda src: TL)
+    with pytest.raises(SystemExit, match="rebuild the video first"):
+        cues.checked_timeline(src_with_clip(file="clip-02-demo-01-t1.mp4", start=99.0))
+
+
+def test_course_timeline_falls_back_to_the_workdir_course_when_the_plan_source_moved(monkeypatch, tmp_path):
+    import cues
+    seen = {}
+    monkeypatch.setattr(cues.storyplan, "lesson_practice", lambda path: seen.setdefault("path", path) and None)
+    monkeypatch.setattr(cues.build_video, "clip_info", lambda audio, plan: {})
+    monkeypatch.setattr(cues.build_video, "vector_labels", lambda plan, vid: {})
+    monkeypatch.setattr(cues.timeline, "build", lambda *a: {"segments": [], "duration": 0.0})
+    course = tmp_path / "course-x_output.json"
+    course.write_text("{}", encoding="utf-8")
+    cues.course_timeline({"plan": {"source": str(tmp_path / "moved" / "x.json")}, "video": tmp_path, "course_path": course})
+    assert seen["path"] == course

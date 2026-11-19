@@ -28,7 +28,8 @@ def _pad(freqs: tuple, length: float) -> str:
 
 
 def reel_command(ff: str, clip: Path, back: Path, front: Path, cues: list[tuple[Path, float, float]], cta: Path,
-                 length: float, out: Path, pad: tuple = PADS["navy"]) -> list[str]:
+                 length: float, out: Path, pad: tuple | None = PADS["navy"]) -> list[str]:
+    """`pad`: the chord under the voice, or None for the clip's narration alone."""
     t = f"{length:.3f}"
     still = lambda p: ["-loop", "1", "-framerate", str(FPS), "-t", t, "-i", str(p)]  # noqa: E731
     cmd = [ff, "-y", "-loglevel", "error"] + still(back) + ["-i", str(clip)] + still(front)
@@ -44,9 +45,13 @@ def reel_command(ff: str, clip: Path, back: Path, front: Path, cues: list[tuple[
     graph.append(f"[{label}][{3 + len(cues)}:v]overlay=0:0:enable='gte(t,{max(length - CTA_SECONDS, 0):.3f})',"
                  "format=yuv420p[v]")
     # The voice over the pad; the pad ducks while the voice speaks. 48 kHz stereo, as Reels prefer.
-    graph += ["[1:a]aresample=48000,aformat=channel_layouts=mono,pan=stereo|c0=c0|c1=c0,asplit=2[voice][key]", _pad(pad, length) + "[pad]",
-              "[pad][key]sidechaincompress=threshold=0.03:ratio=6:attack=30:release=500[duck]",
-              "[voice][duck]amix=inputs=2:duration=first:normalize=0[a]"]
+    voice = "[1:a]aresample=48000,aformat=channel_layouts=mono,pan=stereo|c0=c0|c1=c0"
+    if pad is None:
+        graph.append(voice + "[a]")
+    else:
+        graph += [voice + ",asplit=2[voice][key]", _pad(pad, length) + "[pad]",
+                  "[pad][key]sidechaincompress=threshold=0.03:ratio=6:attack=30:release=500[duck]",
+                  "[voice][duck]amix=inputs=2:duration=first:normalize=0[a]"]
     return cmd + ["-filter_complex", ";".join(graph), "-map", "[v]", "-map", "[a]", "-t", t, "-r", str(FPS),
                   "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-pix_fmt", "yuv420p",
                   "-c:a", "aac", "-b:a", "128k", "-movflags", "+faststart", str(out)]
@@ -72,14 +77,14 @@ def _clip(src: dict, key: str) -> dict:
     raise SystemExit(f"no topic clip {key} in clips.json")
 
 
-def make_reel(src: dict, item: dict, hook: str, out_dir: Path, tl: dict | None = None) -> tuple[Path, Path]:
+def make_reel(src: dict, item: dict, hook: str, out_dir: Path, tl: dict | None = None, pad: bool = True) -> tuple[Path, Path]:
     """Write <id>.mp4 and <id>-cover.jpg into out_dir. Returns their paths. Cues that do not fit are skipped."""
     import imageio_ffmpeg
     ff = imageio_ffmpeg.get_ffmpeg_exe()
     out_dir = Path(out_dir)
     work = out_dir / "_work" / item["id"]
     work.mkdir(parents=True, exist_ok=True)
-    tl = tl or cue_mod.course_timeline(src)
+    tl = tl or cue_mod.checked_timeline(src)
     clip = _clip(src, item["clipKey"])
     _, length = source.reel_window(clip, cue_mod.scene_ends(tl, clip))
     theme, layout = item["theme"], item["layout"]
@@ -112,5 +117,5 @@ def make_reel(src: dict, item: dict, hook: str, out_dir: Path, tl: dict | None =
 
     mp4 = out_dir / f"{item['id']}.mp4"
     subprocess.run(reel_command(ff, src["video"] / clip["file"], work / "back.png", work / "front.png", timed,
-                                work / "cta.png", length, mp4, PADS[theme]), check=True)
+                                work / "cta.png", length, mp4, PADS[theme] if pad else None), check=True)
     return mp4, cover

@@ -29,14 +29,14 @@ def test_quiz_and_answer_come_from_the_lesson(src):
 
 
 def test_long_question_is_skipped():
-    assert not question_fits({"text": "x " * 90, "options": ["a", "b", "c", "d"]})
-    assert question_fits({"text": "Which command makes a venv?", "options": ["a", "b", "c", "d"]})
+    assert not question_fits({"text": "x " * 90, "options": ["a", "b", "c", "d"], "correctOptionIndex": 0})
+    assert question_fits({"text": "Which command makes a venv?", "options": ["a", "b", "c", "d"], "correctOptionIndex": 0})
 
 
 def test_a_four_line_question_fits_but_a_three_line_option_does_not():
     question = "Your .env file holds APP_NAME and main.py calls load_dotenv() first. What does os.getenv return?"
-    assert question_fits({"text": question, "options": ["The value", "None", "An error", "The file name"]})
-    assert not question_fits({"text": "Short?", "options": ["word " * 20, "b", "c", "d"]})
+    assert question_fits({"text": question, "options": ["The value", "None", "An error", "The file name"], "correctOptionIndex": 0})
+    assert not question_fits({"text": "Short?", "options": ["word " * 20, "b", "c", "d"], "correctOptionIndex": 0})
 
 
 def test_default_cover_hook_falls_back_when_the_key_idea_is_too_long(tmp_path):
@@ -105,5 +105,14 @@ def test_an_off_topic_question_is_left_out(tmp_path):
     course = json.loads(path.read_text(encoding="utf-8"))
     course["lessons"][0]["questions"] = [{"id": "q9", "text": "Which HTTP verb reads data?",
                                           "options": ["GET", "POST", "PUT", "DELETE"], "correctOptionIndex": 0}]
+    path.write_text(json.dumps(course), encoding="utf-8")
+    assert "quiz" not in [s["kind"] for s in default_slides(load_source(wd), ITEM)]
+
+
+def test_a_question_without_a_valid_answer_index_is_never_used(tmp_path):
+    wd = write_workdir(tmp_path)
+    path = wd / "course-demo_output.json"
+    course = json.loads(path.read_text(encoding="utf-8"))
+    del course["lessons"][0]["questions"][0]["correctOptionIndex"]
     path.write_text(json.dumps(course), encoding="utf-8")
     assert "quiz" not in [s["kind"] for s in default_slides(load_source(wd), ITEM)]

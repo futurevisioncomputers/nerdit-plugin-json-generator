@@ -65,3 +65,10 @@ def max_volume(path: Path) -> float:
 def test_voice_keeps_its_loudness_in_the_reel(tmp_path):
     out = run_synthetic_reel(tmp_path)
     assert abs(max_volume(out) - max_volume(tmp_path / "c.mp4")) < 1.5
+
+
+def test_without_the_pad_the_reel_carries_only_the_voice():
+    cmd = reel_command("ffmpeg", Path("c.mp4"), Path("b.png"), Path("f.png"), [], Path("cta.png"), 51.0, Path("o.mp4"), pad=None)
+    graph = cmd[cmd.index("-filter_complex") + 1]
+    assert "aevalsrc" not in graph and "amix" not in graph and "[1:a]" in graph
+    assert cmd[cmd.index("-map", cmd.index("-map") + 1) + 1] == "[a]"
