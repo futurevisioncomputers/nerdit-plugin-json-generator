@@ -78,3 +78,13 @@ def test_every_style_gets_a_pad_chord():
     from reel import pad_for
     assert pad_for("navy") == PADS["navy"]
     assert pad_for("risograph-sunrise") in PADS.values() and pad_for("risograph-sunrise") == pad_for("risograph-sunrise")
+
+
+def test_idea_cue_that_repeats_the_hook_is_dropped():
+    from reel import reel_cues
+    cues = [{"kind": "idea", "text": "A request goes in.", "start": 0.0, "end": 30.0},
+            {"kind": "term", "text": "request", "start": 4.0, "end": 6.0},
+            {"kind": "idea", "text": "The dict becomes JSON", "start": 30.0, "end": 60.0},
+            {"kind": "idea", "text": "Too late", "start": 72.0, "end": 80.0}]
+    kept = reel_cues(cues, " A request goes in. ", 72.0)
+    assert [c["text"] for c in kept] == ["request", "The dict becomes JSON"]

@@ -82,6 +82,12 @@ def _clip(src: dict, key: str) -> dict:
     raise SystemExit(f"no topic clip {key} in clips.json")
 
 
+def reel_cues(cues: list[dict], hook: str, length: float) -> list[dict]:
+    """Cues that start inside the Reel, minus an idea cue that repeats the hook already on screen."""
+    said = " ".join(hook.split())
+    return [c for c in cues if c["start"] < length and not (c["kind"] == "idea" and " ".join(c["text"].split()) == said)]
+
+
 def make_reel(src: dict, item: dict, hook: str, out_dir: Path, tl: dict | None = None, pad: bool = True) -> tuple[Path, Path]:
     """Write <id>.mp4 and <id>-cover.jpg into out_dir. Returns their paths. Cues that do not fit are skipped."""
     import imageio_ffmpeg
@@ -98,9 +104,7 @@ def make_reel(src: dict, item: dict, hook: str, out_dir: Path, tl: dict | None =
     pages = [(layers["back"], work / "back.png", 1080, 1920, False), (layers["front"], work / "front.png", 1080, 1920, True),
              (draw.cta_html(look), work / "cta.png", 1080, 1920, True)]
     timed = []
-    for i, c in enumerate(cue_mod.cues_from_timeline(tl, src["plan"], clip)):
-        if c["start"] >= length:
-            continue
+    for i, c in enumerate(reel_cues(cue_mod.cues_from_timeline(tl, src["plan"], clip), hook, length)):
         try:
             doc = draw.cue_html(c, look)
         except draw.DrawError as e:
