@@ -29,8 +29,9 @@ without Reels.
 
 ## Steps
 
-0. **Trend refresh** (once a month, and whenever `plan` says "No fresh looks left"). Owner's rule:
-   never the same design twice, always new inspiration. Look at every image in
+0. **Trend refresh** (whenever `plan` says "No fresh looks left", and at least once a month). Owner's
+   rule: never the same design twice, always new inspiration. A 10-day pack uses about 26 looks and
+   each style gives 5 (Reels and their covers only 2), so plan on about 6 new styles per 10-day pack. Look at every image in
    `~/.nerdit-social/inspiration/` (posts the owner saved because they liked them) and, if you can
    browse, at current design-trend round-ups for social posts. From the general ideas only (colour
    mood, layout structure, type feel, texture) write 5–10 new files in `styles/`, one style each:
