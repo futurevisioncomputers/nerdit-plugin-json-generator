@@ -172,9 +172,12 @@ page lists its source text so NERDIT's word-for-word checker keeps working.
    `C:\Users\siddh\.nerdit-social\assets\gemini-test\PROMPTS.md` does).
 6. **No photo yet.** Every page type has a photo-less variant (the photo region holds a large 3D icon
    with a blob and badge). The pilot runs with the four photos already made plus this fallback.
-7. **Future Vision truth rules (owner).** The brief is the source: every number and fact on a banner
-   must appear in it. Banned phrases: NERDIT's list plus whatever the owner names. The logo is shown
-   as an image on a white chip, never recoloured.
+7. **Future Vision truth rules (owner, 2026-11-20).** Handle on Future Vision banners: `Nerdit.in`.
+   The admissions set features courses only (no batch times, address or phone): the brief lists the
+   NERDIT courses to feature, and every title, number and fact on a banner comes from those courses'
+   exported JSON. Banned phrases: NERDIT's list (owner named no extra ones). The logo
+   (`D:\siddharth\logo\fv logo2024.png`) is shown as an image on a white chip, never recoloured.
+   Pilot brief (my call): the two pilot courses plus Flask Web Development and the FastAPI course.
 8. **Reel overlays** take the course's look tokens from `brand_studio` (light only); the Reel frame
    layout stays as today. The five old themes remain only as a fallback for old plans.
 9. **Development.** `brand-studio-plugin/` is a sibling folder in this workspace with its own local git
