@@ -48,8 +48,9 @@ without Reels.
    a course a new id and slug, so never build it from the JSON: ask the owner, or find the course's
    `<loc>` in `https://nerdit.in/sitemap.xml` by its title. `--course-id` is the live course's id when
    the owner gives it (the server also finds the course from the URL). Default start is tomorrow
-   (IST); the dates are only a draft: the admin moves the whole pack so day 1 is the day after
-   you upload it (owner's rule: a pack is made and uploaded on different days). It writes
+   (IST); the dates are only a draft: the admin moves the whole pack so day 1 is the first free
+   day after you upload it. Packs run one after another, never on the same day as another pack
+   (owner's rules: a pack is made and uploaded on different days; courses do not share a day). It writes
    `<workdir>/social-pack/<name>-<start>/pack-plan.json` (`<packdir>`) and refuses to replace an
    existing one (`--force` replaces it).
    Per day: a Reel (19:00) and a Story card (10:00) on Instagram + Facebook; Tuesday and Friday a
