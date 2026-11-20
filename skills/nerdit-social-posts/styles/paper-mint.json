@@ -1,0 +1,23 @@
+{
+  "name": "paper-mint",
+  "inspiration": "2026 trend round-up (G2, Picsart, Adobe Express graphic design trends 2026), light version for the owner's light-pages rule: paper textures with fresh mint. General idea only; no creator's design copied.",
+  "palette": {
+    "bg": "#f4fbf8",
+    "bg2": "#e3f4ec",
+    "panel": "#ffffff",
+    "ink": "#0f2a22",
+    "muted": "#3f5a50",
+    "accent": "#0f7a5e",
+    "chip": "#0f2a22",
+    "chipInk": "#f4fbf8",
+    "codeBg": "#101826",
+    "codeInk": "#e8eef7"
+  },
+  "fonts": {
+    "head": "Georgia Pro",
+    "body": "Corbel",
+    "code": "Consolas"
+  },
+  "background": "grain",
+  "motif": "highlight"
+}

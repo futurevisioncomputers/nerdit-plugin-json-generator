@@ -22,6 +22,7 @@ FONTS = {"Segoe UI", "Segoe UI Black", "Segoe UI Semibold", "Bahnschrift", "Geor
 RECENT = 3          # a style does not come back within this many posts
 REEL_LAYOUTS = ("stack", "split")   # a Reel's frame has two layouts (fixed safe areas), so only these are distinct looks
 HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
+LIGHT_PAGE = 0.6   # minimum relative luminance of a page background (owner prefers light pages)
 
 
 class NoFreshLooks(Exception):
@@ -65,6 +66,9 @@ def style_errors(style: dict) -> list[str]:
         errors.append(f"background must be one of {', '.join(BACKGROUNDS)}")
     if style["motif"] not in MOTIFS:
         errors.append(f"motif must be one of {', '.join(MOTIFS)}")
+    for key in ("bg", "bg2"):           # owner's rule (2026-11-20): no dark pages
+        if HEX.match(str(palette.get(key, ""))) and _luminance(palette[key]) < LIGHT_PAGE:
+            errors.append(f"{key} must be light: the owner prefers light pages")
     if HEX.match(str(palette.get("codeBg", ""))) and _luminance(palette["codeBg"]) > 0.2:
         errors.append("codeBg must be dark: code colours are tuned for dark panels")
     for fg, bg in (("ink", "bg"), ("ink", "bg2"), ("codeInk", "codeBg"), ("chipInk", "chip")):

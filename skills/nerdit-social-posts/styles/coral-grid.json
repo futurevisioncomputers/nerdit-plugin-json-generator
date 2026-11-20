@@ -1,0 +1,23 @@
+{
+  "name": "coral-grid",
+  "inspiration": "2026 trend round-up (G2, Picsart, Adobe Express graphic design trends 2026), light version for the owner's light-pages rule: graph paper with coral highlights. General idea only; no creator's design copied.",
+  "palette": {
+    "bg": "#fff6f4",
+    "bg2": "#ffe4de",
+    "panel": "#ffffff",
+    "ink": "#2d0f0a",
+    "muted": "#5e3a33",
+    "accent": "#b9372a",
+    "chip": "#b9372a",
+    "chipInk": "#ffffff",
+    "codeBg": "#101826",
+    "codeInk": "#e8eef7"
+  },
+  "fonts": {
+    "head": "Bahnschrift",
+    "body": "Arial Nova",
+    "code": "Consolas"
+  },
+  "background": "grid",
+  "motif": "stickers"
+}

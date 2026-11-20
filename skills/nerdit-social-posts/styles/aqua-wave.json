@@ -1,0 +1,23 @@
+{
+  "name": "aqua-wave",
+  "inspiration": "2026 trend round-up (G2, Picsart, Adobe Express graphic design trends 2026), light version for the owner's light-pages rule: airy shapes, aqua and teal. General idea only; no creator's design copied.",
+  "palette": {
+    "bg": "#f0fbfc",
+    "bg2": "#d9f3f6",
+    "panel": "#ffffff",
+    "ink": "#06303a",
+    "muted": "#33585f",
+    "accent": "#0e7490",
+    "chip": "#0e7490",
+    "chipInk": "#ffffff",
+    "codeBg": "#101826",
+    "codeInk": "#e8eef7"
+  },
+  "fonts": {
+    "head": "Segoe UI Black",
+    "body": "Segoe UI",
+    "code": "Consolas"
+  },
+  "background": "shapes",
+  "motif": "underline"
+}

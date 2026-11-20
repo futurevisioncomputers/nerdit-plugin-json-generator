@@ -1,0 +1,23 @@
+{
+  "name": "lilac-soft",
+  "inspiration": "2026 trend round-up (G2, Picsart, Adobe Express graphic design trends 2026), light version for the owner's light-pages rule: soft gradients, lavender. General idea only; no creator's design copied.",
+  "palette": {
+    "bg": "#f8f5ff",
+    "bg2": "#ece4ff",
+    "panel": "#ffffff",
+    "ink": "#221338",
+    "muted": "#4d3d66",
+    "accent": "#6d28d9",
+    "chip": "#6d28d9",
+    "chipInk": "#ffffff",
+    "codeBg": "#101826",
+    "codeInk": "#e8eef7"
+  },
+  "fonts": {
+    "head": "Trebuchet MS",
+    "body": "Verdana",
+    "code": "Consolas"
+  },
+  "background": "gradient",
+  "motif": "highlight"
+}

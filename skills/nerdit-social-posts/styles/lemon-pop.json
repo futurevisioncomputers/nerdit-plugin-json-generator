@@ -1,0 +1,23 @@
+{
+  "name": "lemon-pop",
+  "inspiration": "2026 trend round-up (G2, Picsart, Adobe Express graphic design trends 2026), light version for the owner's light-pages rule: bold maximalist colour, playful. General idea only; no creator's design copied.",
+  "palette": {
+    "bg": "#fffbe6",
+    "bg2": "#fff3b8",
+    "panel": "#fffdf3",
+    "ink": "#1f1a00",
+    "muted": "#4d4410",
+    "accent": "#b4410c",
+    "chip": "#1f1a00",
+    "chipInk": "#fffbe6",
+    "codeBg": "#101826",
+    "codeInk": "#e8eef7"
+  },
+  "fonts": {
+    "head": "Arial Black",
+    "body": "Arial Nova",
+    "code": "Consolas"
+  },
+  "background": "shapes",
+  "motif": "stickers"
+}

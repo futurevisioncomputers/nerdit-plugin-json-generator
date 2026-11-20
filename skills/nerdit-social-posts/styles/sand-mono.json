@@ -1,0 +1,23 @@
+{
+  "name": "sand-mono",
+  "inspiration": "2026 trend round-up (G2, Picsart, Adobe Express graphic design trends 2026), light version for the owner's light-pages rule: terminal-on-paper: monospace headlines on sand. General idea only; no creator's design copied.",
+  "palette": {
+    "bg": "#faf7f0",
+    "bg2": "#efe8d8",
+    "panel": "#ffffff",
+    "ink": "#1c1a14",
+    "muted": "#4a463a",
+    "accent": "#7c3aed",
+    "chip": "#1c1a14",
+    "chipInk": "#faf7f0",
+    "codeBg": "#101826",
+    "codeInk": "#e8eef7"
+  },
+  "fonts": {
+    "head": "Consolas",
+    "body": "Segoe UI",
+    "code": "Consolas"
+  },
+  "background": "flat",
+  "motif": "none"
+}

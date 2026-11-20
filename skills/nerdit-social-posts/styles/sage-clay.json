@@ -1,0 +1,23 @@
+{
+  "name": "sage-clay",
+  "inspiration": "2026 trend round-up (G2, Picsart, Adobe Express graphic design trends 2026), light version for the owner's light-pages rule: muted earthy tones, handmade feel. General idea only; no creator's design copied.",
+  "palette": {
+    "bg": "#f2f5ef",
+    "bg2": "#e2e9dc",
+    "panel": "#fbfcf9",
+    "ink": "#1d2a17",
+    "muted": "#4a5a40",
+    "accent": "#4d7c0f",
+    "chip": "#1d2a17",
+    "chipInk": "#f2f5ef",
+    "codeBg": "#101826",
+    "codeInk": "#e8eef7"
+  },
+  "fonts": {
+    "head": "Rockwell Nova",
+    "body": "Candara",
+    "code": "Consolas"
+  },
+  "background": "grain",
+  "motif": "arrows"
+}

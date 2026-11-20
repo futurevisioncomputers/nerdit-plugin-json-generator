@@ -1,0 +1,23 @@
+{
+  "name": "peach-editorial",
+  "inspiration": "2026 trend round-up (G2, Picsart, Adobe Express graphic design trends 2026), light version for the owner's light-pages rule: editorial magazine layouts, warm. General idea only; no creator's design copied.",
+  "palette": {
+    "bg": "#fff5ef",
+    "bg2": "#ffe6d8",
+    "panel": "#ffffff",
+    "ink": "#2a1408",
+    "muted": "#5c3b2a",
+    "accent": "#a8321a",
+    "chip": "#2a1408",
+    "chipInk": "#fff5ef",
+    "codeBg": "#101826",
+    "codeInk": "#e8eef7"
+  },
+  "fonts": {
+    "head": "Georgia",
+    "body": "Constantia",
+    "code": "Consolas"
+  },
+  "background": "flat",
+  "motif": "underline"
+}

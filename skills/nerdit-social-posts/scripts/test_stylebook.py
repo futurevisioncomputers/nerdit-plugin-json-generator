@@ -14,7 +14,7 @@ def items(n: int) -> list[dict]:
 
 
 def navy() -> dict:
-    return next(s for s in load_styles(STYLES) if s["name"] == "navy")
+    return next(s for s in load_styles(STYLES) + load_styles(STYLES / "retired") if s["name"] == "navy")
 
 
 def test_seed_styles_are_valid():
@@ -101,3 +101,10 @@ def test_an_abandoned_plan_frees_its_looks_but_a_built_pack_keeps_them(tmp_path)
                    {"style": "violet", "layout": "bleed", "packId": "c", "itemId": "x", "folder": str(alive)}]}
     h = mark_built(h, "b")
     assert [e["packId"] for e in prune_history(h)["looks"]] == ["b", "c"]
+
+
+def test_dark_pages_are_refused_owner_prefers_light():
+    s = navy()
+    dark = {**s, "palette": {**s["palette"], "bg": "#0a0a12", "bg2": "#1b1d2e"}}
+    assert "bg must be light: the owner prefers light pages" in style_errors(dark)
+    assert "bg2 must be light: the owner prefers light pages" in style_errors(dark)

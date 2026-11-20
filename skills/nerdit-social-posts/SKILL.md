@@ -39,7 +39,8 @@ without Reels.
    chipInk, codeBg, codeInk), `fonts` (head, body, code: installed fonts only, see
    `stylebook.FONTS`), `background` (flat, gradient, grain, grid, shapes) and `motif` (none,
    stickers, arrows, highlight, underline). Never copy a creator's layout, art, characters, text or
-   brand. Check them: `python -c "import stylebook as s; [print(x['name'], s.style_errors(x)) for x in s.load_styles('../styles')]"`
+   brand. Pages are light (owner, 2026-11-20: no dark backgrounds; code panels stay dark); the
+   checker refuses a dark `bg`/`bg2`. Retired styles live in `styles/retired/`. Check them: `python -c "import stylebook as s; [print(x['name'], s.style_errors(x)) for x in s.load_styles('../styles')]"`
    from `scripts/` must print an empty list for each. New styles appear in the next pilot for the
    owner's OK.
 1. **Plan.** `python scripts/build_pack.py plan <workdir> --url COURSE_PAGE [--course-id ID] [--start YYYY-MM-DD] [--days 10]`

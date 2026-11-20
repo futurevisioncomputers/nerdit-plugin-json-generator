@@ -1,0 +1,23 @@
+{
+  "name": "sky-grid",
+  "inspiration": "2026 trend round-up (G2, Picsart, Adobe Express graphic design trends 2026), light version for the owner's light-pages rule: clean technical grid, bright blue. General idea only; no creator's design copied.",
+  "palette": {
+    "bg": "#f3f8ff",
+    "bg2": "#e2edfc",
+    "panel": "#ffffff",
+    "ink": "#0b2247",
+    "muted": "#3d5476",
+    "accent": "#1d4ed8",
+    "chip": "#1d4ed8",
+    "chipInk": "#ffffff",
+    "codeBg": "#101826",
+    "codeInk": "#e8eef7"
+  },
+  "fonts": {
+    "head": "Bahnschrift",
+    "body": "Segoe UI",
+    "code": "Consolas"
+  },
+  "background": "grid",
+  "motif": "arrows"
+}
