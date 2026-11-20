@@ -73,7 +73,8 @@ without Reels.
 3. **Pilot.** `python scripts/build_pack.py pilot <packdir>` renders the first Reel and the first
    carousel into `<packdir>/pilot/` and checks them. **Stop here.** Show the owner the Reel, its
    cover and the slides, and wait for their OK. Apply what they ask and run the pilot again.
-   Only then go on.
+   Only then go on: write `<packdir>/pilot/OWNER_OK` holding the date and the owner's words. The
+   project hook (`hooks/nerdit_hooks.py pre-shell`) refuses `build_pack.py build` without that file.
 4. **Build.** `python scripts/build_pack.py build <packdir>` draws every item (about 40 s per Reel),
    writes `pack.json` and runs the checks. Numbers in hooks and slide lines are checked against the
    lesson before anything is drawn. Fix every `PROBLEM` line in `pack-plan.json` (build rewrites
@@ -108,6 +109,23 @@ without Reels.
   student claims; nothing that contradicts the lesson.
 - Stories take no caption.
 - UTM (made by build): `utm_source=<platform>&utm_medium=social&utm_campaign=pack-<item date>&utm_content=<item id>`.
+- YouTube (every Reel, `captions.youtube`): the title on the first line (1-100 characters, English, no
+  link), a blank line, then the description with `{link}`; at most 5000 characters and 15 hashtags; no
+  `<` or `>`. YouTube is not in the item's `platforms`: the server never sees it.
+
+## YouTube Shorts (owner 2026-11-20: Studio kit now, automatic upload after YouTube's audit)
+
+Every Reel also goes to https://www.youtube.com/@nerditSkillLearning as a Short. YouTube Stories no
+longer exist (shut down June 2023) and community Posts have no API. API uploads stay private until
+the Google project passes YouTube's audit, so for now the owner uploads a kit in YouTube Studio:
+
+1. Write `captions.youtube` for every Reel (rules above). `build` then writes `<packdir>/youtube/`:
+   a copy of each Reel named after its title and `SHORTS.md` (day, date and time IST, title,
+   description with the filled link, tags, and the settings to use once).
+2. After the owner imports the pack, packs queue, so the admin shows the real Day 1. Run
+   `python scripts/build_pack.py shorts <packdir> --start <Day 1>` to move every date in the kit.
+3. Hand over `<packdir>/youtube/`: in YouTube Studio, upload up to 15 at once, paste each title and
+   description, and schedule each at its date and time. `youtube/` is never uploaded by the admin.
 
 ## What the scripts do
 

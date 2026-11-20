@@ -5,8 +5,9 @@ platform's UTM link. Stories take no caption.
 """
 import re
 
-LIMITS = {"instagram": 2200, "facebook": 3000, "linkedin": 3000}
-MAX_TAGS = {"instagram": 8, "facebook": 5, "linkedin": 5}
+LIMITS = {"instagram": 2200, "facebook": 3000, "linkedin": 3000, "youtube": 5000}
+MAX_TAGS = {"instagram": 8, "facebook": 5, "linkedin": 5, "youtube": 15}
+YOUTUBE_TITLE_MAX = 100
 HASHTAG = re.compile(r"#\w+")
 URL = re.compile(r"https?://\S+|www\.\S+")
 NUMBER = re.compile(r"\d+(?:\.\d+)?%?")
@@ -49,6 +50,20 @@ def caption_errors(platform: str, fmt: str, text: str, lesson_text: str, item: d
     tags = HASHTAG.findall(text)
     if len(tags) > MAX_TAGS[p]:
         errors.append(f"{p}: {len(tags)} hashtags; at most {MAX_TAGS[p]}")
+    if p == "youtube":
+        # A Short's caption: the title on the first line, then the description (YouTube's own limits).
+        title = text.split("\n", 1)[0].strip()
+        if not title:
+            errors.append("youtube: first line is the title; it is empty")
+        else:
+            if len(title) > YOUTUBE_TITLE_MAX:
+                errors.append(f"youtube: title is {len(title)} characters; at most {YOUTUBE_TITLE_MAX}")
+            if DEVANAGARI.search(title):
+                errors.append("youtube: title in English (no Devanagari)")
+            if URL.search(title):
+                errors.append("youtube: no link in the title")
+        if "<" in text or ">" in text:
+            errors.append("youtube: no < or > (YouTube rejects them)")
     if p == "instagram":
         if _first_sentence_is_question(text):
             errors.append("instagram: open with a claim or a named mistake, not a question")

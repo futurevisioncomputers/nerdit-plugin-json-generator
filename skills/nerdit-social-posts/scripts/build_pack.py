@@ -26,6 +26,7 @@ import stylebook
 import teach
 from blocks import lesson_blocks
 from captions import fill_links
+import shorts
 from dayplan import day_plan
 
 IST = timezone(timedelta(hours=5, minutes=30))
@@ -198,6 +199,9 @@ def main(argv=None) -> int:
     p_plan.add_argument("--no-pad", action="store_true", help="Reels carry the narration only, no background pad")
     for name in ("pilot", "build", "check"):
         sub.add_parser(name).add_argument("packdir", type=Path)
+    p_shorts = sub.add_parser("shorts", help="YouTube Shorts kit for YouTube Studio: <packdir>/youtube/")
+    p_shorts.add_argument("packdir", type=Path)
+    p_shorts.add_argument("--start", type=date.fromisoformat, help="Day 1 as the admin showed it after import")
     a = ap.parse_args(argv)
 
     if a.cmd == "plan":
@@ -228,6 +232,14 @@ def main(argv=None) -> int:
     plan = _read_plan(packdir)
     src = source.load_source(packdir.parents[1])
     texts = packcheck.lesson_texts(packdir.parents[1])
+    if a.cmd == "shorts":
+        problems = shorts.shorts_errors(plan, packdir, texts)
+        if problems:
+            return _report(problems)
+        md = shorts.write_kit(plan, packdir, start=a.start.isoformat() if a.start else None,
+                              course=src["course"]["title"], texts=texts)
+        print(f"wrote {md}")
+        return 0
     todo = pilot_items(plan["items"]) if a.cmd == "pilot" else plan["items"]
     blocks = {lid: lesson_blocks(lesson["content"]) for lid, lesson in src["lessons"].items()}
     written = packcheck.plan_text_errors(todo, texts) + packcheck.source_errors(todo, blocks, packdir.parents[1])
@@ -246,7 +258,24 @@ def main(argv=None) -> int:
     path = stylebook.history_path()
     stylebook.save_history(path, stylebook.mark_built(stylebook.load_history(path), plan["packId"]))
     print(f"wrote {packdir / 'pack.json'}")
-    return _report(packcheck.check_items(manifest, packdir, texts))
+    result = _report(packcheck.check_items(manifest, packdir, texts))
+    _youtube_kit(plan, packdir, src["course"]["title"], texts)
+    return result
+
+
+def _youtube_kit(plan: dict, packdir: Path, course: str, texts: dict) -> None:
+    """After build: the YouTube Shorts kit when every Reel has its YouTube caption (else say how to make it)."""
+    reels = [it for it in plan["items"] if it["format"] == "reel"]
+    if not all((it.get("captions") or {}).get("youtube", "").strip() for it in reels):
+        print(f"YouTube kit: write captions.youtube for every Reel, then run: build_pack.py shorts \"{packdir}\" --start <Day 1>")
+        return
+    problems = shorts.shorts_errors(plan, packdir, texts)
+    if problems:
+        print("YouTube kit not written:")
+        for line in problems:
+            print("PROBLEM", line)
+        return
+    print(f"wrote {shorts.write_kit(plan, packdir, course=course, texts=texts)} (rerun shorts --start <Day 1> after import)")
 
 
 if __name__ == "__main__":
