@@ -129,3 +129,21 @@ def test_meet_the_data_must_describe_the_file_the_code_reads(tmp_path):
     with_csv = teaching_carousel(src_with(tmp_path / "b", CSV_RUN, csv="branch,ad,admissions\nVesu,yes,12\n"), ITEM_T1, set(), "compare")
     assert with_csv["slides"][1]["caption"] == "First rows of weekly_admissions.csv"
     assert with_csv["slides"][1]["source"]["kind"] == "csv"
+
+
+# ---- owner 2026-11-20: a topic with no usable block borrows one from its own lesson ----
+NO_BLOCKS_T3 = FLASK.replace("<h2>📋 Cheat Sheet</h2>", "<section><h2>3 — Run It</h2><p>Plain text only.</p></section>\n<h2>📋 Cheat Sheet</h2>")
+ITEM_T3 = {"id": "d03-carousel", "lessonId": "demo-01", "topic": 3, "clipKey": "demo-01-t3-video", "format": "carousel"}
+
+
+def test_a_topic_without_blocks_borrows_from_its_lesson(tmp_path):
+    result = teaching_carousel(src_with(tmp_path, NO_BLOCKS_T3), ITEM_T3, set(), None)
+    # nearest topic first: topic 2's Wrong vs right comes before topic 1's Guess the output
+    assert result["format"] == "compare" and sources(result["slides"]) == {("demo-01", "compare", 0)}
+
+
+def test_own_topic_first_and_used_blocks_are_not_borrowed(tmp_path):
+    src = src_with(tmp_path, NO_BLOCKS_T3)
+    assert sources(teaching_carousel(src, ITEM_T2, set(), None)["slides"]) == {("demo-01", "compare", 0)}
+    borrowed = teaching_carousel(src, ITEM_T3, {("demo-01", "predict", 0)}, None)
+    assert sources(borrowed["slides"]) == {("demo-01", "compare", 0)}

@@ -110,19 +110,24 @@ def _content(kind: str, block: dict, src: dict, item: dict, topic: dict) -> list
 
 def teaching_carousel(src: dict, item: dict, used: set, last_format: str | None) -> dict | None:
     """The next format in the cycle this topic can show with an unused block; None keeps the key-idea carousel."""
-    topic = _blocks(src, item["lessonId"])["topics"].get(item["topic"], EMPTY)
+    topics = _blocks(src, item["lessonId"])["topics"]
+    # The topic's own blocks first; failing those, the same lesson's other topics, nearest first
+    # (owner 2026-11-20: borrow within the lesson rather than fall back to the key-idea carousel).
+    order = [item["topic"]] + sorted((n for n in topics if n != item["topic"]), key=lambda n: (abs(n - item["topic"]), n))
     start = (FORMAT_CYCLE.index(last_format) + 1) % len(FORMAT_CYCLE) if last_format in FORMAT_CYCLE else 0
-    for fmt in FORMAT_CYCLE[start:] + FORMAT_CYCLE[:start]:
-        for block in topic[fmt]:
-            if (item["lessonId"], fmt, block["index"]) in used:
-                continue
-            content = _content(fmt, block, src, item, topic)
-            if not content:
-                continue
-            slides = [{"kind": "cover", "hook": HOOKS[fmt], "course": src["course"]["title"]}, *content,
-                      {"kind": "cta", "text": "Full lesson free at nerdit.in"}]
-            if _drawable(slides):
-                return {"format": fmt, "slides": slides}
+    for n in order:
+        topic = topics.get(n, EMPTY)
+        for fmt in FORMAT_CYCLE[start:] + FORMAT_CYCLE[:start]:
+            for block in topic[fmt]:
+                if (item["lessonId"], fmt, block["index"]) in used:
+                    continue
+                content = _content(fmt, block, src, item, topic)
+                if not content:
+                    continue
+                slides = [{"kind": "cover", "hook": HOOKS[fmt], "course": src["course"]["title"]}, *content,
+                          {"kind": "cta", "text": "Full lesson free at nerdit.in"}]
+                if _drawable(slides):
+                    return {"format": fmt, "slides": slides}
     return None
 
 
