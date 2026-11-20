@@ -89,8 +89,8 @@ def plan_text_errors(items: list[dict], texts: dict) -> list[str]:
     return out
 
 
-def _norm(text) -> str:
-    return " ".join(str(text).split())
+TEACH_SLIDES = {"predict-q", "predict-a", "wrong", "right", "data", "code", "output"}
+SIDE_FIELDS = ("head", "code", "reason")
 
 
 def _block(blocks: dict, ref: dict):
@@ -104,32 +104,35 @@ def _block(blocks: dict, ref: dict):
     return None
 
 
-def _corpus(block) -> str:
-    """Every string in a block, joined: what a drawn line may be taken from."""
-    if isinstance(block, dict):
-        return " ".join(_corpus(v) for k, v in block.items() if k not in ("kind", "index", "reads", "lang"))
-    if isinstance(block, list):
-        return " ".join(_corpus(v) for v in block)
-    return _norm(block) if isinstance(block, str) else ""
-
-
-def _drawn(s: dict) -> list[str]:
-    """The lesson words a slide or card draws (cover, closing slide and generated captions excluded)."""
+def _matches(s: dict, block, csv_head) -> bool:
+    """Each drawn field equals its source field exactly (newlines and indentation kept)."""
     kind = s.get("kind")
-    fields = {"predict-q": ("question", "code"), "predict-a": ("output", "explanation"), "wrong": ("head", "code", "reason"),
-              "right": ("head", "code", "reason"), "code": ("code",), "output": ("output",)}.get(kind, ())
-    texts = [s.get(f, "") for f in fields]
-    if kind in ("data", "cheat"):
-        texts += list(s.get("headers", [])) + [c for r in s.get("rows", []) for c in r]
-        if kind == "data" and s.get("source", {}).get("kind") == "spot":
-            texts.append(s.get("caption", ""))
+    if block is None:
+        return False
+    if kind == "predict-q":
+        return s.get("question", "") == block["question"] and s.get("code") == block["code"]
+    if kind == "predict-a":
+        return s.get("output") == block["output"] and s.get("explanation", "") == block["explanation"]
+    if kind in ("wrong", "right"):
+        side = block["bad" if kind == "wrong" else "good"]
+        return all(s.get(f, "") == side[f] for f in SIDE_FIELDS)
+    if kind == "code":
+        return s.get("code") == block["code"]
+    if kind == "output":
+        return s.get("output") == block["output"]
+    if kind == "data":
+        if s.get("source", {}).get("kind") == "csv":
+            return csv_head is not None and [s.get("headers"), s.get("rows")] == [csv_head[0], csv_head[1]]
+        return s.get("headers") == block["headers"] and s.get("rows") == block["rows"] and s.get("caption", "") == block["caption"]
+    if kind == "cheat":
+        return s.get("headers") == block["headers"] and all(r in block["rows"] for r in s.get("rows", []))
     if kind == "compare":
-        texts += [s[side].get(f, "") for side in ("bad", "good") for f in ("head", "code", "reason")]
-    return [t for t in texts if _norm(t)]
+        return all(s[side].get(f, "") == block[side][f] for side in ("bad", "good") for f in SIDE_FIELDS)
+    return False
 
 
 def source_errors(items: list[dict], blocks_by_lesson: dict, workdir: Path | None = None) -> list[str]:
-    """Every table, code and output a post draws must be word for word in its source block (or CSV)."""
+    """Every table, code and output a post draws must equal its source block (or CSV) field for field."""
     import teach
     out = []
     for it in items:
@@ -138,14 +141,17 @@ def source_errors(items: list[dict], blocks_by_lesson: dict, workdir: Path | Non
             parts.append(("card", it["card"]))
         for where, s in parts:
             ref = s.get("source")
+            teaching = s.get("kind") in TEACH_SLIDES or (where == "card" and s.get("kind") in ("cheat", "compare"))
             if not ref:
+                if teaching:
+                    out.append(f"{it['id']}: {where}: teaching {'card' if where == 'card' else 'slide'} has no source")
                 continue
             if ref.get("kind") == "csv":
                 head = teach.csv_head(Path(workdir), ref["index"]) if workdir else None
-                corpus = _corpus(list(head)) if head else ""
+                ok = _matches(s, {}, head)
             else:
-                corpus = _corpus(_block(blocks_by_lesson, ref))
-            if not corpus or any(_norm(t) not in corpus for t in _drawn(s)):
+                ok = _matches(s, _block(blocks_by_lesson, ref), None)
+            if not ok:
                 out.append(f"{it['id']}: {where}: text not found in {ref.get('lessonId')} {ref.get('kind')} {ref.get('index')}")
     return out
 

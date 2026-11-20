@@ -62,7 +62,8 @@ def test_run_needs_data_and_marks_sample_output(tmp_path):
     run = teaching_carousel(src, ITEM_T1, set(), "compare")
     assert run["format"] == "run" and [s["kind"] for s in run["slides"]] == ["cover", "data", "code", "output", "cta"]
     data, output = run["slides"][1], run["slides"][3]
-    assert data["headers"] == ["column", "meaning"] and data["sample"] is True and output["sample"] is True
+    # the lesson's table describes weekly_complaints.csv, the code reads weekly_admissions.csv: the CSV's rows are shown
+    assert data["headers"] == ["branch", "ad", "admissions"] and data["sample"] is True and output["sample"] is True
     assert csv_head(Path(src["course_path"]).parent, "weekly_admissions.csv") == (["branch", "ad", "admissions"], [["Vesu", "yes", "12"], ["Pal", "no", "7"]])
 
 
@@ -107,3 +108,24 @@ def test_second_pack_never_reuses_a_block(tmp_path):
     used = [set().union(*(sources(i.get("slides", []) + ([i["card"]] if i.get("card") else [])) for i in p["items"])) for p in plans]
     assert used[0] and not (used[0] & used[1])
     assert used_blocks(wd, "demo-2026-11-24") == used[0]
+
+
+# ---- final review fixes ----
+def test_cheat_rows_with_wide_examples_are_left_out(tmp_path):
+    wide = EIGHT.replace("<code>port()</code>", "<code>app.config.from_mapping(SECRET_KEY='dev-only', START_ROWS=START_ROWS)</code>")
+    card = story_card(src_with(tmp_path, FLASK.split("<h2>📋 Cheat Sheet</h2>")[0] + wide), ITEM_T2, True)
+    assert "port" not in [r[0] for r in card["rows"]] and len(card["rows"]) == 6
+
+
+def test_feed_cheat_card_has_at_most_four_rows(tmp_path):
+    card = feed_card(src_with(tmp_path, FLASK.split("<h2>📋 Cheat Sheet</h2>")[0] + EIGHT), ITEM_T1, set(), False)
+    assert card["kind"] == "cheat" and len(card["rows"]) == 4
+
+
+def test_meet_the_data_must_describe_the_file_the_code_reads(tmp_path):
+    # CSV_RUN's table describes weekly_complaints.csv while the code reads weekly_admissions.csv
+    without_csv = teaching_carousel(src_with(tmp_path / "a", CSV_RUN), ITEM_T1, set(), "compare")
+    assert without_csv is None
+    with_csv = teaching_carousel(src_with(tmp_path / "b", CSV_RUN, csv="branch,ad,admissions\nVesu,yes,12\n"), ITEM_T1, set(), "compare")
+    assert with_csv["slides"][1]["caption"] == "First rows of weekly_admissions.csv"
+    assert with_csv["slides"][1]["source"]["kind"] == "csv"

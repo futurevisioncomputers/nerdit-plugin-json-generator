@@ -18,6 +18,7 @@ HOOKS = {"predict": "Guess the output", "compare": "Wrong vs right", "run": "See
 CSV_DIRS = ("", "lessons", "pack/files", "work/world")
 TOPIC_H2 = re.compile(r"<h2[^>]*>\s*(\d+)\s*[—–-].*?</h2>", re.S)
 EMPTY = {"run": [], "predict": [], "compare": [], "spot": []}
+CHEAT_EXAMPLE_CHARS = 56   # a cheat-sheet example wider than this would be cut at 26 px
 
 
 def _blocks(src: dict, lesson_id: str) -> dict:
@@ -90,8 +91,9 @@ def _content(kind: str, block: dict, src: dict, item: dict, topic: dict) -> list
         return [{"kind": "wrong", **block["bad"], "source": ref}, {"kind": "right", **block["good"], "source": ref}]
     if not block["code"] or not block["output"]:
         return None
-    if topic["spot"]:
-        spot = topic["spot"][0]
+    reads = block["reads"]
+    spot = next((sp for sp in topic["spot"] if any(name in sp["caption"] for name in reads)), None)
+    if spot:     # the lesson's own "meet the data" table, when it describes the file this code reads
         data = {"kind": "data", "headers": spot["headers"], "rows": spot["rows"], "caption": spot["caption"], "sample": True,
                 "source": _ref(item, "spot", spot["index"])}
     else:
@@ -129,8 +131,13 @@ def _cheat(src: dict, item: dict, height: int, used: set) -> dict | None:
     if not cheat or not cheat["rows"] or (item["lessonId"], "cheatsheet", 0) in used:   # once per course
         return None
     text = _topic_text(src, item["lessonId"], item["topic"])
-    first = [r for r in cheat["rows"] if r and r[0].lower() in text]
-    rows = (first + [r for r in cheat["rows"] if r not in first])[:6]
+    # Only rows that fit whole at the floor sizes (never cut mid-value); a Story holds 6, a feed card 4.
+    fitting = [r for r in cheat["rows"] if r and len(r) >= 1 and draw.fits(r[0], 40, 1)
+               and (len(r) < 2 or draw.fits(r[1], 52, 2)) and (len(r) < 3 or len(r[2]) <= CHEAT_EXAMPLE_CHARS)]
+    first = [r for r in fitting if r[0].lower() in text]
+    rows = (first + [r for r in fitting if r not in first])[:6 if height == draw.REEL_H else 4]
+    if not rows:
+        return None
     card = {"kind": "cheat", "headers": cheat["headers"], "rows": rows, "source": _ref(item, "cheatsheet", 0)}
     try:
         draw.cheat_html(card, "navy", height)

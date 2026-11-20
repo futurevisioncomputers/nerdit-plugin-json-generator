@@ -81,3 +81,23 @@ def test_code_panels_must_be_dark_for_the_token_colours():
 def test_a_pack_uses_every_layout_family():
     looks = pick_looks(items(10), load_styles(STYLES), {"looks": []}, "p1")
     assert {l for _, l in looks} == set(LAYOUTS)
+
+
+# ---- final review fixes ----
+from stylebook import prune_history, mark_built  # noqa: E402
+
+
+def test_reels_only_take_the_two_frame_layouts():
+    reel_items = [{"id": f"d{k:02d}-reel", "format": "reel"} for k in range(6)]
+    looks = pick_looks(reel_items, load_styles(STYLES), {"looks": []}, "p1")
+    assert {l for _, l in looks} <= {"stack", "split"}
+
+
+def test_an_abandoned_plan_frees_its_looks_but_a_built_pack_keeps_them(tmp_path):
+    gone, built, alive = tmp_path / "gone", tmp_path / "built", tmp_path / "alive"
+    alive.mkdir(); (alive / "pack-plan.json").write_text("{}")
+    h = {"looks": [{"style": "navy", "layout": "stack", "packId": "a", "itemId": "x", "folder": str(gone)},
+                   {"style": "ember", "layout": "split", "packId": "b", "itemId": "x", "folder": str(built)},
+                   {"style": "violet", "layout": "bleed", "packId": "c", "itemId": "x", "folder": str(alive)}]}
+    h = mark_built(h, "b")
+    assert [e["packId"] for e in prune_history(h)["looks"]] == ["b", "c"]

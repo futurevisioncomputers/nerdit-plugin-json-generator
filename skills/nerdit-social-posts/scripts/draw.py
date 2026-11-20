@@ -531,7 +531,8 @@ def card_html(card: dict, look, height: int) -> str:
     course = html.escape(_english(card.get("course", ""), "course title"))
     topics = "".join(f"<li style='margin-top:14px'>{_fit(x, 'topic', 40, 2)}</li>" for x in card.get("topics", [])[:4])
     text_top = top + (pic_h + 40 if has_pic else 80)
-    body = (_background(t, st, SLIDE_W, height) + _motif(t, st, SLIDE_W, height)
+    marks, _ = _card_marks(t, layout, text_top, height, "&#10022;") if layout != "bleed" else _card_marks(t, layout, text_top + 30, height, "")
+    body = (_background(t, st, SLIDE_W, height) + marks + _motif(t, st, SLIDE_W, height)
             + _picture(card.get("picture"), 56, top, 968, pic_h)
             + f"<div class='abs' style='left:72px;top:{text_top}px;width:936px'>"
               f"<div style='color:{t['accent']};font-size:30px;font-weight:800;letter-spacing:2px;"
@@ -549,10 +550,27 @@ def card_html(card: dict, look, height: int) -> str:
                  st=st, layout=layout)
 
 
-def _card_frame(t: dict, st: dict, height: int, title: str, inner: str) -> str:
+def _card_marks(t: dict, layout: str, top: int, height: int, big: str) -> tuple[str, int]:
+    """(marks, content left edge) for a card in each layout family."""
+    if layout == "split":
+        return (f"<div class='abs' style='left:48px;top:{top}px;width:14px;height:{height - top - 360}px;border-radius:7px;"
+                f"background:{t['accent']}'></div>", 96)
+    if layout == "bleed":
+        return (f"<div class='abs' style='left:0;top:{top - 30}px;width:{SLIDE_W}px;height:{height - top - 330}px;"
+                f"background:{t['panel']}'></div>", 72)
+    if layout == "editorial":
+        return f"<div class='abs' style='left:72px;top:{top - 24}px;width:936px;height:4px;background:{t['ink']};opacity:.85'></div>", 72
+    if layout == "bignumber":
+        return (f"<div class='abs h' style='right:56px;top:{top - 60}px;font-size:200px;font-weight:900;line-height:1;"
+                f"color:{t['accent']};opacity:.25'>{html.escape(big)}</div>", 72)
+    return "", 72
+
+
+def _card_frame(t: dict, st: dict, height: int, title: str, inner: str, layout: str = "stack", big: str = "") -> str:
     top = 250 if height == REEL_H else 170          # Stories: keep clear of the top bar
-    return (_background(t, st, SLIDE_W, height) + _logo((64, top - 110, 190, 66))
-            + f"<div class='abs' style='left:72px;top:{top}px;width:936px'>"
+    marks, left = _card_marks(t, layout, top, height, big)
+    return (_background(t, st, SLIDE_W, height) + marks + _logo((64, top - 110, 190, 66))
+            + f"<div class='abs' style='left:{left}px;top:{top}px;width:{1008 - left}px'>"
               f"<div class='h' style='color:{t['ink']};font-size:64px;font-weight:900;line-height:1.05'>{title}</div>{inner}</div>"
             + f"<div class='abs' style='left:72px;top:{height - (330 if height == REEL_H else 120)}px;background:{t['chip']};"
               f"color:{t['chipInk']};font-size:32px;font-weight:800;padding:12px 28px;border-radius:999px'>Save this &middot; nerdit.in</div>"
@@ -571,18 +589,23 @@ def cheat_html(cheat: dict, look, height: int) -> str:
                  + (f"<div class='mono' style='color:{t['codeInk']};background:{t['codeBg']};font-size:{OUT_PX}px;margin-top:10px;"
                     f"padding:8px 14px;border-radius:12px;white-space:pre;overflow:hidden'>{html.escape(_english(example, 'example'))}</div>"
                     if example else "") + "</div>")
-    return _page(_card_frame(t, st, height, "Cheat sheet", rows), SLIDE_W, height, st=st, layout=layout)
+    return _page(_card_frame(t, st, height, "Cheat sheet", rows, layout, f"{len(cheat['rows'][:6]):02d}"),
+                 SLIDE_W, height, st=st, layout=layout)
 
 
 def compare_card_html(compare: dict, look, height: int) -> str:
     """Wrong and right in one image: the mistake above, the fix below (code needs the full width)."""
     t, st, layout = resolve(look)
+    if sum(len(compare[s]["code"].split("\n")) for s in ("bad", "good")) > 12:
+        raise DrawError("Wrong vs right is too tall for one card (12 code lines in all)")
     side = lambda s, colour, mark: (  # noqa: E731
         f"<div style='margin-top:26px'><div style='color:{colour};font-size:30px;font-weight:800'>{mark} "
         f"{_fit(s.get('head', ''), 'head', 40, 2)}</div><div style='margin-top:12px'>"
-        f"{_code_panel(s['code'], s.get('lang', ''), t, colour)}</div></div>")
+        f"{_code_panel(s['code'], s.get('lang', ''), t, colour)}</div>"
+        + (f"<div style='color:{t['ink']};font-size:28px;line-height:1.3;margin-top:12px'>{_fit(s['reason'], 'reason', 44, 3)}</div>"
+           if s.get("reason") else "") + "</div>")
     inner = side(compare["bad"], WRONG, "&#10007;") + side(compare["good"], RIGHT, "&#10003;")
-    return _page(_card_frame(t, st, height, "Wrong vs right", inner), SLIDE_W, height, st=st, layout=layout)
+    return _page(_card_frame(t, st, height, "Wrong vs right", inner, layout, "VS"), SLIDE_W, height, st=st, layout=layout)
 
 
 def shoot(pages: list[tuple[str, Path, int, int, bool]]) -> None:

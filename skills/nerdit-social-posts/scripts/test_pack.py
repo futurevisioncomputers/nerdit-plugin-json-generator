@@ -247,3 +247,46 @@ def test_every_module_imports_on_its_own():
     for name in ("packcheck", "slides", "teach", "blocks", "stylebook", "draw", "captions", "reel", "cues", "build_pack"):
         r = subprocess.run([sys.executable, "-c", f"import {name}"], cwd=here, capture_output=True, text=True)
         assert r.returncode == 0, f"{name}: {r.stderr.strip().splitlines()[-1]}"
+
+
+# ---- final review fixes ----
+def compare_carousel(tmp_path):
+    from test_teach import ITEM_T2, src_with
+    import teach
+    src = src_with(tmp_path, FLASK)
+    return {**ITEM_T2, "slides": teach.teaching_carousel(src, ITEM_T2, set(), "predict")["slides"]}
+
+
+def test_a_teaching_slide_without_its_source_is_an_error(tmp_path):
+    from packcheck import source_errors
+    _, items, blocks = planned(tmp_path)
+    del items[0]["slides"][1]["source"]
+    items[0]["slides"][1]["code"] = "import os"
+    assert source_errors(items, blocks) == ["d01-carousel: slide 2: teaching slide has no source"]
+
+
+def test_flattened_truncated_and_cross_field_code_is_caught(tmp_path):
+    from packcheck import source_errors
+    for k, change in enumerate((lambda s: s.replace("\n", " "), lambda s: s.split("\n")[0],
+                   lambda s: "The variable name does not matter.")):
+        _, items, blocks = planned(tmp_path / str(k))
+        items[0]["slides"][1]["code"] = change(items[0]["slides"][1]["code"])
+        assert source_errors(items, blocks) == ["d01-carousel: slide 2: text not found in demo-01 predict 0"]
+
+
+def test_swapped_wrong_and_right_are_caught(tmp_path):
+    from packcheck import source_errors
+    car = compare_carousel(tmp_path)
+    car["slides"][1]["head"], car["slides"][2]["head"] = car["slides"][2]["head"], car["slides"][1]["head"]
+    assert source_errors([car], {"demo-01": lesson_blocks(FLASK)}) == [
+        "d02-carousel: slide 2: text not found in demo-01 compare 0", "d02-carousel: slide 3: text not found in demo-01 compare 0"]
+
+
+def test_an_invented_cheat_row_is_caught(tmp_path):
+    from packcheck import source_errors
+    src, items, blocks = planned(tmp_path)
+    import teach
+    from test_teach import ITEM_T1
+    story = {**ITEM_T1, "id": "d01-story", "format": "story", "card": teach.story_card(src, ITEM_T1, True)}
+    story["card"]["rows"][0] = ["route", "Invented meaning", "@app.route('/')"]
+    assert source_errors([story], blocks) == ["d01-story: card: text not found in demo-01 cheatsheet 0"]

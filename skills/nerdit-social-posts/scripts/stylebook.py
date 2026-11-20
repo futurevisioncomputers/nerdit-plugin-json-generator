@@ -20,6 +20,7 @@ FONTS = {"Segoe UI", "Segoe UI Black", "Segoe UI Semibold", "Bahnschrift", "Geor
          "Constantia", "Corbel", "Candara", "Trebuchet MS", "Verdana", "Consolas", "Arial", "Arial Black",
          "Arial Nova", "Impact", "Rockwell Nova"}
 RECENT = 3          # a style does not come back within this many posts
+REEL_LAYOUTS = ("stack", "split")   # a Reel's frame has two layouts (fixed safe areas), so only these are distinct looks
 HEX = re.compile(r"^#[0-9a-fA-F]{6}$")
 
 
@@ -100,10 +101,12 @@ def pick_looks(items: list[dict], styles: list[dict], history: dict, pack_id: st
     picked: list[tuple[str, str]] = []
     uses = {s: 0 for s in names}
     layout_uses = {l: 0 for l in LAYOUTS}
-    for _ in items:
+    for item in items:
         recent = {s for s, _ in picked[-RECENT:]}
         last_layout = picked[-1][1] if picked else None
-        options = [(s, l) for s, l in fresh if (s, l) not in picked and s not in recent and l != last_layout]
+        reel = item.get("format") == "reel"
+        options = [(s, l) for s, l in fresh if (s, l) not in picked and s not in recent and l != last_layout
+                   and (not reel or l in REEL_LAYOUTS)]
         if not options:
             raise NoFreshLooks(len(items), len(fresh))
         # least-used style first, then least-used layout, so a pack shows every layout family
@@ -114,7 +117,19 @@ def pick_looks(items: list[dict], styles: list[dict], history: dict, pack_id: st
     return picked
 
 
-def reserve_looks(history: dict, pack_id: str, picks: list[tuple[str, str, str]]) -> dict:
+def reserve_looks(history: dict, pack_id: str, picks: list[tuple[str, str, str]], folder: str | None = None) -> dict:
     """The history with this pack's earlier entries replaced by `picks` (item id, style, layout)."""
     kept = [h for h in history.get("looks", []) if h.get("packId") != pack_id]
-    return {"looks": kept + [{"style": s, "layout": l, "packId": pack_id, "itemId": i} for i, s, l in picks]}
+    extra = {"folder": str(folder)} if folder else {}
+    return {"looks": kept + [{"style": s, "layout": l, "packId": pack_id, "itemId": i, **extra} for i, s, l in picks]}
+
+
+def mark_built(history: dict, pack_id: str) -> dict:
+    """A built pack's looks are kept for good, even if its folder is later deleted."""
+    return {"looks": [{**h, "built": True} if h.get("packId") == pack_id else h for h in history.get("looks", [])]}
+
+
+def prune_history(history: dict) -> dict:
+    """Drops the looks of plans that were abandoned: never built, and their pack-plan.json is gone."""
+    keep = lambda h: h.get("built") or not h.get("folder") or (Path(h["folder"]) / "pack-plan.json").is_file()  # noqa: E731
+    return {"looks": [h for h in history.get("looks", []) if keep(h)]}

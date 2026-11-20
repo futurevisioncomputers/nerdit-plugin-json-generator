@@ -202,3 +202,27 @@ def test_diagram_slides_skip_the_layout_marks():
     svg = '<svg viewBox="0 0 10 10"><rect width="10" height="10"/></svg>'
     page = slide_html({"kind": "diagram", "svg": svg, "label": "A diagram"}, navy_look("split"), 3, 6)
     assert "width:14px;height:1060px" not in page
+
+
+# ---- final review fixes ----
+def test_compare_card_shows_both_reasons():
+    compare = {"bad": {"head": "Mistake", "code": "x", "lang": "python", "reason": "QQREASONBAD"},
+               "good": {"head": "Fix", "code": "y", "lang": "python", "reason": "QQREASONGOOD"}}
+    page = compare_card_html(compare, look(), 1350)
+    assert "QQREASONBAD" in page and "QQREASONGOOD" in page
+
+
+def _body(page: str) -> str:
+    body = page.split("<body", 1)[1]
+    return re.sub(r"^[^>]*>", "", body)          # drop the body tag and its layout class
+
+
+@pytest.mark.parametrize("draw_page", [
+    lambda lk: cheat_html({"headers": ["K"], "rows": [["route", "Links a URL", "@app.route('/')"]]}, lk, 1920),
+    lambda lk: compare_card_html({"bad": {"head": "M", "code": "x", "lang": "python", "reason": "r"},
+                                  "good": {"head": "F", "code": "y", "lang": "python", "reason": "s"}}, lk, 1350),
+    lambda lk: card_html({"title": "Flask", "course": "Flask", "topics": ["Routes"], "picture": None}, lk, 1920),
+])
+def test_cards_really_change_with_the_layout(draw_page):
+    bodies = {_body(draw_page(navy_look(layout))) for layout in LAYOUTS}
+    assert len(bodies) == len(LAYOUTS)

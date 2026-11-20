@@ -201,8 +201,10 @@ def main(argv=None) -> int:
     a = ap.parse_args(argv)
 
     if a.cmd == "plan":
+        path = stylebook.history_path()
+        history = stylebook.prune_history(stylebook.load_history(path))      # abandoned plans give their looks back
         try:
-            plan = plan_pack(a.workdir, a.start, a.days, a.url, a.course_id, pad=not a.no_pad)
+            plan = plan_pack(a.workdir, a.start, a.days, a.url, a.course_id, pad=not a.no_pad, history=history)
         except stylebook.NoFreshLooks as e:
             print(f"No fresh looks left ({e}): run the trend refresh (SKILL.md step 0) to add new styles.")
             return 1
@@ -213,9 +215,10 @@ def main(argv=None) -> int:
             return 1
         packdir.mkdir(parents=True, exist_ok=True)
         target.write_text(json.dumps(plan, ensure_ascii=False, indent=2), encoding="utf-8")
-        path = stylebook.history_path()          # the looks are now taken, for every course's later packs
-        stylebook.save_history(path, stylebook.reserve_looks(stylebook.load_history(path), plan["packId"],
-                                                             [(i["id"], i["style"], i["layout"]) for i in plan["items"]]))
+        # the looks are now taken, for every course's later packs
+        stylebook.save_history(path, stylebook.reserve_looks(history, plan["packId"],
+                                                             [(i["id"], i["style"], i["layout"]) for i in plan["items"]],
+                                                             folder=str(packdir)))
         print(f"wrote {target}: {len(plan['items'])} items over {plan['days']} days")
         return 0
 
@@ -240,6 +243,8 @@ def main(argv=None) -> int:
     manifest = {k: plan[k] for k in ("version", "packId", "courseId", "courseUrl", "start", "days")}
     manifest["items"] = items
     (packdir / "pack.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+    path = stylebook.history_path()
+    stylebook.save_history(path, stylebook.mark_built(stylebook.load_history(path), plan["packId"]))
     print(f"wrote {packdir / 'pack.json'}")
     return _report(packcheck.check_items(manifest, packdir, texts))
 
