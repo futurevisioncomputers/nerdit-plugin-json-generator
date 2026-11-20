@@ -212,7 +212,10 @@ again. Check in this order, and stop at the first step the owner is not happy wi
 3. **Pilot topic**: pick the most code-heavy topic; `python scripts/voice.py --images-dir <images>
    --only <lessonId>:<topic>` (about 1,500 characters), then `python scripts/build_video.py
    --images-dir <images> --only <lessonId>:<topic>` writes `<images>/video/pilot/pilot-*.mp4` in under
-   a minute. Give the owner that clip and wait for their OK.
+   a minute. Give the owner that clip and wait for their OK, then write
+   `<images>/video/pilot/OWNER_OK` holding the date and the owner's words. The project hook
+   (`hooks/nerdit_hooks.py pre-shell`) refuses a `voice.py` or `build_video.py` run without `--only`,
+   `--stills` or `--thumbnail-only` until that file exists.
 4. **Full run** (sections 2-3). The voice is cached: a clip whose text and voice settings are
    unchanged is not recorded again (its `.key` file matches), so a fix re-records only the scenes
    it changed, and the pilot's clips are reused.
