@@ -531,7 +531,7 @@ def card_html(card: dict, look, height: int) -> str:
     course = html.escape(_english(card.get("course", ""), "course title"))
     topics = "".join(f"<li style='margin-top:14px'>{_fit(x, 'topic', 40, 2)}</li>" for x in card.get("topics", [])[:4])
     text_top = top + (pic_h + 40 if has_pic else 80)
-    marks, _ = _card_marks(t, layout, text_top, height, "&#10022;") if layout != "bleed" else _card_marks(t, layout, text_top + 30, height, "")
+    marks, _ = _card_marks(t, layout, text_top, height, "✦") if layout != "bleed" else _card_marks(t, layout, text_top + 30, height, "")
     body = (_background(t, st, SLIDE_W, height) + marks + _motif(t, st, SLIDE_W, height)
             + _picture(card.get("picture"), 56, top, 968, pic_h)
             + f"<div class='abs' style='left:72px;top:{text_top}px;width:936px'>"

@@ -226,3 +226,9 @@ def _body(page: str) -> str:
 def test_cards_really_change_with_the_layout(draw_page):
     bodies = {_body(draw_page(navy_look(layout))) for layout in LAYOUTS}
     assert len(bodies) == len(LAYOUTS)
+
+
+def test_bignumber_picture_card_draws_its_star_not_an_escaped_entity():
+    page = card_html({"title": "Flask Overview", "course": "Flask", "topics": ["Routes"], "picture": None},
+                     navy_look("bignumber"), 1350)
+    assert "&amp;#" not in page and "\u2726" in page
