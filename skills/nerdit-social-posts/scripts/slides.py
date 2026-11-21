@@ -75,8 +75,26 @@ def _quiz(src: dict, item: dict) -> dict | None:
     return best if score(best) else None   # a question about another topic would confuse this carousel
 
 
+SECTION = re.compile(r"<h2[^>]*>\s*(\d+)\s*[—–-].*?</h2>(.*?)(?=<h2|\Z)", re.S)
+PARAGRAPH = re.compile(r"<p[^>]*>(.*?)</p>", re.S)
+
+
+def section_sentences(src: dict, lesson: str, topic: int) -> list[str]:
+    """The topic section's own sentences, in order (courses without a story video have no scene key ideas)."""
+    content = (src["lessons"].get(lesson) or {}).get("content") or ""
+    out = []
+    for n, body in SECTION.findall(content):
+        if int(n) != topic:
+            continue
+        for para in PARAGRAPH.findall(body):
+            text = " ".join(html.unescape(re.sub(r"<[^>]+>", " ", para)).split())
+            out += [s.strip() for s in re.split(r"(?<=[.!?])\s+", text) if s.strip()]
+    return out
+
+
 def default_slides(src: dict, item: dict) -> list[dict]:
-    title = next((c["title"] for c in src["clips"] if c["key"] == item.get("clipKey")), "")
+    title = next((c["title"] for c in src["clips"] if c["key"] == item.get("clipKey")), "") \
+        or next((c["title"] for c in src["clips"] if (c["lessonId"], c["topic"]) == (item["lessonId"], item["topic"])), "")
     ideas, seen = [], set()
     own = _scenes(src, item["lessonId"], item["topic"])
     others = [s for s in _scenes(src, item["lessonId"]) if s not in own]
@@ -85,6 +103,11 @@ def default_slides(src: dict, item: dict) -> list[dict]:
         if idea and idea.lower() not in seen and _english_fit(idea, 22, 6):
             seen.add(idea.lower())
             ideas.append({"kind": "idea", "text": idea, "title": title if s in own else s.get("title", "")})
+    if not src["plan"].get("scenes"):      # no story video: the section's own sentences are the key ideas
+        for sentence in section_sentences(src, item["lessonId"], item["topic"]):
+            if len(sentence) >= 20 and sentence.lower() not in seen and _english_fit(sentence, 22, 6):
+                seen.add(sentence.lower())
+                ideas.append({"kind": "idea", "text": sentence, "title": title})
     picture = topic_picture(src, item)
     quiz = _quiz(src, item)
     fixed = 2 + (1 if picture else 0) + (2 if quiz else 0)            # cover + cta, diagram, quiz + answer

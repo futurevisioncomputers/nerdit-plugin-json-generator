@@ -88,3 +88,15 @@ def test_intro_renders_six_slides_with_item_names(tmp_path):
     files = intro.render_intro({"id": "d01-intro", "kind": "intro", "intro": WORDS}, src, packdir, packdir / "pack-plan.json")
     assert [f.name for f in files] == [f"d01-intro-{i:02d}.jpg" for i in range(1, 7)]
     assert all(f.is_file() for f in files)
+
+
+def test_empty_course_title_falls_back_to_the_video_plans_title(tmp_path):
+    # final review I1: chapter-generator outputs have "title": ""; the pack already takes the video plan's title
+    wd = write_workdir(tmp_path)
+    course_file = wd / "course-demo_output.json"
+    course = json.loads(course_file.read_text(encoding="utf-8"))
+    course["title"] = ""
+    course_file.write_text(json.dumps(course), encoding="utf-8")
+    src = load_source(wd)
+    assert src["course"]["title"] == "Demo Course"
+    assert intro.intro_errors({"id": "d01-intro", "kind": "intro", "intro": WORDS}, src) == []

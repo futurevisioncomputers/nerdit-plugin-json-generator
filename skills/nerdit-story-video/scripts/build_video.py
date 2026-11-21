@@ -192,7 +192,9 @@ def make_thumbnail(vid: Path, plan: dict, course_path: Path) -> Path:
     facts = content.course_facts(data.get("course", data))
     facts["title"] = facts["title"] or str(plan.get("course", "")).strip()   # chapter outputs can have no title yet
     key_idea = settings.get("key_idea") or next((s.get("keyIdea") for s in plan.get("scenes", []) if s.get("keyIdea")), "")
+    from brand_studio.checks import unknown_numbers
     problems = content.facts_errors(facts) + ([] if key_idea else ["thumbnail: no key idea (plan.thumbnail.key_idea)"])
+    problems += [f"thumbnail key idea: {n} is not in the course" for n in unknown_numbers(key_idea, facts["text"])]
     photos = None
     if settings.get("photo"):
         photo_path = vid / settings["photo"]
@@ -247,6 +249,8 @@ def build(images_dir: Path, workers: int = 3, music: Path | None = None) -> Path
     vid = images_dir / "video"
     plan = storyplan.load_json(vid / "plan.json")
     course = Path(plan["source"]) if plan.get("source") else None
+    for w in thumbnail_warnings(vid, plan, thumbnail_course(vid, course)):
+        print(f"thumbnail warning (the video still builds): {w}", flush=True)
     figures = storyplan.lesson_figures(course, images_dir) if course else {}
     parts = storyplan.lesson_parts(course) if course else None
     practice = storyplan.lesson_practice(course) if course else None
@@ -294,15 +298,52 @@ def build(images_dir: Path, workers: int = 3, music: Path | None = None) -> Path
     for c in clips:
         subprocess.run(cut_command(ff, final, c, vid / c["file"]), check=True)
         c["youtubeTitle"] = storyplan.title_case(f"{plan.get('course', '')}: {c['title']}")
-    found = sorted(vid.parents[1].glob("course-*_output.json"))
-    course_file = course if course and course.is_file() else (found[0] if len(found) == 1 else None)
-    if course_file:                    # brand-studio draws the thumbnail in the course's look (owner 2026-11-20)
-        try:
-            make_thumbnail(vid, plan, course_file)
-        except SystemExit as e:        # a finished video never fails on its thumbnail; the scene frame stays
-            print(f"thumbnail kept from the scene frame: {e}", flush=True)
-    (vid / "clips.json").write_text(json.dumps(clips, ensure_ascii=False, indent=2), encoding="utf-8")
+    finish_build(vid, plan, thumbnail_course(vid, course), clips)
     return final
+
+
+def thumbnail_course(vid: Path, course: Path | None) -> Path | None:
+    """The course file for the thumbnail: the plan's source, else the workdir's one course JSON."""
+    found = sorted(vid.parents[1].glob("course-*_output.json"))
+    return course if course and course.is_file() else (found[0] if len(found) == 1 else None)
+
+
+def finish_build(vid: Path, plan: dict, course_file: Path | None, clips: list[dict]) -> None:
+    """clips.json first (social packs need it), then the thumbnail; a finished video never fails on its thumbnail."""
+    (vid / "clips.json").write_text(json.dumps(clips, ensure_ascii=False, indent=2), encoding="utf-8")
+    if not course_file:
+        print("thumbnail kept from the scene frame: no course JSON found for brand-studio", flush=True)
+        return
+    try:
+        make_thumbnail(vid, plan, course_file)
+    except (SystemExit, Exception) as e:  # noqa: BLE001
+        print(f"thumbnail kept from the scene frame: {e}", flush=True)
+
+
+def thumbnail_warnings(vid: Path, plan: dict, course_file: Path | None) -> list[str]:
+    """Thumbnail problems found before the long render, so the owner can fix them while it runs."""
+    try:
+        from brand_studio import api, content
+        from brand_studio.checks import unknown_numbers
+    except ImportError:
+        return [BRAND_STUDIO_HINT]
+    if not course_file:
+        return ["no course JSON found for the thumbnail"]
+    settings = plan.get("thumbnail") or {}
+    data = storyplan.load_json(course_file)
+    facts = content.course_facts(data.get("course", data))
+    facts["title"] = facts["title"] or str(plan.get("course", "")).strip()
+    key_idea = settings.get("key_idea") or next((s.get("keyIdea") for s in plan.get("scenes", []) if s.get("keyIdea")), "")
+    out = content.facts_errors(facts) + ([] if key_idea else ["thumbnail: no key idea (plan.thumbnail.key_idea)"])
+    out += [f"thumbnail key idea: {n} is not in the course" for n in unknown_numbers(key_idea, facts["text"])]
+    if settings.get("photo"):
+        photo_path = vid / settings["photo"]
+        if not photo_path.is_file():
+            out.append(f"thumbnail photo {photo_path} is missing")
+        else:
+            _, problem = api.photo_from_file(photo_path, settings.get("facing", "left"))
+            out += [problem] if problem else []
+    return out
 
 
 STILL_CPS = 14.0   # characters per second of narration, to time a preview before anything is recorded

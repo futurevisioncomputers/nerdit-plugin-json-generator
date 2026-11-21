@@ -8,7 +8,8 @@ titles and the project come from the course JSON word for word; every number wri
 import copy
 from pathlib import Path
 
-import storyplan
+import source  # noqa: F401  puts the story-video scripts (storyplan) on sys.path
+import storyplan  # noqa: E402
 
 INSTALL_HINT = "brand-studio is not installed: python -m pip install -e <brand-studio-plugin>/engine"
 BRAND = "nerdit"
@@ -51,6 +52,14 @@ def _course(src: dict) -> dict:
     return data.get("course", data)
 
 
+def _facts(content, src: dict) -> dict:
+    """The course facts; an empty JSON title takes the pack's title (from the video plan), as the pack does."""
+    course = _course(src)
+    facts = content.course_facts(course)
+    facts["title"] = facts["title"] or str((src.get("course") or {}).get("title") or "").strip()
+    return facts
+
+
 def _empty(words: dict) -> list[str]:
     paths = []
     for page in ("hook", "questions", "learn", "project", "skills", "cta"):
@@ -74,7 +83,7 @@ def intro_errors(item: dict, src: dict) -> list[str]:
     if empty:
         return [f"{item['id']}: intro.{p} is empty" for p in empty]
     _, brands, content = _studio()
-    facts = content.course_facts(_course(src))
+    facts = _facts(content, src)
     brand = brands.load_brand(BRAND)
     return [f"{item['id']}: {e}" for e in content.facts_errors(facts) + content.truth_errors(facts, words, brand)]
 
@@ -83,7 +92,7 @@ def render_intro(item: dict, src: dict, out_dir: Path, marker: Path) -> list[Pat
     """Six JPEGs <item id>-01.jpg ... -06.jpg in the course's look; `marker` is the pack's pack-plan.json."""
     api, brands, content = _studio()
     course = _course(src)
-    facts = content.course_facts(course)
+    facts = _facts(content, src)
     pages = content.intro_pages(facts, item["intro"], brands.load_brand(BRAND))
     names = [f"{item['id']}-{i:02d}" for i in range(1, len(pages) + 1)]
     key = course.get("slug") or src["name"]

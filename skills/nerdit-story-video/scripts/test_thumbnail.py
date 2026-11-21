@@ -57,3 +57,29 @@ def test_dark_owner_photo_is_refused_with_its_name(setup):
     Image.new("RGB", (928, 1152), (50, 50, 50)).save(vid / "me.png")
     with pytest.raises(SystemExit, match="me.png: background"):
         make_thumbnail(vid, {**plan, "thumbnail": {"photo": "me.png"}}, course_path)
+
+
+def test_key_idea_numbers_must_come_from_the_course(setup):
+    # final review I5
+    from build_video import make_thumbnail
+    vid, plan, course_path = setup
+    with pytest.raises(SystemExit, match="key idea: 95 is not in the course"):
+        make_thumbnail(vid, {**plan, "thumbnail": {"key_idea": "Ship 95 apps in a week."}}, course_path)
+
+
+def test_a_thumbnail_error_never_loses_clips_json(setup, monkeypatch):
+    # final review I2: the thumbnail runs after a long render; clips.json is written first and any error is caught
+    import build_video
+    vid, plan, course_path = setup
+    monkeypatch.setattr(build_video, "make_thumbnail", lambda *a: (_ for _ in ()).throw(RuntimeError("boom")))
+    build_video.finish_build(vid, plan, course_path, [{"key": "k"}])
+    assert json.loads((vid / "clips.json").read_text(encoding="utf-8")) == [{"key": "k"}]
+
+
+def test_thumbnail_problems_are_listed_before_the_render(setup):
+    from build_video import thumbnail_warnings
+    vid, plan, course_path = setup
+    Image.new("RGB", (928, 1152), (50, 50, 50)).save(vid / "me.png")
+    warnings = thumbnail_warnings(vid, {**plan, "thumbnail": {"photo": "me.png"}}, course_path)
+    assert any("me.png: background" in w for w in warnings)
+    assert thumbnail_warnings(vid, plan, course_path) == []

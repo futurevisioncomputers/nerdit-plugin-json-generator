@@ -127,3 +127,14 @@ def test_card_spec_without_video_uses_a_lesson_figure(tmp_path):
     for fmt in ("story", "feed"):
         card = card_spec(src, {**ITEM, "format": fmt})
         assert card["picture"] and "svg" in card["picture"]
+
+
+def test_without_video_key_ideas_come_from_the_lessons_own_sentences(tmp_path):
+    # final review I4: no scenes means no key ideas; the carousel must still teach something
+    import shutil
+    from conftest import write_workdir
+    wd = write_workdir(tmp_path)
+    shutil.rmtree(wd / "images" / "video")
+    slides = default_slides(load_source(wd), {**ITEM, "format": "carousel", "lessonId": "demo-01", "topic": 1})
+    ideas = [s["text"] for s in slides if s["kind"] == "idea"]
+    assert ideas and "Each project gets its own venv." in ideas
