@@ -82,6 +82,22 @@ without Reels.
 5. **Hand over.** Tell the owner the folder to import: Admin → Social posts → Import social pack →
    choose `<packdir>`. Nothing is posted until they approve it there.
 
+## Courses without a story video, and the course intro (brand-studio, owner 2026-11-20)
+
+- **No video?** A workdir without `images/video/` still plans: topics come from the lessons' numbered sections
+  (`<n> — Title`), and the pack has no Reels (stories, carousels and LinkedIn cards keep their days). Get the
+  course JSON from the admin (Data manager, View all courses, Export JSON) and save it as
+  `course-<name>_output.json` in the workdir.
+- **Intro carousel.** A course's first pack opens with item `d01-intro` (format carousel, `"kind": "intro"`) in
+  day 1's carousel slot: six slides (why learn, real questions, what you'll learn, real project, skills, call
+  to action) drawn by the brand-studio plugin in the course's own look, the same look as its video thumbnail.
+  Fill its `intro` words in `pack-plan.json` from the lessons only (shape and rules: brand-studio's SKILL.md):
+  hook headline and subline, 3 question cards (text + keyword), project text, 4 skill cards, cta subline.
+  Lesson titles and the project title come from the course JSON; numbers in headlines, the hook and the cta
+  only from lesson counts, durations and titles. `pilot` and `build` stop on empty or untrue words. Write the
+  intro's Instagram and LinkedIn captions like any carousel's. Needs brand-studio installed
+  (`python -m pip install -e <brand-studio-plugin>/engine`).
+
 ## Teaching posts and looks
 
 - For each topic the plan takes the lesson's own blocks, word for word: **Guess the output**

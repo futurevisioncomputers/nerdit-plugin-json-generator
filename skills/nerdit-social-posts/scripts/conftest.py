@@ -9,6 +9,7 @@ import pytest
 def private_style_history(tmp_path, monkeypatch):
     """Tests never touch the owner's real look history (~/.nerdit-social)."""
     monkeypatch.setenv("NERDIT_SOCIAL_HOME", str(tmp_path / "social-home"))
+    monkeypatch.setenv("BRAND_STUDIO_HOME", str(tmp_path / "studio-home"))   # nor brand-studio's (~/.brand-studio)
 
 LESSON_HTML = (
     "<div class='nerdit-wrapper'><h2>1 — Make a Project Folder</h2><p>Each project gets its own venv.</p>"

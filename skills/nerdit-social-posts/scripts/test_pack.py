@@ -94,7 +94,7 @@ def test_plan_writes_a_draft_with_hooks_and_empty_captions(tmp_path):
     reel = next(i for i in plan["items"] if i["id"] == "d01-reel")
     assert reel["hook"] == "Key idea 1" and reel["title"] == "Topic 1"
     assert reel["captions"] == {"instagram": "", "facebook": ""}
-    carousel = next(i for i in plan["items"] if i["format"] == "carousel")
+    carousel = next(i for i in plan["items"] if i["format"] == "carousel" and i.get("kind") != "intro")
     assert carousel["slides"][0]["kind"] == "cover"
 
 
@@ -199,13 +199,14 @@ from stylebook import LAYOUTS, history_path, load_history, load_styles, save_his
 
 def looks_of(packdir: Path) -> set:
     plan = json.loads((packdir / "pack-plan.json").read_text(encoding="utf-8"))
-    return {(i["style"], i["layout"]) for i in plan["items"]}
+    return {(i["style"], i["layout"]) for i in plan["items"] if i.get("kind") != "intro"}   # the intro: brand-studio look
 
 
 def test_every_item_gets_a_style_and_layout_and_no_theme(tmp_path):
     plan = json.loads((run_plan(write_workdir(tmp_path), "2026-11-19", 2) / "pack-plan.json").read_text(encoding="utf-8"))
-    assert all(i["style"] and i["layout"] in LAYOUTS and "theme" not in i for i in plan["items"])
-    looks = [(i["style"], i["layout"]) for i in plan["items"]]
+    posts = [i for i in plan["items"] if i.get("kind") != "intro"]                # the intro: brand-studio look
+    assert all(i["style"] and i["layout"] in LAYOUTS and "theme" not in i for i in posts)
+    looks = [(i["style"], i["layout"]) for i in posts]
     assert len(set(looks)) == len(looks) and all(a[0] != b[0] and a[1] != b[1] for a, b in zip(looks, looks[1:]))
 
 
@@ -220,7 +221,7 @@ def test_force_replan_frees_its_own_looks(tmp_path):
     packdir = run_plan(wd, "2026-11-19", 2)
     run_plan(wd, "2026-11-19", 2, "--force")
     items = json.loads((packdir / "pack-plan.json").read_text(encoding="utf-8"))["items"]
-    assert len(load_history(history_path())["looks"]) == len(items)
+    assert len(load_history(history_path())["looks"]) == len([i for i in items if i.get("kind") != "intro"])
 
 
 def test_no_fresh_looks_stops_plan(tmp_path, capsys):

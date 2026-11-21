@@ -27,6 +27,7 @@ import teach
 from blocks import lesson_blocks
 from captions import fill_links
 import shorts
+import intro
 from dayplan import day_plan
 
 IST = timezone(timedelta(hours=5, minutes=30))
@@ -69,7 +70,7 @@ def add_teaching(src: dict, items: list[dict], used: set) -> None:
     Wrong vs right (else cheat sheet) LinkedIn cards. Items are in posting order."""
     last, cheat_done, story_seen = None, set(), set()
     for it in items:
-        if it["format"] == "carousel":
+        if it["format"] == "carousel" and it.get("kind") != "intro":
             tc = teach.teaching_carousel(src, it, used, last)
             it["slides"] = tc["slides"] if tc else slides.default_slides(src, it)
             if tc:
@@ -95,6 +96,7 @@ def add_teaching(src: dict, items: list[dict], used: set) -> None:
 def assign_looks(items: list[dict], pack_id: str, history: dict) -> None:
     """A never-used style x layout per item, in posting order (raises stylebook.NoFreshLooks)."""
     styles = stylebook.load_styles(draw.STYLE_DIR)
+    items = [it for it in items if it.get("kind") != "intro"]      # the intro takes the course's brand-studio look
     for it, (style, layout) in zip(items, stylebook.pick_looks(items, styles, history, pack_id)):
         it.pop("theme", None)
         it["style"], it["layout"] = style, layout
@@ -118,6 +120,7 @@ def plan_pack(workdir: Path, start: date, days: int, url: str, course_id: str | 
         if it["format"] == "reel":
             it["hook"] = reel_hook(src, it)
         it["captions"] = {p: "" for p in it["platforms"]}
+    intro.add_intro(items, src, first_pack=not skip)          # a course's first pack opens with its intro
     add_teaching(src, items, teach.used_blocks(workdir, pack_id))
     assign_looks(items, pack_id, stylebook.load_history(stylebook.history_path()) if history is None else history)
     n_days = len({it["date"] for it in items})
@@ -131,6 +134,8 @@ CAROUSEL_KIND = {"predict-q": "predict", "wrong": "compare", "data": "run"}
 
 def _pilot_key(item: dict):
     fmt = item["format"]
+    if item.get("kind") == "intro":
+        return ("carousel", "intro")
     if fmt == "reel":
         return ("reel",)
     if fmt == "carousel":
@@ -160,7 +165,10 @@ def render_items(src: dict, plan: dict, items: list[dict], out_dir: Path) -> lis
     for it in items:
         print(f"  {it['id']} ({it['format']})", flush=True)
         entry = dict(it)
-        if it["format"] == "reel":
+        if it.get("kind") == "intro":
+            marker = out_dir / "pack-plan.json" if (out_dir / "pack-plan.json").is_file() else out_dir.parent / "pack-plan.json"
+            entry["media"] = [p.name for p in intro.render_intro(it, src, out_dir, marker)]
+        elif it["format"] == "reel":
             mp4, cover = reel.make_reel(src, it, it["hook"], out_dir, tl, pad=plan.get("pad", True))
             entry["media"], entry["cover"] = [mp4.name], cover.name
         elif it["format"] == "carousel":
@@ -224,7 +232,7 @@ def main(argv=None) -> int:
         target.write_text(json.dumps(plan, ensure_ascii=False, indent=2), encoding="utf-8")
         # the looks are now taken, for every course's later packs
         stylebook.save_history(path, stylebook.reserve_looks(history, plan["packId"],
-                                                             [(i["id"], i["style"], i["layout"]) for i in plan["items"]],
+                                                             [(i["id"], i["style"], i["layout"]) for i in plan["items"] if "style" in i],
                                                              folder=str(packdir)))
         print(f"wrote {target}: {len(plan['items'])} items over {plan['days']} days")
         return 0
@@ -246,6 +254,7 @@ def main(argv=None) -> int:
     todo = pilot_items(plan["items"]) if a.cmd == "pilot" else plan["items"]
     blocks = {lid: lesson_blocks(lesson["content"]) for lid, lesson in src["lessons"].items()}
     written = packcheck.plan_text_errors(todo, texts) + packcheck.source_errors(todo, blocks, packdir.parents[1])
+    written += [e for it in todo if it.get("kind") == "intro" for e in intro.intro_errors(it, src)]
     # (checked before drawing: cheap to fix in pack-plan.json)
     if written:
         return _report(written)
