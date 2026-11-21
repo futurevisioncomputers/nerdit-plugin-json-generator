@@ -105,6 +105,9 @@ def plan_pack(workdir: Path, start: date, days: int, url: str, course_id: str | 
     """The draft pack. `url` is the live course page; `course_id` the live course's id when known (the admin
     import gives a course a new id, so the JSON's id is only a fallback; the server also finds it by URL)."""
     src = source.load_source(workdir)
+    if not src["clips"]:
+        raise SystemExit("no lesson topics found (numbered '<n> — Title' sections)"
+                         + ("" if src.get("has_video") else " and no story video") + ": nothing to plan")
     pack_id = f"{src['name']}-{start.isoformat()}"
     skip = used_topics(workdir, pack_id)
     if skip:

@@ -16,11 +16,18 @@ def test_load_source_reads_course_and_topic_clips(tmp_path):
     assert "fig-demo-1" in src["figures"]
 
 
-def test_missing_video_folder_stops_with_youtube_studio_hint(tmp_path):
+def test_no_video_folder_loads_topics_from_headings(tmp_path):
+    # owner 2026-11-20 (brand-studio spec): the story video is optional; topics come from the lesson's sections
     wd = write_workdir(tmp_path)
     shutil.rmtree(wd / "images" / "video")
-    with pytest.raises(SystemExit, match="YouTube Studio"):
-        load_source(wd)
+    src = load_source(wd)
+    assert src["has_video"] is False and src["video"] is None and src["plan"] == {"scenes": []}
+    assert [(c["key"], c["topic"], c["video"]) for c in src["clips"]] == [("demo-01-t1", 1, False), ("demo-01-t2", 2, False)]
+    assert src["clips"][0]["title"] == "Make a Project Folder" and src["course"]["title"] == "Demo Course"
+
+
+def test_video_folder_present_means_has_video(tmp_path):
+    assert load_source(write_workdir(tmp_path))["has_video"] is True
 
 
 def test_missing_clips_json_stops_and_names_it(tmp_path):

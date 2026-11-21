@@ -110,14 +110,14 @@ def card_spec(src: dict, item: dict) -> dict:
     lesson = src["lessons"][item["lessonId"]]
     headings = storyplan.lesson_topics(src["course_path"]).get(item["lessonId"], {})
     topics = [h for _, h in sorted(headings.items()) if _english_fit(h, 40, 2)][:4]
-    thumb = src["video"] / "thumbnail.jpg"
+    thumb = src["video"] / "thumbnail.jpg" if src.get("video") else None
     diagram = topic_picture(src, item)
-    if item.get("format") == "feed" and thumb.is_file():
+    if item.get("format") == "feed" and thumb and thumb.is_file():
         picture = {"img": str(thumb)}
     elif diagram:
         picture = {"svg": diagram["svg"]}
     else:
-        picture = {"img": str(thumb)} if thumb.is_file() else None
+        picture = {"img": str(thumb)} if thumb and thumb.is_file() else None
     return {"title": lesson["title"], "course": src["course"]["title"], "topics": topics, "picture": picture}
 
 

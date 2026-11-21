@@ -49,7 +49,7 @@ def day_plan(src: dict, start: date, days: int = 10, skip: set | frozenset = fro
     fresh = [c for c in src["clips"] if (c["lessonId"], c["topic"]) not in skip]
     for i, clip in enumerate(fresh[:days]):
         day = start + timedelta(days=i)
-        formats = ["reel", "story"]
+        formats = ["reel", "story"] if clip.get("video", True) else ["story"]   # no story video: no Reels
         if day.weekday() in CAROUSEL_DAYS:
             formats.append("carousel")
         if day.weekday() in FEED_DAYS:

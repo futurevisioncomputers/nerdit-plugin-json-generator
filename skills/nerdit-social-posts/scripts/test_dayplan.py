@@ -58,3 +58,14 @@ def test_themes_layouts_and_platform_tables():
 def test_topics_used_by_an_earlier_pack_are_skipped():
     items = day_plan(src_with_topics(12), date(2026, 11, 18), 3, skip={("l01", 1), ("l01", 2)})
     assert [i["topic"] for i in items if i["format"] == "reel"] == [3, 4, 5]
+
+
+def test_no_video_means_no_reels_but_stories_carousels_and_cards_keep_their_days():
+    src = src_with_topics(12)
+    for c in src["clips"]:
+        c["video"] = False
+    items = day_plan(src, date(2026, 11, 18), 10)
+    assert not [i for i in items if i["format"] == "reel"]
+    assert sum(i["format"] == "story" for i in items) == 10 and all(i["time"] == "10:00" for i in items if i["format"] == "story")
+    assert sorted(i["date"] for i in items if i["format"] == "carousel") == ["2026-11-20", "2026-11-24", "2026-11-27"]
+    assert len([i for i in items if i["format"] == "feed"]) == 5

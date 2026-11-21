@@ -21,24 +21,32 @@ def _course_file(workdir: Path) -> Path:
 
 
 def load_source(workdir: Path) -> dict:
-    """Everything the pack is made from. Stops (SystemExit) when the story video is missing."""
+    """Everything the pack is made from. Without `images/video/` (no story video) the topics come from the lessons'
+    numbered sections and the pack has no Reels (owner, 2026-11-20). A video folder without its plan or clips
+    stops (SystemExit): the video build is unfinished."""
     workdir = Path(workdir).resolve()
     course_path = _course_file(workdir)
     images = workdir / "images"
     video = images / "video"
-    if not video.is_dir():
-        raise SystemExit(
-            f"no {video}: this course has no local story video. Either download the original MP4 from "
-            "YouTube Studio (your own upload), put it at images/video/story.mp4 and re-run the nerdit-story-video "
-            "split, or make the pack without Reels.")
-    for needed in ("plan.json", "clips.json"):
-        if not (video / needed).is_file():
-            raise SystemExit(f"missing {video / needed}; run the nerdit-story-video build first")
     data = storyplan.load_json(course_path)
     course = data.get("course", data)
     lessons = {l.get("id", ""): {"title": l.get("title", ""), "content": l.get("content") or "",
                                  "questions": l.get("questions") or []}
                for l in storyplan.course_lessons(course_path)}
+    if not video.is_dir():
+        topics = storyplan.lesson_topics(course_path)
+        clips = [{"key": f"{lid}-t{n}", "lessonId": lid, "topic": n, "title": head, "place": "topic", "video": False}
+                 for lid in lessons for n, head in sorted(topics.get(lid, {}).items())]
+        return {
+            "name": course_path.name[len("course-"):-len("_output.json")],
+            "course": {"id": course.get("id", ""), "title": (course.get("title") or "").strip()},
+            "course_path": course_path, "images": images, "video": None, "has_video": False,
+            "lessons": lessons, "plan": {"scenes": []}, "clips": clips,
+            "figures": storyplan.lesson_figures(course_path, images),
+        }
+    for needed in ("plan.json", "clips.json"):
+        if not (video / needed).is_file():
+            raise SystemExit(f"missing {video / needed}; run the nerdit-story-video build first")
     clips = [c for c in storyplan.load_json(video / "clips.json") if c.get("place") == "topic"]
     plan = storyplan.load_json(video / "plan.json")
     return {
@@ -48,6 +56,7 @@ def load_source(workdir: Path) -> dict:
         "course_path": course_path,
         "images": images,
         "video": video,
+        "has_video": True,
         "lessons": lessons,
         "plan": plan,
         "clips": clips,

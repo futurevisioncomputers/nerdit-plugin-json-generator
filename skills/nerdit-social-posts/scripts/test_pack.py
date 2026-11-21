@@ -290,3 +290,40 @@ def test_an_invented_cheat_row_is_caught(tmp_path):
     story = {**ITEM_T1, "id": "d01-story", "format": "story", "card": teach.story_card(src, ITEM_T1, True)}
     story["card"]["rows"][0] = ["route", "Invented meaning", "@app.route('/')"]
     assert source_errors([story], blocks) == ["d01-story: card: text not found in demo-01 cheatsheet 0"]
+
+
+def test_plan_without_topics_or_video_stops_with_a_clear_message(tmp_path):
+    import json
+    import shutil
+    from datetime import date as _date
+    from conftest import write_workdir
+    from build_pack import plan_pack
+    wd = write_workdir(tmp_path)
+    shutil.rmtree(wd / "images" / "video")
+    course_file = wd / "course-demo_output.json"
+    course = json.loads(course_file.read_text(encoding="utf-8"))
+    course["lessons"][0]["content"] = "<p>No numbered sections here.</p>"
+    course_file.write_text(json.dumps(course), encoding="utf-8")
+    with pytest.raises(SystemExit, match="no lesson topics found"):
+        plan_pack(wd, _date(2026, 11, 23), 10, "https://nerdit.in/course/demo/preview", history={"looks": []})
+
+
+def test_course_without_video_plans_no_reels(tmp_path):
+    import shutil
+    from datetime import date as _date
+    from conftest import write_workdir
+    from build_pack import plan_pack
+    wd = write_workdir(tmp_path)
+    shutil.rmtree(wd / "images" / "video")
+    plan = plan_pack(wd, _date(2026, 11, 23), 10, "https://nerdit.in/course/demo/preview", history={"looks": []})
+    assert plan["items"] and not [i for i in plan["items"] if i["format"] == "reel"]
+
+
+def test_course_with_video_still_plans_reels_with_hooks(tmp_path):
+    from datetime import date as _date
+    from conftest import write_workdir
+    from build_pack import plan_pack
+    plan = plan_pack(write_workdir(tmp_path), _date(2026, 11, 23), 10, "https://nerdit.in/course/demo/preview",
+                     history={"looks": []})
+    reels = [i for i in plan["items"] if i["format"] == "reel"]
+    assert reels and all(r.get("hook") and r.get("clipKey") for r in reels)

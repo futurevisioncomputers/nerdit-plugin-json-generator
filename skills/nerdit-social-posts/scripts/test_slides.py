@@ -116,3 +116,14 @@ def test_a_question_without_a_valid_answer_index_is_never_used(tmp_path):
     del course["lessons"][0]["questions"][0]["correctOptionIndex"]
     path.write_text(json.dumps(course), encoding="utf-8")
     assert "quiz" not in [s["kind"] for s in default_slides(load_source(wd), ITEM)]
+
+
+def test_card_spec_without_video_uses_a_lesson_figure(tmp_path):
+    import shutil
+    from conftest import write_workdir
+    wd = write_workdir(tmp_path)
+    shutil.rmtree(wd / "images" / "video")
+    src = load_source(wd)
+    for fmt in ("story", "feed"):
+        card = card_spec(src, {**ITEM, "format": fmt})
+        assert card["picture"] and "svg" in card["picture"]
