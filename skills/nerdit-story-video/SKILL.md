@@ -248,11 +248,15 @@ again. Check in this order, and stop at the first step the owner is not happy wi
 Pexels credits) to `<images>/video/`. It re-runs the plan check first. `stage.html` draws every
 frame; open it and call `renderAt(seconds)` to inspect a moment.
 
-**Thumbnail (owner, 2026-11-04):** the course has one story video, so one thumbnail. Copy the
-owner's own photo (only theirs; the AI-styled suit photo they chose) to
-`<images>/video/presenter.jpg` and set `"thumbnail": {"photo": "presenter.jpg"}` in the plan; the
-build then writes `thumbnail.jpg` with the photo on the right and NERDIT, the course title and
-"Full course explained" on the left. `--thumbnail-only` redoes it for an already built video.
+**Thumbnail (owner, 2026-11-04; brand-studio look 2026-11-20):** the course has one story video, so
+one thumbnail, drawn by the brand-studio plugin in the course's own look (the same look as its social
+intro carousel): the course title on a band, the first lesson's code when it is short (else its first
+three lesson titles), the key idea (`"thumbnail": {"key_idea": "..."}` in the plan, else the first
+scene's key idea) and a student photo from the brand-studio library. To use the owner's own photo
+instead, copy it to `<images>/video/presenter.jpg` and set `"thumbnail": {"photo": "presenter.jpg",
+"facing": "left"}`; its background must be light. `--thumbnail-only` redoes it for an already built
+video. Needs brand-studio installed (`python -m pip install -e <brand-studio-plugin>/engine`); without
+it a full build keeps the scene-frame thumbnail and says so.
 
 Rendering takes about 1.5× the video's length with 3 workers (a 2-hour course took 3 hours).
 Run it in the background, with its output in a log; it prints a line per worker every 5 video

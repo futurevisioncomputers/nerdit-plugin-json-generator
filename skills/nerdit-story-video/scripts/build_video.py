@@ -167,20 +167,49 @@ def thumbnail_html(photo: Path, course: str, title: str, lesson: str = "") -> st
             + "</div><script>window.renderAt=function(){};window.ready=Promise.resolve(true);</script></body></html>")
 
 
-def make_thumbnail(vid: Path, plan: dict) -> Path | None:
-    """thumbnail.jpg for the course's one story video (owner, 2026-11-04: one upload per course),
-    when the plan names the owner's photo (plan.thumbnail.photo, a file in the video folder)."""
-    photo_name = (plan.get("thumbnail") or {}).get("photo")
-    if not photo_name:
-        return None
-    photo = vid / photo_name
-    if not photo.is_file():
-        raise SystemExit(f"thumbnail photo {photo} is missing")
-    page = vid / "parts" / "thumbnail.html"
-    page.parent.mkdir(parents=True, exist_ok=True)
-    page.write_text(thumbnail_html(photo, plan.get("course", ""), "Full course explained"), encoding="utf-8")
-    render.stills([(page, vid / "thumbnail.jpg")])
-    return vid / "thumbnail.jpg"
+BRAND_STUDIO_HINT = "brand-studio is not installed: python -m pip install -e <brand-studio-plugin>/engine"
+
+
+def course_key(course_path: Path) -> str:
+    """The course's key in brand-studio's look record, shared with the social pack's intro: the JSON's slug,
+    else the course file's name (course-<name>_output.json)."""
+    data = storyplan.load_json(course_path)
+    course = data.get("course", data)
+    stem = Path(course_path).name
+    return course.get("slug") or stem[len("course-"):-len("_output.json")]
+
+
+def make_thumbnail(vid: Path, plan: dict, course_path: Path) -> Path:
+    """thumbnail.jpg (1280x720) for the course's one story video, drawn by brand-studio in the course's look
+    (owner, 2026-11-20): the first lesson's short code or its first lesson titles, the key idea, and a student
+    photo - the owner's own (plan.thumbnail.photo, a file in the video folder) when named, else a library cut-out."""
+    try:
+        from brand_studio import api, content
+    except ImportError as e:
+        raise SystemExit(BRAND_STUDIO_HINT) from e
+    settings = plan.get("thumbnail") or {}
+    data = storyplan.load_json(course_path)
+    facts = content.course_facts(data.get("course", data))
+    facts["title"] = facts["title"] or str(plan.get("course", "")).strip()   # chapter outputs can have no title yet
+    key_idea = settings.get("key_idea") or next((s.get("keyIdea") for s in plan.get("scenes", []) if s.get("keyIdea")), "")
+    problems = content.facts_errors(facts) + ([] if key_idea else ["thumbnail: no key idea (plan.thumbnail.key_idea)"])
+    photos = None
+    if settings.get("photo"):
+        photo_path = vid / settings["photo"]
+        if not photo_path.is_file():
+            problems.append(f"thumbnail photo {photo_path} is missing")
+        else:
+            photo, problem = api.photo_from_file(photo_path, settings.get("facing", "left"))
+            problems += [problem] if problem else []
+            photos = {0: photo} if photo else None
+    if problems:
+        raise SystemExit("\n".join(problems))
+    key = course_key(course_path)
+    files, problems = api.render_set_to("nerdit", f"{key}:thumbnail", [content.thumbnail_page(facts, key_idea)], vid,
+                                        ["thumbnail"], look_from=key, photos=photos, jpeg=True)
+    if problems:
+        raise SystemExit("\n".join(problems))
+    return files[0]
 
 
 def svg_parts(svg: str) -> list | None:
@@ -265,7 +294,13 @@ def build(images_dir: Path, workers: int = 3, music: Path | None = None) -> Path
     for c in clips:
         subprocess.run(cut_command(ff, final, c, vid / c["file"]), check=True)
         c["youtubeTitle"] = storyplan.title_case(f"{plan.get('course', '')}: {c['title']}")
-    make_thumbnail(vid, plan)   # the owner's photo replaces the scene-frame thumbnail
+    found = sorted(vid.parents[1].glob("course-*_output.json"))
+    course_file = course if course and course.is_file() else (found[0] if len(found) == 1 else None)
+    if course_file:                    # brand-studio draws the thumbnail in the course's look (owner 2026-11-20)
+        try:
+            make_thumbnail(vid, plan, course_file)
+        except SystemExit as e:        # a finished video never fails on its thumbnail; the scene frame stays
+            print(f"thumbnail kept from the scene frame: {e}", flush=True)
     (vid / "clips.json").write_text(json.dumps(clips, ensure_ascii=False, indent=2), encoding="utf-8")
     return final
 
@@ -383,7 +418,10 @@ def pilot(images_dir: Path, only: str, workers: int = 3) -> Path:
 def thumbnail_only(images_dir: Path) -> Path | None:
     """Redo thumbnail.jpg of an already built video from plan.json."""
     vid = Path(images_dir).resolve() / "video"
-    return make_thumbnail(vid, storyplan.load_json(vid / "plan.json"))
+    found = sorted(vid.parents[1].glob("course-*_output.json"))
+    if len(found) != 1:
+        raise SystemExit(f"expected one course-<name>_output.json in {vid.parents[1]}, found {len(found)}")
+    return make_thumbnail(vid, storyplan.load_json(vid / "plan.json"), found[0])
 
 
 def main(argv=None) -> int:
