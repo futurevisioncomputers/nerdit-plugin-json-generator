@@ -11,6 +11,7 @@ import re
 from pathlib import Path
 
 import draw
+import studio
 from blocks import lesson_blocks, plain
 
 FORMAT_CYCLE = ("predict", "compare", "run")
@@ -69,12 +70,8 @@ def csv_head(workdir: Path, name: str, rows: int = 5) -> tuple[list, list] | Non
 
 
 def _drawable(slides: list[dict]) -> bool:
-    try:
-        for i, s in enumerate(slides, 1):
-            draw.slide_html(s, "navy", i, len(slides))
-        return True
-    except draw.DrawError:
-        return False
+    """Every slide passes brand-studio's slot rules and is English (checked again when it is drawn)."""
+    return not studio.fit_errors([studio.slide_page(s, "", 0) for s in slides])
 
 
 def _content(kind: str, block: dict, src: dict, item: dict, topic: dict) -> list[dict] | None:
@@ -144,9 +141,7 @@ def _cheat(src: dict, item: dict, height: int, used: set) -> dict | None:
     if not rows:
         return None
     card = {"kind": "cheat", "headers": cheat["headers"], "rows": rows, "source": _ref(item, "cheatsheet", 0)}
-    try:
-        draw.cheat_html(card, "navy", height)
-    except draw.DrawError:
+    if studio.fit_errors([studio.card_page(card, "story" if height == draw.REEL_H else "feed")]):
         return None
     return card
 
@@ -161,9 +156,6 @@ def feed_card(src: dict, item: dict, used: set, cheat_posted: bool) -> dict | No
         if (item["lessonId"], "compare", block["index"]) in used or not block["bad"]["code"] or not block["good"]["code"]:
             continue
         card = {"kind": "compare", "bad": block["bad"], "good": block["good"], "source": _ref(item, "compare", block["index"])}
-        try:
-            draw.compare_card_html(card, "navy", draw.SLIDE_H)
+        if not studio.fit_errors([studio.card_page(card, "feed")]):
             return card
-        except draw.DrawError:
-            continue
     return None if cheat_posted else _cheat(src, item, draw.SLIDE_H, used)

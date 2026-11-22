@@ -114,10 +114,11 @@ def test_plan_takes_the_live_course_id(tmp_path):
     assert json.loads((packdir / "pack-plan.json").read_text(encoding="utf-8"))["courseId"] == "pbcJxuHrLEYBxfvn34zn"
 
 
-def test_pilot_items_are_the_first_reel_and_the_first_carousel():
+def test_pilot_items_are_the_first_reel_carousel_and_picture_card():
+    # part 2b: every card is drawn anew by brand-studio, so picture cards join the pilot
     items = [{"id": "d01-feed", "format": "feed"}, {"id": "d01-reel", "format": "reel"},
              {"id": "d02-reel", "format": "reel"}, {"id": "d03-carousel", "format": "carousel"}]
-    assert [i["id"] for i in build_pack.pilot_items(items)] == ["d01-reel", "d03-carousel"]
+    assert [i["id"] for i in build_pack.pilot_items(items)] == ["d01-feed", "d01-reel", "d03-carousel"]
 
 
 def test_numbers_in_hooks_and_slides_must_come_from_the_lesson():
@@ -180,17 +181,7 @@ def test_edited_code_and_edited_card_are_caught(tmp_path):
                                             "d02-feed: card: text not found in demo-01 compare 0"]
 
 
-def test_make_card_draws_the_cheat_and_compare_cards(tmp_path, monkeypatch):
-    import draw
-    import slides as slides_mod
-    src, items, _ = planned(tmp_path)
-    shot = []
-    monkeypatch.setattr(draw, "shoot", lambda pages: shot.extend(pages))
-    slides_mod.make_card(src, {**items[1], "style": "navy", "layout": "stack"}, 1350, tmp_path)
-    cheat = {**items[1], "id": "d03-story", "format": "story", "style": "ember", "layout": "split",
-             "card": {"kind": "cheat", "headers": ["Keyword"], "rows": [["route", "Links a URL", "@app.route"]], "source": {}}}
-    slides_mod.make_card(src, cheat, 1920, tmp_path)
-    assert "Wrong vs right" in shot[0][0] and "Cheat sheet" in shot[1][0] and shot[1][3] == 1920
+# test_make_card_draws_the_cheat_and_compare_cards moved to test_studio.py (cards go through brand-studio)
 
 
 # ---- looks in the pack (data-first plan, Task 7) ----
@@ -239,7 +230,7 @@ def test_pilot_covers_every_format():
              car("d05-carousel", "wrong"), car("d06-carousel", "predict-q"), {"id": "d04-feed", "format": "feed", "card": {"kind": "compare"}},
              {"id": "d05-feed", "format": "feed"}]
     assert [i["id"] for i in build_pack.pilot_items(items)] == [
-        "d01-reel", "d01-carousel", "d01-story", "d03-carousel", "d05-carousel", "d04-feed"]
+        "d01-reel", "d01-carousel", "d01-story", "d02-story", "d03-carousel", "d05-carousel", "d04-feed", "d05-feed"]
 
 
 def test_every_module_imports_on_its_own():

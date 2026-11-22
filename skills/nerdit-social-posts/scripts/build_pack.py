@@ -23,6 +23,7 @@ import reel
 import slides
 import source
 import stylebook
+import studio
 import teach
 from blocks import lesson_blocks
 from captions import fill_links
@@ -141,8 +142,7 @@ def _pilot_key(item: dict):
     if fmt == "carousel":
         slides = item.get("slides") or []
         return ("carousel", CAROUSEL_KIND.get(slides[1]["kind"] if len(slides) > 1 else "", "key-idea"))
-    card = (item.get("card") or {}).get("kind")
-    return (fmt, card) if card else None          # picture cards are not new: not in the pilot
+    return (fmt, (item.get("card") or {}).get("kind") or "picture")   # part 2b: every card is drawn anew
 
 
 def pilot_items(items: list[dict]) -> list[dict]:
@@ -162,19 +162,20 @@ def render_items(src: dict, plan: dict, items: list[dict], out_dir: Path) -> lis
     out_dir.mkdir(parents=True, exist_ok=True)
     tl = cues.checked_timeline(src) if any(i["format"] == "reel" for i in items) else None
     made = []
+    marker = out_dir / "pack-plan.json" if (out_dir / "pack-plan.json").is_file() else out_dir.parent / "pack-plan.json"
     for it in items:
         print(f"  {it['id']} ({it['format']})", flush=True)
         entry = dict(it)
+        day = studio.day_of(plan, it) if plan.get("start") and it.get("date") else 0
         if it.get("kind") == "intro":
-            marker = out_dir / "pack-plan.json" if (out_dir / "pack-plan.json").is_file() else out_dir.parent / "pack-plan.json"
             entry["media"] = [p.name for p in intro.render_intro(it, src, out_dir, marker)]
         elif it["format"] == "reel":
             mp4, cover = reel.make_reel(src, it, it["hook"], out_dir, tl, pad=plan.get("pad", True))
             entry["media"], entry["cover"] = [mp4.name], cover.name
         elif it["format"] == "carousel":
-            entry["media"] = [p.name for p in slides.make_carousel(src, it, it["slides"], out_dir)]
+            entry["media"] = [p.name for p in slides.make_carousel(src, it, it["slides"], out_dir, marker, day)]
         else:
-            entry["media"] = [slides.make_card(src, it, 1920 if it["format"] == "story" else 1350, out_dir).name]
+            entry["media"] = [slides.make_card(src, it, 1920 if it["format"] == "story" else 1350, out_dir, marker, day).name]
         entry["captions"] = {p: fill_links((it.get("captions") or {}).get(p, ""), plan["courseUrl"], p, it)
                              for p in it["platforms"]}
         made.append({k: entry[k] for k in ITEM_KEYS if k in entry})

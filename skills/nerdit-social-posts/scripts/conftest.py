@@ -11,6 +11,18 @@ def private_style_history(tmp_path, monkeypatch):
     monkeypatch.setenv("NERDIT_SOCIAL_HOME", str(tmp_path / "social-home"))
     monkeypatch.setenv("BRAND_STUDIO_HOME", str(tmp_path / "studio-home"))   # nor brand-studio's (~/.brand-studio)
 
+
+@pytest.fixture
+def studio_icons(tmp_path):
+    """The 3D icons brand-studio pages draw (cover badge, hero icon), in the private brand-studio home."""
+    from PIL import Image
+    from brand_studio.assets import add_icons
+    folder = tmp_path / "icons"
+    folder.mkdir()
+    for name in ("brain", "envelope", "bullseye", "memo", "rocket", "books", "laptop"):
+        Image.new("RGBA", (256, 256), (20, 160, 140, 255)).save(folder / f"{name}_3d.png")
+    add_icons("nerdit", folder)
+
 LESSON_HTML = (
     "<div class='nerdit-wrapper'><h2>1 — Make a Project Folder</h2><p>Each project gets its own venv.</p>"
     '<div class="nerdit-figure" data-nerdit-img="fig-demo-1"><svg viewBox="0 0 200 100" role="img" aria-label="Two folders">'

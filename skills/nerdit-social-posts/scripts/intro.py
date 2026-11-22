@@ -10,9 +10,8 @@ from pathlib import Path
 
 import source  # noqa: F401  puts the story-video scripts (storyplan) on sys.path
 import storyplan  # noqa: E402
-
-INSTALL_HINT = "brand-studio is not installed: python -m pip install -e <brand-studio-plugin>/engine"
-BRAND = "nerdit"
+import studio
+from studio import BRAND, INSTALL_HINT  # noqa: F401  (kept importable from here)
 WORDS_SKELETON = {
     "hook": {"headline": "", "highlight": [], "subline": ""},
     "questions": {"headline": "", "highlight": [], "cards": [{"text": "", "keyword": "", "icon": "memo"} for _ in range(3)]},
@@ -25,10 +24,7 @@ WORDS_SKELETON = {
 
 
 def _studio():
-    try:
-        from brand_studio import api, brands, content
-    except ImportError as e:
-        raise SystemExit(INSTALL_HINT) from e
+    api, brands, content, _ = studio.studio()
     return api, brands, content
 
 
@@ -95,7 +91,7 @@ def render_intro(item: dict, src: dict, out_dir: Path, marker: Path) -> list[Pat
     facts = _facts(content, src)
     pages = content.intro_pages(facts, item["intro"], brands.load_brand(BRAND))
     names = [f"{item['id']}-{i:02d}" for i in range(1, len(pages) + 1)]
-    key = course.get("slug") or src["name"]
+    key = studio.course_key(src)
     files, problems = api.render_set_to(BRAND, key, pages, Path(out_dir), names, marker=Path(marker), jpeg=True)
     if problems:
         raise SystemExit("\n".join(f"{item['id']}: {p}" for p in problems))

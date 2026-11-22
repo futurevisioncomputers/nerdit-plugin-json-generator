@@ -9,6 +9,7 @@ from pathlib import Path
 
 import draw
 import storyplan
+import studio
 
 ARIA = re.compile(r'aria-label="([^"]*)"')
 MAX_SLIDES, MIN_SLIDES, MAX_IDEAS = 8, 5, 4
@@ -121,11 +122,11 @@ def default_slides(src: dict, item: dict) -> list[dict]:
     return slides + [{"kind": "cta", "text": CTA_TEXT}]
 
 
-def make_carousel(src: dict, item: dict, slides: list[dict], out_dir: Path) -> list[Path]:
-    out = [Path(out_dir) / f"{item['id']}-{i:02d}.jpg" for i in range(1, len(slides) + 1)]
-    draw.shoot([(draw.slide_html(s, draw.look_for(item), i, len(slides)), path, draw.SLIDE_W, draw.SLIDE_H, False)
-                for i, (s, path) in enumerate(zip(slides, out), 1)])
-    return out
+def make_carousel(src: dict, item: dict, slides: list[dict], out_dir: Path, marker: Path, day: int = 0) -> list[Path]:
+    """<id>-01.jpg ... drawn by brand-studio in the course's look; `marker` is the pack's pack-plan.json, `day` the
+    item's day number (it picks the arrangement variant)."""
+    course = src["course"]["title"]
+    return studio.render(src, item, [studio.slide_page(s, course, day) for s in slides], out_dir, marker, day)
 
 
 def card_spec(src: dict, item: dict) -> dict:
@@ -144,12 +145,10 @@ def card_spec(src: dict, item: dict) -> dict:
     return {"title": lesson["title"], "course": src["course"]["title"], "topics": topics, "picture": picture}
 
 
-def make_card(src: dict, item: dict, height: int, out_dir: Path) -> Path:
-    """The item's teaching card (cheat sheet or Wrong vs right) when the plan gave it one, else the picture card."""
-    out = Path(out_dir) / f"{item['id']}.jpg"
-    card, look = item.get("card") or {}, draw.look_for(item)
-    doc = (draw.cheat_html(card, look, height) if card.get("kind") == "cheat"
-           else draw.compare_card_html(card, look, height) if card.get("kind") == "compare"
-           else draw.card_html(card_spec(src, item), look, height))
-    draw.shoot([(doc, out, draw.SLIDE_W, height, False)])
-    return out
+def make_card(src: dict, item: dict, height: int, out_dir: Path, marker: Path, day: int = 0) -> Path:
+    """The item's teaching card (cheat sheet or Wrong vs right) when the plan gave it one, else the picture card;
+    a Story when `height` is 1920, else a LinkedIn feed card."""
+    card = item.get("card") or {}
+    page = studio.card_page(card if card.get("kind") in ("cheat", "compare") else card_spec(src, item),
+                            "story" if height == draw.REEL_H else "feed")
+    return studio.render(src, item, [page], out_dir, marker, day)[0]
