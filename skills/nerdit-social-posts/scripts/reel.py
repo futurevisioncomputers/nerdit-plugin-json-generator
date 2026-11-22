@@ -88,8 +88,10 @@ def reel_cues(cues: list[dict], hook: str, length: float) -> list[dict]:
     return [c for c in cues if c["start"] < length and not (c["kind"] == "idea" and " ".join(c["text"].split()) == said)]
 
 
-def make_reel(src: dict, item: dict, hook: str, out_dir: Path, tl: dict | None = None, pad: bool = True) -> tuple[Path, Path]:
-    """Write <id>.mp4 and <id>-cover.jpg into out_dir. Returns their paths. Cues that do not fit are skipped."""
+def make_reel(src: dict, item: dict, hook: str, out_dir: Path, tl: dict | None = None, pad: bool = True,
+              look: dict | None = None) -> tuple[Path, Path]:
+    """Write <id>.mp4 and <id>-cover.jpg into out_dir. Returns their paths. Cues that do not fit are skipped. `look`
+    is the course's look (draw.reel_look); without it the item's own old style is used."""
     import imageio_ffmpeg
     ff = imageio_ffmpeg.get_ffmpeg_exe()
     out_dir = Path(out_dir)
@@ -98,7 +100,7 @@ def make_reel(src: dict, item: dict, hook: str, out_dir: Path, tl: dict | None =
     tl = tl or cue_mod.checked_timeline(src)
     clip = _clip(src, item["clipKey"])
     _, length = source.reel_window(clip, cue_mod.scene_ends(tl, clip))
-    look = draw.look_for(item)
+    look = look or draw.look_for(item)
 
     layers = draw.reel_layers(hook, look, None)
     pages = [(layers["back"], work / "back.png", 1080, 1920, False), (layers["front"], work / "front.png", 1080, 1920, True),

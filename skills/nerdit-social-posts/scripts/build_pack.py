@@ -22,7 +22,6 @@ import packcheck
 import reel
 import slides
 import source
-import stylebook
 import studio
 import teach
 from blocks import lesson_blocks
@@ -94,17 +93,7 @@ def add_teaching(src: dict, items: list[dict], used: set) -> None:
                     cheat_done.add(it["lessonId"])
 
 
-def assign_looks(items: list[dict], pack_id: str, history: dict) -> None:
-    """A never-used style x layout per item, in posting order (raises stylebook.NoFreshLooks)."""
-    styles = stylebook.load_styles(draw.STYLE_DIR)
-    items = [it for it in items if it.get("kind") != "intro"]      # the intro takes the course's brand-studio look
-    for it, (style, layout) in zip(items, stylebook.pick_looks(items, styles, history, pack_id)):
-        it.pop("theme", None)
-        it["style"], it["layout"] = style, layout
-
-
-def plan_pack(workdir: Path, start: date, days: int, url: str, course_id: str | None = None, pad: bool = True,
-              history: dict | None = None) -> dict:
+def plan_pack(workdir: Path, start: date, days: int, url: str, course_id: str | None = None, pad: bool = True) -> dict:
     """The draft pack. `url` is the live course page; `course_id` the live course's id when known (the admin
     import gives a course a new id, so the JSON's id is only a fallback; the server also finds it by URL)."""
     src = source.load_source(workdir)
@@ -123,7 +112,6 @@ def plan_pack(workdir: Path, start: date, days: int, url: str, course_id: str | 
         it["captions"] = {p: "" for p in it["platforms"]}
     intro.add_intro(items, src, first_pack=not skip)          # a course's first pack opens with its intro
     add_teaching(src, items, teach.used_blocks(workdir, pack_id))
-    assign_looks(items, pack_id, stylebook.load_history(stylebook.history_path()) if history is None else history)
     n_days = len({it["date"] for it in items})
     return {"version": 1, "packId": pack_id, "courseId": course_id or src["course"]["id"],
             "courseUrl": url, "start": start.isoformat(), "days": n_days, "pad": pad,
@@ -163,6 +151,7 @@ def render_items(src: dict, plan: dict, items: list[dict], out_dir: Path) -> lis
     tl = cues.checked_timeline(src) if any(i["format"] == "reel" for i in items) else None
     made = []
     marker = out_dir / "pack-plan.json" if (out_dir / "pack-plan.json").is_file() else out_dir.parent / "pack-plan.json"
+    look = studio.reel_look(src, marker) if any(i["format"] == "reel" for i in items) else None   # the course's look
     for it in items:
         print(f"  {it['id']} ({it['format']})", flush=True)
         entry = dict(it)
@@ -170,7 +159,7 @@ def render_items(src: dict, plan: dict, items: list[dict], out_dir: Path) -> lis
         if it.get("kind") == "intro":
             entry["media"] = [p.name for p in intro.render_intro(it, src, out_dir, marker)]
         elif it["format"] == "reel":
-            mp4, cover = reel.make_reel(src, it, it["hook"], out_dir, tl, pad=plan.get("pad", True))
+            mp4, cover = reel.make_reel(src, it, it["hook"], out_dir, tl, pad=plan.get("pad", True), look=look)
             entry["media"], entry["cover"] = [mp4.name], cover.name
         elif it["format"] == "carousel":
             entry["media"] = [p.name for p in slides.make_carousel(src, it, it["slides"], out_dir, marker, day)]
@@ -217,25 +206,21 @@ def main(argv=None) -> int:
     a = ap.parse_args(argv)
 
     if a.cmd == "plan":
-        path = stylebook.history_path()
-        history = stylebook.prune_history(stylebook.load_history(path))      # abandoned plans give their looks back
-        try:
-            plan = plan_pack(a.workdir, a.start, a.days, a.url, a.course_id, pad=not a.no_pad, history=history)
-        except stylebook.NoFreshLooks as e:
-            print(f"No fresh looks left ({e}): run the trend refresh (SKILL.md step 0) to add new styles.")
-            return 1
+        plan = plan_pack(a.workdir, a.start, a.days, a.url, a.course_id, pad=not a.no_pad)
         packdir = Path(a.workdir).resolve() / "social-pack" / plan["packId"]
         target = packdir / "pack-plan.json"
         if target.exists() and not a.force:
             print(f"{target} exists and may hold your edits; pass --force to replace it")
             return 1
+        # every post of a course is drawn in its one brand-studio look; no other course may take it
+        look, problem = studio.reserve(source.load_source(a.workdir), target)
+        if problem:
+            print(f"No fresh looks left ({problem}): run the trend refresh (SKILL.md step 0) to add a brand-studio look.")
+            return 1
         packdir.mkdir(parents=True, exist_ok=True)
         target.write_text(json.dumps(plan, ensure_ascii=False, indent=2), encoding="utf-8")
-        # the looks are now taken, for every course's later packs
-        stylebook.save_history(path, stylebook.reserve_looks(history, plan["packId"],
-                                                             [(i["id"], i["style"], i["layout"]) for i in plan["items"] if "style" in i],
-                                                             folder=str(packdir)))
         print(f"wrote {target}: {len(plan['items'])} items over {plan['days']} days")
+        print(f"course look: {look}")
         return 0
 
     packdir = Path(a.packdir).resolve()
@@ -268,8 +253,6 @@ def main(argv=None) -> int:
     manifest = {k: plan[k] for k in ("version", "packId", "courseId", "courseUrl", "start", "days")}
     manifest["items"] = items
     (packdir / "pack.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
-    path = stylebook.history_path()
-    stylebook.save_history(path, stylebook.mark_built(stylebook.load_history(path), plan["packId"]))
     print(f"wrote {packdir / 'pack.json'}")
     result = _report(packcheck.check_items(manifest, packdir, texts))
     _youtube_kit(plan, packdir, src["course"]["title"], texts)

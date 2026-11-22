@@ -28,7 +28,7 @@ WORDS = {
 
 
 def plan(wd, start=date(2026, 11, 23)):
-    return plan_pack(wd, start, 10, URL, history={"looks": []})
+    return plan_pack(wd, start, 10, URL)
 
 
 def test_first_pack_gets_an_intro_on_day_one(tmp_path):

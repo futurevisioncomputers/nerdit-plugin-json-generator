@@ -92,3 +92,19 @@ def test_a_full_four_line_cover_hook_passes_the_guard():
     hook = "Never scale before the split: fit the scaler on training rows, then predict"   # 4 lines of 18: 75 characters
     assert len(hook) == 75 and draw.fits(hook, 18, 4)
     assert studio.fit_errors([studio.slide_page({"kind": "cover", "hook": hook, "course": "C"}, "Demo Course", 0)]) == []
+
+
+def test_old_plan_items_render_in_the_course_look(tmp_path, studio_icons):
+    from brand_studio.looks import history_path, load_history
+    src, item = _carousel(tmp_path)
+    item = {**item, "style": "navy", "layout": "bignumber", "theme": "navy"}       # a pack planned before part 2b
+    slides.make_carousel(src, item, item["slides"], tmp_path / "out", tmp_path / "pack-plan.json", 0)
+    assert len({e["look"] for e in load_history(history_path("nerdit"))["looks"]}) == 1
+
+
+def test_reel_look_reserves_the_course_look_once(tmp_path):
+    src, _ = _carousel(tmp_path)
+    marker = tmp_path / "pack-plan.json"
+    marker.write_text("{}", encoding="utf-8")
+    first, again = studio.reel_look(src, marker), studio.reel_look(src, marker)
+    assert first["name"] == again["name"] and first["fonts"]["head"]

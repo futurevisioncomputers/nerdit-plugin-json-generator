@@ -91,7 +91,7 @@ def test_shoot_writes_png_of_the_right_size(tmp_path):
 
 # ---- looks: a style in one of the layout families (data-first plan, Task 3) ----
 from draw import look_for, reel_frame, style_from_theme  # noqa: E402
-from stylebook import LAYOUTS  # noqa: E402
+LAYOUTS = ("stack", "split", "bleed", "editorial", "bignumber")    # old plans' layout families (stylebook retired)
 
 
 def navy_look(layout: str = "stack", **over) -> dict:
@@ -110,3 +110,14 @@ def test_look_for_reads_the_items_style_or_its_old_theme():
     assert look_for({"style": "ember", "layout": "bleed"})["palette"]["bg"] == "#292524"
     assert look_for({"style": "ember", "layout": "bleed"})["layout"] == "bleed"
     assert look_for({"theme": "violet", "layout": "split"})["layout"] == "split"
+
+
+# ---- part 2b: Reels take the course's brand-studio look ----
+def test_reel_look_takes_the_course_palette_and_stays_light():
+    from brand_studio.looks import load_looks
+    from draw import reel_look
+    bs = load_looks("nerdit")[0]
+    rl = reel_look(bs)
+    assert rl["name"] == bs["name"] and rl["palette"]["bg"] == bs["palette"]["bg"]
+    assert rl["fonts"] == {"head": bs["fonts"]["display"], "body": bs["fonts"]["body"], "code": bs["fonts"]["code"]}
+    assert "Split before you fit" in reel_layers("Split before you fit", rl)["front"]

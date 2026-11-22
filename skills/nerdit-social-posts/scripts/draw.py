@@ -55,6 +55,15 @@ def look_for(item: dict) -> dict:
     return {**style_from_theme(item.get("style") or item.get("theme") or "navy"), "layout": item.get("layout") or "stack"}
 
 
+def reel_look(look: dict) -> dict:
+    """A brand-studio look (the course's) as a Reel style: its light palette and fonts, a gradient, no motif."""
+    p, f = look["palette"], look["fonts"]
+    keys = ("bg", "bg2", "panel", "ink", "muted", "accent", "chip", "chipInk", "codeBg", "codeInk")
+    return {"name": look["name"], "inspiration": "", "palette": {k: p[k] for k in keys},
+            "fonts": {"head": f["display"], "body": f["body"], "code": f["code"]}, "background": "gradient",
+            "motif": "none", "layout": "stack"}
+
+
 def resolve(look) -> tuple[dict, dict, str]:
     """(colours, style, layout) for a look dict or an old theme name."""
     st = style_from_theme(look) if isinstance(look, str) else look

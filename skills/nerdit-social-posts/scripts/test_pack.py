@@ -184,43 +184,68 @@ def test_edited_code_and_edited_card_are_caught(tmp_path):
 # test_make_card_draws_the_cheat_and_compare_cards moved to test_studio.py (cards go through brand-studio)
 
 
-# ---- looks in the pack (data-first plan, Task 7) ----
-from stylebook import LAYOUTS, history_path, load_history, load_styles, save_history  # noqa: E402
+# ---- the course look (part 2b): one brand-studio look per course, reserved at plan time ----
+from brand_studio.looks import history_path, load_history, load_looks, save_history  # noqa: E402
 
 
-def looks_of(packdir: Path) -> set:
-    plan = json.loads((packdir / "pack-plan.json").read_text(encoding="utf-8"))
-    return {(i["style"], i["layout"]) for i in plan["items"] if i.get("kind") != "intro"}   # the intro: brand-studio look
+def studio_entries() -> list[dict]:
+    return load_history(history_path("nerdit"))["looks"]
 
 
-def test_every_item_gets_a_style_and_layout_and_no_theme(tmp_path):
-    plan = json.loads((run_plan(write_workdir(tmp_path), "2026-11-19", 2) / "pack-plan.json").read_text(encoding="utf-8"))
-    posts = [i for i in plan["items"] if i.get("kind") != "intro"]                # the intro: brand-studio look
-    assert all(i["style"] and i["layout"] in LAYOUTS and "theme" not in i for i in posts)
-    looks = [(i["style"], i["layout"]) for i in posts]
-    assert len(set(looks)) == len(looks) and all(a[0] != b[0] and a[1] != b[1] for a, b in zip(looks, looks[1:]))
-
-
-def test_two_packs_never_share_a_look(tmp_path):
-    first = run_plan(write_workdir(tmp_path / "a"), "2026-11-19", 2)
-    second = run_plan(write_workdir(tmp_path / "b", name="demo2"), "2026-11-19", 2)
-    assert looks_of(first) and not (looks_of(first) & looks_of(second))
-
-
-def test_force_replan_frees_its_own_looks(tmp_path):
-    wd = write_workdir(tmp_path)
-    packdir = run_plan(wd, "2026-11-19", 2)
-    run_plan(wd, "2026-11-19", 2, "--force")
+def test_plan_reserves_one_course_look_and_items_carry_no_style(tmp_path, capsys):
+    packdir = run_plan(write_workdir(tmp_path), "2026-11-19", 2)
+    entries = studio_entries()
+    assert {e["key"] for e in entries} == {"demo:reserved"} and len({e["look"] for e in entries}) == 1
+    assert f"course look: {entries[0]['look']}" in capsys.readouterr().out
     items = json.loads((packdir / "pack-plan.json").read_text(encoding="utf-8"))["items"]
-    assert len(load_history(history_path())["looks"]) == len([i for i in items if i.get("kind") != "intro"])
+    assert not any("style" in i for i in items)
 
 
-def test_no_fresh_looks_stops_plan(tmp_path, capsys):
-    styles = load_styles(Path(__file__).resolve().parents[1] / "styles")
-    save_history(history_path(), {"looks": [{"style": s["name"], "layout": l, "packId": "old", "itemId": "x"}
-                                            for s in styles for l in LAYOUTS]})
-    assert build_pack.main(["plan", str(write_workdir(tmp_path)), "--start", "2026-11-19", "--url", LIVE_URL]) == 1
-    assert "run the trend refresh" in capsys.readouterr().out
+def test_two_courses_never_share_a_look(tmp_path):
+    run_plan(write_workdir(tmp_path / "a"), "2026-11-19", 2)
+    run_plan(write_workdir(tmp_path / "b", name="demo2"), "2026-11-19", 2)
+    looks = {e["key"]: e["look"] for e in studio_entries()}
+    assert set(looks) == {"demo:reserved", "demo2:reserved"} and len(set(looks.values())) == 2
+
+
+def test_force_replan_keeps_the_course_look(tmp_path):
+    wd = write_workdir(tmp_path)
+    run_plan(wd, "2026-11-19", 2)
+    first = {e["look"] for e in studio_entries()}
+    run_plan(wd, "2026-11-19", 2, "--force")
+    assert {e["look"] for e in studio_entries()} == first and len(studio_entries()) == 2
+
+
+def test_no_fresh_course_look_stops_plan_and_writes_nothing(tmp_path, capsys):
+    held = [{"look": l["name"], "variant": v, "key": f"o{i}", "itemId": "x", "built": True}
+            for i, l in enumerate(load_looks("nerdit")) for v in ("a", "b")]
+    save_history(history_path("nerdit"), {"looks": held})
+    wd = write_workdir(tmp_path)
+    assert build_pack.main(["plan", str(wd), "--start", "2026-11-19", "--url", LIVE_URL]) == 1
+    assert "No fresh looks left" in capsys.readouterr().out and not list(wd.glob("social-pack/*/pack-plan.json"))
+
+
+def test_render_items_draws_reels_in_the_course_look(tmp_path, monkeypatch):
+    import cues
+    import reel
+    from source import load_source
+    src = load_source(write_workdir(tmp_path))
+    out = tmp_path / "out"
+    out.mkdir()
+    (out / "pack-plan.json").write_text("{}", encoding="utf-8")
+    seen = {}
+
+    def fake_reel(src, it, hook, out_dir, tl=None, pad=True, look=None):
+        seen["look"] = look
+        return out_dir / "d01-reel.mp4", out_dir / "d01-reel-cover.jpg"
+
+    monkeypatch.setattr(cues, "checked_timeline", lambda s: {})
+    monkeypatch.setattr(reel, "make_reel", fake_reel)
+    item = {"id": "d01-reel", "format": "reel", "date": "2026-11-19", "time": "19:00", "hook": "h",
+            "platforms": ["instagram"], "captions": {"instagram": "x"}}
+    build_pack.render_items(src, {"courseUrl": LIVE_URL, "start": "2026-11-19"}, [item], out)
+    assert seen["look"]["name"] in {l["name"] for l in load_looks("nerdit")}
+    assert {e["key"] for e in studio_entries()} == {"demo:reserved"}
 
 
 def test_pilot_covers_every_format():
@@ -236,7 +261,7 @@ def test_pilot_covers_every_format():
 def test_every_module_imports_on_its_own():
     import subprocess, sys
     here = Path(__file__).resolve().parent
-    for name in ("packcheck", "slides", "teach", "blocks", "stylebook", "draw", "captions", "reel", "cues", "build_pack"):
+    for name in ("packcheck", "slides", "teach", "blocks", "studio", "draw", "captions", "reel", "cues", "build_pack"):
         r = subprocess.run([sys.executable, "-c", f"import {name}"], cwd=here, capture_output=True, text=True)
         assert r.returncode == 0, f"{name}: {r.stderr.strip().splitlines()[-1]}"
 
@@ -297,7 +322,7 @@ def test_plan_without_topics_or_video_stops_with_a_clear_message(tmp_path):
     course["lessons"][0]["content"] = "<p>No numbered sections here.</p>"
     course_file.write_text(json.dumps(course), encoding="utf-8")
     with pytest.raises(SystemExit, match="no lesson topics found"):
-        plan_pack(wd, _date(2026, 11, 23), 10, "https://nerdit.in/course/demo/preview", history={"looks": []})
+        plan_pack(wd, _date(2026, 11, 23), 10, "https://nerdit.in/course/demo/preview")
 
 
 def test_course_without_video_plans_no_reels(tmp_path):
@@ -307,7 +332,7 @@ def test_course_without_video_plans_no_reels(tmp_path):
     from build_pack import plan_pack
     wd = write_workdir(tmp_path)
     shutil.rmtree(wd / "images" / "video")
-    plan = plan_pack(wd, _date(2026, 11, 23), 10, "https://nerdit.in/course/demo/preview", history={"looks": []})
+    plan = plan_pack(wd, _date(2026, 11, 23), 10, "https://nerdit.in/course/demo/preview")
     assert plan["items"] and not [i for i in plan["items"] if i["format"] == "reel"]
 
 
@@ -315,7 +340,6 @@ def test_course_with_video_still_plans_reels_with_hooks(tmp_path):
     from datetime import date as _date
     from conftest import write_workdir
     from build_pack import plan_pack
-    plan = plan_pack(write_workdir(tmp_path), _date(2026, 11, 23), 10, "https://nerdit.in/course/demo/preview",
-                     history={"looks": []})
+    plan = plan_pack(write_workdir(tmp_path), _date(2026, 11, 23), 10, "https://nerdit.in/course/demo/preview")
     reels = [i for i in plan["items"] if i["format"] == "reel"]
     assert reels and all(r.get("hook") and r.get("clipKey") for r in reels)

@@ -89,6 +89,19 @@ def fit_errors(page_list: list[tuple[str, dict]]) -> list[str]:
     return errors
 
 
+def reserve(src: dict, marker: Path) -> tuple[str | None, str | None]:
+    """Hold the course's look while its pack plan (`marker`) exists: (look name, None) or (None, why not)."""
+    return studio()[0].reserve_course_look(BRAND, course_key(src), Path(marker))
+
+
+def reel_look(src: dict, marker: Path) -> dict:
+    """The course's look as a Reel style (reserved first, so an old plan gets one too)."""
+    name, problem = reserve(src, marker)
+    if problem:
+        raise SystemExit(f"course look: {problem}")
+    return draw.reel_look(studio()[0].course_look(BRAND, course_key(src)))
+
+
 def render(src: dict, item: dict, page_list: list[tuple[str, dict]], out_dir: Path, marker: Path, day: int) -> list[Path]:
     """JPEGs <id>-01.jpg ... (a one-page card: <id>.jpg) in the course's look; stops naming the item on a problem."""
     api = studio()[0]

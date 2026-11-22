@@ -30,19 +30,16 @@ without Reels.
 ## Steps
 
 0. **Trend refresh** (whenever `plan` says "No fresh looks left", and at least once a month). Owner's
-   rule: never the same design twice, always new inspiration. A 10-day pack uses about 26 looks and
-   each style gives 5 (Reels and their covers only 2), so plan on about 6 new styles per 10-day pack. Look at every image in
-   `~/.nerdit-social/inspiration/` (posts the owner saved because they liked them) and, if you can
-   browse, at current design-trend round-ups for social posts. From the general ideas only (colour
-   mood, layout structure, type feel, texture) write 5–10 new files in `styles/`, one style each:
-   `name`, `inspiration` (what it came from), `palette` (bg, bg2, panel, ink, muted, accent, chip,
-   chipInk, codeBg, codeInk), `fonts` (head, body, code: installed fonts only, see
-   `stylebook.FONTS`), `background` (flat, gradient, grain, grid, shapes) and `motif` (none,
-   stickers, arrows, highlight, underline). Never copy a creator's layout, art, characters, text or
-   brand. Pages are light (owner, 2026-11-20: no dark backgrounds; code panels stay dark); the
-   checker refuses a dark `bg`/`bg2`. Retired styles live in `styles/retired/`. Check them: `python -c "import stylebook as s; [print(x['name'], s.style_errors(x)) for x in s.load_styles('../styles')]"`
-   from `scripts/` must print an empty list for each. New styles appear in the next pilot for the
-   owner's OK.
+   rule: never the same design twice, always new inspiration. Each course takes one brand-studio look
+   for all its posts (intro, carousels, Stories, LinkedIn cards, Reels, video thumbnail), and no other
+   course may use it; NERDIT has 13 looks today. Look at every image in `~/.nerdit-social/inspiration/`
+   (posts the owner saved because they liked them) and, if you can browse, at current design-trend
+   round-ups for social posts. From the general ideas only (colour mood, type feel, motif) write a new
+   look JSON for brand-studio (`name`, `inspiration`, `palette`, `fonts`, `motif`; shape and rules in
+   brand-studio's SKILL.md) and add it with `brand-studio refresh nerdit <look.json>`; it prints
+   `checks passed` or the problems to fix. Never copy a creator's layout, art, characters, text or
+   brand. Pages are light (owner, 2026-11-20: no dark backgrounds; code panels stay dark); the checker
+   refuses a dark page. New looks appear in the next pilot for the owner's OK.
 1. **Plan.** `python scripts/build_pack.py plan <workdir> --url COURSE_PAGE [--course-id ID] [--start YYYY-MM-DD] [--days 10]`
    `--url` is the live course page, `https://nerdit.in/course/<slug>/preview`. The admin import gives
    a course a new id and slug, so never build it from the JSON: ask the owner, or find the course's
@@ -107,9 +104,14 @@ without Reels.
   sentences: `pilot` and `build` check every drawn word against the lesson and stop on any change.
   You write only the cover hooks and the captions. A topic without a usable block keeps the
   key-idea carousel and the picture card.
-- Every post gets a look (style × layout family: stack, split, bleed, editorial, bignumber) that
-  no earlier pack of any course has used; two posts in a row never share a style or a layout. The
-  record is `~/.nerdit-social/style-history.json`; do not edit it.
+- Every post of a course is drawn by brand-studio in the course's one look (the same as its intro
+  and video thumbnail; owner 2026-11-20: the theme changes per course). `plan` reserves it and prints
+  `course look: <name>`. Posts alternate two arrangements day by day, and carousel covers and closing
+  slides carry a student photo picked by mood (thinking on the cover, confident on the close). The
+  record is `~/.brand-studio/nerdit/history.json`; do not edit it. `~/.nerdit-social/style-history.json`
+  is no longer used.
+- Slide and card limits (characters a line, lines) are brand-studio's (`pages.guard`), checked when
+  the plan picks a block and again before drawing; Devanagari on a page is refused.
 
 ## Caption rules (the checker enforces each)
 
@@ -145,15 +147,17 @@ the Google project passes YouTube's audit, so for now the owner uploads a kit in
 
 ## What the scripts do
 
-- `source.py` reads the course; `dayplan.py` plans days and rotates five themes (navy, violet,
-  light, ember, forest) and two layouts so no format repeats a look on consecutive days.
+- `source.py` reads the course; `dayplan.py` plans the days (its themes are only a fallback for
+  packs planned before part 2b).
 - `cues.py` rebuilds the story video's timeline from its plan and word timings, and stops if it no
   longer matches `clips.json` (rebuild the video first). Key ideas, terms and myth/fact lines appear
   when the narration reaches them.
 - `reel.py` lays the frame, the clip (whole; only a clip over 90 s is cut, at a scene end) and the
   cues over each other with ffmpeg: 1080x1920, 30 fps, H.264 + AAC, the clip's own audio.
 - `slides.py` builds carousels (cover, key ideas, the topic's diagram, a real quiz question that
-  fits and its answer, closing slide) and Story/feed cards; `draw.py` draws them with Chromium.
+  fits and its answer, closing slide) and Story/feed cards; `studio.py` turns them into brand-studio
+  pages and renders them in the course's look; `draw.py` draws the Reel overlays (in the course's
+  colours) with Chromium.
 - `captions.py` and `packcheck.py` are the checkers.
 
 Tests: `cd scripts && PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q`
