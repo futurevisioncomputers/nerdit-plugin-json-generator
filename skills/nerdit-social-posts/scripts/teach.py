@@ -122,7 +122,7 @@ def teaching_carousel(src: dict, item: dict, used: set, last_format: str | None)
                 if not content:
                     continue
                 slides = [{"kind": "cover", "hook": HOOKS[fmt], "course": src["course"]["title"]}, *content,
-                          {"kind": "cta", "text": "Full lesson free at nerdit.in"}]
+                          {"kind": "cta", "text": studio.CTA_TEXT}]
                 if _drawable(slides):
                     return {"format": fmt, "slides": slides}
     return None

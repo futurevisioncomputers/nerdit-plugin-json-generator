@@ -18,7 +18,7 @@ WORDS_SKELETON = {
     "learn": {"headline": "What You'll Learn in This Course", "highlight": ["This Course"]},
     "project": {"headline": "", "highlight": [], "text": "", "icon": "rocket"},
     "skills": {"headline": "", "highlight": [], "cards": [{"text": "", "icon": "bullseye"} for _ in range(4)]},
-    "cta": {"subline": ""},
+    "cta": {"subline": "", "keyword": ""},
     "icons": {"hook": "brain", "learn": "laptop"},
 }
 

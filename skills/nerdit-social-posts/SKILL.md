@@ -89,7 +89,9 @@ without Reels.
   day 1's carousel slot: six slides (why learn, real questions, what you'll learn, real project, skills, call
   to action) drawn by the brand-studio plugin in the course's own look, the same look as its video thumbnail.
   Fill its `intro` words in `pack-plan.json` from the lessons only (shape and rules: brand-studio's SKILL.md):
-  hook headline and subline, 3 question cards (text + keyword), project text, 4 skill cards, cta subline.
+  hook headline and subline, 3 question cards (text + keyword), project text, 4 skill cards, cta subline (drawn
+  as a card; say what the course covers in plain words, e.g. "9 lessons: logistic regression, decision trees ...
+  and a full project", not lesson jargon) and its `keyword` (a few words of it, e.g. "9 lessons", marked).
   Lesson titles and the project title come from the course JSON; numbers in headlines, the hook and the cta
   only from lesson counts, durations and titles. `pilot` and `build` stop on empty or untrue words. Write the
   intro's Instagram and LinkedIn captions like any carousel's. Needs brand-studio installed

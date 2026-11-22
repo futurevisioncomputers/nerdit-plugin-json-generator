@@ -13,7 +13,7 @@ import studio
 
 ARIA = re.compile(r'aria-label="([^"]*)"')
 MAX_SLIDES, MIN_SLIDES, MAX_IDEAS = 8, 5, 4
-CTA_TEXT = "Full lesson free at nerdit.in"
+CTA_TEXT = studio.CTA_TEXT
 
 
 def question_fits(q: dict) -> bool:

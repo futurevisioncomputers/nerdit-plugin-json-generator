@@ -13,7 +13,9 @@ def test_cover_and_cta_become_photo_pages():
     assert t == "hook" and c["headline"] == "Split before you fit" and c["subline"] == "C"
     assert c["icon"] == studio.COVER_ICONS[7 % len(studio.COVER_ICONS)]
     t, c = studio.slide_page({"kind": "cta", "text": "Full lesson free at nerdit.in"}, "C", 0)
-    assert t == "cta" and c["band"] == "C" and c["subline"] == "Full lesson free at nerdit.in"
+    # owner 2026-11-22: a clearer line, its keyword marked; plans made earlier still carry the old line
+    assert t == "cta" and c["band"] == "C" and c["subline"] == "Read the full lesson free on nerdit.in"
+    assert c["keyword"] == "free on nerdit.in" and c["keyword"] in c["subline"]
     assert c["headline"] == "Keep learning" and c["cta"] == "Save this post for later"
 
 

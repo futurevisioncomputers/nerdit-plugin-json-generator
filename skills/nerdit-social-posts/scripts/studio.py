@@ -16,7 +16,8 @@ BRAND = "nerdit"
 COVER_ICONS = ("laptop", "brain", "rocket", "books", "bullseye")    # the cover's badge, by day
 CTA_HEADLINE = "Keep learning"
 CTA_BAR = "Save this post for later"
-CTA_TEXT = "Full lesson free at nerdit.in"
+CTA_TEXT = "Read the full lesson free on nerdit.in"      # owner 2026-11-22: was "Full lesson free at nerdit.in"
+CTA_KEYWORD = "free on nerdit.in"
 NOT_TEXT = ("svg", "css", "img", "icon")
 
 
@@ -47,8 +48,9 @@ def slide_page(slide: dict, course: str, day: int) -> tuple[str, dict]:
         return "hook", {"headline": slide["hook"], "highlight": [], "subline": course or slide.get("course", ""),
                         "icon": COVER_ICONS[day % len(COVER_ICONS)]}
     if kind == "cta":
-        return "cta", {"headline": CTA_HEADLINE, "highlight": [], "band": course, "subline": slide.get("text") or CTA_TEXT,
-                       "cta": CTA_BAR}
+        # the closing line is fixed, so a plan made before 2026-11-22 (its slide text is the old line) gets the new one
+        return "cta", {"headline": CTA_HEADLINE, "highlight": [], "band": course, "subline": CTA_TEXT,
+                       "keyword": CTA_KEYWORD, "cta": CTA_BAR}
     content = {k: v for k, v in slide.items() if k != "kind"}
     if kind == "diagram":
         content["css"] = draw.figure_css()
