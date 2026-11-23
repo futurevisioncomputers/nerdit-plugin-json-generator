@@ -36,6 +36,9 @@ def outline(markdown: str) -> list[dict]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # Articles carry ‑ – ’ ²; a Windows console (cp1252) cannot print them.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--article", type=Path, required=True)
     a = ap.parse_args(argv)
