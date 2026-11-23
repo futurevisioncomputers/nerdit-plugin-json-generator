@@ -7,10 +7,10 @@
   1. Write (top left) -> a new draft opens (hashnode.com/draft/<id>; it can take ~15 s to load).
   2. Switch the editor to Markdown (Rich | Markdown toggle).
   3. Paste the kit into the body; move the first line (the title) into 'Article title...'.
-- **Canonical / original URL:** turn on 'Are you republishing?' and paste the nerdit.in article URL. Not in the ... menu any more
-  (2026-11-23 it holds only See preview, Copy markdown, Version history): look in the panel Publish opens, and set it there
-  before the panel's final Publish.
-- **Images:** Markdown image links show by themselves. Cover: upload the article cover PNG.
-- **Publish:** Publish (top right) -> confirm.
+- **Images:** Markdown image links show by themselves. Cover: Cover (above the title) -> Upload Image -> the article cover PNG.
+- **Publish:** Publish (top right) opens the 'Draft settings' panel; it does not publish yet. Discovery tab: Tags (type,
+  pick from the list: #machine-learning, #python ...), SEO description (the article's description), and 'Are you
+  republishing?' -> paste the nerdit.in article URL (the canonical). Stop and get the owner's yes, then the panel's own
+  Publish button at the bottom publishes. Check the live page has <link rel="canonical"> pointing at nerdit.in.
 - **Post URL:** https://<blog>.hashnode.dev/<slug> (for this owner: nerdit.hashnode.dev).
-- **Verified:** no. 2026-11-23: Markdown paste, title move, cover upload and the preview (3 images, 7 nerdit.in links) worked; not published yet
+- **Verified:** yes, 2026-11-23 (Regression how-to: nerdit.hashnode.dev/supervised-machine-learning-regression-algorithms-with-python-a-practical-how-to-guide, canonical nerdit.in, 3 images)
