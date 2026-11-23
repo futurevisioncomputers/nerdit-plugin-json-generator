@@ -140,11 +140,16 @@ without Reels.
   link), a blank line, then the description with `{link}`; at most 5000 characters and 15 hashtags; no
   `<` or `>`. YouTube is not in the item's `platforms`: the server never sees it.
 
-## YouTube Shorts (owner 2026-11-20: Studio kit now, automatic upload after YouTube's audit)
+## YouTube Shorts (owner 2026-11-20: Studio kit now; 2026-11-23: automatic upload from the admin)
 
 Every Reel also goes to https://www.youtube.com/@nerditSkillLearning as a Short. YouTube Stories no
-longer exist (shut down June 2023) and community Posts have no API. API uploads stay private until
-the Google project passes YouTube's audit, so for now the owner uploads a kit in YouTube Studio:
+longer exist (shut down June 2023) and community Posts have no API.
+
+Reels list `youtube` in `platforms`, so `captions.youtube` (title line, blank line, description with
+`{link}`) lands in `pack.json` and the admin uploads the Reel as a Short: with Approve & post now while
+its YouTube access is "Before review", and at the Reel's time once it is "Reviewed". Uploads made
+before YouTube's review may stay private, so until then the owner also uses the Studio kit below; after
+the review the kit is optional.
 
 1. Write `captions.youtube` for every Reel (rules above). `build` then writes `<packdir>/youtube/`:
    a copy of each Reel named after its title and `SHORTS.md` (day, date and time IST, title,
