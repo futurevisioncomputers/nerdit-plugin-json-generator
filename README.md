@@ -148,6 +148,15 @@ else a diagram from the article's own content.
 
 Tests: `cd skills/nerdit-article-illustrator/scripts && PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q`
 
+## Article posting (nerdit-article-poster)
+
+"Post article X": posts a live nerdit.in/blog article to the free sites in the owner's Chrome, one by one,
+stops for logins, asks once per article, keeps 6 sites per article per day (Quora/Reddit and Pinterest once a
+day), saves every link on the Articles page, and resumes from `~/.nerdit-social/article-runs/`.
+Per-site steps: `skills/nerdit-article-poster/references/sites/`.
+
+Tests: `cd skills/nerdit-article-poster/scripts && PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q`
+
 ## Social pack (nerdit-social-posts)
 
 Turns a course folder (with the `nerdit-story-video` topic clips) into a pack of Reels, carousels,
