@@ -137,6 +137,17 @@ JSON exported from the admin for an existing course).
 
 Tests: `cd skills/nerdit-lesson-illustrator/scripts && PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q`
 
+## Article images (nerdit-article-illustrator)
+
+2-3 teaching images for a nerdit.in/blog article: a figure from the related course when one fits,
+else a diagram from the article's own content.
+
+1. `plan` - outline the article, pick the places, extract course figures or draw diagrams, write `plan.json`.
+2. `apply` - `build_pack.py` checks the plan and renders 1600 px PNGs + `placements.json`.
+3. Admin -> Articles -> Edit -> Import images. Cover: `brand-studio article-cover`.
+
+Tests: `cd skills/nerdit-article-illustrator/scripts && PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q`
+
 ## Social pack (nerdit-social-posts)
 
 Turns a course folder (with the `nerdit-story-video` topic clips) into a pack of Reels, carousels,
