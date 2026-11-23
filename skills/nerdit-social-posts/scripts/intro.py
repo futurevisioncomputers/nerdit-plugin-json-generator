@@ -28,6 +28,10 @@ def _studio():
     return api, brands, content
 
 
+# The intro's six slides in order (render_intro draws them so); used to pick its Pinterest slides.
+PIN_KINDS = ("hook", "questions", "learn", "project", "skills", "cta")
+
+
 def add_intro(items: list[dict], src: dict, first_pack: bool) -> None:
     """On a course's first pack, day 1's carousel becomes the intro (or day 1 gains one). Items stay in order."""
     if not first_pack or not items:
@@ -38,8 +42,8 @@ def add_intro(items: list[dict], src: dict, first_pack: bool) -> None:
     first = src["clips"][0] if src.get("clips") else {"lessonId": items[0]["lessonId"], "topic": 1}
     items.append({"id": "d01-intro", "date": day1, "time": "13:00", "format": "carousel", "kind": "intro",
                   "title": (src.get("course") or {}).get("title") or "Course intro",
-                  "platforms": ["instagram", "linkedin"], "lessonId": first["lessonId"], "topic": first["topic"],
-                  "intro": copy.deepcopy(WORDS_SKELETON), "captions": {"instagram": "", "linkedin": ""}})
+                  "platforms": ["instagram", "linkedin", "pinterest"], "lessonId": first["lessonId"], "topic": first["topic"],
+                  "intro": copy.deepcopy(WORDS_SKELETON), "captions": {"instagram": "", "linkedin": "", "pinterest": ""}})
     items.sort(key=lambda it: (it["date"], it["time"]))
 
 

@@ -122,6 +122,21 @@ def default_slides(src: dict, item: dict) -> list[dict]:
     return slides + [{"kind": "cta", "text": CTA_TEXT}]
 
 
+PIN_PAIRS = {"quiz": "answer", "predict-q": "predict-a", "wrong": "right"}   # a question never goes without its answer
+
+
+def pinterest_media(kinds: list[str]) -> list[int]:
+    """The slides of a carousel's Pinterest pin (at most 5): the cover first, the closing slide dropped first,
+    and never a quiz, guess-the-output or wrong slide whose answer was left out."""
+    idx = list(range(len(kinds)))
+    if idx and kinds[-1] == "cta":
+        idx.pop()
+    idx = idx[:5]
+    while idx and kinds[idx[-1]] in PIN_PAIRS:
+        idx.pop()
+    return idx
+
+
 def make_carousel(src: dict, item: dict, slides: list[dict], out_dir: Path, marker: Path, day: int = 0) -> list[Path]:
     """<id>-01.jpg ... drawn by brand-studio in the course's look; `marker` is the pack's pack-plan.json, `day` the
     item's day number (it picks the arrangement variant)."""

@@ -1,12 +1,16 @@
 """Caption rules per platform, and the checker that enforces them (owner rule: every rule has a checker).
 
 Captions are written by the agent with `{link}` where the course link goes; fill_links puts in the
-platform's UTM link. Stories take no caption.
+platform's UTM link. Stories take no caption, except on Pinterest (a pin needs searchable words).
+Pinterest: the title on the first line, a blank line, the description; no link (the pin carries it).
 """
 import re
 
-LIMITS = {"instagram": 2200, "facebook": 3000, "linkedin": 3000, "youtube": 5000}
-MAX_TAGS = {"instagram": 8, "facebook": 5, "linkedin": 5, "youtube": 15}
+PINTEREST_TITLE_MAX = 100
+PINTEREST_TEXT_MAX = 800
+LIMITS = {"instagram": 2200, "facebook": 3000, "linkedin": 3000, "youtube": 5000,
+          "pinterest": PINTEREST_TITLE_MAX + 2 + PINTEREST_TEXT_MAX}
+MAX_TAGS = {"instagram": 8, "facebook": 5, "linkedin": 5, "youtube": 15, "pinterest": 5}
 YOUTUBE_TITLE_MAX = 100
 HASHTAG = re.compile(r"#\w+")
 URL = re.compile(r"https?://\S+|www\.\S+")
@@ -40,7 +44,7 @@ def _first_sentence_is_question(text: str) -> bool:
 
 def caption_errors(platform: str, fmt: str, text: str, lesson_text: str, item: dict, course_url: str) -> list[str]:
     p = platform
-    if fmt == "story":
+    if fmt == "story" and p != "pinterest":
         return [f"{p}: Stories take no caption"] if text.strip() else []
     if not text.strip():
         return [f"{p}: caption is empty"]
@@ -64,7 +68,21 @@ def caption_errors(platform: str, fmt: str, text: str, lesson_text: str, item: d
                 errors.append("youtube: no link in the title")
         if "<" in text or ">" in text:
             errors.append("youtube: no < or > (YouTube rejects them)")
-    if p == "instagram":
+    if p == "pinterest":
+        # A pin: searchable title, then the description (Pinterest's own limits); the link is the pin's field.
+        title, _, description = text.partition("\n")
+        title, description = title.strip(), description.strip()
+        if not title:
+            errors.append("pinterest: first line is the title; it is empty")
+        elif len(title) > PINTEREST_TITLE_MAX:
+            errors.append(f"pinterest: title is {len(title)} characters; at most {PINTEREST_TITLE_MAX}")
+        if len(description) > PINTEREST_TEXT_MAX:
+            errors.append(f"pinterest: description is {len(description)} characters; at most {PINTEREST_TEXT_MAX}")
+        if URL.search(text):
+            errors.append("pinterest: no link (the pin carries it)")
+        if DEVANAGARI.search(text):
+            errors.append("pinterest: English only (no Devanagari)")
+    elif p == "instagram":
         if _first_sentence_is_question(text):
             errors.append("instagram: open with a claim or a named mistake, not a question")
         if URL.search(text):

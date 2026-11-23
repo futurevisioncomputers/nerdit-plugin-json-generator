@@ -52,21 +52,24 @@ without Reels.
    existing one (`--force` replaces it).
    Per day: a Reel (19:00) and a Story card (10:00) on Instagram + Facebook; Tuesday and Friday a
    carousel (13:00, Instagram + LinkedIn); Monday, Wednesday, Thursday a LinkedIn feed card (09:30).
+   Every item also goes to Pinterest (owner 2026-11-22: reach all of India and nearby countries); a
+   carousel's pin takes at most 5 slides, which `build` picks (`pinterestMedia`).
    One topic per day, in course order, never repeated; a later pack for the same course skips the
    topics earlier packs used, so it continues the course. Times are IST. Reels carry the clip's
    narration with a soft background pad that ducks under the voice; `--no-pad` (or `"pad": false`
    in `pack-plan.json`) leaves the narration alone.
 2. **Write the words** in `pack-plan.json`. Change only `hook`, `slides[].text`/`hook`, and
    `captions`. Leave ids, dates, times, formats and themes as they are. `platforms` may only change
-   when the owner asks (reel and story: instagram, facebook; carousel and feed: any of instagram,
-   facebook, linkedin).
+   when the owner asks (reel and story: instagram, facebook, pinterest; carousel and feed: any of
+   instagram, facebook, linkedin, pinterest).
    - Reel `hook`: drawn above the video. English, one idea, at most 2 lines (about 28 characters a
      line). The plan fills it with the topic's key idea; sharpen it into a claim or a named mistake.
    - Carousel `slides`: `slides[0].hook` is the cover (at most 4 lines of about 18 characters, must
      make sense alone in the feed). `idea` slides: one idea each, at most 6 lines of about 22
      characters. Keep the `diagram`, `quiz`, `answer` and `cta` slides as made: they come from the
      lesson.
-   - `captions`: one per platform the item goes to (rules below). Story captions stay empty.
+   - `captions`: one per platform the item goes to (rules below). Story captions stay empty, except
+     `captions.pinterest`, which every item that goes to Pinterest needs (Stories included).
 3. **Pilot.** `python scripts/build_pack.py pilot <packdir>` renders the first Reel and the first
    carousel into `<packdir>/pilot/` and checks them. **Stop here.** Show the owner the Reel, its
    cover and the slides, and wait for their OK. Apply what they ask and run the pilot again.
@@ -127,7 +130,11 @@ without Reels.
 - Hinglish in Roman script is fine on Instagram and Facebook. On-screen text is always English.
 - Every number in a caption or slide appears in the lesson. No invented results, numbers or
   student claims; nothing that contradicts the lesson.
-- Stories take no caption.
+- Stories take no caption, except on Pinterest.
+- Pinterest (every item, `captions.pinterest`): the title on the first line (1-100 characters, English,
+  the search words first: the topic and the subject, e.g. "Python virtual environments for beginners"),
+  a blank line, then the description (at most 800 characters, English, plain and searchable). No link
+  (the pin carries the course link itself), at most 5 hashtags, every number from the lesson.
 - UTM (made by build): `utm_source=<platform>&utm_medium=social&utm_campaign=pack-<item date>&utm_content=<item id>`.
 - YouTube (every Reel, `captions.youtube`): the title on the first line (1-100 characters, English, no
   link), a blank line, then the description with `{link}`; at most 5000 characters and 15 hashtags; no

@@ -93,7 +93,7 @@ def test_plan_writes_a_draft_with_hooks_and_empty_captions(tmp_path):
     assert plan["courseUrl"] == LIVE_URL
     reel = next(i for i in plan["items"] if i["id"] == "d01-reel")
     assert reel["hook"] == "Key idea 1" and reel["title"] == "Topic 1"
-    assert reel["captions"] == {"instagram": "", "facebook": ""}
+    assert reel["captions"] == {"instagram": "", "facebook": "", "pinterest": ""}
     carousel = next(i for i in plan["items"] if i["format"] == "carousel" and i.get("kind") != "intro")
     assert carousel["slides"][0]["kind"] == "cover"
 
@@ -343,3 +343,21 @@ def test_course_with_video_still_plans_reels_with_hooks(tmp_path):
     plan = plan_pack(write_workdir(tmp_path), _date(2026, 11, 23), 10, "https://nerdit.in/course/demo/preview")
     reels = [i for i in plan["items"] if i["format"] == "reel"]
     assert reels and all(r.get("hook") and r.get("clipKey") for r in reels)
+
+
+def test_render_items_writes_the_carousel_pin_slides(tmp_path, monkeypatch):
+    import slides
+    from source import load_source
+    src = load_source(write_workdir(tmp_path))
+    out = tmp_path / "out"
+    out.mkdir()
+    (out / "pack-plan.json").write_text("{}", encoding="utf-8")
+    kinds = ["cover", "idea", "idea", "diagram", "quiz", "answer", "cta"]
+    monkeypatch.setattr(slides, "make_carousel", lambda src, it, sl, out_dir, marker, day=0: [out_dir / f"{it['id']}-{i:02d}.jpg" for i in range(len(sl))])
+    item = {"id": "d03-carousel", "format": "carousel", "date": "2026-11-21", "time": "13:00",
+            "platforms": ["instagram", "pinterest"], "captions": {"instagram": "x", "pinterest": "T\n\nD"},
+            "slides": [{"kind": k} for k in kinds]}
+    made = build_pack.render_items(src, {"courseUrl": LIVE_URL, "start": "2026-11-19"}, [item], out)
+    assert made[0]["pinterestMedia"] == [0, 1, 2, 3]
+    no_pin = dict(item, id="d05-carousel", platforms=["instagram"], captions={"instagram": "x"})
+    assert "pinterestMedia" not in build_pack.render_items(src, {"courseUrl": LIVE_URL, "start": "2026-11-19"}, [no_pin], out)[0]

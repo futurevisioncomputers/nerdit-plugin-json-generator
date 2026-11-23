@@ -37,7 +37,7 @@ def test_first_pack_gets_an_intro_on_day_one(tmp_path):
     assert len(intros) == 1 and intros[0]["id"] == "d01-intro" and intros[0]["format"] == "carousel"
     assert intros[0]["date"] == "2026-11-23" and intros[0]["time"] == "13:00"
     assert [i["id"] for i in items if i["date"] == "2026-11-23" and i["format"] == "carousel"] == ["d01-intro"]
-    assert intros[0]["intro"] == intro.WORDS_SKELETON and intros[0]["captions"] == {"instagram": "", "linkedin": ""}
+    assert intros[0]["intro"] == intro.WORDS_SKELETON and intros[0]["captions"] == {"instagram": "", "linkedin": "", "pinterest": ""}
 
 
 def test_second_pack_gets_no_intro(tmp_path):
@@ -100,3 +100,11 @@ def test_empty_course_title_falls_back_to_the_video_plans_title(tmp_path):
     src = load_source(wd)
     assert src["course"]["title"] == "Demo Course"
     assert intro.intro_errors({"id": "d01-intro", "kind": "intro", "intro": WORDS}, src) == []
+
+
+def test_the_intro_carousel_also_goes_to_pinterest(tmp_path):
+    src = load_source(write_workdir(tmp_path))
+    items = [{"id": "d01-story", "date": "2026-11-25", "time": "10:00", "format": "story", "lessonId": "l1", "topic": 1}]
+    intro.add_intro(items, src, True)
+    it = items[-1]
+    assert it["platforms"] == ["instagram", "linkedin", "pinterest"] and set(it["captions"]) == {"instagram", "linkedin", "pinterest"}

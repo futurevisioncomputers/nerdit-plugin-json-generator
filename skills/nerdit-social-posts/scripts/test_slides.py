@@ -138,3 +138,12 @@ def test_without_video_key_ideas_come_from_the_lessons_own_sentences(tmp_path):
     slides = default_slides(load_source(wd), {**ITEM, "format": "carousel", "lessonId": "demo-01", "topic": 1})
     ideas = [s["text"] for s in slides if s["kind"] == "idea"]
     assert ideas and "Each project gets its own venv." in ideas
+
+
+def test_pinterest_media_keeps_the_cover_drops_the_closing_slide_and_never_splits_a_pair():
+    from slides import pinterest_media
+    assert pinterest_media(["cover", "idea", "idea", "diagram", "quiz", "answer", "cta"]) == [0, 1, 2, 3]
+    assert pinterest_media(["cover", "idea", "quiz", "answer", "cta"]) == [0, 1, 2, 3]
+    assert pinterest_media(["hook", "questions", "learn", "project", "skills", "cta"]) == [0, 1, 2, 3, 4]
+    assert pinterest_media(["cover", "predict-q", "predict-a", "wrong", "right", "cta"]) == [0, 1, 2, 3, 4]
+    assert pinterest_media(["cover", "idea", "idea", "idea", "predict-q", "predict-a", "cta"]) == [0, 1, 2, 3]

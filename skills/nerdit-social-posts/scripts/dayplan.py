@@ -23,11 +23,12 @@ THEME_ORDER = tuple(THEMES)
 LAYOUTS = ("stack", "split")
 
 TIMES = {"story": "10:00", "carousel": "13:00", "reel": "19:00", "feed": "09:30"}   # IST
-PLATFORMS = {"reel": ["instagram", "facebook"], "story": ["instagram", "facebook"],
-             "carousel": ["instagram", "linkedin"], "feed": ["linkedin"]}
+PLATFORMS = {"reel": ["instagram", "facebook", "pinterest"], "story": ["instagram", "facebook", "pinterest"],
+             "carousel": ["instagram", "linkedin", "pinterest"], "feed": ["linkedin", "pinterest"]}   # every pack image pins
 # What the owner may pick for each format; equals the server's PACK_FORMAT_PLATFORMS.
-ALLOWED_PLATFORMS = {"reel": ["instagram", "facebook"], "story": ["instagram", "facebook"],
-                     "carousel": ["instagram", "facebook", "linkedin"], "feed": ["instagram", "facebook", "linkedin"]}
+ALLOWED_PLATFORMS = {"reel": ["instagram", "facebook", "pinterest"], "story": ["instagram", "facebook", "pinterest"],
+                     "carousel": ["instagram", "facebook", "linkedin", "pinterest"],
+                     "feed": ["instagram", "facebook", "linkedin", "pinterest"]}
 
 _OFFSET = {"reel": 0, "story": 1, "carousel": 2, "feed": 3}   # distinct offsets: a day's items never share a theme
 CAROUSEL_DAYS = {1, 4}       # Tuesday, Friday

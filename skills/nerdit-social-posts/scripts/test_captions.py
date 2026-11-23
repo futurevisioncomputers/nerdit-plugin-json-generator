@@ -111,3 +111,26 @@ def test_a_number_must_match_a_whole_lesson_number():
     text = OK_LI.replace("mistake.", "mistake: 5 requests fail.")
     assert caption_errors("linkedin", "feed", text, lesson, ITEM, URL) == ["linkedin: 5 is not in the lesson"]
     assert caption_errors("linkedin", "feed", OK_LI.replace("faster", "40% faster"), lesson, ITEM, URL) == []
+
+
+# ---- Pinterest (design: nerdit docs/superpowers/specs/2026-11-22-pinterest-posting-design.md) ----
+PIN = ("Python virtual environments for beginners\n\n"
+       "Each project gets its own venv, so packages never clash. Activate the venv before pip install.")
+
+
+def test_a_story_takes_a_pinterest_caption_but_instagram_still_takes_none():
+    assert caption_errors("pinterest", "story", PIN, LESSON, ITEM, URL) == []
+    assert caption_errors("instagram", "story", PIN, LESSON, ITEM, URL) == ["instagram: Stories take no caption"]
+    assert caption_errors("pinterest", "carousel", PIN, LESSON, ITEM, URL) == []
+    assert caption_errors("pinterest", "story", "", LESSON, ITEM, URL) == ["pinterest: caption is empty"]
+
+
+def test_pinterest_caption_rules():
+    e = lambda t: caption_errors("pinterest", "feed", t, LESSON, ITEM, URL)  # noqa: E731
+    assert "pinterest: first line is the title; it is empty" in e("\n\nEach project gets its own venv.")
+    assert "pinterest: title is 101 characters; at most 100" in e("x" * 101 + "\n\nwords")
+    assert "pinterest: description is 801 characters; at most 800" in e("Title\n\n" + "y" * 801)
+    assert "pinterest: no link (the pin carries it)" in e("Title\n\nSee https://nerdit.in/x")
+    assert "pinterest: English only (no Devanagari)" in e("Title\n\nयह venv है")
+    assert "pinterest: 6 hashtags; at most 5" in e("Title\n\nwords #a #b #c #d #e #f")
+    assert "pinterest: 7 is not in the lesson" in e("Title\n\n7 packages")

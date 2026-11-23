@@ -31,7 +31,7 @@ import intro
 from dayplan import day_plan
 
 IST = timezone(timedelta(hours=5, minutes=30))
-ITEM_KEYS = ("id", "date", "time", "format", "platforms", "title", "media", "cover", "captions", "lessonId", "topic",
+ITEM_KEYS = ("id", "date", "time", "format", "platforms", "title", "media", "cover", "captions", "pinterestMedia", "lessonId", "topic",
              "style", "layout")
 
 
@@ -167,6 +167,11 @@ def render_items(src: dict, plan: dict, items: list[dict], out_dir: Path) -> lis
             entry["media"] = [slides.make_card(src, it, 1920 if it["format"] == "story" else 1350, out_dir, marker, day).name]
         entry["captions"] = {p: fill_links((it.get("captions") or {}).get(p, ""), plan["courseUrl"], p, it)
                              for p in it["platforms"]}
+        if it["format"] == "carousel" and "pinterest" in it["platforms"]:
+            kinds = list(intro.PIN_KINDS) if it.get("kind") == "intro" else [s.get("kind", "") for s in it.get("slides") or []]
+            picks = slides.pinterest_media(kinds)
+            if len(picks) >= 2:                  # fewer: the server pins the first slide as an image
+                entry["pinterestMedia"] = picks
         made.append({k: entry[k] for k in ITEM_KEYS if k in entry})
     shutil.rmtree(out_dir / "_work", ignore_errors=True)
     return made
