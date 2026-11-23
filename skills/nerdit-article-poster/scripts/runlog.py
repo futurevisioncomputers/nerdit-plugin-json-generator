@@ -1,7 +1,7 @@
 """Which sites to post an article to today, and a log of every posting step.
 
     python runlog.py plan --slug <slug> --posted <site,site,...> [--today YYYY-MM-DD]
-    python runlog.py mark --slug <slug> --site <site> --status posted|failed|skipped [--url U] [--error E] [--today D]
+    python runlog.py mark --slug <slug> --site <site> --status started|posted|failed|skipped [--url U] [--error E] [--today D]
 
 `--posted` is the article's own record (the Articles page: sites with a saved link). The log adds what
 happened in runs: a site logged as posted is never planned again, even when its link was not saved
@@ -20,7 +20,7 @@ from pathlib import Path
 
 SITES = ("medium", "hashnode", "hackernoon", "linkedin", "substack", "wordpress", "blogger", "tumblr", "vocal",
          "hackernews", "dailydev", "indiehackers", "pinterest", "quora")
-STATUSES = ("posted", "failed", "skipped")
+STATUSES = ("started", "posted", "failed", "skipped")
 PER_ARTICLE_PER_DAY = 6
 ONCE_A_DAY = ("quora", "pinterest")
 
@@ -48,12 +48,26 @@ def _save(path: Path, data: dict) -> None:
     os.replace(tmp, path)
 
 
+def _latest(steps: list[dict]) -> dict[str, str]:
+    out: dict[str, str] = {}
+    for s in steps:
+        out[s["site"]] = s["status"]
+    return out
+
+
+def unsettled(slug: str) -> list[str]:
+    """Sites marked `started` (Publish pressed) with no outcome after it: check them on the site first."""
+    latest = _latest(_load(_dir() / f"{slug}.json", {"steps": []})["steps"])
+    return [s for s in SITES if latest.get(s) == "started"]
+
+
 def plan(slug: str, posted: set[str], today: str) -> list[str]:
     steps = _load(_dir() / f"{slug}.json", {"steps": []})["steps"]
     daily = _load(_dir() / "_daily.json", {}).get(today, {})
     done = set(posted) | {s["site"] for s in steps if s["status"] == "posted"}
     waiting = {s["site"] for s in steps if s["status"] == "skipped" and s["day"] == today}
     full = {site for site in ONCE_A_DAY if daily.get(site, 0) >= 1}
+    waiting |= {s for s, status in _latest(steps).items() if status == "started"}
     left = PER_ARTICLE_PER_DAY - sum(1 for s in steps if s["status"] == "posted" and s["day"] == today)
     return [s for s in SITES if s not in done | waiting | full][:max(left, 0)]
 
@@ -86,6 +100,8 @@ def main(argv: list[str] | None = None) -> int:
     if a.cmd == "plan":
         sites = plan(a.slug, {s.strip() for s in a.posted.split(",") if s.strip()}, today)
         print("\n".join(sites) if sites else "nothing to post today")
+        for site in unsettled(a.slug):
+            print(f"check first: {site} (Publish was pressed but no link was logged: is it live there?)")
         return 0
     try:
         mark(a.slug, a.site, a.status, today, a.url, a.error)

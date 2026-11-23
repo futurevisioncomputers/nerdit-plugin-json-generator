@@ -75,3 +75,21 @@ def test_every_site_has_a_recipe_with_the_fields_the_skill_reads():
         text = (sites / f"{site}.md").read_text(encoding="utf-8")
         for field in ("**Start:**", "**Signed in when:**", "**Kit:**", "**Canonical / original URL:**", "**Publish:**", "**Post URL:**", "**Verified:**"):
             assert field in text, f"{site}: {field}"
+
+
+def test_a_site_started_but_not_settled_is_held_back_until_checked():
+    runlog.mark("a", "medium", "started", DAY)
+    assert "medium" not in runlog.plan("a", set(), DAY)
+    assert runlog.unsettled("a") == ["medium"]
+    runlog.mark("a", "medium", "failed", DAY, error="publish button missing")
+    assert runlog.unsettled("a") == [] and runlog.plan("a", set(), DAY)[0] == "medium"
+    runlog.mark("a", "hashnode", "started", DAY)
+    runlog.mark("a", "hashnode", "posted", DAY, url="https://nerdit.hashnode.dev/x")
+    assert runlog.unsettled("a") == [] and "hashnode" not in runlog.plan("a", set(), NEXT)
+
+
+def test_cli_plan_names_sites_to_check_first(capsys):
+    runlog.mark("a", "medium", "started", DAY)
+    assert runlog.main(["plan", "--slug", "a", "--today", DAY]) == 0
+    assert "check first: medium" in capsys.readouterr().out
+

@@ -39,11 +39,14 @@ fv.nerdit.in. Site details: `references/sites/<site>.md`. Profile setup: `refere
    2. In the Articles tab press the site's **Copy** button (it fills the real clipboard), then in the site
       tab click into the editor and press Ctrl+V. Follow the recipe for title, images, tags and the
       canonical / original-URL field.
-   3. Screenshot the filled post. Publish (the article's "yes" covers it).
+   3. Screenshot the filled post. `python scripts/runlog.py mark --slug <slug> --site <site> --status started`,
+      then Publish (the article's "yes" covers it).
    4. Read the post URL (recipe), paste it into the Articles page **Paste links** box and press **Save links**.
-   5. `python scripts/runlog.py mark --slug <slug> --site <site> --status posted --url <url>`
-      (on a problem: `--status failed --error "<what happened>"`, then go on to the next site;
-      owner says skip: `--status skipped`).
+   5. `python scripts/runlog.py mark --slug <slug> --site <site> --status posted --url <url>`.
+      A problem **before** Publish: `--status failed --error "<what happened>"`, then the next site.
+      A problem **after** Publish (no URL, Chrome lost): leave it `started` and tell the owner; `plan` holds
+      that site back and prints "check first" until the owner says whether it went live.
+      Owner says skip: `--status skipped`.
 5. **End:** list posted / failed / skipped with links, and what is left for the next run
    (`runlog.py plan` again shows it).
 
