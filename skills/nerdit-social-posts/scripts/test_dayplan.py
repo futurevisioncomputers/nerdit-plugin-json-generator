@@ -76,3 +76,10 @@ def test_reels_go_to_youtube_too():
     assert PLATFORMS["reel"] == ["instagram", "facebook", "pinterest", "youtube"]
     assert ALLOWED_PLATFORMS["reel"] == PLATFORMS["reel"]
     assert "youtube" not in PLATFORMS["story"] + PLATFORMS["carousel"] + PLATFORMS["feed"]
+
+
+def test_skill_doc_agrees_that_reels_reach_youtube():
+    from pathlib import Path
+    doc = (Path(__file__).resolve().parent.parent / "SKILL.md").read_text(encoding="utf-8")
+    assert "the server never sees it" not in doc          # Reels list youtube now; the admin uploads them
+    assert "Reels list `youtube` in `platforms`" in doc

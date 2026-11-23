@@ -138,7 +138,7 @@ without Reels.
 - UTM (made by build): `utm_source=<platform>&utm_medium=social&utm_campaign=pack-<item date>&utm_content=<item id>`.
 - YouTube (every Reel, `captions.youtube`): the title on the first line (1-100 characters, English, no
   link), a blank line, then the description with `{link}`; at most 5000 characters and 15 hashtags; no
-  `<` or `>`. YouTube is not in the item's `platforms`: the server never sees it.
+  `<` or `>`. Reels list `youtube` in `platforms`, so the admin gets these words (see YouTube Shorts below).
 
 ## YouTube Shorts (owner 2026-11-20: Studio kit now; 2026-11-23: automatic upload from the admin)
 
