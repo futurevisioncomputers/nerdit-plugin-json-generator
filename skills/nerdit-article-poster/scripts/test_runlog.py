@@ -1,3 +1,4 @@
+import datetime as dt
 import json
 
 import pytest
@@ -118,3 +119,33 @@ def test_cli_plan_scheduled(capsys):
     assert runlog.main(["plan", "--slug", "a", "--scheduled", "--today", DAY]) == 0
     assert capsys.readouterr().out.split()[:2] == ["medium", "hashnode"]
 
+
+
+NOW = dt.datetime(2026, 11, 24, 12, 0, tzinfo=dt.timezone.utc)
+
+
+def blog(*posts):  # posts: (slug, iso)
+    items = ",".join(f'{{"@type":"BlogPosting","headline":"x","url":"https://nerdit.in/blog/{s}","datePublished":"{d}"}}' for s, d in posts)
+    return f'<html><script type="application/ld+json">{{"@context":"https://schema.org","@type":"Blog","blogPost":[{items}]}}</script></html>'
+
+
+def test_due_newest_first_and_skips_under_24_hours():
+    html = blog(("old", "2026-11-14T09:00:00.000Z"), ("new", "2026-11-24T06:00:00.000Z"), ("mid", "2026-11-22T11:05:42.209Z"))
+    assert runlog.due_slugs(html, NOW) == ["mid", "old"]
+
+
+def test_due_boundary_is_24_hours():
+    assert runlog.due_slugs(blog(("a", "2026-11-23T12:00:00.000Z")), NOW) == ["a"]
+    assert runlog.due_slugs(blog(("b", "2026-11-23T12:00:01.000Z")), NOW) == []
+
+
+def test_due_without_blogpost_is_empty():
+    assert runlog.due_slugs("<html>no json-ld</html>", NOW) == []
+    assert runlog.due_slugs('<script type="application/ld+json">{"@type":"Blog"}</script>', NOW) == []
+
+
+def test_cli_due_fetch_error(monkeypatch, capsys):
+    def boom(*a, **k): raise OSError("offline")
+    monkeypatch.setattr(runlog.urllib.request, "urlopen", boom)
+    assert runlog.main(["due"]) == 1
+    assert capsys.readouterr().out.startswith("PROBLEM could not read https://nerdit.in/blog")

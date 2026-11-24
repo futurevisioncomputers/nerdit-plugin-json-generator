@@ -17,7 +17,9 @@ import argparse
 import datetime as dt
 import json
 import os
+import re
 import sys
+import urllib.request
 from pathlib import Path
 
 SITES = ("medium", "hashnode", "hackernoon", "linkedin", "substack", "wordpress", "blogger", "tumblr", "vocal",
@@ -27,6 +29,8 @@ PER_ARTICLE_PER_DAY = 6
 ONCE_A_DAY = ("quora", "pinterest")
 # Unattended runs: no Quora/Reddit, Hacker News or LinkedIn (automation bans); WordPress/Blogger/Tumblr post by API.
 SCHEDULED_SITES = ("medium", "hashnode", "hackernoon", "substack", "vocal", "dailydev", "indiehackers", "pinterest")
+BLOG_INDEX = "https://nerdit.in/blog"
+DUE_AFTER = dt.timedelta(hours=24)
 
 
 def _dir() -> Path:
@@ -77,6 +81,31 @@ def plan(slug: str, posted: set[str], today: str, scheduled: bool = False) -> li
     return [s for s in candidates if s not in done | waiting | full][:max(left, 0)]
 
 
+def due_slugs(html: str, now: dt.datetime) -> list[str]:
+    """Slugs live 24 h or more, newest first, from the blog index's JSON-LD `blogPost` list.
+
+    shortcut: the index lists only the 30 newest articles, so older ones are never due; read Firestore if that matters.
+    """
+    posts: list = []
+    for block in re.findall(r'<script type="application/ld\+json">(.*?)</script>', html, re.S):
+        try:
+            posts = json.loads(block).get("blogPost") or []
+        except (json.JSONDecodeError, AttributeError):
+            continue
+        if posts:
+            break
+    due = []
+    for p in posts:
+        try:
+            published = dt.datetime.fromisoformat(p["datePublished"].replace("Z", "+00:00"))
+            slug = p["url"].rstrip("/").rsplit("/", 1)[-1]
+        except (KeyError, TypeError, ValueError, AttributeError):
+            continue
+        if now - published >= DUE_AFTER:
+            due.append((published, slug))
+    return [slug for _, slug in sorted(due, reverse=True)]
+
+
 def mark(slug: str, site: str, status: str, today: str, url: str = "", error: str = "") -> None:
     if site not in SITES or status not in STATUSES:
         raise ValueError(f"unknown site {site!r} or status {status!r}")
@@ -101,7 +130,20 @@ def main(argv: list[str] | None = None) -> int:
     m = sub.add_parser("mark")
     m.add_argument("--slug", required=True); m.add_argument("--site", required=True); m.add_argument("--status", required=True)
     m.add_argument("--url", default=""); m.add_argument("--error", default=""); m.add_argument("--today")
+    d = sub.add_parser("due")
+    d.add_argument("--now", help="ISO time with offset (default: now)")
     a = ap.parse_args(argv)
+    if a.cmd == "due":
+        now = dt.datetime.fromisoformat(a.now) if a.now else dt.datetime.now(dt.timezone.utc)
+        try:
+            with urllib.request.urlopen(BLOG_INDEX, timeout=30) as r:
+                html = r.read().decode("utf-8")
+        except OSError as e:
+            print(f"PROBLEM could not read {BLOG_INDEX}: {e}")
+            return 1
+        slugs = due_slugs(html, now)
+        print("\n".join(slugs) if slugs else "nothing due")
+        return 0
     today = a.today or dt.date.today().isoformat()
     if a.cmd == "plan":
         sites = plan(a.slug, {s.strip() for s in a.posted.split(",") if s.strip()}, today, a.scheduled)
