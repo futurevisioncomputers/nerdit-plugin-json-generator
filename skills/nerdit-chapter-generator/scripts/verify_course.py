@@ -537,7 +537,7 @@ PROGRAMS_PER_LESSON = 2
 FAKE_RUNTIME = ("test_request_context", "MultiDict", '"csrf": False', "'csrf': False", "test_client()")
 CELL_RUNS = 3             # run lines that need earlier code before a lesson needs its whole script
 ENTRY = 'if __name__ == "__main__":'
-SERVER_CALL = re.compile(r"\b(?:app\.run|serve|run_simple)\(")   # a program the learner starts and leaves running
+SERVER_CALL = re.compile(r"\b(?:app\.run|uvicorn\.run|serve|run_simple)\(")   # a program the learner starts and leaves running
 SAFE_PATH = re.compile(r"[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*")
 
 
