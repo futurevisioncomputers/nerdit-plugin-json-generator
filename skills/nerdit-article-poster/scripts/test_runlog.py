@@ -149,3 +149,32 @@ def test_cli_due_fetch_error(monkeypatch, capsys):
     monkeypatch.setattr(runlog.urllib.request, "urlopen", boom)
     assert runlog.main(["due"]) == 1
     assert capsys.readouterr().out.startswith("PROBLEM could not read https://nerdit.in/blog")
+
+
+def test_report_groups_the_day_across_articles():
+    runlog.mark("a", "medium", "posted", DAY, url="https://medium.com/p/1")
+    runlog.mark("b", "vocal", "skipped", DAY, error="sign in needed")
+    runlog.mark("b", "substack", "failed", DAY, error="editor changed")
+    runlog.mark("a", "hashnode", "posted", "2026-11-20", url="https://x.hashnode.dev/a")
+    text = runlog.report(DAY)
+    assert text.splitlines()[0] == "Posted: 1 · Skipped: 1 · Failed: 1 · Check first: 0"
+    assert "- a · medium · https://medium.com/p/1" in text and "- b · vocal · sign in needed" in text
+    assert "- b · substack · editor changed" in text and "hashnode" not in text
+
+
+def test_report_lists_unsettled_from_earlier_days():
+    runlog.mark("a", "medium", "started", "2026-11-20")
+    text = runlog.report(DAY)
+    assert text.splitlines()[0].endswith("Check first: 1") and "- a · medium ·" in text
+
+
+def test_report_with_nothing_today():
+    assert runlog.report(DAY) == "Posted: 0 · Skipped: 0 · Failed: 0 · Check first: 0\n\nNothing ran today."
+
+
+def test_cli_output_is_utf8_when_redirected(home):
+    import subprocess, sys
+    from pathlib import Path
+    env = {k: v for k, v in __import__("os").environ.items() if k != "PYTHONIOENCODING"} | {"NERDIT_SOCIAL_HOME": str(home.parent)}
+    out = subprocess.run([sys.executable, str(Path(runlog.__file__)), "report", "--today", DAY], capture_output=True, env=env, check=True).stdout
+    assert out.decode("utf-8").startswith("Posted: 0 · Skipped: 0")

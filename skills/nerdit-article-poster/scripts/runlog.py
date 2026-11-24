@@ -106,6 +106,30 @@ def due_slugs(html: str, now: dt.datetime) -> list[str]:
     return [slug for _, slug in sorted(due, reverse=True)]
 
 
+def report(today: str) -> str:
+    """The day across every article log, as Markdown. The first line is read by scheduled_run.ps1."""
+    sections: dict[str, list[str]] = {"Posted": [], "Skipped": [], "Failed": [], "Check first": []}
+    for path in sorted(_dir().glob("*.json")):
+        if path.name == "_daily.json":
+            continue
+        slug = path.stem
+        latest: dict[str, dict] = {}
+        for s in _load(path, {"steps": []}).get("steps", []):
+            if s["day"] == today:
+                latest[s["site"]] = s
+        for site, s in latest.items():
+            if s["status"] == "posted":
+                sections["Posted"].append(f"- {slug} · {site} · {s['url']}")
+            elif s["status"] == "skipped":
+                sections["Skipped"].append(f"- {slug} · {site} · {s['error'] or 'skipped'}")
+            elif s["status"] == "failed":
+                sections["Failed"].append(f"- {slug} · {site} · {s['error']}")
+        sections["Check first"] += [f"- {slug} · {site} · Publish was pressed; is it live?" for site in unsettled(slug)]
+    head = " · ".join(f"{name}: {len(lines)}" for name, lines in sections.items())
+    body = "\n\n".join(f"## {name}\n" + "\n".join(lines) for name, lines in sections.items() if lines)
+    return f"{head}\n\n{body or 'Nothing ran today.'}"
+
+
 def mark(slug: str, site: str, status: str, today: str, url: str = "", error: str = "") -> None:
     if site not in SITES or status not in STATUSES:
         raise ValueError(f"unknown site {site!r} or status {status!r}")
@@ -122,6 +146,7 @@ def mark(slug: str, site: str, status: str, today: str, url: str = "", error: st
 
 
 def main(argv: list[str] | None = None) -> int:
+    sys.stdout.reconfigure(encoding="utf-8")  # redirected output on Windows is cp1252; the report is read as UTF-8
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("plan")
@@ -132,6 +157,8 @@ def main(argv: list[str] | None = None) -> int:
     m.add_argument("--url", default=""); m.add_argument("--error", default=""); m.add_argument("--today")
     d = sub.add_parser("due")
     d.add_argument("--now", help="ISO time with offset (default: now)")
+    r = sub.add_parser("report")
+    r.add_argument("--today")
     a = ap.parse_args(argv)
     if a.cmd == "due":
         now = dt.datetime.fromisoformat(a.now) if a.now else dt.datetime.now(dt.timezone.utc)
@@ -145,6 +172,9 @@ def main(argv: list[str] | None = None) -> int:
         print("\n".join(slugs) if slugs else "nothing due")
         return 0
     today = a.today or dt.date.today().isoformat()
+    if a.cmd == "report":
+        print(report(today))
+        return 0
     if a.cmd == "plan":
         sites = plan(a.slug, {s.strip() for s in a.posted.split(",") if s.strip()}, today, a.scheduled)
         print("\n".join(sites) if sites else "nothing to post today")
