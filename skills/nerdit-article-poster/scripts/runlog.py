@@ -7,7 +7,9 @@
 happened in runs: a site logged as posted is never planned again, even when its link was not saved
 (no double posts); a failed site is retried; a skipped site waits until the next day. Pacing: at most
 6 sites per article per run day, and Quora/Reddit (`quora`) and Pinterest at most once a day across
-all articles. State: ~/.nerdit-social/article-runs/<slug>.json and _daily.json (NERDIT_SOCIAL_HOME overrides).
+all articles. `plan --scheduled` (the daily unattended run) offers only SCHEDULED_SITES, each at most once a
+day across all articles. State: ~/.nerdit-social/article-runs/<slug>.json and _daily.json (NERDIT_SOCIAL_HOME
+overrides).
 """
 from __future__ import annotations
 
@@ -23,6 +25,8 @@ SITES = ("medium", "hashnode", "hackernoon", "linkedin", "substack", "wordpress"
 STATUSES = ("started", "posted", "failed", "skipped")
 PER_ARTICLE_PER_DAY = 6
 ONCE_A_DAY = ("quora", "pinterest")
+# Unattended runs: no Quora/Reddit, Hacker News or LinkedIn (automation bans); WordPress/Blogger/Tumblr post by API.
+SCHEDULED_SITES = ("medium", "hashnode", "hackernoon", "substack", "vocal", "dailydev", "indiehackers", "pinterest")
 
 
 def _dir() -> Path:
@@ -61,15 +65,16 @@ def unsettled(slug: str) -> list[str]:
     return [s for s in SITES if latest.get(s) == "started"]
 
 
-def plan(slug: str, posted: set[str], today: str) -> list[str]:
+def plan(slug: str, posted: set[str], today: str, scheduled: bool = False) -> list[str]:
     steps = _load(_dir() / f"{slug}.json", {"steps": []})["steps"]
     daily = _load(_dir() / "_daily.json", {}).get(today, {})
+    candidates = SCHEDULED_SITES if scheduled else SITES
     done = set(posted) | {s["site"] for s in steps if s["status"] == "posted"}
     waiting = {s["site"] for s in steps if s["status"] == "skipped" and s["day"] == today}
-    full = {site for site in ONCE_A_DAY if daily.get(site, 0) >= 1}
+    full = {site for site in (candidates if scheduled else ONCE_A_DAY) if daily.get(site, 0) >= 1}
     waiting |= {s for s, status in _latest(steps).items() if status == "started"}
     left = PER_ARTICLE_PER_DAY - sum(1 for s in steps if s["status"] == "posted" and s["day"] == today)
-    return [s for s in SITES if s not in done | waiting | full][:max(left, 0)]
+    return [s for s in candidates if s not in done | waiting | full][:max(left, 0)]
 
 
 def mark(slug: str, site: str, status: str, today: str, url: str = "", error: str = "") -> None:
@@ -80,7 +85,7 @@ def mark(slug: str, site: str, status: str, today: str, url: str = "", error: st
     log.setdefault("steps", []).append({"site": site, "status": status, "day": today, "url": url, "error": error,
                                         "at": dt.datetime.now().isoformat(timespec="seconds")})
     _save(path, log)
-    if status == "posted" and site in ONCE_A_DAY:
+    if status == "posted":
         dpath = _dir() / "_daily.json"
         daily = _load(dpath, {})
         daily.setdefault(today, {})[site] = daily.get(today, {}).get(site, 0) + 1
@@ -92,13 +97,14 @@ def main(argv: list[str] | None = None) -> int:
     sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("plan")
     p.add_argument("--slug", required=True); p.add_argument("--posted", default=""); p.add_argument("--today")
+    p.add_argument("--scheduled", action="store_true")
     m = sub.add_parser("mark")
     m.add_argument("--slug", required=True); m.add_argument("--site", required=True); m.add_argument("--status", required=True)
     m.add_argument("--url", default=""); m.add_argument("--error", default=""); m.add_argument("--today")
     a = ap.parse_args(argv)
     today = a.today or dt.date.today().isoformat()
     if a.cmd == "plan":
-        sites = plan(a.slug, {s.strip() for s in a.posted.split(",") if s.strip()}, today)
+        sites = plan(a.slug, {s.strip() for s in a.posted.split(",") if s.strip()}, today, a.scheduled)
         print("\n".join(sites) if sites else "nothing to post today")
         for site in unsettled(a.slug):
             print(f"check first: {site} (Publish was pressed but no link was logged: is it live there?)")

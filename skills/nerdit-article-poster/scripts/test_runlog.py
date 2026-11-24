@@ -93,3 +93,28 @@ def test_cli_plan_names_sites_to_check_first(capsys):
     assert runlog.main(["plan", "--slug", "a", "--today", DAY]) == 0
     assert "check first: medium" in capsys.readouterr().out
 
+
+def test_scheduled_plan_only_offers_scheduled_sites_capped_at_six():
+    assert runlog.plan("a", set(), DAY, scheduled=True) == ["medium", "hashnode", "hackernoon", "substack", "vocal", "dailydev"]
+
+
+def test_scheduled_every_site_once_a_day_across_articles():
+    runlog.mark("a", "medium", "posted", DAY, url="https://medium.com/p/1")
+    assert "medium" not in runlog.plan("b", set(), DAY, scheduled=True)
+    assert runlog.plan("b", set(), NEXT, scheduled=True)[0] == "medium"
+
+
+def test_manual_plan_ignores_other_articles_posts():
+    runlog.mark("a", "medium", "posted", DAY, url="https://medium.com/p/1")
+    assert runlog.plan("b", set(), DAY)[0] == "medium"
+
+
+def test_scheduled_plan_never_offers_manual_only_or_api_sites():
+    plan = runlog.plan("a", {"medium", "hashnode", "hackernoon", "substack", "vocal"}, DAY, scheduled=True)
+    assert plan == ["dailydev", "indiehackers", "pinterest"]
+
+
+def test_cli_plan_scheduled(capsys):
+    assert runlog.main(["plan", "--slug", "a", "--scheduled", "--today", DAY]) == 0
+    assert capsys.readouterr().out.split()[:2] == ["medium", "hashnode"]
+
