@@ -12,6 +12,7 @@
   through the editor's image upload (they land on cdn.hashnode.com) and swap each firebasestorage link in the text for
   the cdn.hashnode.com one. Check: the live page has no firebasestorage image. (Not tried yet; record what works.)
   Cover: Cover (above the title) -> Upload Image -> the article cover PNG.
+- **Canonical / original URL:** In the Publish panel: 'Are you republishing?' -> the nerdit.in article URL (see Publish).
 - **Publish:** Publish (top right) opens the 'Draft settings' panel; it does not publish yet. Discovery tab: Tags (type,
   pick from the list: #machine-learning, #python ...), SEO description (the article's description), and 'Are you
   republishing?' -> paste the nerdit.in article URL (the canonical). Stop and get the owner's yes, then the panel's own
