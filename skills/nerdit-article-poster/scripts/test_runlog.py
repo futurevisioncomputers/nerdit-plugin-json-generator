@@ -95,14 +95,22 @@ def test_cli_plan_names_sites_to_check_first(capsys):
     assert "check first: medium" in capsys.readouterr().out
 
 
-def test_scheduled_plan_only_offers_scheduled_sites_capped_at_six():
-    assert runlog.plan("a", set(), DAY, scheduled=True) == ["medium", "hashnode", "hackernoon", "substack", "vocal", "dailydev"]
+def test_scheduled_plan_offers_own_blogs_first_then_six_paced_sites():
+    assert runlog.plan("a", set(), DAY, scheduled=True) == [
+        "wordpress", "blogger", "tumblr", "medium", "hashnode", "hackernoon", "substack", "vocal", "dailydev"]
+
+
+def test_scheduled_own_blogs_are_not_paced_or_held_across_articles():
+    for site in ("medium", "hashnode", "hackernoon", "substack", "vocal", "dailydev"):
+        runlog.mark("a", site, "posted", DAY, url=f"https://{site}.example/x")
+    runlog.mark("b", "wordpress", "posted", DAY, url="https://wp.example/b")
+    assert runlog.plan("a", set(), DAY, scheduled=True) == ["wordpress", "blogger", "tumblr"]
 
 
 def test_scheduled_every_site_once_a_day_across_articles():
     runlog.mark("a", "medium", "posted", DAY, url="https://medium.com/p/1")
     assert "medium" not in runlog.plan("b", set(), DAY, scheduled=True)
-    assert runlog.plan("b", set(), NEXT, scheduled=True)[0] == "medium"
+    assert "medium" in runlog.plan("b", set(), NEXT, scheduled=True)
 
 
 def test_manual_plan_ignores_other_articles_posts():
@@ -110,14 +118,15 @@ def test_manual_plan_ignores_other_articles_posts():
     assert runlog.plan("b", set(), DAY)[0] == "medium"
 
 
-def test_scheduled_plan_never_offers_manual_only_or_api_sites():
+def test_scheduled_plan_never_offers_manual_only_sites():
     plan = runlog.plan("a", {"medium", "hashnode", "hackernoon", "substack", "vocal"}, DAY, scheduled=True)
-    assert plan == ["dailydev", "indiehackers", "pinterest"]
+    assert plan == ["wordpress", "blogger", "tumblr", "dailydev", "pinterest", "linkedin", "indiehackers"]
+    assert not {"hackernews", "quora"} & set(runlog.SCHEDULED_SITES)
 
 
 def test_cli_plan_scheduled(capsys):
     assert runlog.main(["plan", "--slug", "a", "--scheduled", "--today", DAY]) == 0
-    assert capsys.readouterr().out.split()[:2] == ["medium", "hashnode"]
+    assert capsys.readouterr().out.split()[:2] == ["wordpress", "blogger"]
 
 
 
@@ -200,7 +209,7 @@ def test_scheduled_cap_counts_any_step_today_not_only_posted():
     runlog.mark("a", "hashnode", "skipped", DAY, error="sign in needed")
     runlog.mark("a", "hackernoon", "failed", DAY, error="editor changed")
     assert not {"medium", "hashnode", "hackernoon"} & set(runlog.plan("b", set(), DAY, scheduled=True))
-    assert runlog.plan("b", set(), NEXT, scheduled=True)[:3] == ["medium", "hashnode", "hackernoon"]
+    assert runlog.plan("b", set(), NEXT, scheduled=True)[3:6] == ["medium", "hashnode", "hackernoon"]
 
 
 def test_due_treats_times_without_offset_as_utc():

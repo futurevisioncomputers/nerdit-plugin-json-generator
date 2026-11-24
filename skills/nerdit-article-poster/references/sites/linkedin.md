@@ -1,13 +1,21 @@
 # linkedin
 
-- **Start:** https://www.linkedin.com/article/new/
-- **Signed in when:** your photo in the top bar
-- **Kit:** Articles page -> Copy text (full article)
+- **How:** a link post on the owner's LinkedIn profile through the admin's **Social posts** page (LinkedIn's
+  official API, token valid to 2027-01-06). Never through linkedin.com in the browser (automation gets accounts
+  banned), and never a LinkedIn article (the API has no article path). The owner decided this 2026-11-24.
+- **Start:** https://fv.nerdit.in/social-posts
+- **Signed in when:** Connections shows LinkedIn connected (not connected or token expired: `failed` with
+  "LinkedIn not connected in the admin" and a report line for the owner)
+- **Kit:** text = the article title, a blank line, the description, a blank line, "Read it here:" and the tracked
+  link (article URL + `?utm_source=linkedin&utm_medium=share&utm_campaign=<slug>`); 3 hashtags from the tags.
 - **Steps:**
-  1. Pick the author (owner's profile, or the NerdIT Page if offered).
-  2. Paste the first line into the headline, the rest into the body.
-- **Canonical / original URL:** None (no setting). The kit ends with 'Originally published at NerdIT'.
-- **Images:** Upload the cover PNG as the article cover; upload body images where their lines are.
-- **Publish:** Next -> write one line for the share post -> Publish.
-- **Post URL:** https://www.linkedin.com/pulse/<slug>
+  1. **New post** -> Name (admin only) = "Article: <title>"; **LinkedIn & Facebook text** = the kit text; Instagram
+     caption = leave empty; Image = the article cover PNG; tick **Post my image as it is (no card text)**;
+     Link = the tracked link -> **Create post**.
+  2. On the new row untick every platform except **LinkedIn** (Instagram, Facebook, Pinterest, YouTube off).
+- **Canonical / original URL:** Not needed (it is a link post).
+- **Images:** the cover, as the post image.
+- **Publish:** **Approve & post now**. The row then reads 'LinkedIn: posted'.
+- **Post URL:** the row shows no link. Log `posted` with `--url "admin social post: Article: <title>"`; do not
+  save anything on the Articles page (its LinkedIn row is for the Company Page post, which stays manual).
 - **Verified:** no

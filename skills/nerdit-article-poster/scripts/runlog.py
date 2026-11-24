@@ -8,7 +8,7 @@ happened in runs: a site logged as posted is never planned again, even when its 
 (no double posts); a failed site is retried; a skipped site waits until the next day. Pacing: at most
 6 sites per article per run day, and Quora/Reddit (`quora`) and Pinterest at most once a day across
 all articles. `plan --scheduled` (the daily unattended run) offers only SCHEDULED_SITES, each at most once a
-day across all articles. State: ~/.nerdit-social/article-runs/<slug>.json and _daily.json (NERDIT_SOCIAL_HOME
+day across all articles; the own blogs (OWN_BLOGS, posted by API) come first and are not paced. State: ~/.nerdit-social/article-runs/<slug>.json and _daily.json (NERDIT_SOCIAL_HOME
 overrides).
 """
 from __future__ import annotations
@@ -28,8 +28,12 @@ SITES = ("medium", "hashnode", "hackernoon", "linkedin", "substack", "wordpress"
 STATUSES = ("started", "posted", "failed", "skipped")
 PER_ARTICLE_PER_DAY = 6
 ONCE_A_DAY = ("quora", "pinterest")
-# Unattended runs: no Quora/Reddit, Hacker News or LinkedIn (automation bans); WordPress/Blogger/Tumblr post by API.
-SCHEDULED_SITES = ("medium", "hashnode", "hackernoon", "substack", "vocal", "dailydev", "indiehackers", "pinterest")
+# The owner's own blogs, posted by the admin's "Post copy" API buttons: no pacing (no spam risk, no ban risk).
+OWN_BLOGS = ("wordpress", "blogger", "tumblr")
+# Unattended runs: no Quora/Reddit or Hacker News (automation bans); LinkedIn only as an API link post from the
+# admin's Social posts page (owner's decision 2026-11-24), never in the LinkedIn site.
+SCHEDULED_SITES = OWN_BLOGS + ("medium", "hashnode", "hackernoon", "substack", "vocal", "dailydev", "pinterest",
+                               "linkedin", "indiehackers")
 BLOG_INDEX = "https://nerdit.in/blog"
 DUE_AFTER = dt.timedelta(hours=24)
 IMAGE_HOSTS = ("firebasestorage.googleapis.com", "storage.googleapis.com", "nerdit.in", "www.nerdit.in")
@@ -88,10 +92,13 @@ def plan(slug: str, posted: set[str], today: str, scheduled: bool = False) -> li
     done = set(posted) | {s["site"] for s in steps if s["status"] == "posted"}
     waiting = {s["site"] for s in steps if s["status"] == "skipped" and s["day"] == today}
     # Scheduled: one try per site per day across articles, so a signed-out site or a lost Publish is not retried.
-    full = _touched(today) if scheduled else {site for site in ONCE_A_DAY if daily.get(site, 0) >= 1}
+    # The own blogs are exempt: every due article may get its API copy the same day.
+    full = _touched(today) - set(OWN_BLOGS) if scheduled else {site for site in ONCE_A_DAY if daily.get(site, 0) >= 1}
     waiting |= {s for s, status in _latest(steps).items() if status == "started"}
-    left = PER_ARTICLE_PER_DAY - sum(1 for s in steps if s["status"] == "posted" and s["day"] == today)
-    return [s for s in candidates if s not in done | waiting | full][:max(left, 0)]
+    paced = (lambda site: site not in OWN_BLOGS) if scheduled else (lambda site: True)
+    left = PER_ARTICLE_PER_DAY - sum(1 for s in steps if s["status"] == "posted" and s["day"] == today and paced(s["site"]))
+    open_ = [s for s in candidates if s not in done | waiting | full]
+    return [s for s in open_ if not paced(s)] + [s for s in open_ if paced(s)][:max(left, 0)]
 
 
 def due_slugs(html: str, now: dt.datetime) -> list[str]:
