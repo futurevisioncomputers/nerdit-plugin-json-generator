@@ -69,3 +69,11 @@ def test_check_svg_rejects_a_viewbox_too_wide_to_read_on_a_phone():
     wide = GOOD.replace('viewBox="0 0 200 80"', 'viewBox="0 0 640 250"')
     assert any("viewBox is 640 wide" in e for e in check_svg(wide, ["warehouse", "run log"], 2))
     assert check_svg(GOOD.replace('viewBox="0 0 200 80"', 'viewBox="0 0 400 300"'), ["warehouse", "run log"], 2) == []
+
+
+def test_hex_check_ignores_marker_ids_but_catches_colours():
+    import svgcheck
+    assert not svgcheck.HEX.search('<marker id="aab11-arrow"/><path marker-end="url(#aab11-arrow)"/>')
+    assert not svgcheck.HEX.search('<use href="#abc"/> &#123;')
+    for colour in ('fill="#abc"', 'style="fill:#1a2b3c"', 'stroke="#ABCDEF80"'):
+        assert svgcheck.HEX.search(colour), colour

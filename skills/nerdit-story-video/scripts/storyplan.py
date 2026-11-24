@@ -82,7 +82,9 @@ FACT_TOKEN = re.compile(r"\d+(?:[.,:/-]\d+)*|\b[A-Z][A-Za-z0-9_]*")
 ANIM_ROOT = re.compile(r'\bclass="[^"]*\bnerdit-anim\b')
 ANIM_PART = re.compile(r'\bclass="[^"]*\bna-(?:show|slide|draw|open|pulse)\b')
 OWN_MOTION = re.compile(r"<(?:style|script|animate\w*|set|image|foreignObject)\b", re.I)
-HEX = re.compile(r"(?<!&)#[0-9a-fA-F]{3,8}\b")
+# A colour, not an id reference: url(#aab11-arrow) and href="#ab12" name an element, and a
+# colour is never followed by a letter, digit, _ or - (a marker id such as aab11-arrow is).
+HEX = re.compile(r'(?<!&)(?<!url\()(?<!href=")#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})(?![\w-])')
 TOPIC_HEADING = re.compile(r"<h2[^>]*>\s*(\d+)\s*[—–-]\s*(.*?)</h2>", re.S)
 EMOJI = re.compile("[\U0001F000-\U0001FAFF\u2600-\u27BF\uFE0F]")
 # A topic clip plays on its own, so its first scene cannot lean on another clip.

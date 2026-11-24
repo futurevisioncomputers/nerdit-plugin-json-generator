@@ -5,7 +5,9 @@ import re
 
 from lessonhtml import text
 
-HEX = re.compile(r"(?<!&)#[0-9a-fA-F]{3,8}\b")
+# A colour, not an id reference: url(#aab11-arrow) and href="#ab12" name an element, and a
+# colour is never followed by a letter, digit, _ or - (a marker id such as aab11-arrow is).
+HEX = re.compile(r'(?<!&)(?<!url\()(?<!href=")#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})(?![\w-])')
 MARKER_CHARS = "①②③④⑤"
 # Lesson text in an SVG is ~14.7 user units and a phone column is ~314 px wide, so a viewBox
 # wider than this shrinks labels below ~11.5 px. Stack the parts vertically instead.

@@ -888,3 +888,8 @@ def test_lesson_part_skeleton_and_stamp(tmp_path):
     assert storyplan.main(["stamp", "--video", str(v), "--html", str(h)]) == 0
     stamped = json.loads(v.read_text(encoding="utf-8"))["htmlSha256"]
     assert stamped == storyplan.html_sha256(h.read_text(encoding="utf-8"))
+
+
+def test_vector_hex_check_ignores_marker_ids():
+    assert not storyplan.HEX.search('<marker id="faded-arrow"/><path marker-end="url(#faded-arrow)"/>')
+    assert storyplan.HEX.search('<rect fill="#fade00"/>')
