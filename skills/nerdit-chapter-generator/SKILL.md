@@ -117,6 +117,27 @@ multi-lesson chapters.
    own, re-run that lesson's `nerdit-lesson-writer` with the exact lines, re-draw its screens
    (Step 3b), re-assemble, re-verify. **At most 2 regeneration attempts per lesson** (Step 4c) — then stop and report.
    Then deliver (Step 6).
+7. **Small fixes are yours, not a writer's (owner, 2026-11-07).** A fix of a few lines (a
+   `pip install` line, a wording or cross-reference change, deleting a workaround line) is
+   edited by you, the orchestrator, on the exact lines; then re-run `gate_lesson.py` for that
+   lesson, which proves the fix. Resuming a finished writer re-reads its whole transcript
+   (~200k tokens for a one-line fix on the FastAPI course; seven such fixes cost ~1.7M). Send
+   a writer only work that needs rewriting: a code walk, a new or reshaped section, a capstone
+   milestone. After a prose-only edit, set the lesson's `<id>.video.json` `htmlSha256` to the
+   new HTML's hash when the video part does not quote the changed text; otherwise rewrite the
+   video part.
+
+**Lessons from the FastAPI course (owner, 2026-11-07)** — do these before spawning writers:
+- Run `check_sequence.py` with `--concepts-dir <workdir>`; without the manifests it guesses
+  ownership from titles and reports dozens of false violations.
+- Tell every writer to keep its helper scripts in a folder named after its lesson id. Two
+  parallel writers both saved `mkvideo.py` in the shared scratchpad and one rewrote the other
+  lesson's video part.
+- In a FastAPI/Starlette course, list `httpx2` (not `httpx`) in the requirements: Starlette
+  1.10's `TestClient` deprecates `httpx`, and writers otherwise hide the warning with
+  `warnings.filterwarnings` lines that later have to be removed from every lesson.
+- List every package a lesson imports directly (for example `starlette`) in the requirements;
+  `check_offline_outputs.py` fails on an unlisted import.
 
 If the chapter has exactly one lesson, the parallelism in step 2 is moot but the same
 delegation still applies — do not write lesson content directly in the orchestrator.
