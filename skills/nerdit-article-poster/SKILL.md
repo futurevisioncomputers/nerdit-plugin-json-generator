@@ -11,6 +11,10 @@ description: >
 
 # NerdIT Article Poster
 
+**Any model** (Claude, OpenAI/Codex or another agent) with a browser tool that drives the owner's own
+Chrome can run the manual flow: it is these steps, the site recipes and `scripts/runlog.py`. The
+scheduled run is Claude-only (`claude -p --chrome`).
+
 Needs the claude-in-chrome tools (load them with ToolSearch first) and the owner's Chrome signed in to
 fv.nerdit.in. Site details: `references/sites/<site>.md`. Profile setup: `references/profile.md`.
 `scripts/runlog.py` decides today's sites and logs every step.

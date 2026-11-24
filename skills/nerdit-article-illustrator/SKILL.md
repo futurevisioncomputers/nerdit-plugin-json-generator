@@ -11,6 +11,9 @@ description: >
 
 # NerdIT Article Illustrator
 
+**Any model** (Claude, OpenAI/Codex or another agent) can run this skill: it is these steps plus
+Python scripts. Do the steps in order; `scripts/…` paths are relative to this skill's folder.
+
 Scripts live in `scripts/`; run them with `python <script>` and absolute paths. Read every output:
 a `PROBLEM` line or a non-zero exit means stop and fix it, never skip it. House style:
 `references/style.md` (read it before planning).
