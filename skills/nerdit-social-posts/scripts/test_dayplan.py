@@ -29,7 +29,7 @@ def test_items_carry_time_platforms_and_the_days_topic():
     items = day_plan(src_with_topics(12), date(2026, 11, 18), 10)
     reel = next(i for i in items if i["id"] == "d02-reel")
     story = next(i for i in items if i["id"] == "d02-story")
-    assert reel["time"] == "19:00" and reel["platforms"] == ["instagram", "facebook", "pinterest"]
+    assert reel["time"] == "19:00" and reel["platforms"] == ["instagram", "facebook", "pinterest", "youtube"]
     assert story["time"] == "10:00" and story["clipKey"] == reel["clipKey"] == "l01-t2-video"
     assert {k: reel[k] for k in ("lessonId", "topic")} == {"lessonId": "l01", "topic": 2}
 
@@ -52,7 +52,7 @@ def test_themes_layouts_and_platform_tables():
     assert LAYOUTS == ("stack", "split")
     for fmt in FORMATS:
         assert set(PLATFORMS[fmt]) <= set(ALLOWED_PLATFORMS[fmt])
-    assert ALLOWED_PLATFORMS["reel"] == ["instagram", "facebook", "pinterest"]
+    assert ALLOWED_PLATFORMS["reel"] == ["instagram", "facebook", "pinterest", "youtube"]
     assert all("pinterest" in PLATFORMS[f] and "pinterest" in ALLOWED_PLATFORMS[f] for f in PLATFORMS)   # every pack image pins
 
 
@@ -70,3 +70,16 @@ def test_no_video_means_no_reels_but_stories_carousels_and_cards_keep_their_days
     assert sum(i["format"] == "story" for i in items) == 10 and all(i["time"] == "10:00" for i in items if i["format"] == "story")
     assert sorted(i["date"] for i in items if i["format"] == "carousel") == ["2026-11-20", "2026-11-24", "2026-11-27"]
     assert len([i for i in items if i["format"] == "feed"]) == 5
+
+
+def test_reels_go_to_youtube_too():
+    assert PLATFORMS["reel"] == ["instagram", "facebook", "pinterest", "youtube"]
+    assert ALLOWED_PLATFORMS["reel"] == PLATFORMS["reel"]
+    assert "youtube" not in PLATFORMS["story"] + PLATFORMS["carousel"] + PLATFORMS["feed"]
+
+
+def test_skill_doc_agrees_that_reels_reach_youtube():
+    from pathlib import Path
+    doc = (Path(__file__).resolve().parent.parent / "SKILL.md").read_text(encoding="utf-8")
+    assert "the server never sees it" not in doc          # Reels list youtube now; the admin uploads them
+    assert "Reels list `youtube` in `platforms`" in doc

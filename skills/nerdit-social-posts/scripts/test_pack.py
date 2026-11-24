@@ -93,7 +93,7 @@ def test_plan_writes_a_draft_with_hooks_and_empty_captions(tmp_path):
     assert plan["courseUrl"] == LIVE_URL
     reel = next(i for i in plan["items"] if i["id"] == "d01-reel")
     assert reel["hook"] == "Key idea 1" and reel["title"] == "Topic 1"
-    assert reel["captions"] == {"instagram": "", "facebook": "", "pinterest": ""}
+    assert reel["captions"] == {"instagram": "", "facebook": "", "pinterest": "", "youtube": ""}
     carousel = next(i for i in plan["items"] if i["format"] == "carousel" and i.get("kind") != "intro")
     assert carousel["slides"][0]["kind"] == "cover"
 
