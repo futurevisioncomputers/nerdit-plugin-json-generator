@@ -94,7 +94,10 @@ commands; anything else is denied). Call runlog exactly as the prompt gives it: 
    Blogger or Tumblr link ("<slug>: press Post copy on the Articles page"), and one per owner step from step 3.
    `scheduled_run.ps1` shows the report's first line as a desktop notification.
 
-Turn the daily run on or off with `scripts/schedule_task.ps1 [-Time 09:00]` / `scripts/schedule_task.ps1 -Remove`.
+Turn the daily run on or off with `scripts/schedule_task.ps1 -Time HH:mm` / `scripts/schedule_task.ps1 -Remove`.
+Pick a time the PC is on, signed in, unlocked and not in use: Windows drops the bot's key presses while it is
+locked (Ctrl+V pastes nothing), so `scheduled_run.ps1` skips a locked day, and a time missed because the PC was
+off is skipped too (not run at the next sign-in, while the owner works). Skipped articles stay due.
 Run it from the plugin's repo checkout (`nerdit-plugin-json-generator`), not the installed plugin folder: the task
 keeps the script's full path, and the installed folder's name changes with every plugin version.
 

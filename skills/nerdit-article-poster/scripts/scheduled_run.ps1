@@ -61,6 +61,13 @@ try {
     return
   }
 
+  # Windows drops the bot's key presses while the PC is locked (2026-11-24: Ctrl+V pasted nothing, Ctrl+A typed
+  # "a"); LogonUI runs only while the lock screen is up. Skip the day; the articles stay due for tomorrow.
+  if (Get-Process LogonUI -ErrorAction SilentlyContinue) {
+    Write-RunLog 'PC locked: run skipped (the bot cannot type while Windows is locked)'
+    exit 0
+  }
+
   if (-not (Get-Process chrome -ErrorAction SilentlyContinue)) {
     $chrome = (Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe' -ErrorAction SilentlyContinue).'(default)'
     if (-not $chrome) { $chrome = (Get-ItemProperty 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe' -ErrorAction SilentlyContinue).'(default)' }
