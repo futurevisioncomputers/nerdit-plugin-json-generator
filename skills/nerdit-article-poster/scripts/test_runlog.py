@@ -186,3 +186,78 @@ def test_skill_has_a_scheduled_run_section_naming_every_scheduled_site():
     section = text.split("## Scheduled run", 1)[1]
     for needle in ("runlog.py due", "plan --scheduled", "runlog.py report", "24 hours", "sign in needed", *runlog.SCHEDULED_SITES):
         assert needle in section, needle
+
+
+class Page:
+    def __init__(self, body: bytes): self.body = body
+    def __enter__(self): return self
+    def __exit__(self, *a): return False
+    def read(self, *a): return self.body
+
+
+def test_scheduled_cap_counts_any_step_today_not_only_posted():
+    runlog.mark("a", "medium", "started", DAY)
+    runlog.mark("a", "hashnode", "skipped", DAY, error="sign in needed")
+    runlog.mark("a", "hackernoon", "failed", DAY, error="editor changed")
+    assert not {"medium", "hashnode", "hackernoon"} & set(runlog.plan("b", set(), DAY, scheduled=True))
+    assert runlog.plan("b", set(), NEXT, scheduled=True)[:3] == ["medium", "hashnode", "hackernoon"]
+
+
+def test_due_treats_times_without_offset_as_utc():
+    assert runlog.due_slugs(blog(("a", "2026-11-23T12:00:00"), ("b", "2026-11-20")), NOW) == ["a", "b"]
+    assert runlog.due_slugs(blog(("a", "2026-11-23T12:00:00.000Z")), NOW.replace(tzinfo=None)) == ["a"]
+
+
+def test_cli_due_turns_any_error_into_a_problem_line(monkeypatch, capsys):
+    def bad(*a, **k): raise ValueError("weird")
+    monkeypatch.setattr(runlog.urllib.request, "urlopen", bad)
+    assert runlog.main(["due"]) == 1
+    assert capsys.readouterr().out.startswith("PROBLEM")
+
+
+def test_cli_due_page_without_blogpost_is_a_problem_but_none_due_is_not(monkeypatch, capsys):
+    monkeypatch.setattr(runlog.urllib.request, "urlopen", lambda *a, **k: Page(b"<html>redesigned</html>"))
+    assert runlog.main(["due"]) == 1
+    assert "no blogPost list" in capsys.readouterr().out
+    monkeypatch.setattr(runlog.urllib.request, "urlopen", lambda *a, **k: Page(blog(("n", "2026-11-24T11:00:00Z")).encode()))
+    assert runlog.main(["due", "--now", NOW.isoformat()]) == 0
+    assert capsys.readouterr().out.strip() == "nothing due"
+
+
+def test_images_downloads_only_from_nerdit_storage(home, monkeypatch, capsys):
+    monkeypatch.setattr(runlog.urllib.request, "urlopen", lambda *a, **k: Page(b"PNG"))
+    url = "https://firebasestorage.googleapis.com/v0/b/x/o/articles%2Fslug%2Fdiagram-1.png?alt=media&token=t"
+    assert runlog.main(["images", "--slug", "a", url]) == 0
+    saved = home / "a" / "images" / "diagram-1.png"
+    assert saved.read_bytes() == b"PNG" and str(saved) in capsys.readouterr().out
+    assert runlog.main(["images", "--slug", "a", url, "https://evil.example/x.png"]) == 1
+    assert "PROBLEM" in capsys.readouterr().out
+    assert runlog.main(["images", "--slug", "../x", url]) == 1
+
+
+def test_report_save_writes_utf8_file_with_extra_lines(home):
+    assert runlog.main(["report", "--today", DAY, "--save", "--extra", "a: press Post copy on the Articles page"]) == 0
+    text = (home / "reports" / f"{DAY}.md").read_text(encoding="utf-8")
+    assert text.startswith("Posted: 0 · Skipped: 0") and text.rstrip().endswith("a: press Post copy on the Articles page")
+
+
+def test_launcher_puts_the_prompt_first_and_allows_only_runlog_and_chrome(tmp_path):
+    import os, shutil, subprocess
+    from pathlib import Path
+    if not shutil.which("powershell"):
+        pytest.skip("Windows PowerShell only")
+    script = Path(__file__).resolve().parent / "scheduled_run.ps1"
+    env = os.environ | {"NERDIT_SOCIAL_HOME": str(tmp_path)}
+    out = subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(script), "-DryRun"],
+                         capture_output=True, text=True, env=env, timeout=60)
+    assert out.returncode == 0, out.stdout + out.stderr
+    args = out.stdout.split("claude args:\n", 1)[1].split("\nlog:", 1)[0].splitlines()
+    assert args[0] == "-p" and "scheduled run" in args[1] and "/runlog.py" in args[1]
+    opt = lambda name: args[args.index(name) + 1]
+    assert opt("--setting-sources") == "project" and opt("--permission-mode") == "dontAsk"
+    assert Path(opt("--plugin-dir")).is_dir() and "--chrome" in args and opt("--disallowedTools") == "PowerShell"
+    allowed = args[args.index("--allowedTools") + 1:]
+    runlog_rules = [r for r in allowed if r.startswith("Bash(python ")]
+    assert len(runlog_rules) == 1 and runlog_rules[0].endswith("/skills/nerdit-article-poster/scripts/runlog.py *)")
+    assert not [r for r in allowed if r.startswith(("Write(", "Edit(")) or "curl" in r]
+    assert not (tmp_path / "article-runs" / "scheduled.lock").exists()

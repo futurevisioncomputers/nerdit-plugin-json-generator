@@ -34,19 +34,27 @@ if ((Test-Path $lock) -and ((Get-Date) - (Get-Item $lock).LastWriteTime).TotalHo
 Set-Content -Path $lock -Value (Get-Date -Format o) -Encoding UTF8
 
 try {
-  # Exact strings confirmed by the Rollout spike; nothing that deploys, pushes, writes Firestore or sends mail.
-  $allowed = @(
-    'mcp__claude-in-chrome',
-    'Skill',
-    'Bash(python *runlog.py *)',
-    'Bash(curl -sL *)',
-    "Read($($home_ -replace '\\','/')/**)",
-    "Write($($home_ -replace '\\','/')/**)"
-  )
-  $claudeArgs = @('-p', '--chrome', '--allowedTools') + $allowed + @($Prompt)
+  # The installed plugin, loaded by --plugin-dir: the run skips the owner's user settings (their allow rules and hooks).
+  $installed = Join-Path $env:USERPROFILE '.claude\plugins\installed_plugins.json'
+  $pluginDir = $null
+  if (Test-Path $installed) {
+    $entry = (Get-Content -Path $installed -Raw -Encoding UTF8 | ConvertFrom-Json).plugins.'nerdit_content_creator@fv-analysis-marketplace'
+    if ($entry) { $pluginDir = $entry[0].installPath }
+  }
+  if (-not $pluginDir -or -not (Test-Path $pluginDir)) { Write-RunLog 'NerdIT plugin not installed'; exit 1 }
+  $runlog = (Join-Path $pluginDir 'skills\nerdit-article-poster\scripts\runlog.py') -replace '\\', '/'
+
+  $fullPrompt = "$Prompt Run runlog exactly as: python $runlog <command> (this path, forward slashes, no quotes)."
+  # Only these: Chrome, the skill, runlog (pinned path), and reading the plugin's recipes. No curl, no file writes
+  # (runlog saves images and the report), no git, deploy, Firestore or mail. Everything else is denied (dontAsk).
+  $allowed = @('mcp__claude-in-chrome', 'Skill', "Bash(python $runlog *)", 'Read(~/.claude/plugins/**)')
+  # The prompt goes right after -p: --allowedTools takes every value after it.
+  $claudeArgs = @('-p', $fullPrompt, '--chrome', '--setting-sources', 'project', '--plugin-dir', $pluginDir,
+    '--permission-mode', 'dontAsk', '--disallowedTools', 'PowerShell', '--allowedTools') + $allowed
 
   if ($DryRun) {
-    Write-Output ('claude ' + (($claudeArgs | ForEach-Object { if ($_ -match '\s') { "`"$_`"" } else { $_ } }) -join ' '))
+    Write-Output 'claude args:'
+    $claudeArgs | ForEach-Object { Write-Output $_ }
     Write-Output "log: $log"
     Write-Output "report: $report"
     Write-Output "lock: $lock"

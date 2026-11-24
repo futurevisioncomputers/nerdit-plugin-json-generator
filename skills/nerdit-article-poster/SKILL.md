@@ -66,23 +66,29 @@ scheduled site, including where a recipe says "get the owner's yes". Nothing new
 `pinterest`. Quora/Reddit, Hacker News and LinkedIn stay manual (automation gets accounts banned).
 WordPress.com, Blogger and Tumblr post by API from the Articles page, never through the browser here.
 
-1. **Due articles:** `python scripts/runlog.py due` prints the slugs live 24 hours or more, newest first.
-   `PROBLEM …` or `nothing due`: write that as the report (step 4) and stop.
-2. **Saved links:** open fv.nerdit.in/articles. Signed out of the admin: report `admin sign-in needed` and
-   stop. For each due article, read its saved copies from its list row (the "<Site> ✓" labels).
-3. **Each due article, newest first:** `python scripts/runlog.py plan --scheduled --slug <slug> --posted <sites>`;
-   post each listed site exactly as in Run step 4 (Copy, paste, recipe, `mark started`, Publish, save the link,
-   `mark posted`), except:
+The run may only use Chrome, this skill, its recipes and `runlog.py` (no curl, no file writes, no other
+commands; anything else is denied). Call runlog exactly as the prompt gives it: `python <path>/runlog.py <command>`.
+
+1. **Due articles:** `python <path>/runlog.py due` prints the slugs live 24 hours or more, newest first.
+   `PROBLEM …` or `nothing due`: save the report (step 4) with that line as an `--extra` and stop.
+2. **Saved links:** open fv.nerdit.in/articles. Signed out of the admin: save the report (step 4) with
+   `--extra "admin sign-in needed"` and stop. For each due article, read its saved copies from its list row (the "<Site> ✓" labels).
+3. **Each due article, newest first:** `python <path>/runlog.py plan --scheduled --slug <slug> --posted <sites>`.
+   If a listed site's recipe uploads files (cover, images), first
+   `python <path>/runlog.py images --slug <slug> <cover URL> <image URL> …` (the article's own image addresses from
+   its Edit view); it prints where each file was saved, for Chrome's file upload. Then post each listed site exactly
+   as in Run step 4 (Copy, paste, recipe, `mark started`, Publish, save the link, `mark posted`), except:
    - sign-in wall, CAPTCHA, phone or email check, new terms, or a cookie wall without "reject non-essential":
-     `python scripts/runlog.py mark --slug <slug> --site <site> --status skipped --error "sign in needed"`
+     `python <path>/runlog.py mark --slug <slug> --site <site> --status skipped --error "sign in needed"`
      (or the real reason), close that tab, go to the next site;
+   - a recipe step that needs the owner (for example "tell the owner"): put it in the report as an `--extra` line;
    - `check first` sites: leave them alone; the report lists them;
    - a problem after Publish: leave it `started`, as in Run step 4.
    Stop going through articles when `plan --scheduled` prints `nothing to post today` for the rest.
-4. **Report:** `python scripts/runlog.py report --today <YYYY-MM-DD>`, saved as UTF-8 to
-   `~/.nerdit-social/article-runs/reports/<YYYY-MM-DD>.md`, keeping its first line as printed. Append one line per
-   due article that has no WordPress.com, Blogger or Tumblr link: "<slug>: press Post copy on the Articles page".
-   `scheduled_run.ps1` shows the first line as a desktop notification.
+4. **Report:** `python <path>/runlog.py report --save --extra "<line>" --extra "<line>" …` writes
+   `~/.nerdit-social/article-runs/reports/<today>.md`. One `--extra` per due article that has no WordPress.com,
+   Blogger or Tumblr link ("<slug>: press Post copy on the Articles page"), and one per owner step from step 3.
+   `scheduled_run.ps1` shows the report's first line as a desktop notification.
 
 Turn the daily run on or off with `scripts/schedule_task.ps1 [-Time 09:00]` / `scripts/schedule_task.ps1 -Remove`.
 Run it from the plugin's repo checkout (`nerdit-plugin-json-generator`), not the installed plugin folder: the task

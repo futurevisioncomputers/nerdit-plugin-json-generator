@@ -19,6 +19,7 @@ import json
 import os
 import re
 import sys
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -31,6 +32,8 @@ ONCE_A_DAY = ("quora", "pinterest")
 SCHEDULED_SITES = ("medium", "hashnode", "hackernoon", "substack", "vocal", "dailydev", "indiehackers", "pinterest")
 BLOG_INDEX = "https://nerdit.in/blog"
 DUE_AFTER = dt.timedelta(hours=24)
+IMAGE_HOSTS = ("firebasestorage.googleapis.com", "storage.googleapis.com", "nerdit.in", "www.nerdit.in")
+MAX_IMAGE_BYTES = 20 * 1024 * 1024
 
 
 def _dir() -> Path:
@@ -69,13 +72,23 @@ def unsettled(slug: str) -> list[str]:
     return [s for s in SITES if latest.get(s) == "started"]
 
 
+def _touched(today: str) -> set[str]:
+    """Sites with any step today in any article log (posted, started, skipped or failed)."""
+    out: set[str] = set()
+    for path in _dir().glob("*.json"):
+        if path.name != "_daily.json":
+            out |= {s["site"] for s in _load(path, {"steps": []}).get("steps", []) if s.get("day") == today}
+    return out
+
+
 def plan(slug: str, posted: set[str], today: str, scheduled: bool = False) -> list[str]:
     steps = _load(_dir() / f"{slug}.json", {"steps": []})["steps"]
     daily = _load(_dir() / "_daily.json", {}).get(today, {})
     candidates = SCHEDULED_SITES if scheduled else SITES
     done = set(posted) | {s["site"] for s in steps if s["status"] == "posted"}
     waiting = {s["site"] for s in steps if s["status"] == "skipped" and s["day"] == today}
-    full = {site for site in (candidates if scheduled else ONCE_A_DAY) if daily.get(site, 0) >= 1}
+    # Scheduled: one try per site per day across articles, so a signed-out site or a lost Publish is not retried.
+    full = _touched(today) if scheduled else {site for site in ONCE_A_DAY if daily.get(site, 0) >= 1}
     waiting |= {s for s, status in _latest(steps).items() if status == "started"}
     left = PER_ARTICLE_PER_DAY - sum(1 for s in steps if s["status"] == "posted" and s["day"] == today)
     return [s for s in candidates if s not in done | waiting | full][:max(left, 0)]
@@ -86,6 +99,7 @@ def due_slugs(html: str, now: dt.datetime) -> list[str]:
 
     shortcut: the index lists only the 30 newest articles, so older ones are never due; read Firestore if that matters.
     """
+    now = now if now.tzinfo else now.replace(tzinfo=dt.timezone.utc)
     posts: list = []
     for block in re.findall(r'<script type="application/ld\+json">(.*?)</script>', html, re.S):
         try:
@@ -101,9 +115,37 @@ def due_slugs(html: str, now: dt.datetime) -> list[str]:
             slug = p["url"].rstrip("/").rsplit("/", 1)[-1]
         except (KeyError, TypeError, ValueError, AttributeError):
             continue
+        published = published if published.tzinfo else published.replace(tzinfo=dt.timezone.utc)
         if now - published >= DUE_AFTER:
             due.append((published, slug))
     return [slug for _, slug in sorted(due, reverse=True)]
+
+
+def save_images(slug: str, urls: list[str]) -> list[Path]:
+    """Download an article's images into <runs>/<slug>/images/ for sites that need file uploads.
+
+    Only https NerdIT image addresses: the unattended run reads untrusted pages, so no general downloader.
+    """
+    if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", slug):
+        raise ValueError(f"bad slug {slug!r}")
+    for u in urls:
+        parts = urllib.parse.urlsplit(u)
+        if parts.scheme != "https" or parts.hostname not in IMAGE_HOSTS:
+            raise ValueError(f"not a NerdIT image address: {u}")
+    folder = _dir() / slug / "images"
+    folder.mkdir(parents=True, exist_ok=True)
+    saved = []
+    for i, u in enumerate(urls, 1):
+        last = urllib.parse.unquote(urllib.parse.urlsplit(u).path).rsplit("/", 1)[-1]
+        name = re.sub(r"[^A-Za-z0-9._-]", "_", last).lstrip(".") or f"image-{i}"
+        with urllib.request.urlopen(u, timeout=60) as r:
+            data = r.read(MAX_IMAGE_BYTES + 1)
+        if len(data) > MAX_IMAGE_BYTES:
+            raise ValueError(f"image over 20 MB: {u}")
+        path = folder / name
+        path.write_bytes(data)
+        saved.append(path)
+    return saved
 
 
 def report(today: str) -> str:
@@ -138,7 +180,7 @@ def mark(slug: str, site: str, status: str, today: str, url: str = "", error: st
     log.setdefault("steps", []).append({"site": site, "status": status, "day": today, "url": url, "error": error,
                                         "at": dt.datetime.now().isoformat(timespec="seconds")})
     _save(path, log)
-    if status == "posted":
+    if status == "posted" and site in ONCE_A_DAY:
         dpath = _dir() / "_daily.json"
         daily = _load(dpath, {})
         daily.setdefault(today, {})[site] = daily.get(today, {}).get(site, 0) + 1
@@ -158,22 +200,40 @@ def main(argv: list[str] | None = None) -> int:
     d = sub.add_parser("due")
     d.add_argument("--now", help="ISO time with offset (default: now)")
     r = sub.add_parser("report")
-    r.add_argument("--today")
+    r.add_argument("--today"); r.add_argument("--save", action="store_true", help="also write reports/<today>.md (UTF-8)")
+    r.add_argument("--extra", action="append", default=[], help="a line to add at the end (repeatable)")
+    i = sub.add_parser("images")
+    i.add_argument("--slug", required=True); i.add_argument("urls", nargs="+")
     a = ap.parse_args(argv)
     if a.cmd == "due":
-        now = dt.datetime.fromisoformat(a.now) if a.now else dt.datetime.now(dt.timezone.utc)
         try:
+            now = dt.datetime.fromisoformat(a.now) if a.now else dt.datetime.now(dt.timezone.utc)
             with urllib.request.urlopen(BLOG_INDEX, timeout=30) as r:
                 html = r.read().decode("utf-8")
-        except OSError as e:
+            if '"blogPost"' not in html:
+                raise ValueError("no blogPost list on the page (did the blog page change?)")
+            slugs = due_slugs(html, now)
+        except Exception as e:  # unattended: any failure must be a PROBLEM line, never a traceback
             print(f"PROBLEM could not read {BLOG_INDEX}: {e}")
             return 1
-        slugs = due_slugs(html, now)
         print("\n".join(slugs) if slugs else "nothing due")
+        return 0
+    if a.cmd == "images":
+        try:
+            for path in save_images(a.slug, a.urls):
+                print(path)
+        except Exception as e:
+            print(f"PROBLEM {e}")
+            return 1
         return 0
     today = a.today or dt.date.today().isoformat()
     if a.cmd == "report":
-        print(report(today))
+        text = report(today) + ("\n\n" + "\n".join(a.extra) if a.extra else "")
+        if a.save:
+            path = _dir() / "reports" / f"{today}.md"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text + "\n", encoding="utf-8")
+        print(text)
         return 0
     if a.cmd == "plan":
         sites = plan(a.slug, {s.strip() for s in a.posted.split(",") if s.strip()}, today, a.scheduled)
