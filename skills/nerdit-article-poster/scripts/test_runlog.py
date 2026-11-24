@@ -178,3 +178,11 @@ def test_cli_output_is_utf8_when_redirected(home):
     env = {k: v for k, v in __import__("os").environ.items() if k != "PYTHONIOENCODING"} | {"NERDIT_SOCIAL_HOME": str(home.parent)}
     out = subprocess.run([sys.executable, str(Path(runlog.__file__)), "report", "--today", DAY], capture_output=True, env=env, check=True).stdout
     assert out.decode("utf-8").startswith("Posted: 0 · Skipped: 0")
+
+
+def test_skill_has_a_scheduled_run_section_naming_every_scheduled_site():
+    from pathlib import Path
+    text = (Path(__file__).resolve().parents[1] / "SKILL.md").read_text(encoding="utf-8")
+    section = text.split("## Scheduled run", 1)[1]
+    for needle in ("runlog.py due", "plan --scheduled", "runlog.py report", "24 hours", "sign in needed", *runlog.SCHEDULED_SITES):
+        assert needle in section, needle

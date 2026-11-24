@@ -6,6 +6,7 @@ description: >
   back to the Articles page. Use when the owner says "post article X", "post this article
   everywhere", "share the article on all sites" or "continue posting". Stops for every login, asks
   once per article before anything goes public, keeps a safe daily pace, and resumes where it left off.
+  Also runs by itself once a day ("nerdit-article-poster: scheduled run", started by Task Scheduler).
 ---
 
 # NerdIT Article Poster
@@ -52,5 +53,39 @@ fv.nerdit.in. Site details: `references/sites/<site>.md`. Profile setup: `refere
 
 A site whose editor no longer matches its recipe: stop that site (`failed`), describe what changed, and
 fix the recipe after the run.
+
+## Scheduled run
+
+Started by Task Scheduler through `scripts/scheduled_run.ps1` with the prompt "scheduled run". Nobody is
+watching: never ask anything, never wait for an answer. The "Never" list above still applies in full.
+
+**The yes:** an article that has been live on nerdit.in for 24 hours or more is the owner's yes for every
+scheduled site, including where a recipe says "get the owner's yes". Nothing newer goes out.
+
+**Sites:** only `medium`, `hashnode`, `hackernoon`, `substack`, `vocal`, `dailydev`, `indiehackers`,
+`pinterest`. Quora/Reddit, Hacker News and LinkedIn stay manual (automation gets accounts banned).
+WordPress.com, Blogger and Tumblr post by API from the Articles page, never through the browser here.
+
+1. **Due articles:** `python scripts/runlog.py due` prints the slugs live 24 hours or more, newest first.
+   `PROBLEM …` or `nothing due`: write that as the report (step 4) and stop.
+2. **Saved links:** open fv.nerdit.in/articles. Signed out of the admin: report `admin sign-in needed` and
+   stop. For each due article, read its saved copies from its list row (the "<Site> ✓" labels).
+3. **Each due article, newest first:** `python scripts/runlog.py plan --scheduled --slug <slug> --posted <sites>`;
+   post each listed site exactly as in Run step 4 (Copy, paste, recipe, `mark started`, Publish, save the link,
+   `mark posted`), except:
+   - sign-in wall, CAPTCHA, phone or email check, new terms, or a cookie wall without "reject non-essential":
+     `python scripts/runlog.py mark --slug <slug> --site <site> --status skipped --error "sign in needed"`
+     (or the real reason), close that tab, go to the next site;
+   - `check first` sites: leave them alone; the report lists them;
+   - a problem after Publish: leave it `started`, as in Run step 4.
+   Stop going through articles when `plan --scheduled` prints `nothing to post today` for the rest.
+4. **Report:** `python scripts/runlog.py report --today <YYYY-MM-DD>`, saved as UTF-8 to
+   `~/.nerdit-social/article-runs/reports/<YYYY-MM-DD>.md`, keeping its first line as printed. Append one line per
+   due article that has no WordPress.com, Blogger or Tumblr link: "<slug>: press Post copy on the Articles page".
+   `scheduled_run.ps1` shows the first line as a desktop notification.
+
+Turn the daily run on or off with `scripts/schedule_task.ps1 [-Time 09:00]` / `scripts/schedule_task.ps1 -Remove`.
+Run it from the plugin's repo checkout (`nerdit-plugin-json-generator`), not the installed plugin folder: the task
+keeps the script's full path, and the installed folder's name changes with every plugin version.
 
 Tests: `cd skills/nerdit-article-poster/scripts && PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest -q`
