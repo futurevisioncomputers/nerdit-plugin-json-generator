@@ -111,3 +111,39 @@ def test_parallel_gates_build_the_venv_once(tmp_path, monkeypatch):
         t.join()
     assert len(calls) == 1 and all(err is None for _, err in results)
     assert not (tmp_path / "venv.lock").exists()
+
+
+def predict(code, out):
+    return (f'<div class="nerdit-predict"><pre data-lang="python"><code>{code}</code></pre>'
+            f'<details class="nerdit-predict-answer"><summary>Show answer</summary><div class="nerdit-out">'
+            f'<pre><code>{out}</code></pre></div></details></div>')
+
+
+def test_answers_using_offline_names_are_checked_in_real_python(tmp_path, vpy):
+    # The browser engine skips these (NameError on an offline name); the gate must not.
+    good = lesson(run("total = 3", ""), predict("print(total * 2)", "6"))
+    assert lr.answer_runs(good["content"], vpy, tmp_path) == []
+    wrong = lesson(run("total = 3", ""), predict("print(total * 2)", "7"))
+    assert "shown '7' but real Python prints '6'" in lr.answer_runs(wrong["content"], vpy, tmp_path)[0]
+    missing = lesson(run("total = 3", ""), predict("print(follow_up.delay(1))", "ok"))
+    assert "NameError" in lr.answer_runs(missing["content"], vpy, tmp_path)[0]
+
+
+def test_answer_runs_isolate_predicts_and_allow_top_level_await(tmp_path, vpy):
+    page = lesson(run("x = 1", ""), predict("x = 5\nprint(x)", "5"), predict("print(x)", "1"),
+                  predict("import asyncio\nawait asyncio.sleep(0)\nprint('done')", "done"))
+    assert lr.answer_runs(page["content"], vpy, tmp_path) == []
+
+
+def test_lesson_runs_reports_a_wrong_answer_on_a_page_with_offline_lines(tmp_path, vpy):
+    page = lesson(run("total = 3\nprint(total)", "3"), predict("print(total + 1)", "5"))
+    fails, _ = lr.lesson_runs(page, 2, vpy, tmp_path)
+    assert any("predict 1" in f and "real Python prints '4'" in f for f in fails)
+
+
+def test_a_crashing_practice_answer_is_reported_once(tmp_path, vpy):
+    # The solutions run owns practice errors; answer_runs only adds a wrong printed output.
+    page = lesson(run("total = 3", ""), task(1, "print(client)"))
+    fails, _ = lr.lesson_runs(page, 2, vpy, tmp_path)
+    assert [f for f in fails if "NameError" in f] == [f for f in fails if f.startswith("practice answers:")]
+    assert len(fails) == 1

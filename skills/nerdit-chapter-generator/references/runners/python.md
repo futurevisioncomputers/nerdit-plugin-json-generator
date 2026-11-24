@@ -101,6 +101,9 @@ checker imports it (not as `__main__`), runs the check, and compares what it pri
 - a run whose output half has no `<pre>` is a chart: it must draw a figure without an error;
 - each Try It starter alone: it must not raise;
 - offline run lines are reported as offline, never as a pass.
+- an answer (predict, fill-in, practice) that uses names from an offline run line cannot run
+  here; the gate (`--run-dir`) runs it in real Python after the run lines above it, and it must
+  print what the page shows. Never drop imports or names to make an answer skip this check.
 
 What loads in the engine: numpy 1.26.4, pandas 2.2.0, scikit-learn 1.4.2, scipy 1.12.0,
 matplotlib 3.5.2, statsmodels 0.14.2 (Python 3.12.1). seaborn does not load.

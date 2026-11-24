@@ -89,6 +89,80 @@ class _lock:
         self.path.unlink(missing_ok=True)
 
 
+# Runs page steps in one namespace, as the site does: each answer on its own copy of the names
+# (a predict's `x = 5` never reaches the next answer), with top-level await allowed (the site's
+# engine allows it). Prints {id: {"stdout", "error"}} as JSON.
+ANSWER_DRIVER = r'''
+import ast, asyncio, contextlib, inspect, io, json, sys
+steps = json.load(open(sys.argv[1], encoding="utf-8"))
+ns, out = {"__name__": "__nerdit_lesson__"}, {}
+for s in steps:
+    g = dict(ns) if s["isolated"] else ns
+    buf, err = io.StringIO(), None
+    try:
+        code = compile(s["code"], s["id"], "exec", flags=ast.PyCF_ALLOW_TOP_LEVEL_AWAIT)
+        with contextlib.redirect_stdout(buf):
+            if code.co_flags & inspect.CO_COROUTINE:
+                asyncio.run(eval(code, g))
+            else:
+                exec(code, g)
+    except BaseException as exc:
+        err = f"{type(exc).__name__}: {exc}"
+    out[s["id"]] = {"stdout": buf.getvalue(), "error": err}
+sys.stdout.write(json.dumps(out))
+'''
+
+
+def answer_runs(html: str, vpy: Path, folder: Path) -> list[str]:
+    """Failures for the answers the browser engine cannot check because they use names from an
+    offline run line (check_python_outputs.py reports those as "check locally"): every
+    predict, fill-in and practice answer runs here, in real Python, after the run lines above it
+    (practice answers after all of them), and must print what the page shows."""
+    import json
+    from check_python_outputs import normalise
+    parts = python_parts(html)
+    runs, answers = parts["runs"], parts["answers"]
+    steps, labels, counts = [], {}, {}
+    for k, ans in enumerate(answers):
+        counts[ans["kind"]] = counts.get(ans["kind"], 0) + 1
+        labels[f"ans{k}"] = f"{'practice task' if ans['kind'] == 'practice' else ans['kind']} {counts[ans['kind']]}"
+    for i in range(len(runs) + 1):
+        for k, ans in enumerate(answers):
+            if ans["kind"] != "practice" and ans["after"] == i:
+                steps.append({"id": f"ans{k}", "code": ans["code"], "isolated": True})
+        if i < len(runs):
+            steps.append({"id": f"run{i + 1}", "code": runs[i]["code"], "isolated": False})
+    steps += [{"id": f"ans{k}", "code": a["code"], "isolated": False}
+              for k, a in enumerate(answers) if a["kind"] == "practice"]
+    if not any(s["id"].startswith("ans") for s in steps):
+        return []
+    (folder / "_answers.json").write_text(json.dumps(steps), encoding="utf-8")
+    (folder / "_answer_driver.py").write_text(ANSWER_DRIVER, encoding="utf-8")
+    env = {**os.environ, "PYTHONIOENCODING": "utf-8", "MPLBACKEND": "Agg"}
+    try:
+        proc = subprocess.run([str(vpy), "_answer_driver.py", "_answers.json"], cwd=folder, capture_output=True,
+                              text=True, encoding="utf-8", errors="replace", timeout=TIMEOUT, env=env)
+        results = json.loads(proc.stdout)
+    except subprocess.TimeoutExpired:
+        return [f"answers: still running after {TIMEOUT} s in real Python"]
+    except ValueError:
+        return [f"answers: could not run in real Python: {_last_line(proc)}"]
+    fails = []
+    for k, ans in enumerate(answers):
+        got, shown = results.get(f"ans{k}"), ans["shown"]
+        if got is None:
+            continue
+        if got["error"] is not None and ans["kind"] == "practice":
+            continue                      # the solutions run below reports a practice answer that stops
+        if got["error"] is not None and (shown is None or got["error"] not in normalise(shown)):
+            fails.append(f"{labels[f'ans{k}']}: in real Python, after the examples above it, the answer raises "
+                         f"'{got['error']}'; make it run on the page as written")
+        elif got["error"] is None and shown is not None and normalise(got["stdout"]) != normalise(shown):
+            fails.append(f"{labels[f'ans{k}']}: shown {normalise(shown)[:80]!r} but real Python prints "
+                         f"{normalise(got['stdout'])[:80]!r}")
+    return fails
+
+
 def lesson_runs(lesson: dict, position: int, vpy: Path | None, workdir: Path,
                 files: list[Path] = (), pythonpath: Path | None = None) -> tuple[list[str], list[str]]:
     """(failures, warnings) for one lesson's offline examples and practice answers."""
@@ -101,6 +175,16 @@ def lesson_runs(lesson: dict, position: int, vpy: Path | None, workdir: Path,
     if offline_blocks(html):
         fails += [p.split(": ", 1)[1] if p.startswith(lesson["id"] + ": ") else p
                   for p in _run_lesson(vpy, lesson, workdir / "examples", list(files), pythonpath)]
+        # The browser engine skips an answer that uses an offline line's names; check it here.
+        real = workdir / "answers-real" / lesson["id"]
+        shutil.rmtree(real, ignore_errors=True)
+        real.mkdir(parents=True)
+        dataset = python_parts(html)["dataset"]
+        for name, text in (build_files(dataset) if dataset else {}).items():
+            (real / name).write_text(text, encoding="utf-8", newline="")
+        for path in files:
+            shutil.copy(path, real / Path(path).name)
+        fails += answer_runs(html, vpy, real)
     if not answers:
         return fails, warns
     if is_capstone(html):
