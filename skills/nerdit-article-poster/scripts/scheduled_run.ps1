@@ -26,6 +26,20 @@ function Write-RunLog([string]$line) {
   Add-Content -Path $log -Value $stamped -Encoding UTF8
 }
 
+# A desktop notification; clicking it opens $target (the report or the log).
+function Show-Toast([string]$text, [string]$target) {
+  try {
+    [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
+    [Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] | Out-Null
+    $xml = New-Object Windows.Data.Xml.Dom.XmlDocument
+    $xml.LoadXml("<toast activationType='protocol' launch='$([Security.SecurityElement]::Escape(([Uri]$target).AbsoluteUri))'><visual><binding template='ToastGeneric'><text>NerdIT article poster</text><text>$([Security.SecurityElement]::Escape($text))</text></binding></visual></toast>")
+    $appId = '{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}\WindowsPowerShell\v1.0\powershell.exe'
+    [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($appId).Show([Windows.UI.Notifications.ToastNotification]::new($xml))
+  } catch {
+    Write-RunLog "notification failed: $($_.Exception.Message)"
+  }
+}
+
 # A lock younger than 3 hours means another run is going; an older one is left over from a crash.
 if ((Test-Path $lock) -and ((Get-Date) - (Get-Item $lock).LastWriteTime).TotalHours -lt 3) {
   Write-RunLog 'run in progress (lock held), exiting'
@@ -65,6 +79,7 @@ try {
   # "a"); LogonUI runs only while the lock screen is up. Skip the day; the articles stay due for tomorrow.
   if (Get-Process LogonUI -ErrorAction SilentlyContinue) {
     Write-RunLog 'PC locked: run skipped (the bot cannot type while Windows is locked)'
+    Show-Toast 'Skipped today: the PC was locked. The articles go out tomorrow.' $log
     exit 0
   }
 
@@ -78,26 +93,19 @@ try {
   }
 
   Write-RunLog 'claude run starts'
+  Show-Toast "Started $(Get-Date -Format 'HH:mm'). It posts in your Chrome: no copy-paste and no Chrome until the done message." $log
+  $started = Get-Date
   Push-Location $runs
   try {
     & claude @claudeArgs 2>&1 | ForEach-Object { "$_" } | Add-Content -Path $log -Encoding UTF8
   } finally {
     Pop-Location
   }
-  Write-RunLog "claude run ends (exit $LASTEXITCODE)"
+  $minutes = [math]::Ceiling(((Get-Date) - $started).TotalMinutes)
+  Write-RunLog "claude run ends (exit $LASTEXITCODE, $minutes min)"
 
   $line = if (Test-Path $report) { (Get-Content -Path $report -Encoding UTF8 -TotalCount 1) } else { 'No report written - see the log' }
-  try {
-    [Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null
-    [Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] | Out-Null
-    $target = if (Test-Path $report) { $report } else { $log }
-    $xml = New-Object Windows.Data.Xml.Dom.XmlDocument
-    $xml.LoadXml("<toast activationType='protocol' launch='$([Security.SecurityElement]::Escape(([Uri]$target).AbsoluteUri))'><visual><binding template='ToastGeneric'><text>NerdIT article poster</text><text>$([Security.SecurityElement]::Escape($line))</text></binding></visual></toast>")
-    $appId = '{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}\WindowsPowerShell\v1.0\powershell.exe'
-    [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier($appId).Show([Windows.UI.Notifications.ToastNotification]::new($xml))
-  } catch {
-    Write-RunLog "notification failed: $($_.Exception.Message)"
-  }
+  Show-Toast "Done in $minutes min. $line" $(if (Test-Path $report) { $report } else { $log })
 } finally {
   Remove-Item -Path $lock -Force -ErrorAction SilentlyContinue
 }
