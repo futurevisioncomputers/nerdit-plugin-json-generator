@@ -83,14 +83,18 @@ try {
     exit 0
   }
 
+  $chrome = (Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe' -ErrorAction SilentlyContinue).'(default)'
+  if (-not $chrome) { $chrome = (Get-ItemProperty 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe' -ErrorAction SilentlyContinue).'(default)' }
+  if (-not $chrome) { Write-RunLog 'Chrome not found'; exit 1 }
   if (-not (Get-Process chrome -ErrorAction SilentlyContinue)) {
-    $chrome = (Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe' -ErrorAction SilentlyContinue).'(default)'
-    if (-not $chrome) { $chrome = (Get-ItemProperty 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe' -ErrorAction SilentlyContinue).'(default)' }
-    if (-not $chrome) { Write-RunLog 'Chrome not found'; exit 1 }
     Write-RunLog 'starting Chrome'
     Start-Process $chrome
     Start-Sleep -Seconds 20
   }
+  # The Claude extension can sit disconnected with Chrome open (2026-11-25: "Browser extension is not connected"
+  # until its page was opened); opening its options page wakes it. shortcut: leaves that one tab open each run.
+  Start-Process $chrome 'chrome-extension://fcoeoabgfenejglbffodgkkbkcdhcgfn/options.html'
+  Start-Sleep -Seconds 10
 
   Write-RunLog 'claude run starts'
   Show-Toast "Started $(Get-Date -Format 'HH:mm'). It posts in your Chrome: no copy-paste and no Chrome until the done message." $log
