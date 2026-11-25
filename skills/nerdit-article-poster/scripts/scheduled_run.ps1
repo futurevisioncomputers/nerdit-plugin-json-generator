@@ -62,9 +62,11 @@ try {
   # Only these: Chrome, the skill, runlog (pinned path), and reading the plugin's recipes. No curl, no file writes
   # (runlog saves images and the report), no git, deploy, Firestore or mail. Everything else is denied (dontAsk).
   $allowed = @('mcp__claude-in-chrome', 'Skill', "Bash(python $runlog *)", 'Read(~/.claude/plugins/**)')
-  # The prompt goes right after -p: --allowedTools takes every value after it.
+  # The prompt goes right after -p: --allowedTools takes every value after it. --add-dir: Chrome's file upload
+  # takes only files the session may read ("only files this session is allowed to read can be uploaded"), and
+  # runlog saves the article images under $runs.
   $claudeArgs = @('-p', $fullPrompt, '--chrome', '--setting-sources', 'project', '--plugin-dir', $pluginDir,
-    '--permission-mode', 'dontAsk', '--disallowedTools', 'PowerShell', '--allowedTools') + $allowed
+    '--add-dir', $runs, '--permission-mode', 'dontAsk', '--disallowedTools', 'PowerShell', '--allowedTools') + $allowed
 
   if ($DryRun) {
     Write-Output 'claude args:'

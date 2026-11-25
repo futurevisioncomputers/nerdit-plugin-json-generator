@@ -1,11 +1,12 @@
 """Which sites to post an article to today, and a log of every posting step.
 
     python runlog.py plan --slug <slug> --posted <site,site,...> [--today YYYY-MM-DD]
-    python runlog.py mark --slug <slug> --site <site> --status started|posted|failed|skipped [--url U] [--error E] [--today D]
+    python runlog.py mark --slug <slug> --site <site> --status started|posted|failed|skipped|held [--url U] [--error E] [--today D]
 
 `--posted` is the article's own record (the Articles page: sites with a saved link). The log adds what
 happened in runs: a site logged as posted is never planned again, even when its link was not saved
-(no double posts); a failed site is retried; a skipped site waits until the next day. Pacing: at most
+(no double posts); a failed site is retried; a skipped site waits until the next day; a held site (the
+owner said wait) waits until it is marked again. Pacing: at most
 6 sites per article per run day, and Quora/Reddit (`quora`) and Pinterest at most once a day across
 all articles. `plan --scheduled` (the daily unattended run) offers only SCHEDULED_SITES, each at most once a
 day across all articles; the own blogs (OWN_BLOGS, posted by API) come first and are not paced. State: ~/.nerdit-social/article-runs/<slug>.json and _daily.json (NERDIT_SOCIAL_HOME
@@ -20,13 +21,14 @@ import json
 import os
 import re
 import sys
+import time
 import urllib.parse
 import urllib.request
 from pathlib import Path
 
 SITES = ("medium", "hashnode", "hackernoon", "linkedin", "substack", "wordpress", "blogger", "tumblr", "vocal",
          "hackernews", "dailydev", "indiehackers", "pinterest", "quora")
-STATUSES = ("started", "posted", "failed", "skipped")
+STATUSES = ("started", "posted", "failed", "skipped", "held")
 PER_ARTICLE_PER_DAY = 6
 ONCE_A_DAY = ("quora", "pinterest")
 # The owner's own blogs, posted by the admin's "Post copy" API buttons: no pacing (no spam risk, no ban risk).
@@ -95,7 +97,8 @@ def plan(slug: str, posted: set[str], today: str, scheduled: bool = False) -> li
     # Scheduled: one try per site per day across articles, so a signed-out site or a lost Publish is not retried.
     # The own blogs are exempt: every due article may get its API copy the same day.
     full = _touched(today) - set(OWN_BLOGS) if scheduled else {site for site in ONCE_A_DAY if daily.get(site, 0) >= 1}
-    waiting |= {s for s, status in _latest(steps).items() if status == "started"}
+    # started: Publish pressed, outcome unknown; held: the owner said wait. Either way, not until a later mark.
+    waiting |= {s for s, status in _latest(steps).items() if status in ("started", "held")}
     paced = (lambda site: site not in OWN_BLOGS) if scheduled else (lambda site: True)
     left = PER_ARTICLE_PER_DAY - sum(1 for s in steps if s["status"] == "posted" and s["day"] == today and paced(s["site"]))
     open_ = [s for s in candidates if s not in done | waiting | full]
@@ -129,6 +132,17 @@ def due_slugs(html: str, now: dt.datetime) -> list[str]:
     return [slug for _, slug in sorted(due, reverse=True)]
 
 
+def _get(url: str, timeout: int, limit: int | None = None) -> bytes:
+    """One GET with one retry: nerdit.in / Storage sometimes reset the first connection (WinError 10054)."""
+    try:
+        with urllib.request.urlopen(url, timeout=timeout) as r:
+            return r.read(limit)
+    except OSError:
+        time.sleep(3)
+        with urllib.request.urlopen(url, timeout=timeout) as r:
+            return r.read(limit)
+
+
 def blog_images(page: str) -> list[str]:
     """The cover (og:image) then the body images of a live article page: NerdIT https addresses only, no repeats.
 
@@ -159,8 +173,7 @@ def save_images(slug: str, urls: list[str]) -> list[Path]:
     for i, u in enumerate(urls, 1):
         last = urllib.parse.unquote(urllib.parse.urlsplit(u).path).rsplit("/", 1)[-1]
         name = re.sub(r"[^A-Za-z0-9._-]", "_", last).lstrip(".") or f"image-{i}"
-        with urllib.request.urlopen(u, timeout=60) as r:
-            data = r.read(MAX_IMAGE_BYTES + 1)
+        data = _get(u, 60, MAX_IMAGE_BYTES + 1)
         if len(data) > MAX_IMAGE_BYTES:
             raise ValueError(f"image over 20 MB: {u}")
         path = folder / name
@@ -247,8 +260,7 @@ def main(argv: list[str] | None = None) -> int:
                 if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", a.slug):
                     raise ValueError(f"bad slug {a.slug!r}")
                 page_url = f"{BLOG_INDEX}/{a.slug}"
-                with urllib.request.urlopen(page_url, timeout=30) as r:
-                    urls = blog_images(r.read().decode("utf-8", "replace"))
+                urls = blog_images(_get(page_url, 30).decode("utf-8", "replace"))
                 if not urls:
                     raise ValueError(f"no NerdIT images on {page_url}")
             for path in save_images(a.slug, urls):

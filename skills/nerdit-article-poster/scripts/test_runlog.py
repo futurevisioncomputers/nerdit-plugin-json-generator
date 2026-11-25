@@ -244,6 +244,23 @@ def test_images_downloads_only_from_nerdit_storage(home, monkeypatch, capsys):
     assert runlog.main(["images", "--slug", "../x", url]) == 1
 
 
+def test_a_held_site_is_never_planned_until_it_is_marked_again():
+    # Owner 2026-11-25: "dont do, i will inform" for the failed retries.
+    runlog.mark("a", "hackernoon", "failed", DAY, error="no images")
+    runlog.mark("a", "hackernoon", "held", DAY, error="owner: wait until I say")
+    later = "2026-12-05"
+    assert "hackernoon" not in runlog.plan("a", set(), later, scheduled=True)
+    assert "hackernoon" not in runlog.plan("a", set(), later)
+    assert runlog.unsettled("a") == []
+    runlog.mark("a", "hackernoon", "failed", later, error="owner: go")
+    assert "hackernoon" in runlog.plan("a", set(), "2026-12-06", scheduled=True)
+
+
+def test_cli_mark_held(home, capsys):
+    assert runlog.main(["mark", "--slug", "a", "--site", "vocal", "--status", "held", "--today", DAY]) == 0
+    assert capsys.readouterr().out.strip() == "logged vocal: held"
+
+
 def test_images_without_urls_reads_them_from_the_live_blog_page(home, monkeypatch, capsys):
     # The Chrome tool hides URLs with a query string ("[BLOCKED: Cookie/query string data]", 2026-11-25 run),
     # and every Storage URL has ?alt=media&token=…, so runlog reads the public page itself.
@@ -260,6 +277,21 @@ def test_images_without_urls_reads_them_from_the_live_blog_page(home, monkeypatc
     assert asked == ["https://nerdit.in/blog/a", f"{store}cover.png?alt=media&token=t1", f"{store}fig-1.png?alt=media&token=t2"]
     out = capsys.readouterr().out.split()
     assert out == [str(home / "a" / "images" / "cover.png"), str(home / "a" / "images" / "fig-1.png")]
+
+
+def test_images_retry_once_after_a_dropped_connection(home, monkeypatch, capsys):
+    # 2026-11-25 16:3x: the first try got WinError 10054 (connection reset), the second worked.
+    calls = []
+    def flaky(url, *a, **k):
+        calls.append(url)
+        if len(calls) == 1:
+            raise ConnectionResetError(10054, "An existing connection was forcibly closed by the remote host")
+        return Page(b"PNG")
+    monkeypatch.setattr(runlog.urllib.request, "urlopen", flaky)
+    monkeypatch.setattr(runlog.time, "sleep", lambda s: None)
+    url = "https://firebasestorage.googleapis.com/v0/b/x/o/blog%2Fa%2Ffig.png?alt=media&token=t"
+    assert runlog.main(["images", "--slug", "a", url]) == 0
+    assert calls == [url, url]
 
 
 def test_images_without_urls_and_no_images_on_the_page_is_a_problem(home, monkeypatch, capsys):
