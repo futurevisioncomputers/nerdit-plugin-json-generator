@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import html
 import json
 import os
 import re
@@ -128,6 +129,19 @@ def due_slugs(html: str, now: dt.datetime) -> list[str]:
     return [slug for _, slug in sorted(due, reverse=True)]
 
 
+def blog_images(page: str) -> list[str]:
+    """The cover (og:image) then the body images of a live article page: NerdIT https addresses only, no repeats.
+
+    The Chrome tool hides any URL with a query string, and Storage URLs carry ?alt=media&token=…, so the
+    unattended run cannot read them from the page; runlog reads the public page instead.
+    """
+    found = re.findall(r'<meta[^>]+property="og:image"[^>]+content="([^"]+)"', page)
+    found += re.findall(r"""<img[^>]+src=["']([^"']+)["']""", page)
+    urls = [html.unescape(u) for u in found]
+    return [u for u in dict.fromkeys(urls)
+            if urllib.parse.urlsplit(u).scheme == "https" and urllib.parse.urlsplit(u).hostname in IMAGE_HOSTS]
+
+
 def save_images(slug: str, urls: list[str]) -> list[Path]:
     """Download an article's images into <runs>/<slug>/images/ for sites that need file uploads.
 
@@ -210,7 +224,8 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--today"); r.add_argument("--save", action="store_true", help="also write reports/<today>.md (UTF-8)")
     r.add_argument("--extra", action="append", default=[], help="a line to add at the end (repeatable)")
     i = sub.add_parser("images")
-    i.add_argument("--slug", required=True); i.add_argument("urls", nargs="+")
+    i.add_argument("--slug", required=True)
+    i.add_argument("urls", nargs="*", help="default: the cover and body images of the live page nerdit.in/blog/<slug>")
     a = ap.parse_args(argv)
     if a.cmd == "due":
         try:
@@ -227,7 +242,16 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if a.cmd == "images":
         try:
-            for path in save_images(a.slug, a.urls):
+            urls = a.urls
+            if not urls:
+                if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", a.slug):
+                    raise ValueError(f"bad slug {a.slug!r}")
+                page_url = f"{BLOG_INDEX}/{a.slug}"
+                with urllib.request.urlopen(page_url, timeout=30) as r:
+                    urls = blog_images(r.read().decode("utf-8", "replace"))
+                if not urls:
+                    raise ValueError(f"no NerdIT images on {page_url}")
+            for path in save_images(a.slug, urls):
                 print(path)
         except Exception as e:
             print(f"PROBLEM {e}")

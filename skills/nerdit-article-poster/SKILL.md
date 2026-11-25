@@ -51,8 +51,10 @@ recorded there); record the answer in `references/profile.md` or the site recipe
    unless the owner says wait. Note which sites already show a link ("posted").
 2. **Today's sites:** `python scripts/runlog.py plan --slug <slug> --posted <sites with links, comma-separated>`.
    The owner may name extra sites ("do pending: Hacker News, Pinterest"): post those too; the pace is a default.
-3. **Images for upload:** for sites that need files (see each recipe), download the article's image URLs and the
-   cover (`runlog.py images`), or copy the illustrator pack, into a folder Chrome's file upload may read.
+3. **Images for upload:** for sites that need files (see each recipe), `python scripts/runlog.py images --slug
+   <slug>` saves the cover and body images of the live page and prints each file's path (or copy the illustrator
+   pack). Do not read image addresses from the page: the browser tool hides any URL with a query string
+   (`[BLOCKED: Cookie/query string data]`), and every Storage URL has one.
 4. **Each site, in order:**
    1. Open a new tab at the recipe's start URL. Signed out: see "Signing in". New account (the owner made it):
       set up the profile (`references/profile.md`).
@@ -96,9 +98,9 @@ commands; anything else is denied). Call runlog exactly as the prompt gives it: 
 2. **Saved links:** open fv.nerdit.in/articles. Signed out of the admin: save the report (step 4) with
    `--extra "admin sign-in needed"` and stop. For each due article, read its saved copies from its list row (the "<Site> ✓" labels).
 3. **Each due article, newest first:** `python <path>/runlog.py plan --scheduled --slug <slug> --posted <sites>`.
-   If a listed site's recipe uploads files (cover, images), first
-   `python <path>/runlog.py images --slug <slug> <cover URL> <image URL> …` (the article's own image addresses from
-   its Edit view); it prints where each file was saved, for Chrome's file upload. Then post each listed site exactly
+   If a listed site's recipe uploads files (cover, images), first `python <path>/runlog.py images --slug <slug>`
+   (no addresses: it reads the live page itself, because the browser tool hides Storage URLs); it prints where
+   each file was saved, for Chrome's file upload. Then post each listed site exactly
    as in Run step 4 (recipe, `mark started`, Publish, save the link, `mark posted`), except:
    - sign-in wall that "Signing in" does not clear, CAPTCHA, phone or email check, new terms, a payment, or a cookie
      wall without "reject non-essential":

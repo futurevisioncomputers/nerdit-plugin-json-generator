@@ -244,6 +244,30 @@ def test_images_downloads_only_from_nerdit_storage(home, monkeypatch, capsys):
     assert runlog.main(["images", "--slug", "../x", url]) == 1
 
 
+def test_images_without_urls_reads_them_from_the_live_blog_page(home, monkeypatch, capsys):
+    # The Chrome tool hides URLs with a query string ("[BLOCKED: Cookie/query string data]", 2026-11-25 run),
+    # and every Storage URL has ?alt=media&token=…, so runlog reads the public page itself.
+    store = "https://firebasestorage.googleapis.com/v0/b/x/o/blog%2Fa%2F"
+    page = (f'<meta property="og:image" content="{store}cover.png?alt=media&amp;token=t1">'
+            f'<img src="{store}cover.png?alt=media&amp;token=t1"><img src="{store}fig-1.png?alt=media&amp;token=t2">'
+            '<img src="https://evil.example/x.png"><img src="/logo.svg">').encode()
+    asked = []
+    def fake(url, *a, **k):
+        asked.append(url)
+        return Page(page if url == "https://nerdit.in/blog/a" else b"PNG")
+    monkeypatch.setattr(runlog.urllib.request, "urlopen", fake)
+    assert runlog.main(["images", "--slug", "a"]) == 0
+    assert asked == ["https://nerdit.in/blog/a", f"{store}cover.png?alt=media&token=t1", f"{store}fig-1.png?alt=media&token=t2"]
+    out = capsys.readouterr().out.split()
+    assert out == [str(home / "a" / "images" / "cover.png"), str(home / "a" / "images" / "fig-1.png")]
+
+
+def test_images_without_urls_and_no_images_on_the_page_is_a_problem(home, monkeypatch, capsys):
+    monkeypatch.setattr(runlog.urllib.request, "urlopen", lambda *a, **k: Page(b"<html><img src='/logo.svg'></html>"))
+    assert runlog.main(["images", "--slug", "a"]) == 1
+    assert capsys.readouterr().out.startswith("PROBLEM no NerdIT images on https://nerdit.in/blog/a")
+
+
 def test_report_save_writes_utf8_file_with_extra_lines(home):
     assert runlog.main(["report", "--today", DAY, "--save", "--extra", "a: press Post copy on the Articles page"]) == 0
     text = (home / "reports" / f"{DAY}.md").read_text(encoding="utf-8")
