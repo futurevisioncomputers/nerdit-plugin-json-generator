@@ -82,3 +82,13 @@ def test_needs_two_sources():
 def test_banned_phrase():
     errors = script_errors(script(line=LINE.replace("Learn how AI works.", "Get a free certificate.")), KEPT)
     assert any("free certificate" in e for e in errors)
+
+
+def test_spoken_number_not_in_sources_fails():
+    errors = script_errors(script(line=LINE.replace("eighty-five thousand", "ninety thousand")), KEPT)
+    assert any("90000" in e and "spoken" in e for e in errors)
+
+
+def test_small_spoken_counts_are_not_claims():
+    line = "This week in AI and jobs. One, PwC trains people. Two, more. Three, done. Link in bio."
+    assert not [e for e in script_errors(script(line=line), KEPT) if "spoken" in e]

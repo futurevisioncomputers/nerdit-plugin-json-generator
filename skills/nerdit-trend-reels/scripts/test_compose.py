@@ -73,3 +73,27 @@ def test_compose_short_clip_renders(tmp_path):
     assert "1080x1920" in probe
     assert "Duration: 00:00:03" in probe or "Duration: 00:00:02.9" in probe
     assert json.loads((run / "checks.json").read_text())["reel_sha256"]
+
+
+def test_weekly_facts_share_the_time_before_the_end_card():
+    from compose import END_SECONDS, overlay_plan
+    script = {"kind": "weekly", "card": {"facts": ["a", "b", "c"]}}
+    plan = overlay_plan(script, [], 12.8)
+    facts = [p for p in plan if p[0] == "card"]
+    end = next(p for p in plan if p[0] == "end")
+    assert len(facts) == 3 and end[2] == 12.8 - END_SECONDS
+    assert all(f[3] <= end[2] + 1e-9 and f[3] - f[2] >= 2.5 for f in facts)
+
+
+def test_daily_card_and_end_card_timing():
+    from compose import overlay_plan
+    plan = overlay_plan({"kind": "daily", "card": {"facts": ["a"]}}, [], 15.0)
+    assert ("card", 0, 0.3, 5.5) in plan and ("end", 0, 10.5, 15.0) in plan
+
+
+def test_caption_groups_never_run_past_the_screen():
+    from compose import caption_width
+    words = [{"w": w, "s": i, "e": i + .5} for i, w in enumerate("working professionals worldwide face eighty-five thousand employees".split())]
+    groups = caption_groups(words)
+    assert all(caption_width([x["w"] for x in g]) <= 1000 for g in groups)
+    assert [x["w"] for g in groups for x in g] == [w["w"] for w in words]

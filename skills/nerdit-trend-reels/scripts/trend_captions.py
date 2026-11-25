@@ -51,7 +51,7 @@ def main(argv: list[str]) -> int:
     errors = trend_caption_errors(captions, script, kept, item)
     (run / "captions_filled.json").write_text(json.dumps(fill(captions, script, item), indent=1, ensure_ascii=False),
                                               encoding="utf-8")
-    record_check(run, "captions", errors)
+    record_check(run, "captions", errors, [run / "captions.json", run / "captions_filled.json"])
     for e in errors or ["captions ok"]:
         print(e.encode("ascii", "replace").decode())   # the Windows console is cp1252
     return 1 if errors else 0

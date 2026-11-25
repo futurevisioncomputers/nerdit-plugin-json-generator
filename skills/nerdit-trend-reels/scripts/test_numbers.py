@@ -18,3 +18,14 @@ def test_words_to_digits():
 
 def test_words_to_digits_leaves_other_words():
     assert words_to_digits(["learn", "how", "ai", "works"]) == ["learn", "how", "ai", "works"]
+
+
+def test_normalise_billion_suffixes_and_scale_words():
+    assert normalise("$40bn, 9B, $1.5B, 85 thousand, 1.5 million, 20mn") == {
+        "40000000000", "9000000000", "1500000000", "85000", "1500000", "20000000"}
+
+
+def test_words_to_digits_point_and_digit_scale():
+    assert words_to_digits(["one", "point", "five", "million"]) == ["1500000"]
+    assert words_to_digits(["85", "thousand", "jobs"]) == ["85000", "jobs"]
+    assert words_to_digits(["1.5", "million"]) == ["1500000"]

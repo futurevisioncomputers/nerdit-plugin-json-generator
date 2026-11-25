@@ -33,3 +33,11 @@ def test_merge_tokens_joins_and_fixes():
     words = merge_tokens([(" PWC", 0, .3), (" 85", .4, .6), (",000", .6, .8), (" nerdid", 1.0, 1.2), (".in", 1.2, 1.4)])
     assert [w["w"] for w in words] == ["PwC", "85,000", "nerdit.in"]
     assert words[1] == {"w": "85,000", "s": .4, "e": .8}
+
+
+def test_whisper_number_forms_match_spoken_words():
+    assert match_errors("Pay rose 72% this year.".split(), "Pay rose seventy-two percent this year.") == []
+    assert match_errors("PwC trains 85K people.".split(), "PwC trains eighty-five thousand people.") == []
+    assert match_errors("PwC trains 85 thousand people.".split(), "PwC trains eighty-five thousand people.") == []
+    assert match_errors("A $1 billion bet.".split(), "A one billion dollars bet.") == []
+    assert match_errors("About 1.5 million jobs.".split(), "About one point five million jobs.") == []

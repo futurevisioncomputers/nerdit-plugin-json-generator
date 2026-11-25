@@ -71,9 +71,12 @@ def take_download(run: Path, downloads: Path | None = None, max_age_minutes: int
     fresh = [p for p in folder.glob("*.mp4") if p.stat().st_mtime >= cutoff]
     if not fresh:
         raise FileNotFoundError(f"no MP4 saved in {folder} in the last {max_age_minutes} minutes")
+    newest = max(fresh, key=lambda p: p.stat().st_mtime)
     clip = Path(run) / "clips" / "clip1.mp4"
+    if clip.exists() and sha256(clip) == sha256(newest):   # a re-roll still downloading leaves take 1 newest
+        raise FileNotFoundError("the newest download is the take already in clips/clip1.mp4; wait for the new one")
     clip.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(max(fresh, key=lambda p: p.stat().st_mtime), clip)
+    shutil.copyfile(newest, clip)
     return clip
 
 
@@ -109,8 +112,11 @@ def _write_checks(run: Path, key: str, value) -> None:
     (run / "checks.json").write_text(json.dumps(checks, indent=1), encoding="utf-8")
 
 
-def record_check(run: Path, section: str, errors: list[str]) -> None:
-    _write_checks(Path(run), section, {"ok": not errors, "errors": errors})
+def record_check(run: Path, section: str, errors: list[str], inputs: list[Path] = ()) -> None:
+    """The verdict plus the sha256 of the files it judged, so `ready` can tell a stale verdict."""
+    run = Path(run)
+    hashes = {Path(p).relative_to(run).as_posix(): sha256(p) for p in inputs if Path(p).exists()}
+    _write_checks(run, section, {"ok": not errors, "errors": errors, "inputs": hashes})
 
 
 def record_reel(run: Path) -> None:
@@ -130,6 +136,11 @@ def ready(run: Path) -> list[str]:
             errors.append(f"{section} check missing")
         elif not verdict.get("ok"):
             errors.append(f"{section} check failed: {'; '.join(verdict.get('errors', []))}")
+        else:
+            changed = [name for name, digest in verdict.get("inputs", {}).items()
+                       if not (run / name).exists() or sha256(run / name) != digest]
+            if changed:
+                errors.append(f"{section} check is stale ({', '.join(changed)} changed); run it again")
     if not checks.get("reel_sha256"):
         errors.append("compose did not record reel.mp4")
     elif checks["reel_sha256"] != sha256(reel):
@@ -145,7 +156,7 @@ def main(argv: list[str]) -> int:
         print(new_run(argv[1], argv[2], date.today()))
         return 0
     if len(argv) >= 2 and argv[0] == "credits":
-        ok, msg = may_spend(int(argv[1]), date.today(), reroll="--reroll" in argv)
+        ok, msg = may_spend(int(argv[1].replace(",", "")), date.today(), reroll="--reroll" in argv)   # Flow shows "1,050"
         print(msg if ok else f"NOT ALLOWED: {msg}")
         return 0 if ok else 1
     if len(argv) == 2 and argv[0] == "ready":

@@ -10,7 +10,7 @@ import re
 import sys
 from pathlib import Path
 
-from numwords import find, normalise
+from numwords import DIGITS, find, normalise, words_to_digits
 from runs import record_check
 
 MAX_WORDS = 35
@@ -55,6 +55,10 @@ def script_errors(script: dict, kept: list[dict]) -> list[str]:
         errors.append("card needs at least 2 sources")
 
     known = normalise(" ".join(k.get("headline", "") + " " + " ".join(k.get("evidence", [])) for k in kept))
+    # Spoken numbers are claims too (captions show them); counts under 10 ("One… Two… Three…") are not.
+    for tok in words_to_digits(re.findall(r"[a-z]+(?:-[a-z]+)*|\d+(?:\.\d+)?", line.lower())):
+        if DIGITS.match(tok) and float(tok) >= 10 and tok not in known:
+            errors.append(f"spoken number {tok} is not in any kept source")
     headlines = [_words(k.get("headline", "")) for k in kept]
     for fact in facts:
         if NON_LATIN.search(fact):
@@ -78,7 +82,7 @@ def main(argv: list[str]) -> int:
     script = json.loads((run / "script.json").read_text(encoding="utf-8"))
     kept = json.loads((run / "checked.json").read_text(encoding="utf-8")).get("kept", [])
     errors = script_errors(script, kept)
-    record_check(run, "script", errors)
+    record_check(run, "script", errors, [run / "script.json", run / "checked.json"])
     for e in errors or ["script ok"]:
         print(e.encode("ascii", "replace").decode())   # the Windows console is cp1252
     return 1 if errors else 0

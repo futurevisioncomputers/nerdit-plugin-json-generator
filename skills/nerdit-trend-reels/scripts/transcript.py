@@ -12,10 +12,11 @@ import subprocess
 import sys
 from pathlib import Path
 
-from numwords import words_to_digits
+from numwords import MULT, SCALES, plain, words_to_digits
 from runs import record_check
 
 FIX = {"PWC": "PwC", "nerdid": "nerdit", "Nerdid": "nerdit"}
+CURRENCY = {"$": "dollars", "€": "euros", "£": "pounds", "₹": "rupees"}
 STOP = set("a an the of its to in on and so is are for it that this be".split())
 RATE = 16_000
 
@@ -34,13 +35,34 @@ def merge_tokens(raw: list[tuple[str, float, float]]) -> list[dict]:
 
 
 def _content(words: list[str]) -> list[str]:
-    tokens = []
+    """Content words with numbers in one form. Whisper writes "72%", "85K", "$1 billion" for what Dev says in
+    words ("seventy-two percent", "eighty-five thousand", "one billion dollars"), so both sides normalise alike."""
+    raw = []
     for w in words:
         t = w.lower().replace("’", "'").replace("'", "")
         t = re.sub(r"(?<=\d),(?=\d)", "", t).strip(".,!?;:\"()")
         if t:
-            tokens.append(t)
-    return [t for t in words_to_digits(tokens) if t not in STOP]
+            raw.append(t)
+    tokens, i = [], 0
+    while i < len(raw):
+        t, after = raw[i], []
+        currency = CURRENCY.get(t[:1])
+        if currency:
+            t = t[1:]
+        if t.endswith("%") and t[:-1]:
+            t, after = t[:-1], ["percent"]
+        m = re.fullmatch(r"(\d+(?:\.\d+)?)(k|m|mn|b|bn)", t)
+        if m:
+            t = plain(float(m.group(1)) * MULT[m.group(2)])
+        tokens.append(t)
+        if currency:
+            if i + 1 < len(raw) and raw[i + 1] in SCALES:   # "$1 billion" -> 1 billion dollars
+                i += 1
+                tokens.append(raw[i])
+            after.append(currency)
+        tokens += after
+        i += 1
+    return [t for t in words_to_digits(tokens) if t and t not in STOP]
 
 
 def match_errors(heard: list[str], line: str) -> list[str]:
@@ -96,7 +118,7 @@ def main(argv: list[str]) -> int:
     (run / "transcript.json").write_text(json.dumps(words, indent=1), encoding="utf-8")
     line = json.loads((run / "script.json").read_text(encoding="utf-8"))["line"]
     errors = match_errors([w["w"] for w in words], line)
-    record_check(run, "transcript", errors)
+    record_check(run, "transcript", errors, [*sorted((run / "clips").glob("*.mp4")), run / "script.json"])
     print("heard: " + " ".join(w["w"] for w in words).encode("ascii", "replace").decode())
     for e in errors or ["transcript ok"]:
         print(e)

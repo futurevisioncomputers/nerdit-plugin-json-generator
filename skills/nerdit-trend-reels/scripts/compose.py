@@ -22,7 +22,8 @@ FONTS = "C:/Windows/Fonts/"
 LOGO = Path(__file__).resolve().parents[2] / "nerdit-social-posts" / "assets" / "nerdit-logo.png"
 HIGHLIGHT = {"pwc", "ai", "free", "nerdit"}
 CARD_Y, END_Y, CAPTION_Y = 1020, 960, H - 300
-END_SECONDS, FACT_SECONDS = 4.5, 4.0
+END_SECONDS = 4.5
+CAPTION_SIZE, CAPTION_MAX_W = 76, 960   # pill = text + 80 px, so at most 1040 of the 1080 px width
 
 
 def _font(name: str, size: int) -> ImageFont.FreeTypeFont:
@@ -46,9 +47,17 @@ def _canvas():
     return img, ImageDraw.Draw(img)
 
 
-def caption_groups(words: list[dict], max_words: int = 3) -> list[list[dict]]:
+def caption_width(words: list[str]) -> float:
+    return ImageDraw.Draw(Image.new("RGBA", (1, 1))).textlength(" ".join(words), font=_font("segoeuib.ttf", CAPTION_SIZE))
+
+
+def caption_groups(words: list[dict], max_words: int = 3, max_width: float = CAPTION_MAX_W) -> list[list[dict]]:
+    """Up to 3 words a caption, broken at sentence ends and before a word that would run past the screen."""
     groups, cur = [], []
     for w in words:
+        if cur and caption_width([x["w"] for x in cur] + [w["w"]]) > max_width:
+            groups.append(cur)
+            cur = []
         cur.append(w)
         if len(cur) == max_words or w["w"].endswith((".", "?", "!")):
             groups.append(cur)
@@ -56,9 +65,26 @@ def caption_groups(words: list[dict], max_words: int = 3) -> list[list[dict]]:
     return groups + ([cur] if cur else [])
 
 
+def overlay_plan(script: dict, words: list[dict], total: float) -> list[tuple[str, int, float, float]]:
+    """(kind, index, start, end) for every overlay. Weekly facts share the time before the end card."""
+    facts = script["card"]["facts"]
+    end_start = max(0.0, total - END_SECONDS)
+    if len(facts) == 1:
+        plan = [("card", 0, 0.3, min(5.5, total))]
+    else:
+        slot = max(0.0, end_start - 0.3) / len(facts)
+        plan = [("card", i, 0.3 + i * slot, 0.3 + (i + 1) * slot) for i in range(len(facts))]
+    plan.append(("end", 0, end_start, total))
+    groups = caption_groups(words)
+    for i, g in enumerate(groups):
+        nxt = groups[i + 1][0]["s"] if i + 1 < len(groups) else g[-1]["e"] + 0.3
+        plan.append(("cap", i, g[0]["s"], min(nxt, g[-1]["e"] + 0.6)))
+    return plan
+
+
 def caption_png(path: Path, words: list[str]) -> dict:
     img, dr = _canvas()
-    f = _font("segoeuib.ttf", 76)
+    f = _font("segoeuib.ttf", CAPTION_SIZE)
     text = " ".join(words)
     tw = dr.textlength(text, font=f)
     _, top, _, bottom = dr.textbbox((0, 0), "Hgjy", font=f)   # fixed ink box: same pill height for every caption
@@ -138,20 +164,20 @@ def compose(run: Path) -> Path:
     work.mkdir(exist_ok=True)
     total = sum(duration(c) for c in clips)
     card = script["card"]
+    groups = caption_groups(words)
 
     overlays = []   # (png, start, end)
-    facts = card["facts"]
-    for i, fact in enumerate(facts):
-        start, end = (0.3, 5.5) if len(facts) == 1 else (0.3 + i * FACT_SECONDS, 0.3 + (i + 1) * FACT_SECONDS)
-        card_png(work / f"card{i}.png", card["chip"], fact, card["sources"])
-        overlays.append((work / f"card{i}.png", start, min(end, total)))
-    endcard_png(work / "end.png", script["course"])
-    overlays.append((work / "end.png", max(0.0, total - END_SECONDS), total))
-    groups = caption_groups(words)
-    for i, g in enumerate(groups):
-        nxt = groups[i + 1][0]["s"] if i + 1 < len(groups) else g[-1]["e"] + 0.3
-        caption_png(work / f"cap{i:02d}.png", [x["w"] for x in g])
-        overlays.append((work / f"cap{i:02d}.png", g[0]["s"], min(nxt, g[-1]["e"] + 0.6)))
+    for kind, i, start, end in overlay_plan(script, words, total):
+        if kind == "card":
+            png = work / f"card{i}.png"
+            card_png(png, card["chip"], card["facts"][i], card["sources"])
+        elif kind == "end":
+            png = work / "end.png"
+            endcard_png(png, script["course"])
+        else:
+            png = work / f"cap{i:02d}.png"
+            caption_png(png, [x["w"] for x in groups[i]])
+        overlays.append((png, start, end))
 
     args = [FF, "-y", "-loglevel", "error"]
     for c in clips:

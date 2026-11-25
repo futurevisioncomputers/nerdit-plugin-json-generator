@@ -113,3 +113,38 @@ def test_recent_choices_newest_first(tmp_path):
             {"ideas": [{"course_id": course, "links": [f"https://a/{course}"]}], "chosen": 0}))
     assert [c["course_id"] for c in recent_choices(2)] == ["c3", "c2"]
     assert recent_choices(1)[0]["links"] == ["https://a/c3"]
+
+
+def test_ready_refuses_a_stale_check(tmp_path):
+    run = new_run("daily", "x", date(2026, 11, 25))
+    (run / "script.json").write_text("{}")
+    (run / "checked.json").write_text("{}")
+    (run / "clips" / "clip1.mp4").write_bytes(b"take1")
+    (run / "captions_filled.json").write_text("{}")
+    (run / "reel.mp4").write_bytes(b"reel")
+    (run / "ideas.json").write_text(json.dumps({"ideas": [{}], "chosen": 0}))
+    record_check(run, "script", [], [run / "script.json", run / "checked.json"])
+    record_check(run, "transcript", [], [run / "clips" / "clip1.mp4", run / "script.json"])
+    record_check(run, "captions", [], [run / "captions_filled.json"])
+    record_reel(run)
+    assert ready(run) == []
+    (run / "script.json").write_text('{"line": "edited"}')
+    record_reel(run)   # a recompose refreshes the reel hash, but not the stale verdicts
+    errors = ready(run)
+    assert any("script check is stale" in e for e in errors)
+    assert any("transcript check is stale" in e for e in errors)
+
+
+def test_credits_cli_accepts_a_comma():
+    from runs import main
+    assert main(["credits", "1,050"]) == 0
+
+
+def test_take_download_refuses_the_same_take_again(tmp_path):
+    downloads = tmp_path / "Downloads"
+    downloads.mkdir()
+    (downloads / "take1.mp4").write_bytes(b"first take")
+    run = new_run("daily", "x", date(2026, 11, 25))
+    take_download(run, downloads)
+    with pytest.raises(FileNotFoundError):
+        take_download(run, downloads)   # the re-roll is still downloading: newest finished file is take 1
