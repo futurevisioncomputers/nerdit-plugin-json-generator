@@ -9,11 +9,14 @@ CLI:
   runs.py credits <N> [--reroll]        print the credits message; exit 1 when the spend is not allowed
   runs.py ready <run>                   print what is missing; exit 1 when anything is
   runs.py recent                        print the last 3 chosen courses and links (JSON)
+  runs.py take-download <run>           copy the newest MP4 from Downloads (last hour) to <run>/clips/clip1.mp4
 """
 import hashlib
 import json
 import os
+import shutil
 import sys
+import time
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -56,6 +59,22 @@ def recent_choices(n: int = 3) -> list[dict]:
         if len(out) == n:
             break
     return out
+
+
+def take_download(run: Path, downloads: Path | None = None, max_age_minutes: int = 60) -> Path:
+    """Copy the newest MP4 saved in Downloads within the last hour to <run>/clips/clip1.mp4.
+
+    A pinned script instead of a generic `cp` permission: the unattended run can copy only this one file.
+    """
+    folder = Path(downloads) if downloads else Path.home() / "Downloads"
+    cutoff = time.time() - max_age_minutes * 60
+    fresh = [p for p in folder.glob("*.mp4") if p.stat().st_mtime >= cutoff]
+    if not fresh:
+        raise FileNotFoundError(f"no MP4 saved in {folder} in the last {max_age_minutes} minutes")
+    clip = Path(run) / "clips" / "clip1.mp4"
+    clip.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(max(fresh, key=lambda p: p.stat().st_mtime), clip)
+    return clip
 
 
 def next_reset(today: date, reset_day: int = RESET_DAY) -> date:
@@ -135,6 +154,13 @@ def main(argv: list[str]) -> int:
         return 1 if errors else 0
     if argv[:1] == ["recent"]:
         print(json.dumps(recent_choices(3), indent=1))
+        return 0
+    if len(argv) == 2 and argv[0] == "take-download":
+        try:
+            print(take_download(Path(argv[1])))
+        except FileNotFoundError as e:
+            print(e)
+            return 1
         return 0
     print(__doc__)
     return 2

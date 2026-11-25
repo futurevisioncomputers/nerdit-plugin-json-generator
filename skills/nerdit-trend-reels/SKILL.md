@@ -47,9 +47,10 @@ Kind: `daily` (Mon/Wed/Fri, or "make trend reel") or `weekly` (Sunday, or "weekl
    newest Omni model; say so in the report) → 720p → length slider to fit the line (about 2.5 words a second, at
    most 15 s) → x1. Read "Generating will use N credits". Attach the character "Dev - NERDIT presenter" with "+",
    paste the prompt from `references/flow-prompt.md` with the line, Generate. When done, open the clip, download
-   "720p Original" (free), and copy the newest `*.mp4` from Downloads to `<run>/clips/clip1.mp4`.
+   "720p Original" (free), then `runs.py take-download <run>` (copies the newest MP4 from Downloads to
+   `<run>/clips/clip1.mp4`).
 7. **Transcript.** `transcript.py <run>`. On fail: read the credits again; `runs.py credits <N> --reroll` exit 0 →
-   one new take (same prompt), replace `clips/clip1.mp4`, run it again. Still failing (or the re-roll is not
+   one new take (same prompt), download it, `runs.py take-download <run>` again, and run `transcript.py` again. Still failing (or the re-roll is not
    allowed) → report "Dev did not say the script: <errors>. Nothing uploaded." with both takes' paths, and stop.
 8. **Compose and captions.** `compose.py <run>`. Write `<run>/captions.json` (instagram, facebook, youtube, and
    pinterest; `{link}` for the course link; each names "Source: <outlets>"; Instagram says "link in bio" and asks

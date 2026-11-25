@@ -1,0 +1,1 @@
+{"mcpServers":{"nerdit":{"type":"http","url":"https://us-central1-future-vision-skill-learning.cloudfunctions.net/nerditMcp","headers":{"X-Nerdit-Token":"${NERDIT_MCP_TOKEN}"}}}}

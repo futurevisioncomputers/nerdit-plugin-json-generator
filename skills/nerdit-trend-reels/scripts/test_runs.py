@@ -3,7 +3,8 @@ from datetime import date
 
 import pytest
 
-from runs import home, may_spend, new_run, next_reset, ready, recent_choices, record_check, record_reel, reels_planned
+from runs import (home, may_spend, new_run, next_reset, ready, recent_choices, record_check, record_reel, reels_planned,
+                  take_download)
 
 
 def test_next_reset_rolls_month_and_year():
@@ -79,6 +80,30 @@ def test_ready_needs_every_section_and_a_chosen_idea(tmp_path):
 def test_ready_without_reel(tmp_path):
     run = new_run("daily", "x", date(2026, 11, 25))
     assert "reel.mp4 is missing" in ready(run)
+
+
+def test_take_download_copies_the_newest_recent_mp4(tmp_path):
+    import os, time
+    downloads = tmp_path / "Downloads"
+    downloads.mkdir()
+    old, new = downloads / "old.mp4", downloads / "Presenter_speaking_720p.mp4"
+    old.write_bytes(b"old")
+    new.write_bytes(b"new")
+    os.utime(old, (time.time() - 600, time.time() - 600))
+    run = new_run("daily", "x", date(2026, 11, 25))
+    clip = take_download(run, downloads)
+    assert clip == run / "clips" / "clip1.mp4" and clip.read_bytes() == b"new"
+
+
+def test_take_download_refuses_an_old_file(tmp_path):
+    import os, time
+    downloads = tmp_path / "Downloads"
+    downloads.mkdir()
+    stale = downloads / "stale.mp4"
+    stale.write_bytes(b"x")
+    os.utime(stale, (time.time() - 7200, time.time() - 7200))
+    with pytest.raises(FileNotFoundError):
+        take_download(new_run("daily", "x", date(2026, 11, 25)), downloads)
 
 
 def test_recent_choices_newest_first(tmp_path):
