@@ -1,0 +1,26 @@
+[
+ {
+  "by": "E-Reverance",
+  "id": 50637220,
+  "time": 1795569566,
+  "title": "Matrix Multiplication is \u0398(n^2.25) [pdf]",
+  "type": "story",
+  "url": "https://github.com/openai/math/blob/main/preprints/The-matrix-multiplication-exponent-is-nine-fourths-November-24-2026/paper.pdf"
+ },
+ {
+  "by": "gaurang_tandon",
+  "id": 50638032,
+  "time": 1795576987,
+  "title": "Button Sounds \u2013 collection of professionally-recorded button clicks and presses",
+  "type": "story",
+  "url": "https://buttons.joshwcomeau.com/"
+ },
+ {
+  "by": "gmays",
+  "id": 50637686,
+  "time": 1795574061,
+  "title": "Models Can Communicate via Inference Servers Despite Being Sandboxed",
+  "type": "story",
+  "url": "https://www.lesswrong.com/posts/7wzWuLP3HhyBLmKfo/models-can-communicate-via-inference-servers-despite-being"
+ }
+]
