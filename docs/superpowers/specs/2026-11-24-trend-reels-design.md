@@ -42,9 +42,14 @@ then chose, when told the credits cannot cover daily presenter Reels:
 - **A timer, not a command:** Monday, Wednesday, Friday a daily trend Reel; Sunday the weekly round-up (owner: "ok"
   to "a timer on Mon, Wed, Fri and Sunday … about 17 Reels a month").
 - **The bot picks the idea itself** (it still writes 3 ideas and why it chose one).
-- **Review gate: post right away** (owner first said "ok" to a 3-hour cancel window, then minutes later "post
-  right away"): when every check passes, the bot posts the Reel at once ("Approve & post now") and then notifies the
-  owner with the file and the post links. No window to stop it; the checks are the only gate.
+- **Review gate: one tap (owner picked "b", 11:51 IST 2026-11-25, in reply to: a = command + watch, b = automatic
+  with one tap, c = fully automatic).** This replaces the "post right away" the owner gave another session earlier
+  that morning. When every check passes, the bot uploads the Reel to Social posts as a **pending** post (never
+  presses Approve). The server emails the owner (existing `sendLoggedMail("admin-alert", …)` to
+  `ADMIN_ALERT_EMAIL`) with the hook and a link to fv.nerdit.in/social-posts; the owner watches it in the admin
+  (the pending card already plays `videoUrl`) and taps **Approve & post now** on the phone. Nothing posts without
+  that tap. A Reel left pending is not expired automatically; the next run's notice says it is still waiting.
+  (Switching to fully automatic later, e.g. after two weeks with no rejected Reels, is the owner's call.)
 - **Pilot first, still:** the first Reel is a command run the owner watches before posting; the timer is registered
   only after the owner's OK on that pilot.
 
@@ -77,8 +82,8 @@ Where this section and the text below differ, this section wins; the steps below
    map each to a live course, write 3 Reel ideas and pick the best one.
 2. Make the Reel with Dev in Flow, check what Dev said against the script, add the news card, captions and course
    end card.
-3. Post it at once from Social posts to every account that can take a Reel today, with captions per platform,
-   and notify the owner with the file and the post links. (Pilot: the owner watches first.)
+3. Upload it to Social posts as a pending post with captions per platform for every account that can take a Reel
+   today, and email the owner; the owner's Approve tap posts it.
 4. On the Sunday timer or "weekly trend reel": the same, as "This week in AI & jobs", the top 3 stories of 7 days.
 5. Keep a record per Reel (sources, script, transcript, captions, links to the posts) so nothing is posted without
    a traceable source.
@@ -99,8 +104,7 @@ Where this section and the text below differ, this section wins; the steps below
 - A Reel on a sensitive story: deaths, disasters, crime, politics, religion, war, health scares, a named private
   person, or mocking a real company's staff.
 - Dev resembling or naming a real person, or posing as a news anchor of a real channel.
-- A post the owner does not hear about: every post is followed by a desktop notification carrying that exact file
-  and the post links (the pilot: no post before the owner has watched it).
+- A post the owner did not approve: the bot never presses Approve; every Reel waits as pending until the owner's tap.
 - A post when any check failed (script, transcript, captions, credits), or a second re-roll on a timer run.
 - Captions that show a word Dev did not say, or a course name that is not live.
 - Spending Flow credits on re-rolls without the owner knowing the count.
@@ -231,24 +235,27 @@ dropped Chrome connection or a closed session.
    title, lesson count, "free to learn", "nerdit.in · link in bio" button). No AI label on screen. Then captions per
    platform in `captions.json`, checked with the social-posts caption rules (`skills/nerdit-social-posts/scripts/
    captions.py`) where they fit, including source credit ("Source: Business Insider, Inc.") and the course link.
-   **Pilot only:** show the owner the Reel. When the owner says OK in chat, the skill writes `OWNER_OK` in the run
-   folder: date, the owner's words, and the sha256 of `reel.mp4` (same idea as the pack pilots' `pilot/OWNER_OK`).
-   Timer and command runs after the pilot instead need `checks.json` from `scripts/ready_check.py`: script, transcript and caption checks all
-   passed for this `reel.mp4` (sha256), and `ideas.json` names a chosen idea.
-8. **Post (Claude in Chrome)** — only when `ready_check.py` passes (and, for the pilot, `OWNER_OK` matches the
-   sha256 of `reel.mp4`; posting runs in Chrome, so the shell hooks cannot guard it; the skill checks first).
-   **Post now:** "Approve & post now" (owner's choice 2026-11-25), then read the post links back. Then a desktop
-   notification: "Trend Reel '<hook>' posted to <platforms>."; clicking it opens `reel.mp4`. On fv.nerdit.in →
-   Social posts → new post:
+   Every run (pilot, command, timer) then needs `checks.json` from `scripts/ready_check.py`: script, transcript
+   and caption checks all passed for this `reel.mp4` (sha256), and `ideas.json` names a chosen idea. The owner's
+   Approve tap in the admin is the owner's OK, so no `OWNER_OK` file is needed (the pilot is a command run that
+   ends the same way: pending, the owner watches and approves).
+8. **Upload as pending (Claude in Chrome)** — only when `ready_check.py` passes for this `reel.mp4` (the upload
+   runs in Chrome, so the shell hooks cannot guard it; the skill checks first). Never press Approve. Record the
+   new post's id in `posted.json` (status `pending`). Then a desktop notification: "Trend Reel '<hook>' is waiting
+   for your Approve in Social posts." The server's email (step B in the plan) reaches the phone. A later run reads
+   the earlier rows' status from the admin into their `posted.json` (`posted` with links, or still `pending`).
+   On fv.nerdit.in → Social posts → new post:
    the form already takes a Reel (`nerdit-admin/src/pages/AdminSocialPosts.tsx` ~line 319: `<input type="file"
    accept="video/mp4">`, 9:16, 5–90 s, under 200 MB, uploaded to `social/videos/`, checked by `isOurReelUrl`).
    The server posts a manual Reel to Instagram (ig-reel), Facebook (fb-video) and YouTube (yt-short) — see
    `publishCall` in `nerdit/functions/src/socialPosts.ts`; the form's "(Instagram only)" label is out of date and
-   should be corrected. Paste the captions, tick Instagram, Facebook, YouTube (Pinterest once Standard access is
-   live), post now or at a time the owner names, and read the post links back into `posted.json`.
-   If Claude in Chrome cannot set the file input, the owner picks `reel.mp4` (one click) and Claude does the rest.
-   The builder checks whether the manual form gives YouTube its own title/description and adds them if not. (My
-   calls.)
+   should be corrected. Fill the Reel, captions, YouTube title and description, "Contains AI-generated person"
+   and spoken language English, then Create (the row is created `pending`). Approve must default to Instagram,
+   Facebook and YouTube (Pinterest once Standard access is live) for these rows: the server stores `platforms` on
+   a manual Reel row so the owner's one tap needs no ticking.
+   If Claude in Chrome cannot set the file input on a timer run, the run stops, posts nothing and notifies the
+   owner with the file path (a timer run has no one to click). The manual form gets YouTube title and description
+   fields (today `youtubeWords` would fall back to the admin-only Name). (My calls.)
    **Disclosure order (my call):** the YouTube flag ships before any trend Reel goes to YouTube; until then a run
    posts to Instagram and Facebook only. The change: a post-row flag set by an admin checkbox "Contains
    AI-generated person", sent as `status.containsSyntheticMedia: true` in `youtube.ts`, with tests; deploy with
@@ -271,8 +278,7 @@ dropped Chrome connection or a closed session.
     like the article poster. Registered only after the pilot and the owner's OK.
 
 Files per run: `trends.json`, `checked.json`, `ideas.json`, `script.json`, `clips/`, `transcript.json`,
-`reel.mp4`, `captions.json`, `checks.json`, `OWNER_OK` (pilot only), `posted.json`, `run.log` (credits
-before/after, re-rolls).
+`reel.mp4`, `captions.json`, `checks.json`, `posted.json`, `run.log` (credits before/after, re-rolls).
 
 ## Left to the builder
 
