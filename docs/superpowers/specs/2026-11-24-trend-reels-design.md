@@ -14,8 +14,8 @@ the latest data collected fresh before every creation.
 
 ## Decided with the owner (2026-11-24)
 
-- **Trigger:** the owner starts a run with a command in Claude Code ("make trend reel", "weekly trend reel"). No
-  timer. (A button was also acceptable to the owner; the command is enough for now.)
+- **Trigger:** ~~the owner starts a run with a command; no timer.~~ Changed 2026-11-25, see below. The command
+  ("make trend reel", "weekly trend reel") still works for the pilot and for extra runs.
 - **Trend collection: approach A**, a feed script plus a Claude check (see Approaches). Every run collects fresh.
 - **Audience:** global, not only Surat. Working professionals; the hook is the worry "will AI take my job?" and its
   neighbours (layoffs, the new tool my boss wants, falling behind).
@@ -31,7 +31,24 @@ the latest data collected fresh before every creation.
   post, but daily presenter Reels need 1,800–3,300 credits a month against 1,050. So: **Dev Reels on 4 days a
   week, one 15 s clip each (60 credits)**, about 17 a month; the other days keep the existing course posts (daily
   course card, course packs), which are unchanged. Proposed days (my call): Monday, Wednesday, Friday a daily trend
-  Reel; Sunday the weekly round-up. The owner starts each run.
+  Reel; Sunday the weekly round-up. ~~The owner starts each run.~~ A timer starts them (2026-11-25).
+
+## Changed with the owner (2026-11-25)
+
+The owner asked to "schedule daily one or two videos on different topics and schedule for post on all medias",
+then chose, when told the credits cannot cover daily presenter Reels:
+
+- **Trend Reels only, at the pace the credits allow.** No mix with Chirp-voiced course Shorts.
+- **A timer, not a command:** Monday, Wednesday, Friday a daily trend Reel; Sunday the weekly round-up (owner: "ok"
+  to "a timer on Mon, Wed, Fri and Sunday … about 17 Reels a month").
+- **The bot picks the idea itself** (it still writes 3 ideas and why it chose one).
+- **Review gate: post right away** (owner first said "ok" to a 3-hour cancel window, then minutes later "post
+  right away"): when every check passes, the bot posts the Reel at once ("Approve & post now") and then notifies the
+  owner with the file and the post links. No window to stop it; the checks are the only gate.
+- **Pilot first, still:** the first Reel is a command run the owner watches before posting; the timer is registered
+  only after the owner's OK on that pilot.
+
+Where this section and the text below differ, this section wins; the steps below are updated to match.
 
 ## Spike results (facts, 2026-11-24)
 
@@ -56,18 +73,19 @@ the latest data collected fresh before every creation.
 
 ## Goals
 
-1. On "make trend reel": collect fresh trends, pick safe ones that touch a work worry, map each to a live course,
-   and offer 3 Reel ideas. The owner picks one.
+1. On the timer (Mon/Wed/Fri) or "make trend reel": collect fresh trends, pick safe ones that touch a work worry,
+   map each to a live course, write 3 Reel ideas and pick the best one.
 2. Make the Reel with Dev in Flow, check what Dev said against the script, add the news card, captions and course
-   end card, and show it to the owner.
-3. After the owner's OK, post it to every account that can take a Reel today, with captions per platform.
-4. On "weekly trend reel" (proposed: Sunday): the same, as "This week in AI & jobs", the top 3 stories of 7 days.
+   end card.
+3. Post it at once from Social posts to every account that can take a Reel today, with captions per platform,
+   and notify the owner with the file and the post links. (Pilot: the owner watches first.)
+4. On the Sunday timer or "weekly trend reel": the same, as "This week in AI & jobs", the top 3 stories of 7 days.
 5. Keep a record per Reel (sources, script, transcript, captions, links to the posts) so nothing is posted without
    a traceable source.
 
 ## Non-goals
 
-- A timer that starts runs by itself. (Possible later via Task Scheduler, like the article poster; not now.)
+- More than 4 Reels a week, or catching up a missed day (a locked or switched-off PC skips that run).
 - Trending audio. The posting APIs cannot attach Instagram/YouTube library sounds.
 - Instagram's own trend data (trending Reels/sounds): no API without Meta app review. The owner may paste a trend
   into the command as one line.
@@ -81,7 +99,9 @@ the latest data collected fresh before every creation.
 - A Reel on a sensitive story: deaths, disasters, crime, politics, religion, war, health scares, a named private
   person, or mocking a real company's staff.
 - Dev resembling or naming a real person, or posing as a news anchor of a real channel.
-- A post that goes out without the owner having watched that exact file.
+- A post the owner does not hear about: every post is followed by a desktop notification carrying that exact file
+  and the post links (the pilot: no post before the owner has watched it).
+- A post when any check failed (script, transcript, captions, credits), or a second re-roll on a timer run.
 - Captions that show a word Dev did not say, or a course name that is not live.
 - Spending Flow credits on re-rolls without the owner knowing the count.
 
@@ -93,7 +113,8 @@ the latest data collected fresh before every creation.
 - **Flow is browser-only.** Steps that touch Flow are skill instructions for Claude in Chrome, not scripts. Flow's
   screens can change; the skill must describe what to look for (Characters, Video, Ingredients, 9:16, model,
   length slider, credits line, download menu) rather than coordinates.
-- **The PC and Chrome must be on**, signed in to Flow, during a run.
+- **The PC and Chrome must be on**, unlocked, signed in to Flow, during a run (the bot's key presses fail while
+  Windows is locked, learned 2026-11-24). A locked or switched-off PC skips that day; Sunday may skip often.
 - **Platforms that take a Reel today:** Instagram (ig-reel), Facebook (fb-video), YouTube Shorts (yt-short,
   Access = Reviewed). LinkedIn: the posting code has no video path (`PACK_CALLS.reel.linkedin = null`); LinkedIn
   feed posts are image/multi-image only, and only to the owner's personal profile (Company Page API was denied).
@@ -165,8 +186,11 @@ dropped Chrome connection or a closed session.
    back to a generic course. (My call.)
    Write `checked.json` with the reason for every kept and dropped story.
 3. **Ideas** — 3 concepts in `ideas.json`, each: hook line (first 2 s), 2–3 beats, the course and why it fits,
-   the facts used with their links. Show the owner; the owner picks one (or asks for 3 more). Formats can vary
+   the facts used with their links. The bot picks one and writes why in `ideas.json` (`chosen`, `reason`): the
+   strongest work worry, the most sources, a course that fits best, and not the same course or story as the last
+   3 Reels (read from earlier run folders). Formats can vary
    (straight explainer, "3 things this means for you", myth vs fact), always Dev talking to camera.
+   No story passes the check → no Reel that day; notify the owner ("no safe story today"), spend no credits.
 4. **Script** — `script.json`: **one Flow clip of up to 15 s** per Reel (the owner's cadence choice). Rules
    learned in the spike:
    - at most 15 s and about 35 words; sentences of 12 words or fewer; the last sentence is the call to action
@@ -191,13 +215,15 @@ dropped Chrome connection or a closed session.
    line before each Generate and record it. Download "720p Original" (free). Save as `clips/clip1.mp4`.
    **Credit rule (my call, owner may change):** a Reel spends 60 credits. Before a re-roll, the skill compares the
    credits left (account menu) with 60 × the Reels still planned until the reset date (4 a week); if a re-roll
-   would eat into a planned Reel, it stops and asks instead. Every run tells the owner "credits left: N, enough
+   would eat into a planned Reel, it stops and asks instead (a timer run never re-rolls more than once and never
+   asks: it stops and notifies). Fewer than 60 credits left → no Reel; notify "credits run out until <reset
+   date>". Every run tells the owner "credits left: N, enough
    for M more Reels before <reset date>". `run.log` records credits before and after.
 6. **Transcript check** — `scripts/transcript_check.py`: faster-whisper small (PCM through ffmpeg), word
    timestamps; compare normalised words with the script line. Pass when every content word of the line is present
    in order and no extra content words appear (brand fixes allowed: PwC, nerdit). On fail: one automatic re-roll of
-   the clip (only if the credit rule allows), with the credit count shown; on a second fail, stop and show the
-   owner both takes.
+   the clip (only if the credit rule allows), with the credit count shown; on a second fail, stop, post nothing,
+   and notify the owner with both takes.
 7. **Compose** — `scripts/compose.py` (the spike's composer, cleaned up; one clip now, so no concat needed, but
    keep it working for several): scale to 1080×1920 30 fps; news
    card over the chest (y≈1020) for the first ~5 s; captions of up to 3 words from the transcript, pill centred by
@@ -205,10 +231,15 @@ dropped Chrome connection or a closed session.
    title, lesson count, "free to learn", "nerdit.in · link in bio" button). No AI label on screen. Then captions per
    platform in `captions.json`, checked with the social-posts caption rules (`skills/nerdit-social-posts/scripts/
    captions.py`) where they fit, including source credit ("Source: Business Insider, Inc.") and the course link.
-   Show the owner the Reel. When the owner says OK in chat, the skill writes `OWNER_OK` in the run folder: date,
-   the owner's words, and the sha256 of `reel.mp4` (same idea as the pack pilots' `pilot/OWNER_OK`). (My call.)
-8. **Post (Claude in Chrome)** — only when `OWNER_OK` exists and its sha256 matches `reel.mp4` (posting runs in
-   Chrome, so the shell hooks cannot guard it; the skill checks first). On fv.nerdit.in → Social posts → new post:
+   **Pilot only:** show the owner the Reel. When the owner says OK in chat, the skill writes `OWNER_OK` in the run
+   folder: date, the owner's words, and the sha256 of `reel.mp4` (same idea as the pack pilots' `pilot/OWNER_OK`).
+   Timer and command runs after the pilot instead need `checks.json` from `scripts/ready_check.py`: script, transcript and caption checks all
+   passed for this `reel.mp4` (sha256), and `ideas.json` names a chosen idea.
+8. **Post (Claude in Chrome)** — only when `ready_check.py` passes (and, for the pilot, `OWNER_OK` matches the
+   sha256 of `reel.mp4`; posting runs in Chrome, so the shell hooks cannot guard it; the skill checks first).
+   **Post now:** "Approve & post now" (owner's choice 2026-11-25), then read the post links back. Then a desktop
+   notification: "Trend Reel '<hook>' posted to <platforms>."; clicking it opens `reel.mp4`. On fv.nerdit.in →
+   Social posts → new post:
    the form already takes a Reel (`nerdit-admin/src/pages/AdminSocialPosts.tsx` ~line 319: `<input type="file"
    accept="video/mp4">`, 9:16, 5–90 s, under 200 MB, uploaded to `social/videos/`, checked by `isOurReelUrl`).
    The server posts a manual Reel to Instagram (ig-reel), Facebook (fb-video) and YouTube (yt-short) — see
@@ -226,9 +257,22 @@ dropped Chrome connection or a closed session.
 9. **Weekly** — "weekly trend reel" (Sunday): `collect.py --days 7`, Claude picks the top 3 kept stories, one
    15 s clip ("This week in AI and jobs. One… Two… Three… Link in bio."), the news card lists the three facts in
    turn, same steps 4–8.
+10. **Timer (Task Scheduler, like the article poster)** — `scripts/scheduled_run.ps1` + `scripts/schedule_task.ps1`
+    in this skill, copied from the article poster's pattern: task "NerdIT trend reel", weekly Monday, Wednesday,
+    Friday, Sunday at **11:30** (the owner's PC is on and idle at 11:00 for the article run; 11:30 lets that run go
+    first), no catch-up. The script passes "daily" or, on Sunday, "weekly". It skips the day when the PC is locked
+    (LogonUI), wakes the Claude extension (opens its options page), and waits up to 2 hours while the article run's
+    lock is fresh (both drive the same Chrome and clipboard); the article script waits for this lock the same way.
+    `claude -p` runs with `--chrome --setting-sources project --plugin-dir <installed plugin> --permission-mode
+    dontAsk` and only these tools: Claude in Chrome, Skill, `Bash(python <this skill's scripts> *)`, Read of the
+    plugin, Write/Edit inside `~/.nerdit-social/trend-reels/`, WebFetch (the two-outlet check) and
+    `mcp__nerdit__catalogue_status` (the builder checks it loads under `--setting-sources project`; if not, the
+    scheduled run gets the catalogue another way, never a generic course). Start, done and skipped notifications
+    like the article poster. Registered only after the pilot and the owner's OK.
 
 Files per run: `trends.json`, `checked.json`, `ideas.json`, `script.json`, `clips/`, `transcript.json`,
-`reel.mp4`, `captions.json`, `OWNER_OK`, `posted.json`, `run.log` (credits before/after, re-rolls).
+`reel.mp4`, `captions.json`, `checks.json`, `OWNER_OK` (pilot only), `posted.json`, `run.log` (credits
+before/after, re-rolls).
 
 ## Left to the builder
 
