@@ -23,7 +23,7 @@ DEVANAGARI = re.compile("[ऀ-ॿ]")
 def utm_link(course_url: str, platform: str, item: dict) -> str:
     joiner = "&" if "?" in course_url else "?"
     return (f"{course_url}{joiner}utm_source={platform}&utm_medium=social"
-            f"&utm_campaign=pack-{item['date']}&utm_content={item['id']}")
+            f"&utm_campaign={item.get('campaign', 'pack')}-{item['date']}&utm_content={item['id']}")
 
 
 def fill_links(text: str, course_url: str, platform: str, item: dict) -> str:

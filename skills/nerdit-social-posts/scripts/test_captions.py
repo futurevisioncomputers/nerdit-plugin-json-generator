@@ -15,6 +15,11 @@ def test_utm_link_carries_platform_date_and_item():
                                                "&utm_campaign=pack-2026-11-19&utm_content=d01-reel")
 
 
+def test_utm_link_takes_a_campaign_name():
+    assert utm_link(URL, "facebook", {**ITEM, "campaign": "trend"}) == (
+        URL + "?utm_source=facebook&utm_medium=social&utm_campaign=trend-2026-11-19&utm_content=d01-reel")
+
+
 def test_fill_links_replaces_the_placeholder():
     assert fill_links("Learn: {link}", URL, "linkedin", ITEM) == "Learn: " + utm_link(URL, "linkedin", ITEM)
 
