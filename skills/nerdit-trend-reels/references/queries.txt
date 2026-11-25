@@ -1,0 +1,13 @@
+# One Google News search per line (English, US and India). "#" starts a comment.
+# Work worries of the audience (global working professionals):
+AI jobs
+AI layoffs
+AI skills workers
+AI at work
+new AI model
+automation jobs
+# Topics of live NERDIT courses:
+machine learning jobs
+data analyst AI
+Python jobs AI
+generative AI work
