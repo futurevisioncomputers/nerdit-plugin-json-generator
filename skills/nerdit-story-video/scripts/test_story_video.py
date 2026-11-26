@@ -898,3 +898,15 @@ def test_vector_hex_check_ignores_marker_ids():
 def test_plain_keeps_superscripts_and_subscripts():
     import storyplan
     assert " ".join(storyplan.plain("<p>2<sup>3</sup> = 8, v<sub>1</sub></p>").split()) == "2³ = 8, v₁"
+
+
+def test_maths_labels_are_named_by_plain_words_not_code_spans():
+    # Maths course 2026-11-26: "(20, 3)" and "2 + 1 = 3" are maths, not code; f(x) is a maths function.
+    from timeline import is_code_label, part_cues
+    from voice import estimate_words
+    assert not is_code_label("Result (3, 3)") and not is_code_label("Horizontal 2 + 1 = 3")
+    assert not is_code_label("f(x) = 2x + 1") and not is_code_label("2(2, 1) = (4, 2)")
+    assert is_code_label("@app.route") and is_code_label("print(read_root())") and is_code_label('len(x)')
+    labels = ["Horizontal 2 + 1 = 3", "Vertical 1 + 2 = 3", "Result (3, 3)"]
+    text = "Horizontal lane में 2 और 1. Vertical lane में 1 और 2. Final result (3, 3) है."
+    assert part_cues(labels, estimate_words(text, 9.0), 0) is not None

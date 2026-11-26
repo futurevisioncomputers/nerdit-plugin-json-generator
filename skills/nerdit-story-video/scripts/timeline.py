@@ -16,7 +16,14 @@ CARD_QUESTION = 7.0              # ... longer when it asks a question to think a
 
 
 STOP = set("a an the in of to for and or is are it on at by with as be this that from into".split())
-CODE_CHARS = set("@=()[]{}\"'_")
+CODE_CHARS = set("@[]{}\"'_")
+CALL = re.compile(r"[A-Za-z_]\w+\(")   # print( or read_root(; a one-letter f(x) is maths
+
+
+def is_code_label(label: str) -> bool:
+    """A code label (`@app.route`, print(...)) must be named by a backtick span. Brackets and "=" alone are maths
+    ("(20, 3)", "2 + 1 = 3"; maths course 2026-11-26), named by plain words."""
+    return bool(CODE_CHARS & set(label)) or bool(CALL.search(label))
 BEFORE = 0.35                    # an arrow or line appears this long before the part it leads to
 
 
@@ -37,7 +44,7 @@ def part_cues(labels: list[str | None], words: list[dict], offset: float) -> lis
         if label is None:
             times.append(None)
             continue
-        want, code = _tokens(label), bool(CODE_CHARS & set(label))
+        want, code = _tokens(label), is_code_label(label)
         j = next((k for k in range(i, len(words)) if want & _tokens(words[k]["w"])
                   and (not code or "`" in words[k]["w"])), None)
         if j is None:
