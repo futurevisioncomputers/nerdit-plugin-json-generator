@@ -105,7 +105,7 @@ def test_cli_plan_names_sites_to_check_first(capsys):
 
 def test_scheduled_plan_offers_own_blogs_first_then_the_paced_sites():
     assert runlog.plan("a", set(), DAY, scheduled=True) == [
-        "wordpress", "blogger", "tumblr", "medium", "hashnode", "substack", "dailydev", "pinterest"]
+        "wordpress", "blogger", "tumblr", "medium", "hashnode", "substack", "pinterest"]
 
 
 def test_scheduled_own_blogs_are_not_paced_or_held_across_articles():
@@ -128,8 +128,10 @@ def test_manual_plan_ignores_other_articles_posts():
 
 def test_scheduled_plan_never_offers_manual_only_sites():
     plan = runlog.plan("a", {"medium", "hashnode", "substack"}, DAY, scheduled=True)
-    assert plan == ["wordpress", "blogger", "tumblr", "dailydev", "pinterest"]
+    assert plan == ["wordpress", "blogger", "tumblr", "pinterest"]
     assert "quora" not in runlog.SCHEDULED_SITES
+    # daily.dev posts from GitHub Actions (nerdit-cloud-poster, nightly 02:00 IST) since 2026-11-26.
+    assert "dailydev" not in runlog.SCHEDULED_SITES
     # Publish books the LinkedIn post on the server since 2026-11-26: scheduled runs never do it.
     assert "linkedin" not in runlog.SCHEDULED_SITES
 
