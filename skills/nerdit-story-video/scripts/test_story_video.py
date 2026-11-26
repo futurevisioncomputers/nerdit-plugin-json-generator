@@ -893,3 +893,8 @@ def test_lesson_part_skeleton_and_stamp(tmp_path):
 def test_vector_hex_check_ignores_marker_ids():
     assert not storyplan.HEX.search('<marker id="faded-arrow"/><path marker-end="url(#faded-arrow)"/>')
     assert storyplan.HEX.search('<rect fill="#fade00"/>')
+
+
+def test_plain_keeps_superscripts_and_subscripts():
+    import storyplan
+    assert " ".join(storyplan.plain("<p>2<sup>3</sup> = 8, v<sub>1</sub></p>").split()) == "2³ = 8, v₁"

@@ -110,3 +110,13 @@ def test_plain_drops_tags_and_keeps_pre_newlines():
 
 def test_a_lesson_without_blocks():
     assert lesson_blocks("<h2>1 — Intro</h2><p>Text</p>") == {"topics": {1: {"run": [], "predict": [], "compare": [], "spot": []}}, "cheatsheet": None}
+
+
+def test_superscripts_and_subscripts_keep_their_meaning():
+    # Maths course 2026-11-26: "2<sup>3</sup> = 8" was read as "23 = 8" on a cheat-sheet card.
+    lesson = ('<h2>1 — Powers</h2><div class="nerdit-cheatsheet"><table><tr><th>Term</th><th>Example</th></tr>'
+              '<tr><td>Power</td><td>2<sup>3</sup> = 8</td></tr><tr><td>Transpose</td><td>A<sup>T</sup></td></tr>'
+              '<tr><td>Inverse</td><td>A<sup>-1</sup></td></tr><tr><td>Entry</td><td>a<sub>21</sub></td></tr></table></div>')
+    rows = lesson_blocks(lesson)["cheatsheet"]["rows"]
+    assert [r[1] for r in rows] == ["2³ = 8", "Aᵀ", "A⁻¹", "a₂₁"]
+    assert plain("x<sub>new</sub> and lim<sub>x → 2</sub> and 2<sup>n-1</sup>") == "x_new and lim_(x → 2) and 2ⁿ⁻¹"

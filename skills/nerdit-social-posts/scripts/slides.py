@@ -88,7 +88,7 @@ def section_sentences(src: dict, lesson: str, topic: int) -> list[str]:
         if int(n) != topic:
             continue
         for para in PARAGRAPH.findall(body):
-            text = " ".join(html.unescape(re.sub(r"<[^>]+>", " ", para)).split())
+            text = " ".join(storyplan.plain(para).split())
             out += [s.strip() for s in re.split(r"(?<=[.!?])\s+", text) if s.strip()]
     return out
 

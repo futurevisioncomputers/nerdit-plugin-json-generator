@@ -104,8 +104,27 @@ def course_lessons(course_path: Path) -> list[dict]:
     return lessons
 
 
+_SUP = str.maketrans("0123456789+-−=()nibT", "⁰¹²³⁴⁵⁶⁷⁸⁹⁺⁻⁻⁼⁽⁾ⁿⁱᵇᵀ")
+_SUB = str.maketrans("0123456789+-−=()aeijknox", "₀₁₂₃₄₅₆₇₈₉₊₋₋₌₍₎ₐₑᵢⱼₖₙₒₓ")
+_MARK = re.compile(r"<(sup|sub)\b[^>]*>(.*?)</\1>", re.S | re.I)
+
+
+def marks(markup: str) -> str:
+    """<sup>/<sub> as their characters ("2<sup>3</sup>" -> "2³", "a<sub>21</sub>" -> "a₂₁"), so stripping tags never
+    turns 2³ into 23; text with no such characters falls back to ^ / _ ("x<sub>new</sub>" -> "x_new")."""
+    def one(m: re.Match) -> str:
+        sup = m.group(1).lower() == "sup"
+        text = html.unescape(re.sub(r"<[^>]+>", "", m.group(2))).strip()
+        table = _SUP if sup else _SUB
+        if text and all(c in "".join(chr(k) for k in table) for c in text):
+            return text.translate(table)
+        mark = "^" if sup else "_"
+        return f"{mark}({text})" if " " in text else f"{mark}{text}"
+    return _MARK.sub(one, markup or "")
+
+
 def plain(markup: str) -> str:
-    return html.unescape(re.sub(r"<[^>]+>", " ", markup or ""))
+    return html.unescape(re.sub(r"<[^>]+>", " ", marks(markup)))
 
 
 def lesson_texts(course_path: Path) -> dict:

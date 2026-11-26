@@ -8,7 +8,12 @@ Topics are the numbered sections (<h2>N — Title</h2>). Inside them the lessons
 and once per lesson a nerdit-cheatsheet table.
 """
 import re
+import sys
 from html.parser import HTMLParser
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "nerdit-story-video" / "scripts"))
+from storyplan import marks  # noqa: E402  one <sup>/<sub> reading for the pack and its checks
 
 VOID = {"br", "img", "hr", "input", "meta", "link", "source", "wbr", "col", "area", "base", "embed", "param", "track"}
 TOPIC = re.compile(r"^\s*(\d+)\s*[—–-]")
@@ -48,7 +53,7 @@ class _Tree(HTMLParser):
 
 def _tree(html: str) -> Node:
     t = _Tree()
-    t.feed(html or "")
+    t.feed(marks(html))
     t.close()
     return t.root
 
