@@ -105,7 +105,7 @@ def test_cli_plan_names_sites_to_check_first(capsys):
 
 def test_scheduled_plan_offers_own_blogs_first_then_the_paced_sites():
     assert runlog.plan("a", set(), DAY, scheduled=True) == [
-        "wordpress", "blogger", "tumblr", "medium", "hashnode", "substack", "pinterest"]
+        "wordpress", "blogger", "tumblr", "medium", "hashnode", "pinterest"]
 
 
 def test_scheduled_own_blogs_are_not_paced_or_held_across_articles():
@@ -132,6 +132,8 @@ def test_scheduled_plan_never_offers_manual_only_sites():
     assert "quora" not in runlog.SCHEDULED_SITES
     # daily.dev posts from GitHub Actions (nerdit-cloud-poster, nightly 02:00 IST) since 2026-11-26.
     assert "dailydev" not in runlog.SCHEDULED_SITES
+    # Substack too (GitHub Actions, nightly 02:15 IST, web only) since 2026-11-26.
+    assert "substack" not in runlog.SCHEDULED_SITES
     # Publish books the LinkedIn post on the server since 2026-11-26: scheduled runs never do it.
     assert "linkedin" not in runlog.SCHEDULED_SITES
 
@@ -221,7 +223,7 @@ def test_scheduled_cap_counts_any_step_today_not_only_posted():
     runlog.mark("a", "hashnode", "skipped", DAY, error="sign in needed")
     runlog.mark("a", "substack", "failed", DAY, error="editor changed")
     assert not {"medium", "hashnode", "substack"} & set(runlog.plan("b", set(), DAY, scheduled=True))
-    assert runlog.plan("b", set(), NEXT, scheduled=True)[3:6] == ["medium", "hashnode", "substack"]
+    assert runlog.plan("b", set(), NEXT, scheduled=True)[3:6] == ["medium", "hashnode", "pinterest"]
 
 
 def test_due_treats_times_without_offset_as_utc():
@@ -258,14 +260,14 @@ def test_images_downloads_only_from_nerdit_storage(home, monkeypatch, capsys):
 
 def test_a_held_site_is_never_planned_until_it_is_marked_again():
     # Owner 2026-11-25: "dont do, i will inform" for the failed retries.
-    runlog.mark("a", "substack", "failed", DAY, error="no images")
-    runlog.mark("a", "substack", "held", DAY, error="owner: wait until I say")
+    runlog.mark("a", "medium", "failed", DAY, error="no images")
+    runlog.mark("a", "medium", "held", DAY, error="owner: wait until I say")
     later = "2026-12-05"
-    assert "substack" not in runlog.plan("a", set(), later, scheduled=True)
-    assert "substack" not in runlog.plan("a", set(), later)
+    assert "medium" not in runlog.plan("a", set(), later, scheduled=True)
+    assert "medium" not in runlog.plan("a", set(), later)
     assert runlog.unsettled("a") == []
-    runlog.mark("a", "substack", "failed", later, error="owner: go")
-    assert "substack" in runlog.plan("a", set(), "2026-12-06", scheduled=True)
+    runlog.mark("a", "medium", "failed", later, error="owner: go")
+    assert "medium" in runlog.plan("a", set(), "2026-12-06", scheduled=True)
 
 
 def test_cli_mark_held(home, capsys):

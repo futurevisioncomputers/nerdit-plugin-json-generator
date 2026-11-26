@@ -87,9 +87,9 @@ watching: never ask anything, never wait for an answer. The "Never" list and "Si
 scheduled site. Nothing newer goes out.
 
 **Sites:** only `wordpress`, `blogger`, `tumblr` (the Articles page's **Post copy** API buttons, not their editors),
-`medium`, `hashnode`, `substack` and `pinterest`. Quora/Reddit stays manual. LinkedIn is not the run's job: Publish
-books its link post on the server (since 2026-11-26). daily.dev is not the run's job either: it posts from GitHub
-Actions every night at 02:00 IST (private repo nerdit-cloud-poster, since 2026-11-26). Vocal, HackerNoon, Hacker News and Indie Hackers
+`medium`, `hashnode` and `pinterest`. Quora/Reddit stays manual. LinkedIn (and the Facebook Page) is not the run's
+job: Publish books its link post on the server (since 2026-11-26). daily.dev and Substack are not the run's job either:
+they post from GitHub Actions every night at 02:00 / 02:15 IST (private repo nerdit-cloud-poster, since 2026-11-26). Vocal, HackerNoon, Hacker News and Indie Hackers
 were dropped on 2026-11-26 (owner: not in our region, banned us, posting errors, needs a subscription): never post there.
 
 The run may only use Chrome, this skill, its recipes and `runlog.py` (no curl, no file writes, no other

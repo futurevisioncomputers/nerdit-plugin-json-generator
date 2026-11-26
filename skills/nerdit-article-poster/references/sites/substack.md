@@ -1,5 +1,8 @@
 # substack
 
+- **Since 2026-11-26:** posted by GitHub Actions every night at 02:15 IST, web only (private repo
+  `futurevisioncomputers/nerdit-cloud-poster`, `substack-post.yml`; what it posted: `state/substack.json`). Scheduled PC
+  runs never do Substack. Use the steps below only when the owner asks by hand.
 - **Start:** https://substack.com/home (publication: nerditin.substack.com, made 2026-11-24)
 - **Signed in when:** the left sidebar with Home / Create (signed out: the orange landing page with 'Sign in').
   Signed out: sign-in is by an emailed link or code, so the owner does it (scheduled run: skip "sign in needed").
