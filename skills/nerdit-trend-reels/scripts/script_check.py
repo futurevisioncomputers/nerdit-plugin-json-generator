@@ -10,7 +10,7 @@ import re
 import sys
 from pathlib import Path
 
-from numwords import DIGITS, find, normalise, words_to_digits
+from numwords import DIGITS, TENS, UNITS, find, normalise, words_to_digits
 from runs import record_check
 
 MAX_WORDS = 35
@@ -19,6 +19,9 @@ BANNED = ("free certificate",)
 WEB = re.compile(r"https?://|www\.|\bdot (?:com|in|org|net)\b|\b\w+\.(?:com|in|org|net)\b", re.I)
 NON_LATIN = re.compile("[^\u0000-ɏ -⁯₹]")   # Latin letters, punctuation, rupee sign
 FACTS = {"daily": 1, "weekly": 3}
+_NUMWORD = "|".join([*UNITS, *TENS])
+# Pilot 2026-11-25: Dev garbled "ten point six million" in both takes; say "over ten million" instead.
+SPOKEN_DECIMAL = re.compile(rf"\b(?:{_NUMWORD})(?:-(?:{_NUMWORD}))?\s+point\s+(?:{_NUMWORD})\b", re.I)
 
 
 def _words(text: str) -> list[str]:
@@ -42,6 +45,8 @@ def script_errors(script: dict, kept: list[dict]) -> list[str]:
     digits = [w for w in words if re.search(r"\d", w)]
     if digits:
         errors.append(f"spoken line has digits: {', '.join(digits)} (spell numbers as said)")
+    if m := SPOKEN_DECIMAL.search(line):
+        errors.append(f"spoken decimal '{m.group(0)}' (Dev garbles decimals: round it, e.g. 'over ten million')")
     if WEB.search(line):
         errors.append("spoken line has a web address (say 'link in bio' only)")
     title = script.get("course", {}).get("title", "")

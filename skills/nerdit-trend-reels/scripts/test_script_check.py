@@ -92,3 +92,17 @@ def test_spoken_number_not_in_sources_fails():
 def test_small_spoken_counts_are_not_claims():
     line = "This week in AI and jobs. One, PwC trains people. Two, more. Three, done. Link in bio."
     assert not [e for e in script_errors(script(line=line), KEPT) if "spoken" in e]
+
+
+def test_spoken_decimal_fails():
+    # Pilot 2026-11-25: Dev said "ten points million" and skipped the line in two takes (108 credits).
+    kept = copy.deepcopy(KEPT)
+    kept[0]["evidence"].append("creates 10.6 million jobs")
+    line = LINE.replace("eighty-five thousand of its people", "ten point six million people")
+    errors = script_errors(script(line=line), kept)
+    assert any("decimal" in e for e in errors)
+
+
+def test_point_as_plain_word_passes():
+    line = LINE.replace("Learn how AI works.", "That is the point. Learn how AI works.")
+    assert not [e for e in script_errors(script(line=line), KEPT) if "decimal" in e]
