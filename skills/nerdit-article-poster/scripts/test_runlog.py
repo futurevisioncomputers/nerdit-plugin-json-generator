@@ -16,7 +16,14 @@ def home(tmp_path, monkeypatch):
 
 
 def test_plan_keeps_panel_order_drops_posted_and_caps_at_six():
-    assert runlog.plan("a", {"medium", "linkedin"}, DAY) == ["hashnode", "hackernoon", "substack", "wordpress", "blogger", "tumblr"]
+    assert runlog.plan("a", {"medium", "linkedin"}, DAY) == ["hashnode", "substack", "wordpress", "blogger", "tumblr", "dailydev"]
+
+
+def test_manual_plan_never_offers_linkedin_or_the_dropped_sites():
+    # LinkedIn: Publish books it on the server (2026-11-26); the owner can still name it. Dropped sites are unknown.
+    assert "linkedin" not in runlog.plan("a", set(), DAY)
+    assert not {"hackernoon", "vocal", "hackernews", "indiehackers"} & set(runlog.SITES)
+    assert "linkedin" in runlog.SITES
 
 
 def test_a_site_logged_as_posted_is_never_planned_again_even_if_its_link_was_not_saved():
@@ -52,9 +59,10 @@ def test_mark_records_each_step_and_a_corrupt_log_is_kept_aside(home):
 
 def test_cli_plan_and_mark(capsys):
     assert runlog.main(["plan", "--slug", "a", "--posted", "medium,hashnode", "--today", DAY]) == 0
-    assert capsys.readouterr().out.split()[:2] == ["hackernoon", "linkedin"]
-    assert runlog.main(["mark", "--slug", "a", "--site", "hackernoon", "--status", "posted", "--url", "https://hackernoon.com/x",
+    assert capsys.readouterr().out.split()[:2] == ["substack", "wordpress"]
+    assert runlog.main(["mark", "--slug", "a", "--site", "substack", "--status", "posted", "--url", "https://x.substack.com/p/x",
                         "--today", DAY]) == 0
+    assert runlog.main(["mark", "--slug", "a", "--site", "hackernoon", "--status", "posted", "--today", DAY]) == 1
     assert runlog.main(["mark", "--slug", "a", "--site", "myspace", "--status", "posted", "--today", DAY]) == 1
     assert runlog.main(["mark", "--slug", "a", "--site", "medium", "--status", "done", "--today", DAY]) == 1
 
@@ -62,11 +70,11 @@ def test_cli_plan_and_mark(capsys):
 def test_six_sites_per_article_per_day_counts_what_was_already_posted_today():
     for site in runlog.SITES[:4]:
         runlog.mark("a", site, "posted", DAY, url=f"https://{site}.example/x")
-    assert runlog.plan("a", set(), DAY) == ["substack", "wordpress"]
-    for site in ("substack", "wordpress"):
+    assert runlog.plan("a", set(), DAY) == ["wordpress", "blogger"]
+    for site in ("wordpress", "blogger"):
         runlog.mark("a", site, "posted", DAY, url="https://x.example/y")
     assert runlog.plan("a", set(), DAY) == []
-    assert runlog.plan("a", set(), NEXT)[:2] == ["blogger", "tumblr"]
+    assert runlog.plan("a", set(), NEXT)[:2] == ["tumblr", "dailydev"]
 
 
 def test_every_site_has_a_recipe_with_the_fields_the_skill_reads():
@@ -95,13 +103,13 @@ def test_cli_plan_names_sites_to_check_first(capsys):
     assert "check first: medium" in capsys.readouterr().out
 
 
-def test_scheduled_plan_offers_own_blogs_first_then_six_paced_sites():
+def test_scheduled_plan_offers_own_blogs_first_then_the_paced_sites():
     assert runlog.plan("a", set(), DAY, scheduled=True) == [
-        "wordpress", "blogger", "tumblr", "medium", "hashnode", "hackernoon", "substack", "vocal", "dailydev"]
+        "wordpress", "blogger", "tumblr", "medium", "hashnode", "substack", "dailydev", "pinterest"]
 
 
 def test_scheduled_own_blogs_are_not_paced_or_held_across_articles():
-    for site in ("medium", "hashnode", "hackernoon", "substack", "vocal", "dailydev"):
+    for site in ("medium", "hashnode", "substack", "dailydev", "pinterest"):
         runlog.mark("a", site, "posted", DAY, url=f"https://{site}.example/x")
     runlog.mark("b", "wordpress", "posted", DAY, url="https://wp.example/b")
     assert runlog.plan("a", set(), DAY, scheduled=True) == ["wordpress", "blogger", "tumblr"]
@@ -119,9 +127,9 @@ def test_manual_plan_ignores_other_articles_posts():
 
 
 def test_scheduled_plan_never_offers_manual_only_sites():
-    plan = runlog.plan("a", {"medium", "hashnode", "hackernoon", "substack", "vocal"}, DAY, scheduled=True)
-    assert plan == ["wordpress", "blogger", "tumblr", "dailydev", "pinterest", "indiehackers"]
-    assert not {"hackernews", "quora"} & set(runlog.SCHEDULED_SITES)
+    plan = runlog.plan("a", {"medium", "hashnode", "substack"}, DAY, scheduled=True)
+    assert plan == ["wordpress", "blogger", "tumblr", "dailydev", "pinterest"]
+    assert "quora" not in runlog.SCHEDULED_SITES
     # Publish books the LinkedIn post on the server since 2026-11-26: scheduled runs never do it.
     assert "linkedin" not in runlog.SCHEDULED_SITES
 
@@ -164,12 +172,12 @@ def test_cli_due_fetch_error(monkeypatch, capsys):
 
 def test_report_groups_the_day_across_articles():
     runlog.mark("a", "medium", "posted", DAY, url="https://medium.com/p/1")
-    runlog.mark("b", "vocal", "skipped", DAY, error="sign in needed")
+    runlog.mark("b", "dailydev", "skipped", DAY, error="sign in needed")
     runlog.mark("b", "substack", "failed", DAY, error="editor changed")
     runlog.mark("a", "hashnode", "posted", "2026-11-20", url="https://x.hashnode.dev/a")
     text = runlog.report(DAY)
     assert text.splitlines()[0] == "Posted: 1 · Skipped: 1 · Failed: 1 · Check first: 0"
-    assert "- a · medium · https://medium.com/p/1" in text and "- b · vocal · sign in needed" in text
+    assert "- a · medium · https://medium.com/p/1" in text and "- b · dailydev · sign in needed" in text
     assert "- b · substack · editor changed" in text and "hashnode" not in text
 
 
@@ -209,9 +217,9 @@ class Page:
 def test_scheduled_cap_counts_any_step_today_not_only_posted():
     runlog.mark("a", "medium", "started", DAY)
     runlog.mark("a", "hashnode", "skipped", DAY, error="sign in needed")
-    runlog.mark("a", "hackernoon", "failed", DAY, error="editor changed")
-    assert not {"medium", "hashnode", "hackernoon"} & set(runlog.plan("b", set(), DAY, scheduled=True))
-    assert runlog.plan("b", set(), NEXT, scheduled=True)[3:6] == ["medium", "hashnode", "hackernoon"]
+    runlog.mark("a", "substack", "failed", DAY, error="editor changed")
+    assert not {"medium", "hashnode", "substack"} & set(runlog.plan("b", set(), DAY, scheduled=True))
+    assert runlog.plan("b", set(), NEXT, scheduled=True)[3:6] == ["medium", "hashnode", "substack"]
 
 
 def test_due_treats_times_without_offset_as_utc():
@@ -248,19 +256,19 @@ def test_images_downloads_only_from_nerdit_storage(home, monkeypatch, capsys):
 
 def test_a_held_site_is_never_planned_until_it_is_marked_again():
     # Owner 2026-11-25: "dont do, i will inform" for the failed retries.
-    runlog.mark("a", "hackernoon", "failed", DAY, error="no images")
-    runlog.mark("a", "hackernoon", "held", DAY, error="owner: wait until I say")
+    runlog.mark("a", "substack", "failed", DAY, error="no images")
+    runlog.mark("a", "substack", "held", DAY, error="owner: wait until I say")
     later = "2026-12-05"
-    assert "hackernoon" not in runlog.plan("a", set(), later, scheduled=True)
-    assert "hackernoon" not in runlog.plan("a", set(), later)
+    assert "substack" not in runlog.plan("a", set(), later, scheduled=True)
+    assert "substack" not in runlog.plan("a", set(), later)
     assert runlog.unsettled("a") == []
-    runlog.mark("a", "hackernoon", "failed", later, error="owner: go")
-    assert "hackernoon" in runlog.plan("a", set(), "2026-12-06", scheduled=True)
+    runlog.mark("a", "substack", "failed", later, error="owner: go")
+    assert "substack" in runlog.plan("a", set(), "2026-12-06", scheduled=True)
 
 
 def test_cli_mark_held(home, capsys):
-    assert runlog.main(["mark", "--slug", "a", "--site", "vocal", "--status", "held", "--today", DAY]) == 0
-    assert capsys.readouterr().out.strip() == "logged vocal: held"
+    assert runlog.main(["mark", "--slug", "a", "--site", "dailydev", "--status", "held", "--today", DAY]) == 0
+    assert capsys.readouterr().out.strip() == "logged dailydev: held"
 
 
 def test_images_without_urls_reads_them_from_the_live_blog_page(home, monkeypatch, capsys):

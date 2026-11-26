@@ -24,7 +24,7 @@ fv.nerdit.in. Site details: `references/sites/<site>.md`. Profile setup: `refere
 
 - Type a password, a one-time code or a recovery answer, open an emailed sign-in link, or solve a CAPTCHA.
 - Pay, buy credits or start a trial; create an account on a site that has none yet.
-- Post to Quora/Reddit or Hacker News without the owner's yes for that answer or submission (automation gets
+- Post to Quora/Reddit without the owner's yes for that answer (automation gets
   accounts banned), or into a community whose rules ban self-promotion (use the NerdIT space instead, e.g. the
   daily.dev Squad).
 - Accept cookies beyond "reject non-essential", accept new terms, grant an app new permissions, or change account
@@ -50,7 +50,7 @@ recorded there); record the answer in `references/profile.md` or the site recipe
    cover (`coverImage`) and images in its body. Missing: say so and offer nerdit-article-illustrator, but post anyway
    unless the owner says wait. Note which sites already show a link ("posted").
 2. **Today's sites:** `python scripts/runlog.py plan --slug <slug> --posted <sites with links, comma-separated>`.
-   The owner may name extra sites ("do pending: Hacker News, Pinterest"): post those too; the pace is a default.
+   The owner may name extra sites ("do pending: Quora, Pinterest"): post those too; the pace is a default.
 3. **Images for upload:** for sites that need files (see each recipe), `python scripts/runlog.py images --slug
    <slug>` saves the cover and body images of the live page and prints each file's path (or copy the illustrator
    pack). Do not read image addresses from the page: the browser tool hides any URL with a query string
@@ -87,8 +87,9 @@ watching: never ask anything, never wait for an answer. The "Never" list and "Si
 scheduled site. Nothing newer goes out.
 
 **Sites:** only `wordpress`, `blogger`, `tumblr` (the Articles page's **Post copy** API buttons, not their editors),
-`medium`, `hashnode`, `hackernoon`, `substack`, `vocal`, `dailydev`, `pinterest` and `indiehackers`. Quora/Reddit
-and Hacker News stay manual. LinkedIn is not the run's job: Publish books its link post on the server (since 2026-11-26).
+`medium`, `hashnode`, `substack`, `dailydev` and `pinterest`. Quora/Reddit stays manual. LinkedIn is not the run's
+job: Publish books its link post on the server (since 2026-11-26). Vocal, HackerNoon, Hacker News and Indie Hackers
+were dropped on 2026-11-26 (owner: not in our region, banned us, posting errors, needs a subscription): never post there.
 
 The run may only use Chrome, this skill, its recipes and `runlog.py` (no curl, no file writes, no other
 commands; anything else is denied). Call runlog exactly as the prompt gives it: `python <path>/runlog.py <command>`.

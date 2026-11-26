@@ -26,17 +26,19 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-SITES = ("medium", "hashnode", "hackernoon", "linkedin", "substack", "wordpress", "blogger", "tumblr", "vocal",
-         "hackernews", "dailydev", "indiehackers", "pinterest", "quora")
+# Dropped 2026-11-26 (owner): Vocal (not in our region), HackerNoon (banned us), Hacker News (posting errors),
+# Indie Hackers (needs a subscription).
+SITES = ("medium", "hashnode", "linkedin", "substack", "wordpress", "blogger", "tumblr", "dailydev", "pinterest", "quora")
 STATUSES = ("started", "posted", "failed", "skipped", "held")
 PER_ARTICLE_PER_DAY = 6
 ONCE_A_DAY = ("quora", "pinterest")
 # The owner's own blogs, posted by the admin's "Post copy" API buttons: no pacing (no spam risk, no ban risk).
 OWN_BLOGS = ("wordpress", "blogger", "tumblr")
-# Unattended runs: no Quora/Reddit or Hacker News (automation bans). No LinkedIn: since 2026-11-26 the server books
-# the LinkedIn link post when the article is published (Social posts posts it a day later).
-SCHEDULED_SITES = OWN_BLOGS + ("medium", "hashnode", "hackernoon", "substack", "vocal", "dailydev", "pinterest",
-                               "indiehackers")
+# Booked by the server: since 2026-11-26 Publish books the LinkedIn link post (Social posts posts it a day later).
+# Never planned; the owner may still name it.
+SERVER_BOOKED = ("linkedin",)
+# Unattended runs: no Quora/Reddit (automation bans).
+SCHEDULED_SITES = OWN_BLOGS + ("medium", "hashnode", "substack", "dailydev", "pinterest")
 BLOG_INDEX = "https://nerdit.in/blog"
 DUE_AFTER = dt.timedelta(hours=24)
 IMAGE_HOSTS = ("firebasestorage.googleapis.com", "storage.googleapis.com", "nerdit.in", "www.nerdit.in")
@@ -91,7 +93,7 @@ def _touched(today: str) -> set[str]:
 def plan(slug: str, posted: set[str], today: str, scheduled: bool = False) -> list[str]:
     steps = _load(_dir() / f"{slug}.json", {"steps": []})["steps"]
     daily = _load(_dir() / "_daily.json", {}).get(today, {})
-    candidates = SCHEDULED_SITES if scheduled else SITES
+    candidates = SCHEDULED_SITES if scheduled else tuple(s for s in SITES if s not in SERVER_BOOKED)
     done = set(posted) | {s["site"] for s in steps if s["status"] == "posted"}
     waiting = {s["site"] for s in steps if s["status"] == "skipped" and s["day"] == today}
     # Scheduled: one try per site per day across articles, so a signed-out site or a lost Publish is not retried.
