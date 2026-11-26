@@ -33,10 +33,10 @@ PER_ARTICLE_PER_DAY = 6
 ONCE_A_DAY = ("quora", "pinterest")
 # The owner's own blogs, posted by the admin's "Post copy" API buttons: no pacing (no spam risk, no ban risk).
 OWN_BLOGS = ("wordpress", "blogger", "tumblr")
-# Unattended runs: no Quora/Reddit or Hacker News (automation bans); LinkedIn only as an API link post from the
-# admin's Social posts page (owner's decision 2026-11-24), never in the LinkedIn site.
+# Unattended runs: no Quora/Reddit or Hacker News (automation bans). No LinkedIn: since 2026-11-26 the server books
+# the LinkedIn link post when the article is published (Social posts posts it a day later).
 SCHEDULED_SITES = OWN_BLOGS + ("medium", "hashnode", "hackernoon", "substack", "vocal", "dailydev", "pinterest",
-                               "linkedin", "indiehackers")
+                               "indiehackers")
 BLOG_INDEX = "https://nerdit.in/blog"
 DUE_AFTER = dt.timedelta(hours=24)
 IMAGE_HOSTS = ("firebasestorage.googleapis.com", "storage.googleapis.com", "nerdit.in", "www.nerdit.in")

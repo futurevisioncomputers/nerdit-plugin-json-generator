@@ -120,8 +120,10 @@ def test_manual_plan_ignores_other_articles_posts():
 
 def test_scheduled_plan_never_offers_manual_only_sites():
     plan = runlog.plan("a", {"medium", "hashnode", "hackernoon", "substack", "vocal"}, DAY, scheduled=True)
-    assert plan == ["wordpress", "blogger", "tumblr", "dailydev", "pinterest", "linkedin", "indiehackers"]
+    assert plan == ["wordpress", "blogger", "tumblr", "dailydev", "pinterest", "indiehackers"]
     assert not {"hackernews", "quora"} & set(runlog.SCHEDULED_SITES)
+    # Publish books the LinkedIn post on the server since 2026-11-26: scheduled runs never do it.
+    assert "linkedin" not in runlog.SCHEDULED_SITES
 
 
 def test_cli_plan_scheduled(capsys):

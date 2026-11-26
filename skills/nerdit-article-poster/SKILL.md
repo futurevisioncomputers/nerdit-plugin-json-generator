@@ -87,8 +87,8 @@ watching: never ask anything, never wait for an answer. The "Never" list and "Si
 scheduled site. Nothing newer goes out.
 
 **Sites:** only `wordpress`, `blogger`, `tumblr` (the Articles page's **Post copy** API buttons, not their editors),
-`medium`, `hashnode`, `hackernoon`, `substack`, `vocal`, `dailydev`, `pinterest`, `linkedin` (an API link post from
-the admin's Social posts page, never linkedin.com) and `indiehackers`. Quora/Reddit and Hacker News stay manual.
+`medium`, `hashnode`, `hackernoon`, `substack`, `vocal`, `dailydev`, `pinterest` and `indiehackers`. Quora/Reddit
+and Hacker News stay manual. LinkedIn is not the run's job: Publish books its link post on the server (since 2026-11-26).
 
 The run may only use Chrome, this skill, its recipes and `runlog.py` (no curl, no file writes, no other
 commands; anything else is denied). Call runlog exactly as the prompt gives it: `python <path>/runlog.py <command>`.

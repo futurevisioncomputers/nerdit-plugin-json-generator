@@ -1,5 +1,8 @@
 # linkedin
 
+- **Since 2026-11-26:** Publish on the Articles page books this post by itself (Social posts row
+  `article-<slug>-linkedin`, a day later, 10:00 IST if that lands at night). Scheduled runs never do LinkedIn. Use
+  the steps below only when the owner asks by hand, for an article published before 2026-11-26.
 - **How:** a link post on the owner's LinkedIn profile through the admin's **Social posts** page (LinkedIn's
   official API, token valid to 2027-01-06). Never through linkedin.com in the browser (automation gets accounts
   banned), and never a LinkedIn article (the API has no article path). The owner decided this 2026-11-24.
