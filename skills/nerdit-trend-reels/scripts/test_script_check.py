@@ -56,9 +56,10 @@ def test_thirteen_word_sentence_fails():
     assert any("12 words" in e for e in errors)
 
 
-def test_more_than_35_words_fails():
-    long = "AI is here. " * 12 + "Link in bio."
-    assert any("35" in e for e in script_errors(script(line=long), KEPT))
+def test_more_than_30_words_fails():
+    # Pilot 2026-11-26: a 33-word line ran past the 14 s clip and Dev's "link in bio" was cut.
+    long = "AI is here. " * 10 + "Link in bio."
+    assert any("at most 30" in e for e in script_errors(script(line=long), KEPT))
 
 
 def test_verbatim_headline_on_card_fails():

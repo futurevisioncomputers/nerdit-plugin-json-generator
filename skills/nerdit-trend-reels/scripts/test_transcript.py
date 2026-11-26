@@ -41,3 +41,8 @@ def test_whisper_number_forms_match_spoken_words():
     assert match_errors("PwC trains 85 thousand people.".split(), "PwC trains eighty-five thousand people.") == []
     assert match_errors("A $1 billion bet.".split(), "A one billion dollars bet.") == []
     assert match_errors("About 1.5 million jobs.".split(), "About one point five million jobs.") == []
+
+
+def test_whisper_split_percent_sign_matches_spoken_percent():
+    # Pilot 2026-11-26: Whisper wrote "42 %" as two words for "forty-two percent".
+    assert match_errors("Only 42 % say it.".split(), "Only forty-two percent say it.") == []

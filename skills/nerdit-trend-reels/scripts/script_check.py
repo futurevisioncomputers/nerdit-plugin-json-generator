@@ -13,7 +13,7 @@ from pathlib import Path
 from numwords import DIGITS, TENS, UNITS, find, normalise, words_to_digits
 from runs import record_check
 
-MAX_WORDS = 35
+MAX_WORDS = 30   # Dev: ~2.4 words a second after a 1 s lead-in; 30 words fit a 15 s clip
 MAX_SENTENCE = 12
 BANNED = ("free certificate",)
 WEB = re.compile(r"https?://|www\.|\bdot (?:com|in|org|net)\b|\b\w+\.(?:com|in|org|net)\b", re.I)

@@ -49,7 +49,9 @@ def _content(words: list[str]) -> list[str]:
         currency = CURRENCY.get(t[:1])
         if currency:
             t = t[1:]
-        if t.endswith("%") and t[:-1]:
+        if t == "%":   # Whisper sometimes writes "42 %" as two words
+            t = "percent"
+        elif t.endswith("%"):
             t, after = t[:-1], ["percent"]
         m = re.fullmatch(r"(\d+(?:\.\d+)?)(k|m|mn|b|bn)", t)
         if m:

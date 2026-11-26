@@ -46,7 +46,7 @@ Kind: `daily` (Mon/Wed/Fri, or "make trend reel") or `weekly` (Sunday, or "weekl
    `sources`}, `course` {`id`, `title`, `lessons`, `url`}). Run `script_check.py <run>` until it passes.
 6. **Flow.** Open the project "NERDIT trend reels" (first run: rename "Nov 24 - 18:15" to it). Turn the Flow
    Agent switch off. Settings: Video → Ingredients → 9:16 → model `Omni 1.2 Flash` (if Flow has retired it, the
-   newest Omni model; say so in the report) → 720p → length slider to fit the line (about 2.5 words a second, at
+   newest Omni model; say so in the report) → 720p → length slider to fit the line (Dev starts after about 1 s, then about 2.4 words a second: 30 words need 15 s; at
    most 15 s) → x1. Read "Generating will use N credits". Attach the character "Dev - NERDIT presenter" with "+",
    paste the prompt from `references/flow-prompt.md` with the line, Generate. When done, open the clip, download
    "720p Original" (free), then `runs.py take-download <run>` (copies the newest MP4 from Downloads to
