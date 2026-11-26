@@ -910,3 +910,25 @@ def test_maths_labels_are_named_by_plain_words_not_code_spans():
     labels = ["Horizontal 2 + 1 = 3", "Vertical 1 + 2 = 3", "Result (3, 3)"]
     text = "Horizontal lane में 2 और 1. Vertical lane में 1 और 2. Final result (3, 3) है."
     assert part_cues(labels, estimate_words(text, 9.0), 0) is not None
+
+
+def test_spoken_reads_maths_signs_fractions_and_terms():
+    # Maths course 2026-11-26: the Hindi voice dropped the sign of -2 and read 1/2 as "one two".
+    say = pronounce.spoken
+    assert say("Start -3 से, x = -2, (-2) squared") == "Start minus three से, x = minus two, (minus two) squared"
+    assert say("1/2 + 1/4 = 3/4, 6 / 2 = 3, (1 + 3)/2") == "one by two + one by four = three by four, six by two = three, (one + three) by two"
+    assert say("5 - 3 = 2, x - 1 और B - A") == "five minus three = two, x minus one और B minus A"
+    assert say("Error-free API - fast") == "Error-free A P I - fast"      # a prose dash stays a dash
+    assert say("2x + 1, 2u, 0a और 1st step") == "two x + one, two u, zero a और first step" or \
+        say("2x + 1, 2u, 0a और 1st step").startswith("two x + one, two u, zero a")
+
+
+def test_voice_cache_keys_on_what_is_spoken():
+    import voice
+    plain = voice.spoken_key("x = -2", lambda s: s, {}, "google")
+    assert plain != voice.spoken_key("x = -2", pronounce.spoken, {}, "google")
+    assert plain == voice.spoken_key("x = -2", lambda s: s, {}, "google")
+
+
+def test_spoken_reads_capital_letter_terms():
+    assert pronounce.spoken("doubled 2A, E = 2I") == "doubled two A, E = two I"

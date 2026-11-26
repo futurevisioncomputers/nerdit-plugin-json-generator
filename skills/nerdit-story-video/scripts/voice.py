@@ -218,6 +218,11 @@ def clip_key(text: str, voice: dict, engine: str) -> str:
     return hashlib.sha256(data.encode("utf-8")).hexdigest()[:16]
 
 
+def spoken_key(text: str, say, voice: dict, engine: str) -> str:
+    """The cache key of what the voice will actually say."""
+    return clip_key(say(text), voice, engine)
+
+
 def cached(audio: Path, clip_id: str, key: str) -> bool:
     files = [audio / f"{clip_id}{ext}" for ext in (".wav", ".words.json", ".key")]
     return all(f.is_file() for f in files) and files[2].read_text(encoding="utf-8").strip() == key
@@ -234,20 +239,21 @@ def run(images_dir: Path, engine: str | None, python: str | None, ref: Path | No
     pick = selected(plan, only)
     items = [c for c in clips(plan) if pick is None or c["id"] in pick]
     if engine == "google":
-        # A clip whose text and voice settings are unchanged is not recorded (or paid for) again.
-        keys = {c["id"]: clip_key(c["text"], voice, engine) for c in items}
-        reused = [c for c in items if cached(audio, c["id"], keys[c["id"]])]
-        items = [c for c in items if c not in reused]
-        print(f"recording {len(items)} clip(s), {sum(len(c['text']) for c in items)} characters; "
-              f"{len(reused)} unchanged clip(s) reused", flush=True)
-        key = google_key()
-        name, rate = voice.get("name", "hi-IN-Chirp3-HD-Achird"), float(voice.get("rate", 0.9))
         say = spoken
         if voice.get("spelling") == "devanagari":   # English words in Devanagari: an Indian accent (owner, 2026-11-04)
             sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "nerdit-presenter-shorts" / "scripts"))
             from shorts import hi_lexicon, respell
             lex = hi_lexicon()
             say = lambda s: respell(s, lex)[0]   # noqa: E731
+        # A clip whose spoken text and voice settings are unchanged is not recorded (or paid for) again; keying on
+        # the spoken text means a pronunciation fix re-records exactly the clips it changes.
+        keys = {c["id"]: spoken_key(c["text"], say, voice, engine) for c in items}
+        reused = [c for c in items if cached(audio, c["id"], keys[c["id"]])]
+        items = [c for c in items if c not in reused]
+        print(f"recording {len(items)} clip(s), {sum(len(c['text']) for c in items)} characters; "
+              f"{len(reused)} unchanged clip(s) reused", flush=True)
+        key = google_key()
+        name, rate = voice.get("name", "hi-IN-Chirp3-HD-Achird"), float(voice.get("rate", 0.9))
         for c in items:
             wav = audio / f"{c['id']}.wav"
             words = google_sentences(c["text"], say, name, rate, wav, key, ff, google, runner)

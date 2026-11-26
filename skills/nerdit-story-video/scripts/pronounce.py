@@ -137,8 +137,29 @@ def speak_code_spans(text: str) -> str:
     return CODE_SPAN.sub(one, text)
 
 
+# Maths outside backticks (maths course 2026-11-26: the Hindi voice dropped the sign of -2 and read 1/2 as "one two").
+NEGATIVE = re.compile(r"(?<![\w)\]])[-−](?=\d)")                 # -2, (-2), x = -2; not 5-3
+FRACTION = re.compile(r"(?<=[\d)])\s?/\s?(?=\d)")                 # 1/2, 6 / 2, (1 + 3)/2 -> "by"
+TERM = re.compile(r"(?<![\w.])(\d+)([A-Za-z]{1,3})(?![\w])")      # 2x, 2u, 0a, 2A, 2I -> 2 x, 2 u, 0 a, 2 A, 2 I
+BINARY = re.compile(r"(\S+) [-−] (?=(\S+))")
+ORDINAL = {"st", "nd", "rd", "th"}
+
+
+def _mathy(token: str) -> bool:
+    """A maths operand: has a digit, is a single letter (x, B), or carries a bracket."""
+    core = token.strip(".,;:!?")
+    return bool(re.search(r"\d", core)) or bool(re.fullmatch(r"[(\[]?[A-Za-z][)\]]?", core)) or core[:1] in "([" or core[-1:] in ")]"
+
+
+def speak_maths(text: str) -> str:
+    text = NEGATIVE.sub("minus ", text)
+    text = FRACTION.sub(" by ", text)
+    text = TERM.sub(lambda m: m.group(0) if m.group(2) in ORDINAL else m.group(1) + " " + " ".join(m.group(2)), text)
+    return BINARY.sub(lambda m: f"{m.group(1)} minus " if _mathy(m.group(1)) or _mathy(m.group(2)) else m.group(0), text)
+
+
 def spoken(text: str, lex: dict | None = None) -> str:
     """The narration as the voice should say it."""
     lex = lexicon() if lex is None else lex
-    text = speak_code_spans(text)
+    text = speak_maths(speak_code_spans(text))
     return NUMBER.sub(number, TOKEN.sub(lambda m: name(m.group(0), lex), text))
