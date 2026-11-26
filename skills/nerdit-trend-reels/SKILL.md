@@ -38,7 +38,8 @@ Kind: `daily` (Mon/Wed/Fri, or "make trend reel") or `weekly` (Sunday, or "weekl
    (avatar, top right) and read "N Google Flow credits". `runs.py credits <N>`: exit 1 → write the report "Flow
    credits run out until <reset date>" and stop. Write `<run>/run.log` lines as you go (credits before, each step).
 2. **Collect.** `collect.py --days 2 --out <run>/trends.json` (weekly: `--days 7`).
-3. **Check.** Follow `references/editorial.md`: read the links with WebFetch (never in Chrome), keep only stories that pass, map each to a live course
+3. **Check.** Follow `references/editorial.md`: find each story's original article with WebSearch (Google News links
+   are empty pages), read it with WebFetch (never in Chrome), keep only stories that pass, map each to a live course
    with `mcp__nerdit__catalogue_status` (course URL `https://nerdit.in/course/<slug>/preview`), write
    `<run>/checked.json`. Nothing kept → report "No safe story today; no credits spent." and stop.
 4. **Ideas.** 3 ideas, `chosen` and `reason` in `<run>/ideas.json`; check `runs.py recent` first.

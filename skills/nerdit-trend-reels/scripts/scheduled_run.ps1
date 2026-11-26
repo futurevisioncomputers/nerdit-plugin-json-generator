@@ -77,7 +77,9 @@ try {
   # fetching article pages for the two-outlet check, and the course catalogue. Everything else is denied (dontAsk).
   $allowed = @('mcp__claude-in-chrome', 'Skill') + ($names | ForEach-Object { "Bash(python $scripts/$_ *)" }) + @(
     'Read(~/.claude/plugins/**)', 'Read(~/.nerdit-social/trend-reels/**)', 'Write(~/.nerdit-social/trend-reels/**)',
-    'Edit(~/.nerdit-social/trend-reels/**)', 'WebFetch', 'mcp__nerdit__catalogue_status')
+    'Edit(~/.nerdit-social/trend-reels/**)', 'WebFetch', 'WebSearch', 'mcp__nerdit__catalogue_status')
+  # WebSearch: Google News feed links open only an empty "Google News" page (2026-11-26), so the run finds each
+  # story's original article by its headline and outlet first.
   # The prompt goes right after -p: --allowedTools takes every value after it.
   $claudeArgs = @('-p', $fullPrompt, '--chrome', '--setting-sources', 'project', '--plugin-dir', $pluginDir,
     '--mcp-config', $mcpConfig, '--permission-mode', 'dontAsk', '--disallowedTools', 'PowerShell', '--allowedTools') + $allowed
