@@ -1,5 +1,8 @@
 # hashnode
 
+- **Since 2026-11-26:** posted by GitHub Actions every night at 02:30 IST (private repo
+  `futurevisioncomputers/nerdit-cloud-poster`, `hashnode-post.yml`; what it posted: `state/hashnode.json`). The editor
+  now opens in Rich mode (switch to Markdown). Scheduled PC runs never do Hashnode; the steps below are for a manual ask.
 - **Start:** https://hashnode.com/
 - **Signed in when:** 'Good morning, <name>' and the Write button
 - **Kit:** Articles page -> Copy text

@@ -105,7 +105,7 @@ def test_cli_plan_names_sites_to_check_first(capsys):
 
 def test_scheduled_plan_offers_own_blogs_first_then_the_paced_sites():
     assert runlog.plan("a", set(), DAY, scheduled=True) == [
-        "wordpress", "blogger", "tumblr", "medium", "hashnode", "pinterest"]
+        "wordpress", "blogger", "tumblr", "medium", "pinterest"]
 
 
 def test_scheduled_own_blogs_are_not_paced_or_held_across_articles():
@@ -134,6 +134,8 @@ def test_scheduled_plan_never_offers_manual_only_sites():
     assert "dailydev" not in runlog.SCHEDULED_SITES
     # Substack too (GitHub Actions, nightly 02:15 IST, web only) since 2026-11-26.
     assert "substack" not in runlog.SCHEDULED_SITES
+    # Hashnode too (GitHub Actions, nightly 02:30 IST, canonical nerdit.in) since 2026-11-26.
+    assert "hashnode" not in runlog.SCHEDULED_SITES
     # Publish books the LinkedIn post on the server since 2026-11-26: scheduled runs never do it.
     assert "linkedin" not in runlog.SCHEDULED_SITES
 
@@ -223,7 +225,7 @@ def test_scheduled_cap_counts_any_step_today_not_only_posted():
     runlog.mark("a", "hashnode", "skipped", DAY, error="sign in needed")
     runlog.mark("a", "substack", "failed", DAY, error="editor changed")
     assert not {"medium", "hashnode", "substack"} & set(runlog.plan("b", set(), DAY, scheduled=True))
-    assert runlog.plan("b", set(), NEXT, scheduled=True)[3:6] == ["medium", "hashnode", "pinterest"]
+    assert runlog.plan("b", set(), NEXT, scheduled=True)[3:5] == ["medium", "pinterest"]
 
 
 def test_due_treats_times_without_offset_as_utc():

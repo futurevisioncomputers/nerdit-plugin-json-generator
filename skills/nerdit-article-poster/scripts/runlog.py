@@ -37,9 +37,10 @@ OWN_BLOGS = ("wordpress", "blogger", "tumblr")
 # Booked by the server: since 2026-11-26 Publish books the LinkedIn link post (Social posts posts it a day later).
 # Never planned; the owner may still name it.
 SERVER_BOOKED = ("linkedin",)
-# Unattended runs: no Quora/Reddit (automation bans). No daily.dev or Substack: since 2026-11-26 they post from GitHub
-# Actions (private repo nerdit-cloud-poster, nightly 02:00 / 02:15 IST); the owner may still name them in a manual run.
-SCHEDULED_SITES = OWN_BLOGS + ("medium", "hashnode", "pinterest")
+# Unattended runs: no Quora/Reddit (automation bans). No daily.dev, Substack or Hashnode: since 2026-11-26 they post
+# from GitHub Actions (private repo nerdit-cloud-poster, nightly 02:00 / 02:15 / 02:30 IST); the owner may still name
+# them in a manual run.
+SCHEDULED_SITES = OWN_BLOGS + ("medium", "pinterest")
 BLOG_INDEX = "https://nerdit.in/blog"
 DUE_AFTER = dt.timedelta(hours=24)
 IMAGE_HOSTS = ("firebasestorage.googleapis.com", "storage.googleapis.com", "nerdit.in", "www.nerdit.in")
