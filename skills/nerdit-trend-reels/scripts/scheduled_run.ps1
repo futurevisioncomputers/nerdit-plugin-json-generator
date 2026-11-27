@@ -80,8 +80,9 @@ try {
     'Edit(~/.nerdit-social/trend-reels/**)', 'WebFetch', 'WebSearch', 'mcp__nerdit__catalogue_status')
   # WebSearch: Google News feed links open only an empty "Google News" page (2026-11-26), so the run finds each
   # story's original article by its headline and outlet first.
-  # The prompt goes right after -p: --allowedTools takes every value after it.
-  $claudeArgs = @('-p', $fullPrompt, '--chrome', '--setting-sources', 'project', '--plugin-dir', $pluginDir,
+  # The prompt goes right after -p: --allowedTools takes every value after it. --model sonnet: the script and
+  # facts are held by script_check.py and the two-outlet rule (owner, 2026-11-27: save Claude tokens).
+  $claudeArgs = @('-p', $fullPrompt, '--model', 'sonnet', '--chrome', '--setting-sources', 'project', '--plugin-dir', $pluginDir,
     '--mcp-config', $mcpConfig, '--permission-mode', 'dontAsk', '--disallowedTools', 'PowerShell', '--allowedTools') + $allowed
 
   if ($DryRun) {

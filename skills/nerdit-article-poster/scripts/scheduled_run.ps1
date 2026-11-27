@@ -64,8 +64,9 @@ try {
   $allowed = @('mcp__claude-in-chrome', 'Skill', "Bash(python $runlog *)", 'Read(~/.claude/plugins/**)')
   # The prompt goes right after -p: --allowedTools takes every value after it. --add-dir: Chrome's file upload
   # takes only files the session may read ("only files this session is allowed to read can be uploaded"), and
-  # runlog saves the article images under $runs.
-  $claudeArgs = @('-p', $fullPrompt, '--chrome', '--setting-sources', 'project', '--plugin-dir', $pluginDir,
+  # runlog saves the article images under $runs. --model sonnet: the daily run follows a written recipe in
+  # Chrome; the main model is not needed for it (owner, 2026-11-27: save Claude tokens).
+  $claudeArgs = @('-p', $fullPrompt, '--model', 'sonnet', '--chrome', '--setting-sources', 'project', '--plugin-dir', $pluginDir,
     '--add-dir', $runs, '--permission-mode', 'dontAsk', '--disallowedTools', 'PowerShell', '--allowedTools') + $allowed
 
   if ($DryRun) {

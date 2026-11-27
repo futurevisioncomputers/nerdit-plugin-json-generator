@@ -24,6 +24,10 @@ files and run shell commands can follow it. Read each step in order and do exact
 - **Subagents.** When a step says to spawn `nerdit-lesson-writer` or `nerdit-qa-validator` and
   your tool cannot start subagents, do that agent's job yourself: read
   `${CLAUDE_PLUGIN_ROOT}/agents/<name>.md` in full and follow it exactly, one lesson at a time.
+- **Models (owner, 2026-11-27: save Claude tokens).** In Claude Code the agent files set the model:
+  `nerdit-lesson-writer` runs on Sonnet, `nerdit-qa-validator` on Haiku. Do not pass a `model`
+  override when spawning them; the GATE and `verify_course.py` hold the quality bar on any model.
+  Only a lesson that still fails its GATE after the hook's fix rounds goes back to the main model.
 - **Scripts decide; never guess their result.** Run every command shown, read its output, and
   act on its exit code: `0` = pass, go on; `1` = the content is wrong, fix what the lines name;
   `2` = the environment is missing something (an engine, a Python version, a file), fix the

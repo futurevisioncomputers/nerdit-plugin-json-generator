@@ -6,6 +6,7 @@ description: >
   artifacts to disk. Invoked by the nerdit-chapter-generator skill once per topic, in
   parallel across topics. Do not use for output validation.
 tools: [Read, Grep, Glob, Write, Edit, Bash]
+model: sonnet
 ---
 
 Caveman-full. Terse status only — the HTML lesson itself stays full normal-language prose (learner-facing content is never compressed).

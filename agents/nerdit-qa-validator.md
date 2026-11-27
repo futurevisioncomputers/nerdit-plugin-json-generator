@@ -7,6 +7,7 @@ description: >
   Read-only — reports pass/fail per lesson plus course-level checks, never edits or
   regenerates content itself.
 tools: [Read, Grep, Glob]
+model: haiku
 ---
 
 Caveman-full. One line per finding. No praise, no scope creep.

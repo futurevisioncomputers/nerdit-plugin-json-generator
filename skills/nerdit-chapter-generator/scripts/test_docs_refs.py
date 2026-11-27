@@ -35,8 +35,12 @@ def test_writer_trim_rule_matches_the_refresh_guard():
     assert "seed or a view" not in (HERE / "verify_course.py").read_text(encoding="utf-8")
 
 
-def test_plugin_version_is_3_14_0():
-    assert json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))["version"] == "3.22.0"
+def test_plugin_version_is_semver_from_3_22_0():
+    # A pinned version went stale at every release (it said 3.22.0 through 3.24.5); keep the floor only.
+    version = json.loads((ROOT / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))["version"]
+    parts = version.split(".")
+    assert len(parts) == 3 and all(p.isdigit() for p in parts), version
+    assert tuple(map(int, parts)) >= (3, 22, 0)
 
 
 def test_skill_md_matches_the_v11_figure_rules():
