@@ -170,7 +170,9 @@ stale part fails the merge: rewrite that lesson's part, never fill the gap by ha
      words; Hindi words in Devanagari so the Hindi voice says them right. **`en-IN`** (on request)
      is natural Indian English, the way a friendly Indian instructor talks in class: short spoken
      sentences, contractions ("you'll", "it's"), "so", "now", "notice", at most a few Hindi words;
-     at least 80% English words. Only the lesson's facts; any number spoken must appear in that lesson. Say each
+     at least 80% English words. **Maths and explanation words are always English** (owner, 2026-11-27): add, subtract,
+     multiply, divide, equals, double, power, square, sum, reverse, never जोड़, घटाना, गुणा, बराबर, दोगुना, उलटा (`check`
+     fails them), and the voice reads + × = √ as plus, times, equals, square root of. Only the lesson's facts; any number spoken must appear in that lesson. Say each
      `terms` entry out loud (1–3 per scene).
    - **keyIdea** (≤ 90 chars, English) is the KEY IDEA panel: one sentence a learner gets at a
      glance, the takeaway of the picture on the left; never a copy of the narration and never a

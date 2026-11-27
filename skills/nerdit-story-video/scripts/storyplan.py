@@ -398,6 +398,15 @@ def english_share(text: str) -> float:
     return latin / (latin + hindi) if latin + hindi else 0.0
 
 
+# Owner 2026-11-27: maths and explanation words are said in English (add, subtract, multiply, equals, double, power,
+# square, sum, difference, reverse), never in Hindi. A word starting with one of these stems is refused.
+HINDI_MATHS = ("जोड़", "जोड", "घटा", "गुणा", "गुना", "भाग", "बराबर", "दोगुन", "दुगुन", "घात", "वर्ग", "योग", "अंतर", "उलट")
+
+
+def hindi_maths_words(text: str) -> list[str]:
+    return sorted({w for w in re.findall(r"[ऀ-ॿ]+", text or "") if w.startswith(HINDI_MATHS)})
+
+
 def _check_text(tag: str, text: str, errors: list, floor: float = MIN_ENGLISH) -> bool:
     text = (text or "").strip()
     if not text:
@@ -411,6 +420,10 @@ def _check_text(tag: str, text: str, errors: list, floor: float = MIN_ENGLISH) -
     if share < floor:
         errors.append(f"{tag}: narration is {share:.0%} English words; say the technical terms and key nouns "
                       f"in English (at least {floor:.0%})")
+    hindi = hindi_maths_words(text)
+    if hindi:
+        errors.append(f"{tag}: say maths words in English, not Hindi: {', '.join(hindi)} "
+                      f"(add, subtract, multiply, equals, double, power, square, sum, reverse)")
     return True
 
 

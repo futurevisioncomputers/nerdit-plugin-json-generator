@@ -70,7 +70,7 @@ def test_a_code_scene_points_at_the_idea_not_every_line(tmp_path):
     part["clips"] = part["clips"][:1]
     part["scenes"].append({"kind": "code", "lessonId": "c-01", "topic": 1, "title": "1 — part", "code": 1,
                            "highlight": ["line:1", "line:2", "line:3"],
-                           "narration": "ये program तीन values जोड़कर एक total data value print करता है.",
+                           "narration": "ये program तीन values को add करके एक total data value print करता है.",
                            "keyIdea": "Three values add to one total.", "terms": ["data"], "focus": [],
                            "myth": None, "purpose": "Shows what the program is for"})
     errors = lesson_check(tmp_path, part, html=CODE_HTML)

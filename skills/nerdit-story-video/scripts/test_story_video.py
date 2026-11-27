@@ -915,12 +915,11 @@ def test_maths_labels_are_named_by_plain_words_not_code_spans():
 def test_spoken_reads_maths_signs_fractions_and_terms():
     # Maths course 2026-11-26: the Hindi voice dropped the sign of -2 and read 1/2 as "one two".
     say = pronounce.spoken
-    assert say("Start -3 से, x = -2, (-2) squared") == "Start minus three से, x = minus two, (minus two) squared"
-    assert say("1/2 + 1/4 = 3/4, 6 / 2 = 3, (1 + 3)/2") == "one by two + one by four = three by four, six by two = three, (one + three) by two"
-    assert say("5 - 3 = 2, x - 1 और B - A") == "five minus three = two, x minus one और B minus A"
+    assert say("Start -3 से, x = -2, (-2) squared") == "Start minus three से, x equals minus two, (minus two) squared"
+    assert say("1/2 + 1/4 = 3/4, 6 / 2 = 3, (1 + 3)/2") == "one by two plus one by four equals three by four, six by two equals three, (one plus three) by two"
+    assert say("5 - 3 = 2, x - 1 और B - A") == "five minus three equals two, x minus one और B minus A"
     assert say("Error-free API - fast") == "Error-free A P I - fast"      # a prose dash stays a dash
-    assert say("2x + 1, 2u, 0a और 1st step") == "two x + one, two u, zero a और first step" or \
-        say("2x + 1, 2u, 0a और 1st step").startswith("two x + one, two u, zero a")
+    assert say("2x + 1, 2u, 0a और 1st step") == "two x plus one, two u, zero a और 1st step"
 
 
 def test_voice_cache_keys_on_what_is_spoken():
@@ -931,4 +930,16 @@ def test_voice_cache_keys_on_what_is_spoken():
 
 
 def test_spoken_reads_capital_letter_terms():
-    assert pronounce.spoken("doubled 2A, E = 2I") == "doubled two A, E = two I"
+    assert pronounce.spoken("doubled 2A, E = 2I") == "doubled two A, E equals two I"
+
+
+def test_maths_words_are_said_in_english():
+    # Owner 2026-11-27: the voice said "जोड़" for +; maths words (plus, add, subtract, power...) are English only.
+    assert pronounce.spoken("2 + 2 = 4, 2 × 3, √9 = 3") == "two plus two equals four, two times three, square root of nine equals three"
+    import storyplan
+    errors = []
+    storyplan._check_text("scene 1", "Horizontal lane में 2 और 1 जोड़िए, फिर result बराबर 3 है, और direction उलट जाती है.", errors, 0.0)
+    assert any("English" in e and "जोड़िए" in e and "बराबर" in e and "उलट" in e for e in errors)
+    ok = []
+    storyplan._check_text("scene 1", "Horizontal lane में 2 और 1 add कीजिए; इसका उपयोग हर vector पर होता है.", ok, 0.0)
+    assert ok == []          # उपयोग (use) is not योग (sum)

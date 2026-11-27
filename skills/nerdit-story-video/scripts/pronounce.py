@@ -151,11 +151,19 @@ def _mathy(token: str) -> bool:
     return bool(re.search(r"\d", core)) or bool(re.fullmatch(r"[(\[]?[A-Za-z][)\]]?", core)) or core[:1] in "([" or core[-1:] in ")]"
 
 
+# Owner 2026-11-27: the Hindi voice read + as "जोड़" and × as "गुना"; maths symbols are said in English.
+SYMBOLS = {"+": "plus", "×": "times", "=": "equals", "≠": "is not equal to", "√": "square root of", "→": "becomes",
+           "·": "dot", "≥": "is at least", "≤": "is at most", "÷": "divided by"}
+SYMBOL = re.compile("|".join(re.escape(s) for s in SYMBOLS))
+
+
 def speak_maths(text: str) -> str:
     text = NEGATIVE.sub("minus ", text)
     text = FRACTION.sub(" by ", text)
     text = TERM.sub(lambda m: m.group(0) if m.group(2) in ORDINAL else m.group(1) + " " + " ".join(m.group(2)), text)
-    return BINARY.sub(lambda m: f"{m.group(1)} minus " if _mathy(m.group(1)) or _mathy(m.group(2)) else m.group(0), text)
+    text = BINARY.sub(lambda m: f"{m.group(1)} minus " if _mathy(m.group(1)) or _mathy(m.group(2)) else m.group(0), text)
+    text = SYMBOL.sub(lambda m: f" {SYMBOLS[m.group(0)]} ", text)
+    return re.sub(r"(?<=\S) {2,}(?=\S)", " ", text).replace(" ,", ",")
 
 
 def spoken(text: str, lex: dict | None = None) -> str:
