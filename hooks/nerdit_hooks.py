@@ -2,7 +2,10 @@
 
   python -I nerdit_hooks.py subagent-gate   SubagentStop: re-run a lesson writer's GATE; block while it fails
   python -I nerdit_hooks.py pre-shell       PreToolUse (Bash|PowerShell): handover files, stale deploys,
-                                            pilot-first for social packs and story videos
+                                            pilot-first for social packs and story videos,
+                                            no Hindi maths words before voice.py / build_video.py
+  python -I nerdit_hooks.py post-write      PostToolUse (Write|Edit|MultiEdit): a story-video narration file
+                                            with a Hindi maths word goes straight back for a fix
   python -I nerdit_hooks.py stop-pack       Stop: check every social pack this session changed
 
 The hook input arrives as JSON on stdin; a decision, if any, goes to stdout as JSON.
@@ -352,6 +355,109 @@ def video_full_run_problem(cmd: str, cwd: Path) -> str | None:
     return None
 
 
+# ---------- Story-video narration: maths words in English (owner, 2026-11-27) ----------
+# The Hindi voice said "जोड़" for "add"; every clip recorded with a Hindi maths word had to be recorded again.
+# The plan check (storyplan.py) already refuses them; these hooks stop at the first moment instead:
+# right after a narration file is written, and before voice.py / build_video.py spend money or time.
+
+STORY_SCRIPTS = Path(__file__).resolve().parents[1] / "skills" / "nerdit-story-video" / "scripts"
+# Same list as storyplan.HINDI_MATHS (a test keeps them equal); used when storyplan cannot be imported.
+HINDI_MATHS = ("जोड़", "जोड", "घटा", "गुणा", "गुना", "भाग", "बराबर", "दोगुन", "दुगुन", "घात", "वर्ग", "योग", "अंतर", "उलट")
+ENGLISH_MATHS = "add, subtract, multiply, divide, equals, equal, double, power, square, sum, difference, reverse"
+
+
+def hindi_maths_words(text: str) -> list[str]:
+    try:
+        if str(STORY_SCRIPTS) not in sys.path:
+            sys.path.insert(0, str(STORY_SCRIPTS))
+        import storyplan                                    # the plugin's own rule, when it loads
+        return storyplan.hindi_maths_words(text)
+    except Exception:
+        return sorted({w for w in re.findall(r"[ऀ-ॿ]+", text or "") if w.startswith(HINDI_MATHS)})
+
+
+def is_narration_file(path: Path) -> bool:
+    """A lesson part (<id>.video.json) or a story-video plan (.../video/plan.json)."""
+    return path.name.endswith(".video.json") or (path.name == "plan.json" and path.parent.name == "video")
+
+
+def narrations(plan: dict):
+    """(where, text) for every line the voice says in a story-video plan or lesson part."""
+    for key in ("intro", "recap"):
+        part = plan.get(key)
+        if isinstance(part, dict):
+            for f in ("narration", "say"):
+                if isinstance(part.get(f), str):
+                    yield key, part[f]
+    for n, s in enumerate(plan.get("scenes") or [], 1):
+        if not isinstance(s, dict):
+            continue
+        tag = f"scene {n}" + (f" ({s['lessonId']} topic {s.get('topic', '?')})" if s.get("lessonId") else "")
+        for f in ("narration", "say"):
+            if isinstance(s.get(f), str):
+                yield tag, s[f]
+        myth = s.get("myth")
+        if isinstance(myth, dict) and isinstance(myth.get("narration"), str):
+            yield tag + " myth", myth["narration"]
+
+
+def maths_word_lines(plan: dict) -> list[str]:
+    return [f"{where}: {', '.join(words)}" for where, text in narrations(plan)
+            if (words := hindi_maths_words(text))]
+
+
+def _maths_rule(lines: list[str]) -> str:
+    more = f"\n... and {len(lines) - 30} more" if len(lines) > 30 else ""
+    return (f"maths words are always English in the narration (owner, 2026-11-27): {ENGLISH_MATHS}; "
+            "never जोड़/घटा/गुणा/बराबर/दोगुना/उलटा. Reword each line below (e.g. जोड़िए -> add कीजिए, "
+            "बराबर -> equals), then run `storyplan.py check` again.\n" + "\n".join(lines[:30]) + more)
+
+
+def handle_post_write(data: dict) -> dict | None:
+    """PostToolUse (Write|Edit|MultiEdit): a narration file with a Hindi maths word is sent back at once."""
+    inp = data.get("tool_input") or {}
+    raw = inp.get("file_path") or (data.get("tool_response") or {}).get("filePath")
+    if not isinstance(raw, str) or not raw:
+        return None
+    path = Path(raw)
+    if not is_narration_file(path):
+        return None
+    try:
+        plan = json.loads(path.read_text(encoding="utf-8-sig"))
+    except (OSError, ValueError):
+        return None                                   # half-written or not JSON yet: the plan check reports it
+    lines = maths_word_lines(plan) if isinstance(plan, dict) else []
+    if not lines:
+        return None
+    return {"decision": "block",
+            "reason": f"nerdit hook: {path.name} — " + _maths_rule(lines) +
+                      "\nFix it now, before any voice run, so no clip is recorded twice."}
+
+
+VOICE_FREE_FLAGS = {"--stills", "--thumbnail-only", "--list-voices", "-h", "--help"}
+
+
+def video_maths_words_problem(cmd: str, cwd: Path) -> str | None:
+    """voice.py / build_video.py (pilot runs too) refuse a plan whose narration has a Hindi maths word."""
+    for script in ("voice.py", "build_video.py"):
+        for args, base in _script_calls(cmd, cwd, script):
+            if any(a.split("=", 1)[0] in VOICE_FREE_FLAGS for a in args):
+                continue
+            imgs = _opt(args, "--images-dir")
+            if imgs is None or _unresolved(imgs):
+                continue                              # the pilot-first check asks for a literal path
+            plan_path = _resolve(base, imgs) / "video" / "plan.json"
+            try:
+                plan = json.loads(plan_path.read_text(encoding="utf-8-sig"))
+            except (OSError, ValueError):
+                continue
+            lines = maths_word_lines(plan) if isinstance(plan, dict) else []
+            if lines:
+                return (f"{script} would record or render Hindi maths words from {plan_path}: "
+                        + _maths_rule(lines) + "\nFix the lesson parts, merge again, then run " + script + ".")
+    return None
+
+
 def find_root(start: Path) -> Path:
     for p in (start, *start.parents):
         if (p / "nerdit" / "shared").is_dir():
@@ -366,7 +472,8 @@ def handle_pre_shell(data: dict, root: Path | None = None) -> dict | None:
     cwd = Path(data.get("cwd") or os.getcwd())
     root = root or find_root(Path(os.environ.get("CLAUDE_PROJECT_DIR") or cwd))
     checks = (lambda: key_file_delete(cmd), lambda: deploy_problem(cmd, root, cwd),
-              lambda: pack_build_problem(cmd, cwd), lambda: video_full_run_problem(cmd, cwd))
+              lambda: pack_build_problem(cmd, cwd), lambda: video_full_run_problem(cmd, cwd),
+              lambda: video_maths_words_problem(cmd, cwd))
     for check in checks:
         problem = check()
         if problem:
@@ -452,7 +559,8 @@ def handle_stop(data: dict, run=subprocess.run, state_dir: Path | None = None,
 
 # ---------- entry point ----------
 
-HANDLERS = {"subagent-gate": handle_subagent_stop, "pre-shell": handle_pre_shell, "stop-pack": handle_stop}
+HANDLERS = {"subagent-gate": handle_subagent_stop, "pre-shell": handle_pre_shell, "stop-pack": handle_stop,
+            "post-write": handle_post_write}
 
 
 def main(argv: list[str] | None = None) -> int:

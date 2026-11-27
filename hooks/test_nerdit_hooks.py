@@ -296,6 +296,88 @@ def test_pre_shell_allows_plain_commands(tmp_path):
                                 "tool_input": {"command": "ls -la"}}, root=tmp_path) is None
 
 
+# ---------- Story-video narration: maths words in English ----------
+
+def _plan(path: Path, scene="Vector को scale करके add करते हैं.", **extra) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    plan = {"intro": {"narration": "यह course vectors से शुरू होता है."},
+            "recap": {"narration": "Integral पूरा change add कर देता है."},
+            "scenes": [{"lessonId": "L01", "topic": 2, "narration": scene}], **extra}
+    path.write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    return path
+
+
+def test_hook_word_list_matches_storyplan():
+    sys.path.insert(0, str(nh.STORY_SCRIPTS))
+    import storyplan
+    assert nh.HINDI_MATHS == storyplan.HINDI_MATHS
+
+
+@pytest.mark.parametrize("name,parent,ok", [("l01.video.json", "parts", True), ("plan.json", "video", True),
+                                            ("plan.json", "course", False), ("pack-plan.json", "video", False)])
+def test_narration_files_are_recognised(name, parent, ok):
+    assert nh.is_narration_file(Path(parent) / name) is ok
+
+
+def test_post_write_blocks_hindi_maths_word_in_a_scene(tmp_path):
+    f = _plan(tmp_path / "parts/l01.video.json", scene="दोनों legs जोड़ देते हैं, x बराबर 2 है.")
+    out = nh.handle_post_write({"tool_name": "Edit", "tool_input": {"file_path": str(f)}})
+    assert out["decision"] == "block"
+    assert "scene 1 (L01 topic 2): जोड़, बराबर" in out["reason"] and "add" in out["reason"]
+
+
+def test_post_write_checks_myth_intro_and_recap(tmp_path):
+    f = _plan(tmp_path / "images/video/plan.json", recap={"narration": "Step gradient का multiple घटाकर आगे बढ़ता है."})
+    data = json.loads(f.read_text(encoding="utf-8"))
+    data["scenes"][0]["myth"] = {"narration": "Order उलटा पढ़ेंगे."}
+    f.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+    reason = nh.handle_post_write({"tool_input": {"file_path": str(f)}})["reason"]
+    assert "recap: घटाकर" in reason and "scene 1 (L01 topic 2) myth: उलटा" in reason
+
+
+def test_post_write_passes_english_maths_words(tmp_path):
+    f = _plan(tmp_path / "parts/l01.video.json")
+    assert nh.handle_post_write({"tool_input": {"file_path": str(f)}}) is None
+
+
+@pytest.mark.parametrize("name", ["notes.json", "lesson.html"])
+def test_post_write_ignores_other_files(tmp_path, name):
+    f = tmp_path / name
+    f.write_text("दोनों legs जोड़ देते हैं", encoding="utf-8")
+    assert nh.handle_post_write({"tool_input": {"file_path": str(f)}}) is None
+
+
+def test_post_write_ignores_half_written_json(tmp_path):
+    f = tmp_path / "parts/l01.video.json"
+    f.parent.mkdir(parents=True)
+    f.write_text('{"scenes": [{"narration": "जोड़', encoding="utf-8")
+    assert nh.handle_post_write({"tool_input": {"file_path": str(f)}}) is None
+
+
+@pytest.mark.parametrize("cmd", ["python voice.py --images-dir imgs",
+                                 "python voice.py --images-dir imgs --only L01:2",
+                                 "python build_video.py --images-dir imgs --only L01"])
+def test_voice_and_render_denied_on_hindi_maths_words(tmp_path, cmd):
+    _touch(tmp_path / "imgs/video/pilot/OWNER_OK", 100)
+    _plan(tmp_path / "imgs/video/plan.json", scene="सभी products जोड़िए.")
+    out = nh.handle_pre_shell({"tool_name": "Bash", "cwd": str(tmp_path), "tool_input": {"command": cmd}},
+                              root=tmp_path)
+    reason = out["hookSpecificOutput"]["permissionDecisionReason"]
+    assert out["hookSpecificOutput"]["permissionDecision"] == "deny" and "जोड़िए" in reason
+
+
+def test_voice_allowed_when_narration_is_english(tmp_path):
+    _touch(tmp_path / "imgs/video/pilot/OWNER_OK", 100)
+    _plan(tmp_path / "imgs/video/plan.json")
+    assert nh.video_maths_words_problem("python voice.py --images-dir imgs", tmp_path) is None
+
+
+@pytest.mark.parametrize("flags", ["--stills", "--thumbnail-only"])
+def test_voice_free_steps_skip_the_maths_word_check(tmp_path, flags):
+    _plan(tmp_path / "imgs/video/plan.json", scene="सभी products जोड़िए.")
+    assert nh.video_maths_words_problem(f"python build_video.py --images-dir imgs {flags}", tmp_path) is None
+
+
 # ---------- Stop: pack check ----------
 
 def _pack(tmp_path: Path, name="p1", mtime=2_000_000_000.0) -> Path:
