@@ -76,3 +76,8 @@ def test_cli_fix_keeps_unicode(tmp_path, capsysbinary):
     f.write_text("Save ₹500 with Excel — सीखो", encoding="utf-8")
     assert main([str(f), "--fix"]) == 0
     assert capsysbinary.readouterr().out.decode("utf-8").strip() == "Save ₹500 with Excel, सीखो"
+
+
+def test_en_dash_in_a_number_range_is_fine():
+    assert slop_errors("Freshers earn ₹3–5 LPA; lessons 1–4 are free.", "article") == []
+    assert slop_errors("Learn fast – then build.", "article") == ["article: en dash; use a hyphen"]

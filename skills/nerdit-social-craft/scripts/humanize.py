@@ -192,7 +192,7 @@ def slop_errors(text: str, label: str) -> list[str]:
             errors.append(f"{label}: invisible character {entry['name']} (delete it)")
     if "—" in text:
         errors.append(f"{label}: em dash; use a comma or a full stop")
-    if "–" in text:
+    if re.search(r"(?<!\d)–|–(?!\d)", text):   # "₹3–5 LPA" is a number range, the en dash's proper job
         errors.append(f"{label}: en dash; use a hyphen")
     # Links and hashtags are not prose: "nerdit.in/journey" and "#journey" are not stock words.
     prose = HASHTAG_RE.sub(" ", URL_RE.sub(" ", text)).replace("’", "'")
