@@ -35,3 +35,8 @@ stock sentence shapes ("It's not just X, it's Y"). `--fix` prints a cleaned copy
 read it before using it, because a sentence shape still needs a rewrite by hand. Links and hashtags are skipped.
 Roman Hinglish captions are fine; never run it on story-video narration. Words in `nerdit_keep` (normal teaching
 words such as "ecosystem") are never flagged. Other skills call `slop_errors(text, label)`.
+
+`scripts/humanscore.py <file>` scores a longer English text (a LinkedIn post) on five checks: sentence-length
+variety, concrete numbers and names, stock-word density, typed-by-machine characters, and voice (contractions,
+"you" and "I"). Under 50 is FLAGGED: rewrite with a real number or name from the lesson, a short sentence next to a
+long one, and plain words. Social-posts runs it on LinkedIn captions only (`human_errors(text, label)`).
