@@ -13,6 +13,8 @@ import source  # noqa: F401  puts story-video's scripts on sys.path
 import storyplan
 from captions import caption_errors, unknown_numbers
 from dayplan import ALLOWED_PLATFORMS
+from hookscore import hook_errors  # social-craft, on sys.path through captions
+from humanize import slop_errors
 
 SIZES = {"story": (1080, 1920), "feed": (1080, 1350), "carousel": (1080, 1350), "cover": (1080, 1920)}
 MAX_SLIDES, MIN_SLIDES = 10, 2
@@ -76,16 +78,21 @@ def check_items(manifest: dict, packdir: Path, texts: dict) -> list[str]:
 
 
 def plan_text_errors(items: list[dict], texts: dict) -> list[str]:
-    """Every number in a hook or a written slide line must be in the lesson (lesson-made slides are not checked)."""
+    """Every number in a hook or a written slide line must be in the lesson (lesson-made slides are not checked);
+    Reel hooks and carousel covers must score at least 50 (social-craft hookscore); no stock words or dashes."""
     out = []
     for it in items:
         lesson = texts.get(it.get("lessonId", ""), "")
         if it.get("hook"):
             out += [f"{it['id']}: hook: {n} is not in the lesson" for n in unknown_numbers(it["hook"], lesson)]
+            out += hook_errors(it["hook"], it["id"]) + slop_errors(it["hook"], f"{it['id']}: hook")
         for i, s in enumerate(it.get("slides") or [], 1):
+            if i == 1 and s.get("kind") == "cover" and s.get("hook"):
+                out += hook_errors(s["hook"], f"{it['id']}: cover")
             for field in ("hook", "text"):
                 if s.get("kind") in ("cover", "idea", "cta") and s.get(field):
                     out += [f"{it['id']}: slide {i}: {n} is not in the lesson" for n in unknown_numbers(s[field], lesson)]
+                    out += slop_errors(s[field], f"{it['id']}: slide {i}")
     return out
 
 

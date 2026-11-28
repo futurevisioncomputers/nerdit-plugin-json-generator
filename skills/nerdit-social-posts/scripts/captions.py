@@ -5,12 +5,21 @@ platform's UTM link. Stories take no caption, except on Pinterest (a pin needs s
 Pinterest: the title on the first line, a blank line, the description; no link (the pin carries it).
 """
 import re
+import sys
+from pathlib import Path
+
+# Hook, fold and humanizer rules live with the social-craft skill (shared with trend-reels); reuse, never copy.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "nerdit-social-craft" / "scripts"))
+from fold import fold_errors  # noqa: E402
+from humanize import slop_errors  # noqa: E402
+from humanscore import human_errors  # noqa: E402
 
 PINTEREST_TITLE_MAX = 100
 PINTEREST_TEXT_MAX = 800
 LIMITS = {"instagram": 2200, "facebook": 3000, "linkedin": 3000, "youtube": 5000,
           "pinterest": PINTEREST_TITLE_MAX + 2 + PINTEREST_TEXT_MAX}
-MAX_TAGS = {"instagram": 8, "facebook": 5, "linkedin": 5, "youtube": 15, "pinterest": 5}
+# Instagram caps hashtags at 5 per post and Reel since 19 Dec 2025 (Mosseri; phase 0 facts, 2026-11-28).
+MAX_TAGS = {"instagram": 5, "facebook": 5, "linkedin": 5, "youtube": 15, "pinterest": 5}
 YOUTUBE_TITLE_MAX = 100
 HASHTAG = re.compile(r"#\w+")
 URL = re.compile(r"https?://\S+|www\.\S+")
@@ -99,4 +108,9 @@ def caption_errors(platform: str, fmt: str, text: str, lesson_text: str, item: d
         errors.append("linkedin: English only (no Devanagari)")
     # Every number must come from the lesson (no invented results); years and link digits are not claims.
     errors += [f"{p}: {n} is not in the lesson" for n in unknown_numbers(text, lesson_text)]
+    # Machine fingerprint (dashes, stock words) everywhere; the feed fold where the feed cuts (Instagram, LinkedIn);
+    # the five-check human score on LinkedIn, the one long English caption.
+    errors += slop_errors(text, p) + fold_errors(text, p, p)
+    if p == "linkedin":
+        errors += human_errors(text, p)
     return errors

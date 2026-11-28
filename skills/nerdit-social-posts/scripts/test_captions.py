@@ -3,9 +3,9 @@ from captions import caption_errors, fill_links, utm_link
 LESSON = "Each project gets its own venv. pip installs 2 packages here. Activate the venv before pip install."
 ITEM = {"id": "d01-reel", "date": "2026-11-19"}
 URL = "https://nerdit.in/course/course-demo-1/preview"
-OK_IG = ("Most beginners install packages globally. A venv keeps each project's packages apart.\n\n"
+OK_IG = ("Most beginners install Python packages globally. A venv keeps each project's packages apart.\n\n"
          "Save this for your next project and share it with a friend. Full lesson free, link in bio.\n#python #fastapi")
-OK_LI = ("Installing packages globally is a common beginner mistake. A virtual environment keeps each project's "
+OK_LI = ("Installing Python packages globally is a common beginner mistake. A virtual environment keeps each project's "
          "packages apart, so a project is faster to set up again.\n\nFree lesson: " + utm_link(URL, "linkedin", ITEM)
          + "\n#Python #FastAPI")
 
@@ -44,9 +44,29 @@ def test_instagram_too_long_is_refused():
         "instagram", "reel", OK_IG + "a" * (2301 - len(OK_IG)), LESSON, ITEM, URL)
 
 
-def test_instagram_more_than_8_hashtags_is_refused():
+def test_instagram_more_than_5_hashtags_is_refused():
     tags = " ".join(f"#tag{c}" for c in "abcdefghi")
-    assert "instagram: 11 hashtags; at most 8" in caption_errors("instagram", "reel", OK_IG + " " + tags, LESSON, ITEM, URL)
+    assert "instagram: 11 hashtags; at most 5" in caption_errors("instagram", "reel", OK_IG + " " + tags, LESSON, ITEM, URL)
+
+
+def test_em_dash_in_caption_fails():
+    text = OK_IG.replace("apart.", "apart — always.")
+    assert "instagram: em dash; use a comma or a full stop" in caption_errors("instagram", "reel", text, LESSON, ITEM, URL)
+
+
+def test_linkedin_slop_fails():
+    slop = ("In today's fast-paced world, we leverage cutting-edge, robust, seamless tools to unlock a transformative "
+            "journey. Moreover, it's not just a course, it's a game-changer!\n\n" + utm_link(URL, "linkedin", ITEM))
+    errs = caption_errors("linkedin", "feed", slop, LESSON, ITEM, URL)
+    assert any(e.startswith("linkedin: reads machine-written") for e in errs)
+    assert "linkedin: stock word 'unlock' (say 'get')" in errs
+
+
+def test_instagram_fold_needs_something_concrete():
+    text = ("Most beginners install packages globally. A venv keeps them apart. "
+            "Save this and share it. Full lesson free, link in bio.")
+    assert "instagram: nothing concrete before the cut (a number or a name like Python or Excel)" in caption_errors(
+        "instagram", "reel", text, LESSON, ITEM, URL)
 
 
 def test_instagram_needs_a_call_to_action():

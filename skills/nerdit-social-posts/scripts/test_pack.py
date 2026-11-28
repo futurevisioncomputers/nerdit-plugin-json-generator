@@ -11,7 +11,7 @@ from conftest import synthetic_mp4, write_workdir
 from packcheck import check
 
 URL = "https://nerdit.in/course/course-demo-1/preview"
-IG = ("Most beginners install packages globally. A venv keeps each project's packages apart.\n\n"
+IG = ("Most beginners install Python packages globally. A venv keeps each project's packages apart.\n\n"
       "Save this and share it with a friend. Full lesson free, link in bio.\n#python #fastapi")
 
 
@@ -35,7 +35,7 @@ def make_pack(tmp: Path, eleven_slides=False, duplicate_id=False, date=None, lef
     carousel = {"id": "d02-carousel", "date": "2026-11-20", "time": "13:00", "format": "carousel",
                 "platforms": ["instagram", "linkedin"], "title": "Topic 2", "media": slides, "lessonId": "demo-01",
                 "topic": 2, "theme": "light", "layout": "split"}
-    carousel["captions"] = {"instagram": IG, "linkedin": "Each project gets its own venv. Free lesson: "
+    carousel["captions"] = {"instagram": IG, "linkedin": "Each Python project gets its own venv. Free lesson: "
                                                          + utm_link(URL, "linkedin", carousel)}
     items = [reel, story, carousel]
     if duplicate_id:
@@ -123,11 +123,32 @@ def test_pilot_items_are_the_first_reel_carousel_and_picture_card():
 
 def test_numbers_in_hooks_and_slides_must_come_from_the_lesson():
     from packcheck import plan_text_errors
-    items = [{"id": "d01-reel", "format": "reel", "lessonId": "demo-01", "hook": "Install in 40 seconds"},
+    items = [{"id": "d01-reel", "format": "reel", "lessonId": "demo-01", "hook": "Stop: install Python in 40 seconds"},
              {"id": "d02-carousel", "format": "carousel", "lessonId": "demo-01",
-              "slides": [{"kind": "cover", "hook": "pip installs 2 packages"}, {"kind": "idea", "text": "Saves 3 hours"}]}]
+              "slides": [{"kind": "cover", "hook": "Stop: pip installs 2 packages"}, {"kind": "idea", "text": "Saves 3 hours"}]}]
     assert plan_text_errors(items, {"demo-01": "pip installs 2 packages here."}) == [
         "d01-reel: hook: 40 is not in the lesson", "d02-carousel: slide 2: 3 is not in the lesson"]
+
+
+def test_weak_reel_hook_fails():
+    from packcheck import plan_text_errors
+    items = [{"id": "d03-reel", "format": "reel", "lessonId": "demo-01", "hook": "Movement = end minus start"}]
+    assert "d03-reel: hook scores 28; at least 50 (weakest: SPECIFICITY)" in plan_text_errors(items, {"demo-01": ""})
+
+
+def test_cover_hook_is_scored():
+    from packcheck import plan_text_errors
+    items = [{"id": "d02-carousel", "format": "carousel", "lessonId": "demo-01",
+              "slides": [{"kind": "cover", "hook": "Movement = end minus start"}]}]
+    assert "d02-carousel: cover: hook scores 28; at least 50 (weakest: SPECIFICITY)" in plan_text_errors(
+        items, {"demo-01": ""})
+
+
+def test_stock_word_in_a_slide_fails():
+    from packcheck import plan_text_errors
+    items = [{"id": "d02-carousel", "format": "carousel", "lessonId": "demo-01",
+              "slides": [{"kind": "idea", "text": "Unlock clean Python projects"}]}]
+    assert "d02-carousel: slide 1: stock word 'unlock' (say 'get')" in plan_text_errors(items, {"demo-01": ""})
 
 
 def test_plan_can_leave_the_pad_out(tmp_path):

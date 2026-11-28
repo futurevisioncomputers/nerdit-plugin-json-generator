@@ -64,6 +64,9 @@ without Reels.
    instagram, facebook, linkedin, pinterest).
    - Reel `hook`: drawn above the video. English, one idea, at most 2 lines (about 28 characters a
      line). The plan fills it with the topic's key idea; sharpen it into a claim or a named mistake.
+     Write 3 options from 3 formulas in `nerdit-social-craft/references/hooks.json`, score them with
+     `nerdit-social-craft/scripts/hookscore.py`, and keep the best: the checker fails a Reel hook or
+     a carousel cover under 50.
    - Carousel `slides`: `slides[0].hook` is the cover (at most 4 lines of about 18 characters, must
      make sense alone in the feed). `idea` slides: one idea each, at most 6 lines of about 22
      characters. Keep the `diagram`, `quiz`, `answer` and `cta` slides as made: they come from the
@@ -120,13 +123,21 @@ without Reels.
 
 ## Caption rules (the checker enforces each)
 
-- Instagram: at most 2200 characters and 8 hashtags. The first sentence is a claim or a named
-  mistake, never a question. At least one call to action: comment (give a keyword, e.g.
+- Instagram: at most 2200 characters and 5 hashtags (Instagram's cap since 19 Dec 2025). The first
+  sentence is a claim or a named mistake, never a question. At least one call to action: comment (give a keyword, e.g.
   "Comment VENV"), save or share. Say "link in bio"; no URL (`http://`, `https://`, `www.`).
 - Facebook: the course link with UTM (write `{link}`; build fills it in), at most 5 hashtags,
   community tone.
 - LinkedIn: at most 3000 characters and 5 hashtags, the course link (`{link}`), professional and
   career-oriented, English only (no Devanagari).
+- The fold (social-craft `fold.py`): the feed shows about 125 characters on Instagram and 140 on
+  LinkedIn before "... more". The first sentence ends inside it, and a number or a name (Python,
+  Excel, pandas) shows before the cut.
+- No machine fingerprint (social-craft `humanize.py`) in captions, hooks and slide words: no em or
+  en dashes, no invisible characters, no stock words or phrases ("unlock", "game-changer", "deep
+  dive", "It's not just X, it's Y"). The error names the plain word to use.
+- LinkedIn captions also pass the human score (social-craft `humanscore.py`, at least 50): a real
+  number or name, sentences of different lengths, plain words.
 - Hinglish in Roman script is fine on Instagram and Facebook. On-screen text is always English.
 - Every number in a caption or slide appears in the lesson. No invented results, numbers or
   student claims; nothing that contradicts the lesson.
