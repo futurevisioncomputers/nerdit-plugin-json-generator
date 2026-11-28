@@ -26,3 +26,12 @@ wrong and exits 1; fix the words, never the checker.
    write new ones.
 
 Other skills call `hook_errors(text, label)` and `best_hook(options)` from `scripts/hookscore.py` directly.
+
+## Check the words
+
+`scripts/humanize.py <file>` lists what makes a caption, slide line or script read machine-written: invisible
+characters, em and en dashes, stock words and phrases from `references/slop.json` (with the plain word to use), and
+stock sentence shapes ("It's not just X, it's Y"). `--fix` prints a cleaned copy (dashes and stock words replaced);
+read it before using it, because a sentence shape still needs a rewrite by hand. Links and hashtags are skipped.
+Roman Hinglish captions are fine; never run it on story-video narration. Words in `nerdit_keep` (normal teaching
+words such as "ecosystem") are never flagged. Other skills call `slop_errors(text, label)`.
