@@ -13,6 +13,10 @@ description: >
 The rules come from two MIT-licensed skill packs (see `THIRD_PARTY.md`), adapted for NERDIT: every number in a hook
 or caption still comes from the lesson (course posts) or a kept source (Trend Reels), and nothing is ever invented.
 
+**Any model** (Claude, OpenAI/Codex, Gemini/Antigravity or another agent) can run this skill: it is these steps
+plus Python scripts with no network and no API key. Run every command shown and read its output: a non-zero exit
+means fix the words it names, never skip it.
+
 `<scripts>` is this skill's `scripts/` folder; run each as `python <scripts>/<name>.py`. Each one prints what is
 wrong and exits 1; fix the words, never the checker.
 
