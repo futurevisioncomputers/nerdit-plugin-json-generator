@@ -43,10 +43,15 @@ Kind: `daily` (Mon/Wed/Fri, or "make trend reel") or `weekly` (Sunday, or "weekl
    (avatar, top right) and read "N Google Flow credits". `runs.py credits <N>`: exit 1 → write the report "Flow
    credits run out until <reset date>" and stop. Write `<run>/run.log` lines as you go (credits before, each step).
 2. **Collect.** `collect.py --days 2 --out <run>/trends.json` (weekly: `--days 7`).
-3. **Check.** Follow `references/editorial.md`: find each story's original article with WebSearch (Google News links
-   are empty pages), read it with WebFetch (never in Chrome), keep only stories that pass, map each to a live course
-   with `mcp__nerdit__catalogue_status` (course URL `https://nerdit.in/course/<slug>/preview`), write
-   `<run>/checked.json`. Nothing kept → report "No safe story today; no credits spent." and stop.
+3. **Check.** Save the live courses from `mcp__nerdit__catalogue_status` (`state: live`) to `<run>/courses.json` as
+   `[{"id", "title", "slug"}]` (course URL `https://nerdit.in/course/<slug>/preview`). Then run
+   `gemini_check.py <run>`: Gemini (the Antigravity CLI `agy`) finds the original articles and writes
+   `<run>/checked.json`. Then run `checked_check.py <run>` (two different sites, fresh, live course, numbers and
+   quotes confirmed on the outlets' pages). If either script fails, do the check yourself: follow
+   `references/editorial.md`, find each story's original article with WebSearch (Google News links are empty pages),
+   read it with WebFetch (never in Chrome), write `<run>/checked.json`, and run `checked_check.py <run>` until it
+   passes. A "could not read" warning is fine; an error is not. Nothing kept → report "No safe story today; no
+   credits spent." and stop.
 4. **Ideas.** 3 ideas, `chosen` and `reason` in `<run>/ideas.json`; check `runs.py recent` first.
 5. **Script.** First write 3 hook options for the line's first sentence, from 3 different formulas in
    `../nerdit-social-craft/references/hooks.json` (spoken, numbers in words, at most 12 words). Then write
@@ -94,5 +99,5 @@ server emails the owner when the pending Reel is created.
 
 ## Files in a run folder
 
-`trends.json`, `checked.json`, `ideas.json`, `script.json`, `clips/clip1.mp4`, `transcript.json`, `overlays/`,
+`trends.json`, `courses.json`, `gemini-raw.txt`, `checked.json`, `ideas.json`, `script.json`, `clips/clip1.mp4`, `transcript.json`, `overlays/`,
 `reel.mp4`, `captions.json`, `captions_filled.json`, `checks.json`, `posted.json`, `run.log`.

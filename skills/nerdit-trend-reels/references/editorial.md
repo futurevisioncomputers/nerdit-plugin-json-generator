@@ -20,7 +20,7 @@ The audience is global working professionals. The hook is a work worry; the cour
 
 Record every kept story in `checked.json` → `kept` with `headline`, `links` (2+), `outlets` (2+), `evidence` (the
 sentences you read that carry the fact and its numbers, quoted) and `course_id`; every dropped one in `dropped`
-with its reason. On a low-news day keep fewer; never relax a rule.
+with its reason. On a low-news day keep fewer; never relax a rule. `checked_check.py` enforces these rules on `checked.json`, whoever wrote it, and confirms each quoted sentence on the outlet's page.
 
 ## Reading trends.json
 

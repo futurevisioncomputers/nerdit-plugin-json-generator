@@ -63,7 +63,7 @@ try {
   }
   if (-not $pluginDir -or -not (Test-Path $pluginDir)) { Write-RunLog 'NerdIT plugin not installed'; exit 1 }
   $scripts = (Join-Path $pluginDir 'skills\nerdit-trend-reels\scripts') -replace '\\', '/'
-  $names = @('runs.py', 'collect.py', 'script_check.py', 'transcript.py', 'compose.py', 'trend_captions.py')
+  $names = @('runs.py', 'collect.py', 'gemini_check.py', 'checked_check.py', 'script_check.py', 'transcript.py', 'compose.py', 'trend_captions.py')
 
   # --setting-sources project drops the user-scoped nerdit MCP (verified 2026-11-25), so pass it by file; the token
   # comes from ~/.claude.json into an env var the file names. It is never written to a file, the log or the args.
@@ -73,7 +73,7 @@ try {
   if ($LASTEXITCODE -ne 0 -or -not $token) { $token = $null }
 
   $fullPrompt = "Use the nerdit-trend-reels skill: scheduled run, kind $Kind. Run the scripts exactly as: python $scripts/<name>.py (these paths, forward slashes, no quotes)."
-  # Only these: Chrome, the skill, the six pinned scripts, reading the plugin and run folders, writing run files,
+  # Only these: Chrome, the skill, the eight pinned scripts, reading the plugin and run folders, writing run files,
   # fetching article pages for the two-outlet check, and the course catalogue. Everything else is denied (dontAsk).
   $allowed = @('mcp__claude-in-chrome', 'Skill') + ($names | ForEach-Object { "Bash(python $scripts/$_ *)" }) + @(
     'Read(~/.claude/plugins/**)', 'Read(~/.nerdit-social/trend-reels/**)', 'Write(~/.nerdit-social/trend-reels/**)',
