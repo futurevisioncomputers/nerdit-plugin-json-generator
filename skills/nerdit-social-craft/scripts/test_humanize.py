@@ -7,7 +7,7 @@ def test_em_dash_is_an_error():
 
 
 def test_en_dash_is_an_error():
-    assert slop_errors("Lessons 1–4 are free.", "facebook") == ["facebook: en dash; use a hyphen"]
+    assert slop_errors("Learn venv – then pip.", "facebook") == ["facebook: en dash; use a hyphen"]
 
 
 def test_invisible_character_is_an_error():
