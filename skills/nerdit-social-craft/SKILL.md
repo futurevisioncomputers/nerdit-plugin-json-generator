@@ -40,3 +40,10 @@ words such as "ecosystem") are never flagged. Other skills call `slop_errors(tex
 variety, concrete numbers and names, stock-word density, typed-by-machine characters, and voice (contractions,
 "you" and "I"). Under 50 is FLAGGED: rewrite with a real number or name from the lesson, a short sentence next to a
 long one, and plain words. Social-posts runs it on LinkedIn captions only (`human_errors(text, label)`).
+
+## Check the fold
+
+`scripts/fold.py <instagram|linkedin> <file>` prints what the feed shows before "... more" (Instagram 125
+characters; LinkedIn about 140 on a phone) and fails when the first sentence runs past it, or when nothing concrete
+(a number, or a name like Python or Excel) shows before the cut. Links are skipped. Other skills call
+`fold_errors(text, platform, label)`.
