@@ -1,3 +1,7 @@
+> **SUPERSEDED (owner, 2026-11-28 15:30 IST):** Codex-first article writing goes inside Article Studio's writer skill
+> (plan 3 of `nerdit/docs/superpowers/specs/2026-11-28-article-studio-design.md`), not a separate skill. Only Task 1
+> (en dash in number ranges, commit 46bdacb) was built here. The calibration and rules below are input for that plan.
+
 # Article writer (Codex first, Sonnet fallback) Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
