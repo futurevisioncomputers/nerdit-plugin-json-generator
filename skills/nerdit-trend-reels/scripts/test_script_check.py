@@ -2,15 +2,16 @@ import copy
 
 from script_check import script_errors
 
-LINE = ("PwC is training eighty-five thousand of its people for the AI age. "
-        "That tells you what your company will expect next. Learn how AI works. Link in bio.")
+HOOK = "PwC won't wait: it is training eighty-five thousand people for AI."   # scores 58 (social-craft)
+LINE = (HOOK + " That tells you what your company will expect next. Learn how AI works. Link in bio.")
+HOOKS = [HOOK, "AI is changing work.", "Hey, AI news today."]
 KEPT = [{"headline": "PwC Is Training 85,000 Employees on AI Skills", "evidence": ["certify 85,000 workers"],
          "links": ["https://inc.com/a", "https://businessinsider.com/b"], "outlets": ["Inc.", "Business Insider"]}]
 
 
 def script(line=LINE, facts=("PwC is training 85,000 staff for the AI age",), kind="daily",
-           sources=("Business Insider", "Inc.")):
-    return {"kind": kind, "line": line,
+           sources=("Business Insider", "Inc."), hooks=tuple(HOOKS)):
+    return {"kind": kind, "line": line, "hooks": list(hooks),
             "card": {"chip": "AI & JOBS  ·  25 NOV 2026", "facts": list(facts), "sources": list(sources)},
             "course": {"id": "Ncyq98jK81IVOgRygqP8", "title": "Machine Learning Fundamentals", "lessons": 12,
                        "url": "https://nerdit.in/course/machine-learning-fundamentals-1792397644108/preview"}}
@@ -52,7 +53,7 @@ def test_missing_cta_fails():
 
 
 def test_thirteen_word_sentence_fails():
-    errors = script_errors(script(line=LINE.replace("of its people", "of its own people")), KEPT)
+    errors = script_errors(script(line=LINE.replace("thousand people", "thousand of its own people")), KEPT)
     assert any("12 words" in e for e in errors)
 
 
@@ -99,7 +100,7 @@ def test_spoken_decimal_fails():
     # Pilot 2026-11-25: Dev said "ten points million" and skipped the line in two takes (108 credits).
     kept = copy.deepcopy(KEPT)
     kept[0]["evidence"].append("creates 10.6 million jobs")
-    line = LINE.replace("eighty-five thousand of its people", "ten point six million people")
+    line = LINE.replace("eighty-five thousand people", "ten point six million people")
     errors = script_errors(script(line=line), kept)
     assert any("decimal" in e for e in errors)
 
@@ -107,3 +108,28 @@ def test_spoken_decimal_fails():
 def test_point_as_plain_word_passes():
     line = LINE.replace("Learn how AI works.", "That is the point. Learn how AI works.")
     assert not [e for e in script_errors(script(line=line), KEPT) if "decimal" in e]
+
+
+def test_needs_three_hooks():
+    s = script()
+    del s["hooks"]
+    assert "script.json needs 3 hook options in 'hooks'" in script_errors(s, KEPT)
+
+
+def test_line_opens_with_the_best_hook():
+    pilot2 = "Ninety-six percent of Indian employees use AI at work."   # owner-approved, scores 50.6
+    kept = [{"headline": "96% of Indian employees use AI at work", "evidence": ["96 percent"], "links": [], "outlets": []}]
+    s = script(line="AI is changing work. Learn how AI works. Link in bio.",
+               hooks=[pilot2, "AI is changing work.", "Hey, AI news today."], facts=["96% of employees use AI"])
+    assert f"line must open with the best hook: '{pilot2}'" in script_errors(s, kept)
+
+
+def test_weak_best_hook_fails():
+    weak = ["AI is changing work.", "AI is big.", "Work is changing."]
+    s = script(line="AI is changing work. Learn how AI works. Link in bio.", hooks=weak)
+    assert any(e.startswith("hook: hook scores ") for e in script_errors(s, KEPT))
+
+
+def test_slop_on_card_fails():
+    s = script(facts=["PwC is training 85,000 staff — for the AI age"])
+    assert "card: em dash; use a comma or a full stop" in script_errors(s, KEPT)

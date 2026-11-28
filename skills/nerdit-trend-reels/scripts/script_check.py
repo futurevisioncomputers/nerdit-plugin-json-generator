@@ -13,6 +13,11 @@ from pathlib import Path
 from numwords import DIGITS, TENS, UNITS, find, normalise, words_to_digits
 from runs import record_check
 
+# Hook scoring and the humanizer live with the social-craft skill (shared with social-posts); reuse, never copy.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "nerdit-social-craft" / "scripts"))
+from hookscore import best_hook, hook_errors  # noqa: E402
+from humanize import slop_errors  # noqa: E402
+
 MAX_WORDS = 30   # Dev: ~2.4 words a second after a 1 s lead-in; 30 words fit a 15 s clip
 MAX_SENTENCE = 12
 BANNED = ("free certificate",)
@@ -76,6 +81,20 @@ def script_errors(script: dict, kept: list[dict]) -> list[str]:
 
     everything = " ".join([line, card.get("chip", ""), *facts]).lower()
     errors += [f"banned phrase '{p}'" for p in BANNED if p in everything]
+
+    # Three hook options from three formulas (social-craft hooks.json); the line opens with the best, scoring 50+.
+    hooks = script.get("hooks")
+    if not (isinstance(hooks, list) and len(hooks) == 3 and all(isinstance(h, str) and h.strip() for h in hooks)):
+        errors.append("script.json needs 3 hook options in 'hooks'")
+    else:
+        best, _ = best_hook(hooks)
+        first = re.split(r"(?<=[.!?])\s+", line)[0]
+        if first.strip().lower() != best.strip().lower():
+            errors.append(f"line must open with the best hook: '{best}'")
+        errors += hook_errors(best, "hook")
+    errors += slop_errors(line, "line") + slop_errors(card.get("chip", ""), "card")
+    for fact in facts:
+        errors += slop_errors(fact, "card")
     return errors
 
 

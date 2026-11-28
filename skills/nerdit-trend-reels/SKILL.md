@@ -48,8 +48,12 @@ Kind: `daily` (Mon/Wed/Fri, or "make trend reel") or `weekly` (Sunday, or "weekl
    with `mcp__nerdit__catalogue_status` (course URL `https://nerdit.in/course/<slug>/preview`), write
    `<run>/checked.json`. Nothing kept → report "No safe story today; no credits spent." and stop.
 4. **Ideas.** 3 ideas, `chosen` and `reason` in `<run>/ideas.json`; check `runs.py recent` first.
-5. **Script.** Write `<run>/script.json` (`kind`, `line`, `card` {`chip` e.g. "AI & JOBS  ·  25 NOV 2026", `facts`,
-   `sources`}, `course` {`id`, `title`, `lessons`, `url`}). Run `script_check.py <run>` until it passes.
+5. **Script.** First write 3 hook options for the line's first sentence, from 3 different formulas in
+   `../nerdit-social-craft/references/hooks.json` (spoken, numbers in words, at most 12 words). Then write
+   `<run>/script.json` (`kind`, `hooks` [the 3 options], `line` opening with the best-scoring hook, `card` {`chip`
+   e.g. "AI & JOBS  ·  25 NOV 2026", `facts`, `sources`}, `course` {`id`, `title`, `lessons`, `url`}). Run
+   `script_check.py <run>` until it passes: it scores the hooks (best at least 50) and checks the line and card for
+   dashes and stock words.
 6. **Flow.** Open the project "NERDIT trend reels" (first run: rename "Nov 24 - 18:15" to it). Turn the Flow
    Agent switch off. Settings: Video → Ingredients → 9:16 → model `Omni 1.2 Flash` (if Flow has retired it, the
    newest Omni model; say so in the report) → 720p → length slider to fit the line (Dev starts after about 1 s, then about 2.4 words a second: 30 words need 15 s; at
