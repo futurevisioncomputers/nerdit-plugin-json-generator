@@ -13,7 +13,7 @@ import sys
 import unicodedata
 from pathlib import Path
 
-from humanize import LEX
+from humanize import HASHTAG_RE, LEX, URL_RE
 from textio import say
 
 PASS_MARK = 50.0
@@ -97,7 +97,10 @@ def _check_voice(text: str) -> tuple[float, str]:
     contractions = len(CONTRACTIONS.findall(text)) * per100
     person = len(PRONOUNS.findall(text)) * per100
     tells = 0
+    skip = set(LEX.get("nerdit_skip_structures", []))
     for s in LEX["structures"]:
+        if s.get("id") in skip:
+            continue
         try:
             tells += len(re.compile(s["regex"], re.MULTILINE).findall(text))
         except re.error:
@@ -113,6 +116,8 @@ def _check_voice(text: str) -> tuple[float, str]:
 
 
 def human_score(text: str) -> dict:
+    # Links and hashtags are not prose: the required course link's digits are not "specific", a slug is not slop.
+    text = HASHTAG_RE.sub(" ", URL_RE.sub(" ", text))
     checks = {
         "BURSTINESS": _check_burstiness(text),
         "SPECIFICITY": _check_specificity(text),

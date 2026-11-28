@@ -33,3 +33,23 @@ def test_link_is_not_the_first_sentence():
 
 def test_feed_window_is_the_first_fold_characters():
     assert feed_window(LONG, "instagram") == LONG[:125]
+
+
+# --- final-review fixes ---
+
+def test_acronym_and_camelcase_names_count_as_concrete():
+    assert fold_errors("FastAPI checks every request for you. Save this.", "instagram", "instagram") == []
+    assert fold_errors("Most teams write SQL joins badly. Save this.", "instagram", "instagram") == []
+
+
+def test_sentence_initial_name_counts_when_the_lesson_names_it():
+    text = "Python installs packages globally by default. Save this."
+    assert fold_errors(text, "instagram", "instagram") != []
+    assert fold_errors(text, "instagram", "instagram", names={"Python"}) == []
+
+
+def test_lesson_names_are_proper_nouns_acronyms_and_camelcase():
+    from fold import lesson_names
+    assert lesson_names("Each project uses Python. Install FastAPI and SQL tools. The venv helps.") >= {
+        "Python", "FastAPI", "SQL"}
+    assert not lesson_names("Each project uses Python.") & {"Each", "The"}

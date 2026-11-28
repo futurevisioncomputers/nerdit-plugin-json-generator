@@ -149,7 +149,10 @@ def _pass_lexical(text: str, lex: dict) -> tuple[str, list]:
 
 def _scan_structures(text: str, lex: dict) -> list[dict]:
     flags = []
+    skip = set(lex.get("nerdit_skip_structures", []))
     for s in lex["structures"]:
+        if s.get("id") in skip:
+            continue
         try:
             pattern = re.compile(s["regex"], re.MULTILINE)
         except re.error:
@@ -211,7 +214,10 @@ def main(argv: list[str]) -> int:
         return 2
     text = Path(args[0]).read_text(encoding="utf-8")
     if "--fix" in argv:
-        say(clean(text)[0])
+        # The cleaned copy is for use, so it keeps every character (UTF-8); say() is for diagnostics only.
+        sys.stdout.flush()
+        sys.stdout.buffer.write((clean(text)[0] + "\n").encode("utf-8"))
+        sys.stdout.buffer.flush()
         return 0
     errors = slop_errors(text, "text")
     for e in errors or ["text ok"]:

@@ -3,7 +3,7 @@ import re
 from humanscore import human_errors, human_score
 
 # The good LinkedIn caption from nerdit-social-posts/scripts/test_captions.py (link shortened).
-OK_LI = ("Installing packages globally is a common beginner mistake. A virtual environment keeps each project's "
+OK_LI = ("Installing Python packages globally is a common beginner mistake. A virtual environment keeps each project's "
          "packages apart, so a project is faster to set up again.\n\nFree lesson: "
          "https://nerdit.in/course/course-demo-1/preview?utm_source=linkedin\n#Python #FastAPI")
 SLOP = ("In today's fast-paced world, we leverage cutting-edge, robust, seamless tools to unlock a transformative "
@@ -23,3 +23,11 @@ def test_slop_caption_is_flagged():
 
 def test_checks_are_named():
     assert set(human_score(OK_LI)["checks"]) == {"BURSTINESS", "SPECIFICITY", "SLOP DENSITY", "FINGERPRINT", "VOICE"}
+
+
+# --- final-review fixes ---
+
+def test_links_and_hashtags_do_not_change_the_score():
+    base = OK_LI.split("\n\n")[0]
+    assert human_score(base + "\n\nhttps://nerdit.in/course/a-journey-12/preview?utm_source=linkedin #journey")["score"] \
+        == human_score(base)["score"]

@@ -133,3 +133,26 @@ def test_weak_best_hook_fails():
 def test_slop_on_card_fails():
     s = script(facts=["PwC is training 85,000 staff — for the AI age"])
     assert "card: em dash; use a comma or a full stop" in script_errors(s, KEPT)
+
+
+def test_hook_option_without_full_stop_still_matches():
+    s = script(hooks=[HOOK.rstrip("."), "AI is changing work.", "Hey, AI news today."])
+    assert not [e for e in script_errors(s, KEPT) if "must open" in e]
+
+
+def test_curly_apostrophe_in_line_still_matches():
+    s = script(line=LINE.replace("won't", "won’t"))
+    assert not [e for e in script_errors(s, KEPT) if "must open" in e or "hook scores" in e]
+
+
+def test_weekly_script_with_hooks_passes():
+    s = script(kind="weekly", line=HOOK + " One… Two… Three… Link in bio.",
+               facts=["PwC is training 85,000 staff for AI", "Firms retrain staff for AI", "AI skills top job ads"])
+    assert script_errors(s, KEPT) == []
+
+
+def test_weekly_template_opens_with_the_best_hook():
+    from pathlib import Path
+    editorial = (Path(__file__).parents[1] / "references" / "editorial.md").read_text(encoding="utf-8")
+    assert "This week in AI and jobs. One" not in editorial
+    assert "<best hook>. One… Two… Three… Link in bio." in editorial

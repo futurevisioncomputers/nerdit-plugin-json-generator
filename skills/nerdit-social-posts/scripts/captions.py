@@ -10,7 +10,7 @@ from pathlib import Path
 
 # Hook, fold and humanizer rules live with the social-craft skill (shared with trend-reels); reuse, never copy.
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "nerdit-social-craft" / "scripts"))
-from fold import fold_errors  # noqa: E402
+from fold import fold_errors, lesson_names  # noqa: E402
 from humanize import slop_errors  # noqa: E402
 from humanscore import human_errors  # noqa: E402
 
@@ -110,7 +110,7 @@ def caption_errors(platform: str, fmt: str, text: str, lesson_text: str, item: d
     errors += [f"{p}: {n} is not in the lesson" for n in unknown_numbers(text, lesson_text)]
     # Machine fingerprint (dashes, stock words) everywhere; the feed fold where the feed cuts (Instagram, LinkedIn);
     # the five-check human score on LinkedIn, the one long English caption.
-    errors += slop_errors(text, p) + fold_errors(text, p, p)
+    errors += slop_errors(text, p) + fold_errors(text, p, p, lesson_names(lesson_text))
     if p == "linkedin":
         errors += human_errors(text, p)
     return errors

@@ -24,6 +24,8 @@ NUMBER_RE = re.compile(
     r"|days?\b|weeks?\b|months?\b|years?\b)?",
     re.IGNORECASE)
 PROPER_RE = re.compile(r"(?<!^)\b[A-Z][a-z]{2,}\b")
+# NERDIT: tech names are acronyms (SQL, AI) or CamelCase (FastAPI, NumPy); upstream counted neither.
+NAME_RE = re.compile(r"\b[A-Z]{2,}\b|\b[A-Z][a-z]+[A-Z]\w*")
 HASHTAG_RE = re.compile(r"(?:^|\s)#\w+")
 EMOJI_RE = re.compile(r"[\U0001F300-\U0001FAFF☀-➿]")
 
@@ -108,7 +110,7 @@ def _check_length(text: str) -> tuple[float, str]:
 
 def _check_specificity(text: str) -> tuple[float, str]:
     nums = [n.strip() for n in NUMBER_RE.findall(text) if n.strip()]
-    propers = set(PROPER_RE.findall(text))
+    propers = set(PROPER_RE.findall(text)) | set(NAME_RE.findall(text))
     low = [w.lower().strip("'’") for w in _words(text)]
     spoken = [w for w in low if w in SPOKEN_NUMBERS or w in MONEY_WORDS]
     hits = len(nums) + len(propers) + len(spoken)
@@ -139,7 +141,7 @@ def _check_frontload(text: str) -> tuple[float, str]:
     payload = None
     for i, token in enumerate(low):
         if (token in STAKES or token in SPOKEN_NUMBERS or token in MONEY_WORDS
-                or NUMBER_RE.match(w[i]) or (i and PROPER_RE.match(w[i]))):
+                or NUMBER_RE.match(w[i]) or (i and PROPER_RE.match(w[i])) or NAME_RE.fullmatch(w[i])):
             payload = i
             break
     if payload is None:
@@ -167,6 +169,7 @@ def _check_address(text: str) -> tuple[float, str]:
 
 def score_hook(text: str) -> dict:
     text = " ".join(text.split())          # a two-line on-screen hook reads as one line
+    text = text.replace("’", "'").replace("‘", "'")   # curly apostrophes: the word sets are ASCII
     results = {
         "LENGTH": _check_length(text),
         "SPECIFICITY": _check_specificity(text),

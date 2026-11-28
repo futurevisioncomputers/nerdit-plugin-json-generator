@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "note": "Lexicon used by humanize.py and detect.py. Replacements are plain-English and keep the sentence grammatical. The last block of each list is Instagram-specific: caption and voiceover slop that does not show up on other platforms. Edit freely - it is meant to be yours. NERDIT: adapted from https://github.com/Jakeschincariol/instagram-agent-skill (MIT, Copyright (c) 2026 Jake Schincariol), plus the single-hit LinkedIn tells (family 'linkedin') from https://github.com/sergebulaev/linkedin-skills (MIT, Copyright (c) 2026 Sergey Bulaev). 'nerdit_keep' lists words that are normal teaching words in tech courses and are never flagged.",
+  "note": "Lexicon used by humanize.py and detect.py. Replacements are plain-English and keep the sentence grammatical. The last block of each list is Instagram-specific: caption and voiceover slop that does not show up on other platforms. Edit freely - it is meant to be yours. NERDIT: adapted from https://github.com/Jakeschincariol/instagram-agent-skill (MIT, Copyright (c) 2026 Jake Schincariol), plus the single-hit LinkedIn tells (family 'linkedin') from https://github.com/sergebulaev/linkedin-skills (MIT, Copyright (c) 2026 Sergey Bulaev). 'nerdit_keep' lists words that are normal teaching words in tech courses and are never flagged. 'nerdit_skip_structures' lists shapes that are normal in teaching text (a list of three terms; SQL keywords and acronyms in capitals) and are never flagged.",
   "invisible": [
     {
       "cp": "U+200B",
@@ -1065,7 +1065,7 @@
     },
     {
       "id": "as-an-ai",
-      "regex": "(?i)\\bas an ai\\b|\\bas a language model\\b",
+      "regex": "(?i)\\bas an ai(?: language)? model\\b|\\bas an ai,|\\bas a language model\\b",
       "name": "Model self-reference",
       "fix": "Delete the sentence."
     },
@@ -1114,6 +1114,17 @@
   ],
   "nerdit_keep": [
     "ecosystem",
-    "robust"
+    "robust",
+    "underscore",
+    "underscores",
+    "landscape",
+    "paradigm",
+    "thus",
+    "hence",
+    "hack"
+  ],
+  "nerdit_skip_structures": [
+    "triad",
+    "caps-shout"
   ]
 }

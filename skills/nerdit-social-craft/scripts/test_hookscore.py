@@ -55,3 +55,24 @@ def test_hooks_json_drops_personal_result_formulas():
     ids = {h["id"] for h in d["hooks"]}
     assert not ids & {1, 6, 15, 25} and 27 in ids and not set(d["classify_order"]) - ids
     assert all({"template", "example", "on_screen", "match"} <= h.keys() for h in d["hooks"])
+
+
+# --- final-review fixes ---
+
+def test_acronyms_and_camelcase_are_specific():
+    assert score_hook("FastAPI checks every request")["score"] > score_hook("It checks every request")["score"]
+
+
+def test_curly_apostrophe_scores_the_same():
+    assert score_hook("PwC won’t wait: it is training eighty-five thousand people for AI.") == \
+        score_hook("PwC won't wait: it is training eighty-five thousand people for AI.")
+
+
+def test_formulas_never_claim_a_personal_past():
+    import re
+    d = json.loads((Path(__file__).parents[1] / "references" / "hooks.json").read_text(encoding="utf-8"))
+    first_person = re.compile(r"\b(I|my|me|I'm|I've|I'd|mine)\b")
+    for h in d["hooks"]:
+        text = re.sub(r'"[^"]*"', "", " ".join([h["template"], h["example"], h["on_screen"]]))   # quoted viewer words are fine
+        assert not first_person.search(text), (h["id"], h["name"])
+    assert 8 not in {h["id"] for h in d["hooks"]}

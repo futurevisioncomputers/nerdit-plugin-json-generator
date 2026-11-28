@@ -29,6 +29,13 @@ _NUMWORD = "|".join([*UNITS, *TENS])
 SPOKEN_DECIMAL = re.compile(rf"\b(?:{_NUMWORD})(?:-(?:{_NUMWORD}))?\s+point\s+(?:{_NUMWORD})\b", re.I)
 
 
+def _same_sentence(a: str, b: str) -> bool:
+    """Equal after case, curly apostrophes and the closing full stop are set aside."""
+    def norm(s: str) -> str:
+        return re.sub(r"[.!?\s]+$", "", s.replace("’", "'").replace("‘", "'")).strip().lower()
+    return norm(a) == norm(b)
+
+
 def _words(text: str) -> list[str]:
     return re.findall(r"[a-z0-9]+", text.lower())
 
@@ -89,7 +96,7 @@ def script_errors(script: dict, kept: list[dict]) -> list[str]:
     else:
         best, _ = best_hook(hooks)
         first = re.split(r"(?<=[.!?])\s+", line)[0]
-        if first.strip().lower() != best.strip().lower():
+        if not _same_sentence(first, best):
             errors.append(f"line must open with the best hook: '{best}'")
         errors += hook_errors(best, "hook")
     errors += slop_errors(line, "line") + slop_errors(card.get("chip", ""), "card")

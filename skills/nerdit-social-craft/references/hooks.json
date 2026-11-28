@@ -1,13 +1,14 @@
 {
   "version": "1.0",
-  "note": "26 hook formulas for Reels. A Reel has two hooks that fire at the same time and they are not the same sentence: the first thing you say, and the first thing on screen. The spoken hook has about two seconds. The on-screen hook has about one, because it is read before it is heard. Every formula here carries a template, a filled example, the on-screen version, what it is for, and the way it usually gets ruined. Each formula also carries a `match` regex, so the same vocabulary can name a hook found in the wild and not only write a new one. Walk them in `classify_order`, which is most specific first, case-insensitive. Adapted for NERDIT from https://github.com/Jakeschincariol/instagram-agent-skill (MIT, Copyright (c) 2026 Jake Schincariol): formulas 1, 6, 15 and 25 are removed because they need a personal or someone else's result, and NERDIT never invents one; 27 is added. Every number in a hook comes from a kept source (Trend Reels) or the lesson (course posts).",
+  "note": "26 hook formulas for Reels. A Reel has two hooks that fire at the same time and they are not the same sentence: the first thing you say, and the first thing on screen. The spoken hook has about two seconds. The on-screen hook has about one, because it is read before it is heard. Every formula here carries a template, a filled example, the on-screen version, what it is for, and the way it usually gets ruined. Each formula also carries a `match` regex, so the same vocabulary can name a hook found in the wild and not only write a new one. Walk them in `classify_order`, which is most specific first, case-insensitive. Adapted for NERDIT from https://github.com/Jakeschincariol/instagram-agent-skill (MIT, Copyright (c) 2026 Jake Schincariol): formulas 1, 6, 8, 15 and 25 are removed because they need a personal or someone else's result, and NERDIT never invents one; 27 is added. Every number in a hook comes from a kept source (Trend Reels) or the lesson (course posts). Formulas 4, 5, 9, 13, 16, 17, 18, 21 and 24 are rewritten without a personal past.",
   "rules": [
     "Write the spoken line and the on-screen line separately. On screen is the shorter, blunter one, six words or fewer, no punctuation it does not need.",
     "No setup. The video starts at the sentence you would normally reach at second six.",
     "Say the number. 'A lot' is not a number and neither is 'so much time'.",
     "The first frame is a hook too. A static talking head at 0:00 with no motion and no text is three hooks wasted.",
     "If the hook would work for anyone else in your niche, it is not your hook. Put the thing only you can say in it.",
-    "A hook promises something. Deliver it before the halfway mark or the retention you bought gets handed back."
+    "A hook promises something. Deliver it before the halfway mark or the retention you bought gets handed back.",
+    "NERDIT and Dev have no personal past: write about the viewer, a tool, or a company in the story. Never 'I spent', 'I ran', 'my results' or 'it took me'."
   ],
   "hooks": [
     {
@@ -33,9 +34,9 @@
     {
       "id": 4,
       "name": "The Replacement",
-      "template": "{This thing} replaced {expensive thing} for {price}.",
-      "example": "This $12 tool replaced the editor I was paying $2,000 a month.",
-      "on_screen": "$2,000 -> $12",
+      "template": "{This tool} replaced {an expensive thing or a long task} for {price or time}.",
+      "example": "This free Python script replaced a two-hour Excel report.",
+      "on_screen": "2 HOURS -> 1 SCRIPT",
       "best_for": "Demos and tool videos. The price gap does the work.",
       "trap": "Overstating the replacement. If it replaced 60% of the job, say 60%, or the comments will say it for you.",
       "match": "\\breplaced?\\b[^.!?]*\\$\\s?\\d|\\$\\s?\\d[^.!?]*\\breplaced?\\b|\\binstead of (?:paying|hiring)\\b"
@@ -43,9 +44,9 @@
     {
       "id": 5,
       "name": "Time Collapse",
-      "template": "This used to take me {long time}. It now takes {short time}.",
-      "example": "Proposals used to take me five hours. They take twenty minutes now.",
-      "on_screen": "5 HOURS -> 20 MIN",
+      "template": "{Task} used to take {long time}. {Tool} does it in {short time}.",
+      "example": "Cleaning this sheet used to take two hours. pandas does it in ten seconds.",
+      "on_screen": "2 HOURS -> 10 SEC",
       "best_for": "Process videos where the payoff is speed. Reads instantly on screen.",
       "trap": "A ratio nobody believes. 40 hours to 4 seconds gets treated as a lie even when it is true.",
       "match": "\\bused to take\\b|\\bnow (?:it )?(?:only )?takes?\\b|\\btakes? (?:me )?\\d+\\s*(?:sec|second|min|minute|hour|hr)"
@@ -61,20 +62,10 @@
       "match": "\\b(?:big(?:gest)?|common|the) mistake\\b|\\bmistake (?:that|people|i)\\b|\\byou'?(?:re| are) doing\\b[^.!?]*\\bwrong\\b|\\bdoing (?:it|this) wrong\\b"
     },
     {
-      "id": 8,
-      "name": "Insider Leak",
-      "template": "I spent {N years} {inside the thing}. Here is what we never said out loud.",
-      "example": "I spent six years selling agency retainers. Here is what we never put in the proposal.",
-      "on_screen": "6 YEARS INSIDE",
-      "best_for": "Authority without a credential slide. Works only if the years are real.",
-      "trap": "Promising a secret and delivering the brochure. The comments are merciless about this one.",
-      "match": "\\bi (?:spent|worked|ran|was|have been)\\b[^.!?]*\\b\\d+\\s*\\+?\\s*years?\\b|\\bwe never (?:told|said|showed)\\b|\\bnobody (?:puts|tells you about)\\b|\\bi (?:sell|sold|run)\\b[^.!?]*\\$\\s?\\d"
-    },
-    {
       "id": 9,
       "name": "The Steal",
-      "template": "Steal this {artifact}. It took me {time} to get right.",
-      "example": "Steal this four-line follow-up. It took me two years and a lot of dead leads.",
+      "template": "Steal this {artifact}. {Who} use it every day.",
+      "example": "Steal this four-line SQL query. Analysts use it every day.",
       "on_screen": "STEAL THIS",
       "best_for": "Saves and sends, which are the two metrics that move reach the most.",
       "trap": "The artifact not being on screen. If they cannot screenshot it, there is nothing to steal.",
@@ -114,8 +105,8 @@
       "id": 13,
       "name": "Before And After, On Screen",
       "template": "{Show the old thing}. {Show the new thing}. {One sentence on the lever}.",
-      "example": "This was my profile in March. This is it now. I changed the name field, nothing else.",
-      "on_screen": "MARCH  /  NOW",
+      "example": "This is the formula most beginners write. This is the one that scales. One function changed.",
+      "on_screen": "BEFORE  /  AFTER",
       "best_for": "Anything visual. The cut between the two frames is the hook, the words are secondary.",
       "trap": "Three levers. Name one thing that changed or the transformation stops being believable.",
       "match": "\\b(?:this|that) was\\b[^.!?]*[.!?]\\s*(?:this|that) is\\b|\\bbefore\\b[^.!?]*\\bafter\\b|\\bi (?:look|looked) back at\\b"
@@ -133,9 +124,9 @@
     {
       "id": 16,
       "name": "The Verbatim Question",
-      "template": "\"{Question exactly as it was asked}\" - I get this every week.",
-      "example": "\"How do I post consistently without hating it?\" I get this one every week.",
-      "on_screen": "ASKED EVERY WEEK",
+      "template": "\"{Question exactly as learners ask it}\" Here is the short answer.",
+      "example": "\"Do I need maths for data science?\" Here is the short answer.",
+      "on_screen": "THE QUESTION EVERYONE ASKS",
       "best_for": "Search. A question typed the way people type it is what Instagram search is matching against.",
       "trap": "Tidying the question up. The value is that it is in their words, typos and all.",
       "match": "^\\s*[\\\"“']?(?:how|what|what'?s|why|when|where|who|which|can|should|do|does|did|is|are|have you|would you)\\b[^?]{3,110}\\?"
@@ -143,9 +134,9 @@
     {
       "id": 17,
       "name": "Head To Head",
-      "template": "{A} versus {B}. I ran both for {time} and one of them was not close.",
-      "example": "Carousels versus reels. I ran both for 90 days and it was not close.",
-      "on_screen": "CAROUSELS vs REELS",
+      "template": "{A} versus {B} for {job}. One of them is not close.",
+      "example": "Excel versus Python for a million-row file. It is not close.",
+      "on_screen": "EXCEL vs PYTHON",
       "best_for": "Comments. People arrive already holding an opinion, which is the point.",
       "trap": "Refusing to pick. A comparison with a diplomatic ending is a video with no ending.",
       "match": "\\b(?:vs\\.?|versus)\\b|\\bdifferences? between\\b|\\b(?:a|the) or (?:b|the)\\b"
@@ -154,7 +145,7 @@
       "id": 18,
       "name": "Cold Open Demo",
       "template": "{Start mid-action, already doing the thing.} Watch what this does.",
-      "example": "Watch what happens when I paste a competitor's caption into this.",
+      "example": "Watch what happens when you paste messy dates into this one formula.",
       "on_screen": "WATCH THIS",
       "best_for": "Screen recordings and anything with a visible result. No setup at all, the hand is already moving.",
       "trap": "A result that takes twelve seconds to arrive. If the payoff is slow, cut to it and show the wait afterwards.",
@@ -184,7 +175,7 @@
       "id": 21,
       "name": "Mid-Sentence Start",
       "template": "{...and that is when {the turn}.}",
-      "example": "...and that is when the client asked for the money back. Three days after approving it.",
+      "example": "...and that is when the company stopped hiring junior analysts. Three months after buying the tool.",
       "on_screen": "HE ASKED FOR A REFUND",
       "best_for": "Stories. Starting mid-scene makes the viewer feel they arrived late, which is a reason to stay.",
       "trap": "Never going back to fill in the gap. Deliver the setup by second eight or it reads as a mistake.",
@@ -214,7 +205,7 @@
       "id": 24,
       "name": "The Reveal",
       "template": "This is the new {thing}.",
-      "example": "This is the new Sony point and shoot, and it fixes the one thing I hated.",
+      "example": "This is the new Excel function, and it fixes the one thing everyone hated about VLOOKUP.",
       "on_screen": "THE NEW ONE",
       "best_for": "Anything physical or visual. The object is the hook and the words are captions on it.",
       "trap": "Holding the thing up without saying what it changes. A reveal with no stake is an advert.",
@@ -254,7 +245,6 @@
     24,
     18,
     17,
-    8,
     16,
     12,
     10,

@@ -41,4 +41,4 @@ you", myth vs fact. Always Dev talking to camera.
 `script.json` (checked by `script_check.py`): one line of at most 30 words, sentences of 12 words or fewer, numbers
 spelled as said, no web address, no course name, ending "… link in bio." The news card states the fact in our own
 words (never the outlet's headline), names the outlets, and uses only numbers found in the kept stories.
-Weekly: "This week in AI and jobs. One… Two… Three… Link in bio." with the 3 facts on the card in turn.
+Weekly: "<best hook>. One… Two… Three… Link in bio." (the best of the 3 scored hooks in `script.json`, about the week's biggest story) with the 3 facts on the card in turn.

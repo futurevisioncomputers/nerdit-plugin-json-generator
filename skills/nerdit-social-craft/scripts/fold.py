@@ -15,7 +15,12 @@ from textio import say
 
 FOLD = {"instagram": 125, "linkedin": 140}
 URL_RE = re.compile(r"https?://\S+|www\.\S+")
-CONCRETE = re.compile(r"\d|(?<![.!?]\s)(?<!^)\b[A-Z][a-z]{2,}\b", re.MULTILINE)
+# A number, an acronym (SQL, API), a CamelCase name (FastAPI, NumPy), or a capitalised word that does not just start
+# a line or sentence. A sentence-initial name counts when the caller passes it in `names` (see lesson_names).
+ACRONYM_OR_CAMEL = r"\b[A-Z]{2,}\b|\b[A-Z][a-z]+[A-Z]\w*"
+PROPER = r"(?<![.!?]\s)(?<!^)\b[A-Z][a-z]{2,}\b"
+CONCRETE = re.compile(r"\d|" + ACRONYM_OR_CAMEL + "|" + PROPER, re.MULTILINE)
+NAME = re.compile(ACRONYM_OR_CAMEL + "|" + PROPER, re.MULTILINE)
 
 
 def _visible(text: str) -> str:
@@ -23,11 +28,16 @@ def _visible(text: str) -> str:
     return URL_RE.sub("", text).lstrip()
 
 
+def lesson_names(text: str) -> set[str]:
+    """Names a lesson uses: acronyms, CamelCase words, and capitalised words that do not just start a sentence."""
+    return set(NAME.findall(text))
+
+
 def feed_window(text: str, platform: str) -> str:
     return _visible(text)[:FOLD[platform]]
 
 
-def fold_errors(text: str, platform: str, label: str) -> list[str]:
+def fold_errors(text: str, platform: str, label: str, names: set | frozenset = frozenset()) -> list[str]:
     if platform not in FOLD:
         return []
     shown = _visible(text)
@@ -36,7 +46,9 @@ def fold_errors(text: str, platform: str, label: str) -> list[str]:
     first = re.split(r"(?<=[.!?])\s|\n", shown, maxsplit=1)[0].strip()
     if len(first) > cut:
         errors.append(f"{label}: first sentence is {len(first)} characters; the feed cuts at {cut}")
-    if not CONCRETE.search(shown[:cut]):
+    window = shown[:cut]
+    named = any(re.search(rf"\b{re.escape(n)}\b", window) for n in names)
+    if not (CONCRETE.search(window) or named):
         errors.append(f"{label}: nothing concrete before the cut (a number or a name like Python or Excel)")
     return errors
 
