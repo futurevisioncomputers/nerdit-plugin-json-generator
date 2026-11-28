@@ -112,11 +112,12 @@ def _write_checks(run: Path, key: str, value) -> None:
     (run / "checks.json").write_text(json.dumps(checks, indent=1), encoding="utf-8")
 
 
-def record_check(run: Path, section: str, errors: list[str], inputs: list[Path] = ()) -> None:
-    """The verdict plus the sha256 of the files it judged, so `ready` can tell a stale verdict."""
+def record_check(run: Path, section: str, errors: list[str], inputs: list[Path] = (), **extra) -> None:
+    """The verdict plus the sha256 of the files it judged, so `ready` can tell a stale verdict; `extra` adds fields
+    such as checked_check's `fetched`."""
     run = Path(run)
     hashes = {Path(p).relative_to(run).as_posix(): sha256(p) for p in inputs if Path(p).exists()}
-    _write_checks(run, section, {"ok": not errors, "errors": errors, "inputs": hashes})
+    _write_checks(run, section, {"ok": not errors, "errors": errors, "inputs": hashes, **extra})
 
 
 def record_reel(run: Path) -> None:
@@ -136,6 +137,9 @@ def ready(run: Path) -> list[str]:
             errors.append(f"{section} check missing")
         elif not verdict.get("ok"):
             errors.append(f"{section} check failed: {'; '.join(verdict.get('errors', []))}")
+        elif verdict.get("fetched") is False:
+            # The quotes were never confirmed on the outlets' pages (--no-fetch is for tests and dry checks only).
+            errors.append(f"{section} check ran without fetching the pages; run checked_check.py <run> without --no-fetch")
         else:
             changed = [name for name, digest in verdict.get("inputs", {}).items()
                        if not (run / name).exists() or sha256(run / name) != digest]

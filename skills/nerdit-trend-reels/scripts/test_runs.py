@@ -157,3 +157,10 @@ def test_ready_needs_the_checked_verdict(tmp_path):
     del checks["checked"]
     (run / "checks.json").write_text(json.dumps(checks))
     assert "checked check missing" in ready(run)
+
+
+def test_ready_refuses_a_checked_verdict_made_without_fetching(tmp_path):
+    run = _good_run(tmp_path)
+    record_check(run, "checked", [], fetched=False)
+    assert ("checked check ran without fetching the pages; run checked_check.py <run> without --no-fetch"
+            in ready(run))

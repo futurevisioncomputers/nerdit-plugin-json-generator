@@ -19,3 +19,9 @@ def test_scheduled_run_may_call_the_checker_but_not_gemini():
 def test_editorial_asks_for_what_the_checker_needs():
     text = (SKILL.parent / "references" / "editorial.md").read_text(encoding="utf-8")
     assert "`published`" in text and "starts with the" in text and "outlet name exactly as in `outlets`" in text
+
+
+def test_editorial_states_link_order_and_exact_quotes():
+    text = (SKILL.parent / "references" / "editorial.md").read_text(encoding="utf-8")
+    assert "one link per outlet, in the same order" in text and "never a Google News link" in text
+    assert "word for word" in text and "fetch the page once more" in text

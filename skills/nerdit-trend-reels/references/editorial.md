@@ -18,11 +18,15 @@ The audience is global working professionals. The hook is a work worry; the cour
 5. **A live course fits:** map it to one live course from `catalogue_status` (`state: live`). No fit → drop the
    story. Never fall back to a generic course.
 
-Record every kept story in `checked.json` → `kept` with `headline`, `links` (2+), `outlets` (2+), `published`
+Record every kept story in `checked.json` → `kept` with `headline`, `links` (2+:
+one link per outlet, in the same order as `outlets`, each the outlet's own article, never a Google News link),
+`outlets` (2+), `published`
 (YYYY-MM-DD), `evidence` (the sentences you read that carry the fact and its numbers: each line starts with the
 outlet name exactly as in `outlets`, a colon, then the sentence in double quotes, copied word for word) and
 `course_id`; every dropped one in `dropped`
-with its reason. On a low-news day keep fewer; never relax a rule. `checked_check.py` enforces these rules on `checked.json`, whoever wrote it, and confirms each quoted sentence on the outlet's page.
+with its reason. On a low-news day keep fewer; never relax a rule. `checked_check.py` enforces these rules on `checked.json`, whoever wrote it, and confirms each quoted sentence and its numbers on the outlet's page. Ask WebFetch for the exact sentences, word
+for word. If the checker says a quote is not on its page, fetch the page once more and copy the sentence again;
+if it still fails, drop the story with that reason.
 
 ## Reading trends.json
 
