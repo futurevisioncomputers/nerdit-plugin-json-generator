@@ -20,6 +20,11 @@ the owner's Chrome, signed in to flow.google.com and fv.nerdit.in. Design:
 `<scripts>` is this skill's `scripts/` folder; run each as `python <scripts>/<name>.py`. Each one prints what is
 wrong and exits 1; fix the input (rewrite the script or captions), never the checker.
 
+**Any model** (Claude, OpenAI/Codex or another agent) can do the news, script, check and build steps: they are
+these instructions plus the scripts, which decide every check. Only the Flow and admin steps need a tool that drives
+the owner's Chrome. The scheduled run starts Claude on Sonnet (`--model sonnet` in `scripts/scheduled_run.ps1`;
+owner, 2026-11-27: save Claude tokens).
+
 ## Never
 
 - Press **Approve**, "Approve & post now", Schedule or Delete in Social posts. The owner's tap posts the Reel.
