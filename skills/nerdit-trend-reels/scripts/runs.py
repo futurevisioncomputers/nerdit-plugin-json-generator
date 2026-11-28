@@ -21,7 +21,7 @@ from datetime import date, timedelta
 from pathlib import Path
 
 KINDS = ("daily", "weekly")
-SECTIONS = ("script", "transcript", "captions")
+SECTIONS = ("checked", "script", "transcript", "captions")
 REEL_COST = 60
 RESET_DAY = 8
 REEL_DAYS = (0, 2, 4, 6)   # Monday, Wednesday, Friday, Sunday

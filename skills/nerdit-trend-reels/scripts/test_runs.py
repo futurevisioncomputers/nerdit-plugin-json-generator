@@ -48,7 +48,7 @@ def _good_run(tmp_path):
     run = new_run("daily", "x", date(2026, 11, 25))
     (run / "reel.mp4").write_bytes(b"reel")
     (run / "ideas.json").write_text(json.dumps({"ideas": [{"hook": "h"}], "chosen": 0, "reason": "r"}))
-    for section in ("script", "transcript", "captions"):
+    for section in ("checked", "script", "transcript", "captions"):
         record_check(run, section, [])
     record_reel(run)
     return run
@@ -123,6 +123,7 @@ def test_ready_refuses_a_stale_check(tmp_path):
     (run / "captions_filled.json").write_text("{}")
     (run / "reel.mp4").write_bytes(b"reel")
     (run / "ideas.json").write_text(json.dumps({"ideas": [{}], "chosen": 0}))
+    record_check(run, "checked", [], [run / "checked.json"])
     record_check(run, "script", [], [run / "script.json", run / "checked.json"])
     record_check(run, "transcript", [], [run / "clips" / "clip1.mp4", run / "script.json"])
     record_check(run, "captions", [], [run / "captions_filled.json"])
@@ -148,3 +149,11 @@ def test_take_download_refuses_the_same_take_again(tmp_path):
     take_download(run, downloads)
     with pytest.raises(FileNotFoundError):
         take_download(run, downloads)   # the re-roll is still downloading: newest finished file is take 1
+
+
+def test_ready_needs_the_checked_verdict(tmp_path):
+    run = _good_run(tmp_path)
+    checks = json.loads((run / "checks.json").read_text())
+    del checks["checked"]
+    (run / "checks.json").write_text(json.dumps(checks))
+    assert "checked check missing" in ready(run)
