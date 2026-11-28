@@ -44,14 +44,14 @@ Kind: `daily` (Mon/Wed/Fri, or "make trend reel") or `weekly` (Sunday, or "weekl
    credits run out until <reset date>" and stop. Write `<run>/run.log` lines as you go (credits before, each step).
 2. **Collect.** `collect.py --days 2 --out <run>/trends.json` (weekly: `--days 7`).
 3. **Check.** Save the live courses from `mcp__nerdit__catalogue_status` (`state: live`) to `<run>/courses.json` as
-   `[{"id", "title", "slug"}]` (course URL `https://nerdit.in/course/<slug>/preview`). Then run
-   `gemini_check.py <run>`: Gemini (the Antigravity CLI `agy`) finds the original articles and writes
-   `<run>/checked.json`. Then run `checked_check.py <run>` (two different sites, fresh, live course, numbers and
-   quotes confirmed on the outlets' pages). If either script fails, do the check yourself: follow
-   `references/editorial.md`, find each story's original article with WebSearch (Google News links are empty pages),
-   read it with WebFetch (never in Chrome), write `<run>/checked.json`, and run `checked_check.py <run>` until it
-   passes. A "could not read" warning is fine; an error is not. Nothing kept → report "No safe story today; no
-   credits spent." and stop.
+   `[{"id", "title", "slug"}]` (course URL `https://nerdit.in/course/<slug>/preview`). Follow
+   `references/editorial.md`: find each story's original article with WebSearch (Google News links are empty pages),
+   read it with WebFetch (never in Chrome), keep only stories that pass, write `<run>/checked.json`, and run
+   `checked_check.py <run>` until it passes (two different sites, fresh, live course, numbers and quotes confirmed on
+   the outlets' pages; a "could not read" warning is fine, an error is not). Nothing kept → report "No safe story
+   today; no credits spent." and stop. `gemini_check.py <run>` (Gemini through the Antigravity CLI `agy`) is an
+   optional tool the owner may run by hand; it is never in a scheduled run, because it passed 0 of 2 replays
+   (`docs/superpowers/specs/2026-11-28-phase5-replay.md`: it can search but not read pages).
 4. **Ideas.** 3 ideas, `chosen` and `reason` in `<run>/ideas.json`; check `runs.py recent` first.
 5. **Script.** First write 3 hook options for the line's first sentence, from 3 different formulas in
    `../nerdit-social-craft/references/hooks.json` (spoken, numbers in words, at most 12 words). Then write
